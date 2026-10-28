@@ -6,6 +6,7 @@ from models.breed import Breed
 from models.breed_variety import BreedVariety
 from models.breeder import Breeder
 from models.department import Department
+from models.digest_entry import DigestEntry
 from models.follow_up import FollowUp, FollowUpNote
 from models.listing import Listing
 from models.listing_change import ListingChange
@@ -22,6 +23,7 @@ __all__ = [
     "BreedVariety",
     "Breeder",
     "Department",
+    "DigestEntry",
     "FollowUp",
     "FollowUpNote",
     "Listing",

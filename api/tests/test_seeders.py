@@ -56,7 +56,11 @@ def test_migrations_create_every_table_and_record_themselves(tmp_path: Path) -> 
     database_engine = create_engine(f"sqlite:///{tmp_path / 'migrations.db'}")
     runner = MigrationRunner(database_engine)
 
-    assert runner.run() == ["create_initial_tables"]
+    assert runner.run() == [
+        "create_initial_tables",
+        "add_litter_group_confirmed_colors",
+        "add_digest_entries_table",
+    ]
     assert runner.run() == []
     tables = set(inspect(database_engine).get_table_names())
     assert {"listings", "litter_groups", "push_subscriptions", "schema_migrations", "source_runs"} <= tables

@@ -9,10 +9,12 @@ import logging
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+from core.clock import naive_utc_now
 from core.database import SessionLocal, engine
 from migrations.run_migrations import MigrationRunner
 from services.collection_runner import collection_runner
 from services.collectors.centrale_canine import CentraleCanineCollector
+from services.notifier import notifier_service
 
 logger = logging.getLogger("worker")
 
@@ -26,8 +28,9 @@ class CollectionWorker:
         """
         Create the scheduler and register the jobs.
 
-        One job per source runs every hour, a few minutes apart (the Centrale Canine at minute 5);
-        the evening digest at the profile's ``digest_hour`` arrives with milestone 2.
+        One job per source runs every hour, a few minutes apart (the Centrale Canine at minute 5).
+        The evening digest job wakes at minute 0 of every hour and sends the digests whose
+        ``digest_hour`` has come.
 
         Returns:
             The configured scheduler, not started.
@@ -35,6 +38,7 @@ class CollectionWorker:
         scheduler = BlockingScheduler(timezone=SCHEDULER_TIMEZONE)
         scheduler.configure(job_defaults={"coalesce": True, "max_instances": 1, "misfire_grace_time": 600})
         scheduler.add_job(self.collect_centrale_canine, "cron", minute=5, id="collect_centrale_canine")
+        scheduler.add_job(self.send_evening_digests, "cron", minute=0, id="send_evening_digests")
         return scheduler
 
     def collect_centrale_canine(self) -> None:
@@ -49,6 +53,16 @@ class CollectionWorker:
                 report.source_run.listings_new,
                 report.source_run.listings_changed,
             )
+        finally:
+            db.close()
+
+    def send_evening_digests(self) -> None:
+        """Hourly check: send the digests of the profiles whose digest hour is now."""
+        db = SessionLocal()
+        try:
+            sent_count = notifier_service.send_due_evening_digests(db, naive_utc_now())
+            if sent_count:
+                logger.info("Evening digest sent to %d user(s)", sent_count)
         finally:
             db.close()
 

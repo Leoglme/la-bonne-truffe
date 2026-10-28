@@ -46,4 +46,4 @@ def run_migration(database_engine: Engine) -> None:
         database_engine: Engine of the database to migrate.
     """
     for model in BASELINE_MODELS:
-        model.__table__.create(database_engine, checkfirst=True)  # type: ignore[attr-defined]
+        Base.metadata.tables[model.__tablename__].create(database_engine, checkfirst=True)

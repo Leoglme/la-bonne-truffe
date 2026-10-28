@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import JSON, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.clock import naive_utc_now
@@ -24,6 +24,7 @@ class LitterGroup(TimestampMixin, Base):
         available_from: Birth (or expected birth) + 56 days, the legal handover age.
         is_active: False once every listing is gone, or six months after the birth.
         is_grouping_probable: True when listings were grouped on a guess (no birth date, single candidate).
+        confirmed_colors: Canonical colours confirmed by hand after a call; they override every source.
         first_seen_at: First time a source showed this litter.
         last_seen_at: Last time a source showed this litter.
     """
@@ -39,6 +40,7 @@ class LitterGroup(TimestampMixin, Base):
     available_from: Mapped[date | None]
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False, index=True)
     is_grouping_probable: Mapped[bool] = mapped_column(default=False, nullable=False)
+    confirmed_colors: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     first_seen_at: Mapped[datetime] = mapped_column(default=naive_utc_now, nullable=False)
     last_seen_at: Mapped[datetime] = mapped_column(default=naive_utc_now, nullable=False)
 

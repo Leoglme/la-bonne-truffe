@@ -17,6 +17,9 @@ from services.collectors.centrale_canine import (
     CentraleCanineError,
 )
 from services.listing_ingestion import IngestionSummary, listing_ingestion_service
+from services.litter_grouping import GroupingResult, litter_grouping_service
+from services.matching.match_refresh import RefreshSummary, match_refresh_service
+from services.notifier import notifier_service
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +32,22 @@ class CentraleCanineRunReport:
     plan: CentraleCanineCollectionPlan
     collection: CentraleCanineCollection = field(default_factory=CentraleCanineCollection)
     summary: IngestionSummary = field(default_factory=IngestionSummary)
+    grouping: GroupingResult = field(default_factory=GroupingResult)
+    refresh: RefreshSummary = field(default_factory=RefreshSummary)
 
 
 class CollectionRunner:
-    """Plans, collects and stores a run; an error on a source is recorded, never raised further."""
+    """
+    Plans, collects and stores a run, then groups the litters, scores them and notifies.
+
+    An error on a source is recorded on its run line, never raised further; three failed runs in a
+    row send the « source en panne » alert.
+    """
 
     def run_centrale_canine(self, db: Session, collector: CentraleCanineCollector) -> CentraleCanineRunReport:
         """
-        Read the Centrale Canine for the active profiles and store what was found.
+        Read the Centrale Canine for the active profiles, store what was found, then regroup, score
+        and notify.
 
         Args:
             db: Database session.
@@ -84,6 +95,13 @@ class CollectionRunner:
         finally:
             source_run.finished_at = naive_utc_now()
             db.commit()
+
+        if source_run.status == SourceRunStatus.OK:
+            now = naive_utc_now()
+            report.grouping = litter_grouping_service.regroup(db, now)
+            report.refresh = match_refresh_service.refresh(db, now, set(report.grouping.born_group_ids))
+        else:
+            notifier_service.alert_if_source_down(db, ListingSource.CENTRALE_CANINE, naive_utc_now())
         return report
 
 
