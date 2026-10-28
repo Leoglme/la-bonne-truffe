@@ -19,6 +19,7 @@ from services.collectors.centrale_canine import (
     CentraleCanineError,
 )
 from services.collectors.chiens_de_france import ChiensDeFranceCollector
+from services.collectors.chiots_de_france import ChiotsDeFranceCollector
 from services.collectors.html_source import HtmlCollection, HtmlCollectionPlan, HtmlSourceCollector
 from services.collectors.polite_http_client import SourceReadError
 from services.listing_ingestion import IngestionSummary, listing_ingestion_service
@@ -82,6 +83,8 @@ class CollectionRunner:
             return self.run_centrale_canine(db, CentraleCanineCollector())
         if source == ListingSource.CHIENS_DE_FRANCE:
             return self.run_html_source(db, source, ChiensDeFranceCollector())
+        if source == ListingSource.CHIOTS_DE_FRANCE:
+            return self.run_html_source(db, source, ChiotsDeFranceCollector())
         raise ValueError(f"Aucun collecteur pour {source}")
 
     def run_centrale_canine(self, db: Session, collector: CentraleCanineCollector) -> CentraleCanineRunReport:

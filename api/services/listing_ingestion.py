@@ -100,7 +100,9 @@ class ListingIngestionService:
                 .filter(Listing.source == source, Listing.external_id == raw_listing.external_id)
                 .one_or_none()
             )
-            breeder_id = self._upsert_breeder(db, source, raw_listing, known_department_codes)
+            breeder_id = self._upsert_breeder(
+                db, source, raw_listing, known_department_codes, listing.breeder_id if listing is not None else None
+            )
             if listing is None:
                 listing = Listing(
                     source=source,
@@ -245,19 +247,27 @@ class ListingIngestionService:
 
     @classmethod
     def _upsert_breeder(
-        cls, db: Session, source: ListingSource, raw_listing: RawListing, known_department_codes: set[str]
+        cls,
+        db: Session,
+        source: ListingSource,
+        raw_listing: RawListing,
+        known_department_codes: set[str],
+        current_breeder_id: int | None,
     ) -> int | None:
         """
         Find the breeder of a listing, or create it, then copy what the source knows about it.
 
         A value the source leaves empty never erases a known one, and a SIREN or a Centrale Canine
-        identifier already carried by another breeder is never moved onto this one.
+        identifier already carried by another breeder is never moved onto this one. A breeder no rule
+        finds (a private seller without SIREN, phone or affix) stays the one the listing already has,
+        instead of a new one at every run.
 
         Args:
             db: Database session.
             source: Source of the listing.
             raw_listing: Listing read by the collector.
             known_department_codes: Seeded department codes.
+            current_breeder_id: Breeder of the listing since an earlier run, if any.
 
         Returns:
             The breeder id, or None when the source names no breeder.
@@ -269,6 +279,8 @@ class ListingIngestionService:
         affix_key = BreederContactParser.affix_key(raw_breeder.affix)
 
         breeder = cls._find_breeder(db, source, raw_breeder, affix_key, department_code)
+        if breeder is None and current_breeder_id is not None:
+            breeder = db.get(Breeder, current_breeder_id)
         if breeder is None:
             breeder = Breeder()
             db.add(breeder)

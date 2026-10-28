@@ -8,6 +8,7 @@ from core.clock import french_date_of
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
 from enums.listing_kind import ListingKind
+from enums.listing_source import ListingSource
 from enums.lof_status import LofStatus
 from models.breed import Breed
 from models.breeder import Breeder
@@ -150,8 +151,9 @@ class LitterSnapshotBuilder:
     @classmethod
     def _sex_counts(cls, listings: list[Listing]) -> tuple[int | None, int | None]:
         """
-        Males and females of a litter: as a born litter declares them, else the puppies its ads offer,
-        one puppy per ad. A declared mating reports none.
+        Males and females of a litter: as the Centrale Canine declares the born litter, else the puppies
+        still offered by a litter ad, else the puppies its puppy ads offer, one puppy per ad. A declared
+        mating reports none.
 
         Args:
             listings: Active listings of the group.
@@ -159,7 +161,10 @@ class LitterSnapshotBuilder:
         Returns:
             The male and female counts, each None while unknown.
         """
-        born_litters = [listing for listing in listings if listing.kind == ListingKind.LITTER_BORN]
+        born_litters = sorted(
+            (listing for listing in listings if listing.kind == ListingKind.LITTER_BORN),
+            key=lambda listing: listing.source != ListingSource.CENTRALE_CANINE,
+        )
         if born_litters:
             return (
                 cls._first_known([listing.male_count for listing in born_litters]),

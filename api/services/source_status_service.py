@@ -8,7 +8,7 @@ from models.source_run import SourceRun
 from schemas.source_status import SourceStatus
 from services.notification_texts import SOURCE_NAMES
 
-COLLECTED_SOURCES: frozenset[ListingSource] = frozenset({ListingSource.CENTRALE_CANINE, ListingSource.CHIENS_DE_FRANCE})
+COLLECTED_SOURCES: frozenset[ListingSource] = frozenset(ListingSource)
 
 
 class SourceStatusService:

@@ -3,18 +3,13 @@
 from sqlalchemy.orm import Session
 
 from enums.listing_source import ListingSource
-from models.listing import Listing
 from models.litter_group import LitterGroup
 from seeders.run_seeders import SeederRunner
 from services.collection_runner import collection_runner
 from services.matching.snapshot_builder import LitterSnapshotBuilder
 from tests.centrale_canine_pages import collector_serving, load_recorded_pages
 from tests.chiens_de_france_pages import chiens_de_france_collector_serving
-
-
-def listing_of(db: Session, external_id: str) -> Listing:
-    """The listing of an identifier, whatever its source."""
-    return db.query(Listing).filter(Listing.external_id == external_id).one()
+from tests.stored_listings import listing_of
 
 
 def test_puppy_and_litter_to_come_join_the_centrale_canine_litters_of_their_breeder(db: Session) -> None:

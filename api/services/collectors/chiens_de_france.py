@@ -10,19 +10,24 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime
-from urllib.parse import urlparse
 
 import httpx
-from selectolax.lexbor import LexborHTMLParser, LexborNode
+from selectolax.lexbor import LexborHTMLParser
 
 from core.config import settings
 from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
 from enums.lof_status import LofStatus
 from services.collectors.breeder_contact_parser import BreederContactParser
-from services.collectors.html_source import HtmlCollection, HtmlCollectionPlan, HtmlRawPage
+from services.collectors.html_source import (
+    WHITESPACE_PATTERN,
+    HtmlAdParser,
+    HtmlCollection,
+    HtmlCollectionPlan,
+    HtmlRawPage,
+)
 from services.collectors.polite_http_client import PoliteHttpClient, SourcePageMissingError
-from services.collectors.raw_listing import RawBreeder, RawListing
+from services.collectors.raw_listing import RawListing
 
 logger = logging.getLogger(__name__)
 
@@ -53,11 +58,8 @@ DEPARTMENT_HEADING_PATTERN = re.compile(r"Département\s+(\d{2,3}|2[AB])\b")
 PUPPY_PATH_PATTERN = re.compile(r"/chiot/(\d+)$")
 LITTER_TO_COME_PATH_PATTERN = re.compile(r"/saillie/(\d+)$")
 FRENCH_DATE_PATTERN = re.compile(r"(\d{1,2})[./](\d{1,2})[./](\d{4})")
-PRICE_PATTERN = re.compile(r"(\d[\d\s]*)\s*€")
 POSTAL_CODE_AND_TOWN_PATTERN = re.compile(r"(\d{5})\s+(.+)")
 BREEDER_SITE_PREFIX = "Elevage "
-BREEDER_SITE_HOST_SUFFIX = ".chiens-de-france.com"
-WHITESPACE_PATTERN = re.compile(r"\s+")
 LITTER_PHOTO_PATH_PART = "/portees/"
 THUMBNAIL_PREFIX = "TN200_"
 
@@ -243,8 +245,7 @@ class ChiensDeFranceCollector:
         is_male = sex.startswith("Mâle")
         is_female = sex.startswith("Femelle")
         has_known_sex = is_male or is_female
-        price_text = cls._text_of(tree.css_first("div.fiche-prix div.prix"))
-        price_match = PRICE_PATTERN.search(price_text)
+        price_text = HtmlAdParser.text_of(tree.css_first("div.fiche-prix div.prix"))
         town, postal_code = cls._town_and_postal_code(tree)
         parents = cls._parents(tree)
         affix = cls._affix(summary_facts.get("Eleveur"))
@@ -261,14 +262,14 @@ class ChiensDeFranceCollector:
             male_count=int(is_male) if has_known_sex else None,
             female_count=int(is_female) if has_known_sex else None,
             puppies_available=cls._puppies_available(price_text),
-            price_cents=int(WHITESPACE_PATTERN.sub("", price_match.group(1))) * 100 if price_match else None,
+            price_cents=HtmlAdParser.price_cents(price_text),
             department_code=listed_ad.department_code,
             zip_code=postal_code,
             city=town,
             sire_name=parents.get("Père"),
             dam_name=parents.get("Mère"),
             photos=cls._litter_photos(tree),
-            breeder=cls._breeder(
+            breeder=HtmlAdParser.breeder_of_site(
                 tree.css_first("div.fiche-recap a[href]"), affix, detail_facts.get("Siret"), postal_code, town
             ),
             published_at=cls._published_at(detail_facts.get("Informations complémentaires")),
@@ -290,12 +291,12 @@ class ChiensDeFranceCollector:
         """
         facts = cls._list_facts(tree)
         town_node = tree.css_first("p.lieu-ville")
-        town_match = POSTAL_CODE_AND_TOWN_PATTERN.match(cls._text_of(town_node))
+        town_match = POSTAL_CODE_AND_TOWN_PATTERN.match(HtmlAdParser.text_of(town_node))
         postal_code = town_match.group(1) if town_match else None
         town = BreederContactParser.readable_name(town_match.group(2)) if town_match else None
         parents = cls._litter_to_come_parents(tree)
         breeder_site_link = tree.css_first("a.fichesite")
-        breeder_site_text = cls._text_of(breeder_site_link)
+        breeder_site_text = HtmlAdParser.text_of(breeder_site_link)
         affix = cls._affix(breeder_site_text.removeprefix(BREEDER_SITE_PREFIX) if breeder_site_text else None)
         return RawListing(
             source=ListingSource.CHIENS_DE_FRANCE,
@@ -310,25 +311,12 @@ class ChiensDeFranceCollector:
             city=town,
             sire_name=parents.get("Père"),
             dam_name=parents.get("Mère"),
-            breeder=cls._breeder(breeder_site_link, affix, facts.get("Pro / Siret"), postal_code, town),
+            breeder=HtmlAdParser.breeder_of_site(breeder_site_link, affix, facts.get("Pro / Siret"), postal_code, town),
             raw_json={"facts": facts},
         )
 
     @staticmethod
-    def _text_of(node: LexborNode | None) -> str:
-        """
-        The text of a node, spaces collapsed.
-
-        Args:
-            node: The node, if found.
-
-        Returns:
-            Its text, or an empty string.
-        """
-        return WHITESPACE_PATTERN.sub(" ", node.text()).strip() if node is not None else ""
-
-    @classmethod
-    def _headline_facts(cls, tree: LexborHTMLParser) -> dict[str, str]:
+    def _headline_facts(tree: LexborHTMLParser) -> dict[str, str]:
         """
         The facts at the top of a puppy page (« Sexe », « Disponibilité »…), the label without its note.
 
@@ -343,12 +331,12 @@ class ChiensDeFranceCollector:
             title = block.css_first("div.fiche-info-titre")
             if title is None:
                 continue
-            label = cls._text_of(title).split("(")[0].strip()
-            facts[label] = cls._text_of(block.css_first("div.int"))
+            label = HtmlAdParser.text_of(title).split("(")[0].strip()
+            facts[label] = HtmlAdParser.text_of(block.css_first("div.int"))
         return facts
 
-    @classmethod
-    def _summary_facts(cls, tree: LexborHTMLParser) -> dict[str, str]:
+    @staticmethod
+    def _summary_facts(tree: LexborHTMLParser) -> dict[str, str]:
         """
         The « Lieu » and « Eleveur » box of a puppy page.
 
@@ -362,14 +350,14 @@ class ChiensDeFranceCollector:
         label: str | None = None
         for node in tree.css("div.fiche-recap div.left, div.fiche-recap div.right"):
             if "left" in (node.attributes.get("class") or "").split():
-                label = cls._text_of(node)
+                label = HtmlAdParser.text_of(node)
             elif label is not None:
-                facts[label] = cls._text_of(node)
+                facts[label] = HtmlAdParser.text_of(node)
                 label = None
         return facts
 
-    @classmethod
-    def _detail_facts(cls, tree: LexborHTMLParser) -> dict[str, str]:
+    @staticmethod
+    def _detail_facts(tree: LexborHTMLParser) -> dict[str, str]:
         """
         The « Informations supplémentaires » and « Portée » boxes of a puppy page: each label sits in a
         ``div.int`` followed by its value.
@@ -386,11 +374,11 @@ class ChiensDeFranceCollector:
             while value_node is not None and value_node.tag != "div":
                 value_node = value_node.next
             if value_node is not None:
-                facts[cls._text_of(label_node)] = cls._text_of(value_node)
+                facts[HtmlAdParser.text_of(label_node)] = HtmlAdParser.text_of(value_node)
         return facts
 
-    @classmethod
-    def _list_facts(cls, tree: LexborHTMLParser) -> dict[str, str]:
+    @staticmethod
+    def _list_facts(tree: LexborHTMLParser) -> dict[str, str]:
         """
         The facts of a litter-to-come page, one ``<li>`` each: a ``div`` label, then its value.
 
@@ -405,11 +393,11 @@ class ChiensDeFranceCollector:
             label_node = item.css_first("div")
             value_node = item.css_first("p")
             if label_node is not None and value_node is not None:
-                facts[cls._text_of(label_node)] = cls._text_of(value_node)
+                facts[HtmlAdParser.text_of(label_node)] = HtmlAdParser.text_of(value_node)
         return facts
 
-    @classmethod
-    def _birth_date_text(cls, tree: LexborHTMLParser) -> str | None:
+    @staticmethod
+    def _birth_date_text(tree: LexborHTMLParser) -> str | None:
         """
         The « (Né le 28.08.2026) » note of the age of a puppy.
 
@@ -420,7 +408,7 @@ class ChiensDeFranceCollector:
             The note, or None when the page has none.
         """
         for title in tree.css("div.fiche-info-titre span"):
-            text = cls._text_of(title)
+            text = HtmlAdParser.text_of(title)
             if "le " in text:
                 return text
         return None
@@ -479,8 +467,8 @@ class ChiensDeFranceCollector:
             return 0
         return None
 
-    @classmethod
-    def _town_and_postal_code(cls, tree: LexborHTMLParser) -> tuple[str | None, str | None]:
+    @staticmethod
+    def _town_and_postal_code(tree: LexborHTMLParser) -> tuple[str | None, str | None]:
         """
         The town and postal code of the « Lieu » box: the town, then « 35133 - France » below it.
 
@@ -491,21 +479,21 @@ class ChiensDeFranceCollector:
             The town and the postal code, each None when absent.
         """
         for label in tree.css("div.fiche-recap div.left"):
-            if cls._text_of(label) != "Lieu":
+            if HtmlAdParser.text_of(label) != "Lieu":
                 continue
             value = label.next
             while value is not None and value.tag != "div":
                 value = value.next
             if value is None:
                 return None, None
-            postal_line = cls._text_of(next((child for child in value.iter() if child.tag == "div"), None))
-            town_text = cls._text_of(value).removesuffix(postal_line).strip()
+            postal_line = HtmlAdParser.text_of(next((child for child in value.iter() if child.tag == "div"), None))
+            town_text = HtmlAdParser.text_of(value).removesuffix(postal_line).strip()
             postal_match = re.search(r"\d{5}", postal_line)
             return BreederContactParser.readable_name(town_text), postal_match.group(0) if postal_match else None
         return None, None
 
-    @classmethod
-    def _parents(cls, tree: LexborHTMLParser) -> dict[str, str]:
+    @staticmethod
+    def _parents(tree: LexborHTMLParser) -> dict[str, str]:
         """
         The father and mother of a puppy, from the « Les parents » box.
 
@@ -517,16 +505,16 @@ class ChiensDeFranceCollector:
         """
         parents: dict[str, str] = {}
         for card in tree.css("div.pedifich"):
-            role = cls._text_of(card.css_first("div.type"))
+            role = HtmlAdParser.text_of(card.css_first("div.type"))
             name_box = card.css_first("div.nom")
             name_node = next((child for child in name_box.iter() if child.tag == "div"), None) if name_box else None
-            name = cls._text_of(name_node)
+            name = HtmlAdParser.text_of(name_node)
             if role in ("Père", "Mère") and name:
                 parents[role] = name
         return parents
 
-    @classmethod
-    def _litter_to_come_parents(cls, tree: LexborHTMLParser) -> dict[str, str]:
+    @staticmethod
+    def _litter_to_come_parents(tree: LexborHTMLParser) -> dict[str, str]:
         """
         The father and mother of a litter to come: a « Père » or « Mère » label, then a ``div.nom``.
 
@@ -541,9 +529,9 @@ class ChiensDeFranceCollector:
             label_node = name_node.prev
             while label_node is not None and label_node.tag != "div":
                 label_node = label_node.prev
-            role = cls._text_of(label_node)
+            role = HtmlAdParser.text_of(label_node)
             if role in ("Père", "Mère") and role not in parents:
-                parents[role] = cls._text_of(name_node)
+                parents[role] = HtmlAdParser.text_of(name_node)
         return parents
 
     @staticmethod
@@ -560,36 +548,6 @@ class ChiensDeFranceCollector:
         if not text or text.lower().startswith("sans affixe"):
             return None
         return BreederContactParser.readable_name(text)
-
-    @staticmethod
-    def _breeder(
-        site_link: LexborNode | None,
-        affix: str | None,
-        siret_text: str | None,
-        postal_code: str | None,
-        town: str | None,
-    ) -> RawBreeder | None:
-        """
-        The breeder of an ad. Its site on Chiens de France names it (``artimarellek.chiens-de-france.com``);
-        without a site, its affix or its SIREN does.
-
-        Args:
-            site_link: The link to the breeder's site, where the page shows the breeder.
-            affix: The affix shown.
-            siret_text: SIRET shown, if any.
-            postal_code: Postal code of the ad.
-            town: Town of the ad.
-
-        Returns:
-            The breeder, or None when nothing names it.
-        """
-        siren = BreederContactParser.siren(siret_text)
-        host = urlparse(site_link.attributes.get("href") or "").netloc if site_link is not None else ""
-        site_name = host.removesuffix(BREEDER_SITE_HOST_SUFFIX) if host.endswith(BREEDER_SITE_HOST_SUFFIX) else None
-        source_id = site_name or BreederContactParser.affix_key(affix) or siren
-        if source_id is None:
-            return None
-        return RawBreeder(source_id=source_id, affix=affix, siren=siren, zip_code=postal_code, city=town)
 
     @staticmethod
     def _litter_photos(tree: LexborHTMLParser) -> tuple[str, ...]:
