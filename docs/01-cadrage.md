@@ -43,8 +43,9 @@ La **Centrale Canine** (Société Centrale Canine, qui tient le LOF) publie un *
 | Styles | **Tailwind v4 + Nuxt UI 4 + Lucide**, comme DevLeadHunter | Tranché par Léo le 28/10/2026 |
 | Adresse de contact | `contact@dibodev.fr` pour `ADMIN_EMAIL`, `VAPID_SUBJECT` et le User-Agent des sources HTML, toujours lue depuis le `.env` | Même adresse que DevLeadHunter |
 | Portées à naître | Incluses | C'est l'avantage décisif de la Centrale Canine |
+| Hébergement | `la-bonne-truffe.dibodev.fr` (dashboard) et `api.la-bonne-truffe.dibodev.fr` (API) sur le VPS, déployés par GitHub Actions comme DevLeadHunter | Sous-domaines créés le 28/10/2026 ; détail dans `11-deploiement.md` |
+| Centrale Canine sur le VPS | Pas relevée : le worker du VPS ne relève que Chiens de France et Chiots de France (`COLLECT_SKIPPED_SOURCES`) | Cloudflare refuse le `curl` de Linux même là où celui de Windows passe (28/10/2026, `02-sources.md`) |
 
 ## Questions encore ouvertes
 
-- Le nom de domaine et le sous-domaine sur le VPS (le build web attend `NUXT_PUBLIC_API_BASE`).
-- La Centrale Canine répond-elle depuis l'IP du VPS ? Elle refuse l'IP d'un conteneur cloud (voir `02-sources.md`).
+- Celles qui restent sont dans `08-idees-et-questions-ouvertes.md`.

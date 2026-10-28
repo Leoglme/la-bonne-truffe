@@ -26,6 +26,8 @@ la-bonne-truffe/
 │   └── src-tauri/       Tauri 2 (desktop Windows)
 ├── design/              maquette, icône, illustration, photos
 ├── docs/                ce cadrage
+├── deploy/nginx/        confs nginx du VPS
+├── .github/workflows/   déploiement de l'API et du web, release de l'app Windows
 └── docker-compose.yml   api + worker + volume SQLite
 ```
 
@@ -89,7 +91,9 @@ Toutes les routes sont préfixées par `/api/v1`.
 
 ## Déploiement
 
-- Docker Compose sur le VPS OVH de Léo : services `api` (uvicorn) et `worker`, volume `data/` pour SQLite, reverse proxy nginx existant en HTTPS.
-- Variables d'environnement : `SECRET_KEY`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY_B64`, `VAPID_SUBJECT` (mailto), `COLLECT_USER_AGENT_CONTACT`, `DATABASE_URL`, `API_BASE_URL`, `WEB_BASE_URL`.
-- Le web Nuxt est servi en SSR ou statique sur le même VPS (pm2 comme DevLeadHunter) ; le build Tauri se fait sur le PC de Léo.
-- Pas de CI obligatoire en V1 ; un `Makefile` ou des scripts `npm` pour lint, test, build, deploy suffisent.
+Détail, secrets et premier déploiement dans `11-deploiement.md`.
+
+- Sur le VPS, comme DevLeadHunter et sans Docker : l'API (uvicorn) et le worker en services systemd dans un venv, la base SQLite hors du dossier redéployé, le web Nuxt en SSR sous pm2, nginx et les certificats certbot devant (`deploy/nginx/`).
+- Adresses : https://la-bonne-truffe.dibodev.fr pour le dashboard, https://api.la-bonne-truffe.dibodev.fr pour l'API.
+- GitHub Actions : `deploy-api.yml` et `deploy-web.yml` contrôlent (ruff, mypy et pytest ; Prettier, ESLint et vue-tsc) puis déploient à chaque push sur `main` ; `desktop-release.yml` publie l'installeur Windows signé en release GitHub, où l'updater de l'app le trouve.
+- Variables d'environnement, écrites dans le `.env` du VPS par `deploy-api.yml` : `SECRET_KEY`, `ADMIN_PASSWORD`, `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY_B64` depuis les secrets GitHub ; `ADMIN_EMAIL`, `VAPID_SUBJECT` (mailto), `COLLECT_USER_AGENT_CONTACT`, `COLLECT_SKIPPED_SOURCES`, `DATABASE_URL`, `API_BASE_URL`, `WEB_BASE_URL` et `CORS_ORIGINS` en clair dans le workflow.

@@ -1,4 +1,4 @@
-name: Desktop build & release (Tauri)
+name: 🖥️ Desktop build & release (Tauri)
 
 on:
   push:
@@ -9,12 +9,12 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: la-bonne-truffe-desktop-${{ github.ref }}
+  group: desktop-release-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-desktop:
-    name: Build desktop (windows)
+    name: 🏗️ Build desktop (Windows)
     runs-on: windows-latest
     permissions:
       contents: write
@@ -23,88 +23,79 @@ jobs:
         working-directory: web
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: 📥 Checkout
+        uses: actions/checkout@v5
 
-      # Without the signing key the installer cannot be updated in place: skip until the secrets exist.
-      - name: Check the release secrets
-        id: release-secrets
-        shell: bash
-        env:
-          UPDATER_PUBKEY: ${{ secrets.TAURI_UPDATER_PUBKEY }}
-          SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          API_BASE: ${{ secrets.NUXT_PUBLIC_API_BASE }}
-        run: |
-          if [ -z "$UPDATER_PUBKEY" ] || [ -z "$SIGNING_PRIVATE_KEY" ] || [ -z "$API_BASE" ]; then
-            echo "::notice::Release skipped: add the secrets TAURI_UPDATER_PUBKEY, TAURI_SIGNING_PRIVATE_KEY and NUXT_PUBLIC_API_BASE."
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Setup Node.js
-        if: steps.release-secrets.outputs.ready == 'true'
-        uses: actions/setup-node@v4
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - name: Install Rust stable
-        if: steps.release-secrets.outputs.ready == 'true'
+      - name: 🦀 Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install frontend dependencies
-        if: steps.release-secrets.outputs.ready == 'true'
+      - name: 📦 Cache the Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: web/src-tauri -> target
+
+      - name: 📦 Install dependencies
         run: npm ci
 
-      - name: Set desktop version and updater key
-        if: steps.release-secrets.outputs.ready == 'true'
+      - name: 🏷️ Set the version and the updater key
         shell: bash
         env:
           RELEASE_VERSION: 0.1.${{ github.run_number }}
           UPDATER_PUBKEY: ${{ secrets.TAURI_UPDATER_PUBKEY }}
+          SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
-          python << 'PY'
-          import json, os, re
+          if [ -z "$UPDATER_PUBKEY" ] || [ -z "$SIGNING_PRIVATE_KEY" ]; then
+            echo "::error::Missing secrets TAURI_UPDATER_PUBKEY or TAURI_SIGNING_PRIVATE_KEY (see docs/11-deploiement.md)."
+            exit 1
+          fi
+
+          python - <<'PY'
+          import json
+          import os
+          import re
+
           version = os.environ["RELEASE_VERSION"]
           os.chdir("src-tauri")
+
           with open("Cargo.toml", encoding="utf-8") as cargo_file:
-              lines = cargo_file.read().splitlines(keepends=True)
-          is_in_package = False
-          updated_lines = []
-          for line in lines:
-              stripped = line.strip()
-              if stripped == "[package]":
-                  is_in_package = True
-              elif stripped.startswith("["):
-                  is_in_package = False
-              if is_in_package and re.match(r"^version\s*=\s*", line):
-                  line = f'version = "{version}"\n'
-              updated_lines.append(line)
+              cargo_lines = cargo_file.read().splitlines(keepends=True)
+          is_in_package_section = False
+          for index, line in enumerate(cargo_lines):
+              stripped_line = line.strip()
+              if stripped_line.startswith("["):
+                  is_in_package_section = stripped_line == "[package]"
+              elif is_in_package_section and re.match(r"^version\s*=", line):
+                  cargo_lines[index] = f'version = "{version}"\n'
           with open("Cargo.toml", "w", encoding="utf-8") as cargo_file:
-              cargo_file.writelines(updated_lines)
+              cargo_file.writelines(cargo_lines)
+
           with open("tauri.conf.json", encoding="utf-8") as config_file:
-              config = json.load(config_file)
-          config["version"] = version
-          config["plugins"]["updater"]["pubkey"] = os.environ["UPDATER_PUBKEY"]
+              tauri_config = json.load(config_file)
+          tauri_config["version"] = version
+          tauri_config["plugins"]["updater"]["pubkey"] = os.environ["UPDATER_PUBKEY"]
           with open("tauri.conf.json", "w", encoding="utf-8") as config_file:
-              json.dump(config, config_file, indent=2, ensure_ascii=False)
+              json.dump(tauri_config, config_file, indent=2, ensure_ascii=False)
               config_file.write("\n")
+
           print(f"Desktop version set to {version}")
           PY
 
-      - name: Sync Cargo.lock with the new version
-        if: steps.release-secrets.outputs.ready == 'true'
+      - name: 🔒 Sync Cargo.lock with the new version
         working-directory: web/src-tauri
         run: cargo update -p la-bonne-truffe-desktop
 
-      - name: Build and publish the desktop release
-        if: steps.release-secrets.outputs.ready == 'true'
+      - name: 🚀 Build and publish the release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NUXT_PUBLIC_API_BASE: ${{ secrets.NUXT_PUBLIC_API_BASE }}
+          NUXT_PUBLIC_API_BASE: https://api.la-bonne-truffe.dibodev.fr
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
@@ -112,8 +103,10 @@ jobs:
           tagName: v0.1.${{ github.run_number }}
           releaseName: "La Bonne Truffe Desktop v0.1.${{ github.run_number }}"
           releaseBody: |
-            Installeur Windows (Tauri + Nuxt), version `0.1.${{ github.run_number }}`.
+            Installeur Windows (Tauri + Nuxt).
 
-            L'app vérifie `latest.json` sur la dernière release au démarrage et propose la mise à jour.
+            **Version de l'app :** `0.1.${{ github.run_number }}` (le patch est le numéro de run GitHub Actions).
+
+            Mise à jour dans l'app : au démarrage, elle lit `latest.json` sur la dernière release GitHub.
           releaseDraft: false
           prerelease: false

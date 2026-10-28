@@ -2,13 +2,12 @@
 
 ## Questions à trancher par Léo avant ou pendant la V1
 
-Tranchées le 28/10/2026 (détail dans `01-cadrage.md`) : autres couleurs ignorées, sexe indifférent, pas de plafond de prix, départements 35, 56, 22, 29, 44, 53, 49, 72, 85, pas de notification native Windows, Tailwind v4 + Nuxt UI, adresse `contact@dibodev.fr`. **Relevé de la Centrale Canine** : sur le PC de Léo, par le `curl` du système, puisque Cloudflare refuse le client Python même depuis sa connexion (`02-sources.md`). Léo : « tu peux exécuter des commandes sur mon PC ».
+Tranchées le 28/10/2026 (détail dans `01-cadrage.md`) : autres couleurs ignorées, sexe indifférent, pas de plafond de prix, départements 35, 56, 22, 29, 44, 53, 49, 72, 85, pas de notification native Windows, Tailwind v4 + Nuxt UI, adresse `contact@dibodev.fr`. **Relevé de la Centrale Canine** : sur le PC de Léo, par le `curl` du système, puisque Cloudflare refuse le client Python même depuis sa connexion (`02-sources.md`). Léo : « tu peux exécuter des commandes sur mon PC ». **Domaines** : `la-bonne-truffe.dibodev.fr` pour le dashboard et `api.la-bonne-truffe.dibodev.fr` pour l'API, déployés comme DevLeadHunter (`11-deploiement.md`).
 
 Restent ouvertes :
 
-1. Le nom de domaine et le sous-domaine sur le VPS.
-2. **Le relevé une fois l'API sur le VPS** (jalon 5). L'app Windows de Léo, lancée au démarrage dans la zone de notification comme celle de DevLeadHunter, relèvera chaque heure avec le même `curl` et enverra les pages à l'API, qui fera le reste : regroupement, correspondance, notifications. Le worker du VPS ne doit pas relever la Centrale Canine : son image Docker n'a pas `curl`, il échouerait et déclencherait l'alerte « source en panne ». Les portées n'arrivent que quand le PC est allumé.
-3. **Les annonces « Type Cocker Spaniel Anglais » de Chiots de France.** La loi réserve le nom d'une race aux chiens LOF : le site range sous ce titre tous les autres, cockers sans papiers et croisements mêlés, sans moyen sûr de les distinguer. Le collecteur les écarte pour l'instant. Le cadrage dit pourtant qu'une annonce non LOF reste visible en « acceptable » : faut-il les montrer quand même, en sachant qu'un croisement y passera pour un cocker ?
+1. **Le relevé une fois l'API sur le VPS** (jalon 5). L'app Windows de Léo, lancée au démarrage dans la zone de notification comme celle de DevLeadHunter, relèvera chaque heure avec le même `curl` et enverra les pages à l'API, qui fera le reste : regroupement, correspondance, notifications. Les portées de la Centrale Canine n'arriveront alors que quand le PC est allumé. En attendant, elles n'arrivent pas du tout dans le dashboard en ligne : le worker du VPS ne relève pas la Centrale Canine (`COLLECT_SKIPPED_SOURCES`), qui refuse le `curl` de Linux (`02-sources.md`, `11-deploiement.md`).
+2. **Les annonces « Type Cocker Spaniel Anglais » de Chiots de France.** La loi réserve le nom d'une race aux chiens LOF : le site range sous ce titre tous les autres, cockers sans papiers et croisements mêlés, sans moyen sûr de les distinguer. Le collecteur les écarte pour l'instant. Le cadrage dit pourtant qu'une annonce non LOF reste visible en « acceptable » : faut-il les montrer quand même, en sachant qu'un croisement y passera pour un cocker ?
 
 ## Idées V1.5 (après que ça tourne)
 

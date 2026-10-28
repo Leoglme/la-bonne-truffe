@@ -1,0 +1,165 @@
+name: 🚀 Build and Deploy Nuxt 4 Web to VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/deploy-web.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/deploy-web.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SITE_DIR: /var/www/la-bonne-truffe.dibodev.fr
+  PM2_PROCESS_NAME: la-bonne-truffe.dibodev.fr
+  NITRO_PORT: "5630"
+
+jobs:
+  build-and-deploy:
+    name: 🏗️ Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout (sparse)
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: web
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: 📦 Install dependencies
+        run: npm ci
+        working-directory: web
+
+      - name: 🧹 Lint (Prettier, ESLint, vue-tsc)
+        run: npm run lint
+        working-directory: web
+
+      - name: 🛠️ Build Nitro (SSR)
+        run: npm run build
+        working-directory: web
+        env:
+          NITRO_PRESET: node-server
+          NUXT_PUBLIC_API_BASE: https://api.la-bonne-truffe.dibodev.fr
+
+      - name: 🔐 Check the secrets
+        if: github.event_name != 'pull_request'
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          missing_secrets=""
+          for name in SSH_HOST SSH_PORT SSH_USERNAME SSH_PRIVATE_KEY; do
+            if [ -z "${!name}" ]; then
+              missing_secrets="$missing_secrets $name"
+            fi
+          done
+          if [ -n "$missing_secrets" ]; then
+            echo "::error::Missing repository secrets:$missing_secrets (see docs/11-deploiement.md)."
+            exit 1
+          fi
+
+      - name: 🧹 Prepare the server folder (SSH)
+        if: github.event_name != 'pull_request'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            SITE_DIR="${{ env.SITE_DIR }}"
+            sudo mkdir -p "$SITE_DIR/html"
+            sudo chown -R "$(id -un):$(id -gn)" "$SITE_DIR"
+            rm -rf "${SITE_DIR:?}/server"
+            mkdir -p "$SITE_DIR/server"
+
+      - name: 📤 Upload the public files (SCP)
+        if: github.event_name != 'pull_request'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "web/.output/public/"
+          target: "${{ env.SITE_DIR }}/html"
+          strip_components: 3
+
+      - name: 📤 Upload the Nitro server (SCP)
+        if: github.event_name != 'pull_request'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "web/.output/server/"
+          target: "${{ env.SITE_DIR }}/server"
+          strip_components: 3
+          tar_dereference: true
+          overwrite: true
+
+      - name: 🛠️ Start Nitro with pm2 (SSH)
+        if: github.event_name != 'pull_request'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            SITE_DIR="${{ env.SITE_DIR }}"
+            cd "$SITE_DIR/server"
+
+            command -v node > /dev/null || {
+              curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+              sudo apt-get install -y nodejs
+            }
+            command -v pm2 > /dev/null || npm install -g pm2
+
+            # Nitro serves sw.js, the manifest and the icons from ../public: point it to html/.
+            ln -sfn "$SITE_DIR/html" "$SITE_DIR/public"
+
+            pm2 delete "${{ env.PM2_PROCESS_NAME }}" > /dev/null 2>&1 || true
+            NODE_ENV=production HOST=127.0.0.1 PORT=${{ env.NITRO_PORT }} pm2 start index.mjs --name "${{ env.PM2_PROCESS_NAME }}"
+            pm2 save
+
+      - name: 🩺 Health check (SSH)
+        if: github.event_name != 'pull_request'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            for attempt in $(seq 1 12); do
+              code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${{ env.NITRO_PORT }}/" || true)
+              if [ "$code" = "200" ]; then
+                echo "Dashboard up (HTTP $code) after ${attempt} attempt(s)."
+                exit 0
+              fi
+              sleep 5
+            done
+            echo "Nitro did not come up: pm2 status and last logs."
+            pm2 describe "${{ env.PM2_PROCESS_NAME }}" || true
+            pm2 logs "${{ env.PM2_PROCESS_NAME }}" --lines 60 --nostream || true
+            exit 1

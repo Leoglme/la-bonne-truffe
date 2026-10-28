@@ -6,9 +6,10 @@ Ce dépôt contient le **cadrage complet** et le code de l'application :
 
 - `api/` : FastAPI, SQLAlchemy et SQLite, worker APScheduler, collecteur Centrale Canine, Web Push.
 - `web/` : Nuxt 4, Tailwind v4 et Nuxt UI, PWA avec Web Push, empaquetée en Tauri 2 pour Windows (`web/src-tauri/`).
-- `docker-compose.yml` : l'API et le worker sur le VPS, la base SQLite dans un volume.
+- `docker-compose.yml` : l'API et le worker en conteneurs, la base SQLite dans un volume.
+- `.github/workflows/` et `deploy/nginx/` : le déploiement sur le VPS (https://la-bonne-truffe.dibodev.fr et https://api.la-bonne-truffe.dibodev.fr) et la release de l'app Windows.
 
-Pour lancer le projet en local : [docs/10-developpement-local.md](docs/10-developpement-local.md).
+Pour lancer le projet en local : [docs/10-developpement-local.md](docs/10-developpement-local.md). Pour le déployer : [docs/11-deploiement.md](docs/11-deploiement.md).
 
 ## À lire dans l'ordre
 
@@ -24,6 +25,7 @@ Pour lancer le projet en local : [docs/10-developpement-local.md](docs/10-develo
 | [docs/07-historique-des-echanges.md](docs/07-historique-des-echanges.md) | Le résumé chronologique des discussions de cadrage |
 | [docs/08-idees-et-questions-ouvertes.md](docs/08-idees-et-questions-ouvertes.md) | Ce qui est gardé pour plus tard |
 | [docs/10-developpement-local.md](docs/10-developpement-local.md) | Lancer l'API, le worker, le dashboard, Tauri et Docker en local ; les commandes `cli.py` |
+| [docs/11-deploiement.md](docs/11-deploiement.md) | Le VPS, les workflows GitHub Actions, les secrets, nginx, le premier déploiement |
 
 ## La maquette
 

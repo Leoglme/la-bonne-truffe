@@ -1,5 +1,4 @@
-# La Bonne Truffe on the VPS: the API and the collection worker share one SQLite file.
-# The nginx reverse proxy of the VPS terminates HTTPS in front of the api service.
+# La Bonne Truffe in containers: the API and the collection worker share one SQLite file.
 services:
   api:
     build: ./api

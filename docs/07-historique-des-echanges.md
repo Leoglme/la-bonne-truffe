@@ -75,3 +75,10 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 - Léo trouve la page de connexion « beaucoup trop simpliste » face au reste de la maquette et demande connexion, inscription et le reste, en maquette d'abord.
 - Première version rejetée : formulaire dans une carte blanche, « Pas encore de compte ? » en lien à gauche d'un bouton (« pas logique au niveau UX »), photo à reprendre. Deuxième version validée : le gabarit des autres écrans, champs blancs sur le crème, deux boutons pleine largeur empilés, photos chaudes (`06-maquette-et-design.md`).
 - Léo : « Tu peux commit et push sur main sans souci », puis coder toutes les pages ajoutées à la maquette. L'API gagne l'inscription et le mot de passe oublié ; l'inscription reste ouverte par défaut, `SIGNUP_ENABLED=false` la ferme.
+
+## 28 octobre (nuit) : déploiement sur le VPS
+
+- Sous-domaines `la-bonne-truffe.dibodev.fr` et `api.la-bonne-truffe.dibodev.fr` créés et pointés vers le VPS, certificats certbot posés. Demande : les pipelines et les confs nginx « comme DevLeadHunter ».
+- **Même mécanique que DevLeadHunter, sans Docker** : l'API et le worker en services systemd dans un venv, le dashboard en SSR sous pm2, nginx devant ; ports 8030 et 5630. La base SQLite vit hors du dossier que chaque déploiement remplace. Le VPS tourne sous Debian 12 : les contrôles de l'API passent sous Python 3.11, comme lui.
+- **Pas de Centrale Canine sur le VPS** : depuis la connexion du PC, le `curl` de Linux (OpenSSL, comme celui de Debian) reçoit `403` avec les en-têtes qui passent avec celui de Windows. Le worker du VPS ne relève donc que Chiens de France et Chiots de France (`COLLECT_SKIPPED_SOURCES`) ; la page Sources affiche la Centrale Canine « Pas encore relevée » (`11-deploiement.md`).
+- **Contrôles avant chaque déploiement** : ruff, mypy et pytest pour l'API, Prettier, ESLint et vue-tsc pour le web ; une pull request ne déploie jamais. L'installeur Windows signé est publié en release GitHub à chaque changement du web, comme DevLeadHunter.

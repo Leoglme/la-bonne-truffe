@@ -1,6 +1,6 @@
 # Développement local
 
-Comment faire tourner La Bonne Truffe sur un poste de dev : l'API FastAPI et son worker, le dashboard Nuxt, la fenêtre Tauri, et la stack Docker du VPS.
+Comment faire tourner La Bonne Truffe sur un poste de dev : l'API FastAPI et son worker, le dashboard Nuxt, la fenêtre Tauri, et la stack Docker. Le déploiement sur le VPS est dans [11-deploiement.md](11-deploiement.md).
 
 ## Prérequis
 
@@ -23,7 +23,7 @@ Dans `.env`, changer au moins `SECRET_KEY` et `ADMIN_PASSWORD`. L'adresse `conta
 .venv/bin/python cli.py init-db      # migrations + seeders (départements, cocker, utilisateur, profil de départ)
 .venv/bin/python cli.py vapid-keys   # coller les deux lignes affichées dans .env
 .venv/bin/python main.py             # API sur http://localhost:8000, documentation sur /docs
-.venv/bin/python worker.py           # worker APScheduler : relevé Centrale Canine à la 5e minute de chaque heure
+.venv/bin/python worker.py           # worker APScheduler : un relevé par source chaque heure (5e, 20e et 35e minutes)
 ```
 
 `init-db` est idempotent : il ne recrée ni ne modifie ce qui existe déjà. La base SQLite vit dans `api/data/` (ignoré par git).
@@ -64,7 +64,7 @@ npm install
 npm run dev          # http://localhost:3000, API attendue sur http://localhost:8000
 ```
 
-Pour viser une autre API, définir `NUXT_PUBLIC_API_BASE` (voir `web/.env.example`). C'est obligatoire pour le build de production, le domaine du VPS n'étant pas encore choisi.
+Pour viser une autre API, définir `NUXT_PUBLIC_API_BASE` (voir `web/.env.example`). Les workflows de production la fixent à `https://api.la-bonne-truffe.dibodev.fr`.
 
 | Script | Rôle |
 |---|---|
@@ -85,13 +85,13 @@ npm run tauri:dev     # Nuxt en mode desktop sur le port 1420 + fenêtre Tauri
 npm run tauri:build   # installeur NSIS dans src-tauri/target/release/bundle/
 ```
 
-Le build desktop est une génération statique (`NUXT_DESKTOP_BUILD=1`). La fenêtre se cache dans la zone de notification à la fermeture, une seconde instance ramène la première, et l'app vérifie au démarrage les mises à jour publiées dans les releases GitHub. Avant le premier build de release, générer la clé de signature de l'updater (`npx tauri signer generate`) et remplacer `__TAURI_UPDATER_PUBKEY__` dans `tauri.conf.json` par la clé publique, comme dans DevLeadHunter. Pas de notification native sur Windows : les alertes arrivent sur l'iPhone et l'iPad.
+Le build desktop est une génération statique (`NUXT_DESKTOP_BUILD=1`). La fenêtre se cache dans la zone de notification à la fermeture, une seconde instance ramène la première, et l'app vérifie au démarrage les mises à jour publiées dans les releases GitHub. Les releases sont construites par le workflow `desktop-release.yml`, qui remplace `__TAURI_UPDATER_PUBKEY__` par la clé publique de l'updater et signe l'installeur, comme dans DevLeadHunter (clés dans `11-deploiement.md`). Pas de notification native sur Windows : les alertes arrivent sur l'iPhone et l'iPad.
 
-## Docker (VPS)
+## Docker
 
 ```bash
 cp api/.env.example api/.env    # puis le remplir
 docker compose up -d --build
 ```
 
-Deux services sur la même image : `api` (migrations + seeders au démarrage, puis uvicorn sur `127.0.0.1:8000`, derrière le nginx du VPS en HTTPS) et `worker` (`python worker.py`). La base SQLite est dans le volume `data`, partagé par les deux.
+Deux services sur la même image : `api` (migrations + seeders au démarrage, puis uvicorn sur `127.0.0.1:8000`) et `worker` (`python worker.py`). La base SQLite est dans le volume `data`, partagé par les deux. Le VPS n'utilise pas Docker : l'API et le worker y tournent en services systemd (`11-deploiement.md`).

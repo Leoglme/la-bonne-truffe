@@ -1,0 +1,273 @@
+name: 🚀 Deploy FastAPI (api/) to VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "api/**"
+      - ".github/workflows/deploy-api.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "api/**"
+      - ".github/workflows/deploy-api.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-api-${{ github.ref }}
+  # Never stop a deploy halfway: the old sources are gone before the new ones are uploaded.
+  cancel-in-progress: false
+
+env:
+  APP_DIR: /var/www/api.la-bonne-truffe.dibodev.fr/html
+  # Outside APP_DIR/api, which every deploy replaces: the SQLite file outlives the deploys.
+  DATA_DIR: /var/www/api.la-bonne-truffe.dibodev.fr/data
+  API_PORT: "8030"
+  API_SERVICE: la-bonne-truffe-api.service
+  WORKER_SERVICE: la-bonne-truffe-worker.service
+
+jobs:
+  checks:
+    name: 🧪 Lint, type-check and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+
+    steps:
+      - name: 📥 Checkout (sparse)
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: api
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          # The VPS runs the Python 3.11 of Debian 12: test on the same version.
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: api/requirements.txt
+
+      - name: 📦 Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: 🧹 Ruff
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: 🔎 Mypy
+        run: python -m mypy .
+
+      - name: 🧪 Pytest
+        run: python -m pytest
+
+  deploy:
+    name: 🏗️ Deploy API
+    needs: checks
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔐 Check the secrets
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY_B64: ${{ secrets.VAPID_PRIVATE_KEY_B64 }}
+        run: |
+          missing_secrets=""
+          for name in SSH_HOST SSH_PORT SSH_USERNAME SSH_PRIVATE_KEY SECRET_KEY ADMIN_PASSWORD VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY_B64; do
+            if [ -z "${!name}" ]; then
+              missing_secrets="$missing_secrets $name"
+            fi
+          done
+          if [ -n "$missing_secrets" ]; then
+            echo "::error::Missing repository secrets:$missing_secrets (see docs/11-deploiement.md)."
+            exit 1
+          fi
+
+      - name: 📥 Checkout (sparse)
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: api
+
+      - name: 🧱 Prepare the folders (SSH)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            APP_DIR="${{ env.APP_DIR }}"
+            DATA_DIR="${{ env.DATA_DIR }}"
+            sudo mkdir -p "$APP_DIR" "$DATA_DIR"
+            sudo rm -rf "${APP_DIR:?}/api"
+            sudo chown -R "$(id -un):$(id -gn)" "$APP_DIR" "$DATA_DIR"
+
+      - name: 📤 Upload the API sources (SCP)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "api"
+          target: ${{ env.APP_DIR }}
+          strip_components: 0
+
+      - name: 🐍 Create the venv and install the dependencies (SSH)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd "${{ env.APP_DIR }}"
+            if ! dpkg -s python3-venv > /dev/null 2>&1; then
+              sudo apt-get update -y
+              sudo apt-get install -y python3-venv
+            fi
+            if [ ! -x .venv/bin/python ]; then
+              python3 -m venv .venv
+            fi
+            .venv/bin/python -m pip install --upgrade pip wheel
+            .venv/bin/pip install --no-cache-dir -r api/requirements.txt
+
+      # Quoted heredoc: the secrets are written as they are, even with a « $ » in them.
+      - name: ⚙️ Write the .env (SSH)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd "${{ env.APP_DIR }}/api"
+            cat > .env <<'EOF'
+            ENV=production
+            DEBUG=false
+            API_BASE_URL=https://api.la-bonne-truffe.dibodev.fr
+            WEB_BASE_URL=https://la-bonne-truffe.dibodev.fr
+            CORS_ORIGINS=https://la-bonne-truffe.dibodev.fr,tauri://localhost,http://tauri.localhost
+            DATABASE_URL=sqlite:///${{ env.DATA_DIR }}/la-bonne-truffe.db
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            ADMIN_EMAIL=contact@dibodev.fr
+            ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+            VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
+            VAPID_PRIVATE_KEY_B64=${{ secrets.VAPID_PRIVATE_KEY_B64 }}
+            VAPID_SUBJECT=mailto:contact@dibodev.fr
+            COLLECT_USER_AGENT_CONTACT=contact@dibodev.fr
+            COLLECT_SKIPPED_SOURCES=centrale_canine
+            EOF
+            chmod 600 .env
+
+      - name: 🧬 Apply the migrations and the seeders (SSH)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd "${{ env.APP_DIR }}/api"
+            ../.venv/bin/python cli.py init-db
+
+      - name: ⚙️ Install and restart the systemd services (SSH)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            APP_DIR="${{ env.APP_DIR }}"
+            DEPLOY_USER="$(id -un)"
+            sudo tee "/etc/systemd/system/${{ env.API_SERVICE }}" > /dev/null <<EOF
+            [Unit]
+            Description=La Bonne Truffe API (FastAPI, Uvicorn)
+            After=network.target
+
+            [Service]
+            User=${DEPLOY_USER}
+            WorkingDirectory=${APP_DIR}/api
+            Environment=PYTHONPATH=${APP_DIR}/api
+            Environment=PYTHONUNBUFFERED=1
+            ExecStart=${APP_DIR}/.venv/bin/uvicorn main:app --host 127.0.0.1 --port ${{ env.API_PORT }} --workers 1 --proxy-headers
+            Restart=always
+            RestartSec=5
+            KillSignal=SIGINT
+            MemoryHigh=384M
+            MemoryMax=512M
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+            sudo tee "/etc/systemd/system/${{ env.WORKER_SERVICE }}" > /dev/null <<EOF
+            [Unit]
+            Description=La Bonne Truffe collection worker (APScheduler)
+            After=network-online.target
+            Wants=network-online.target
+
+            [Service]
+            User=${DEPLOY_USER}
+            WorkingDirectory=${APP_DIR}/api
+            Environment=PYTHONPATH=${APP_DIR}/api
+            Environment=PYTHONUNBUFFERED=1
+            ExecStart=${APP_DIR}/.venv/bin/python worker.py
+            Restart=always
+            RestartSec=5
+            KillSignal=SIGINT
+            MemoryHigh=384M
+            MemoryMax=512M
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+            sudo systemctl daemon-reload
+            sudo systemctl enable "${{ env.API_SERVICE }}" "${{ env.WORKER_SERVICE }}"
+            sudo systemctl restart "${{ env.API_SERVICE }}" "${{ env.WORKER_SERVICE }}"
+
+      - name: 🩺 Health check (SSH)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            api_is_up=false
+            for attempt in $(seq 1 12); do
+              code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${{ env.API_PORT }}/api/v1/health" || true)
+              if [ "$code" = "200" ]; then
+                echo "API up (HTTP $code) after ${attempt} attempt(s)."
+                api_is_up=true
+                break
+              fi
+              sleep 5
+            done
+            if [ "$api_is_up" != "true" ]; then
+              echo "API did not come up: service status and last logs."
+              sudo systemctl status "${{ env.API_SERVICE }}" --no-pager -l || true
+              sudo journalctl -u "${{ env.API_SERVICE }}" -n 60 --no-pager || true
+              exit 1
+            fi
+            if ! systemctl is-active --quiet "${{ env.WORKER_SERVICE }}"; then
+              echo "Worker not running: service status and last logs."
+              sudo systemctl status "${{ env.WORKER_SERVICE }}" --no-pager -l || true
+              sudo journalctl -u "${{ env.WORKER_SERVICE }}" -n 60 --no-pager || true
+              exit 1
+            fi
+            echo "Worker running."
