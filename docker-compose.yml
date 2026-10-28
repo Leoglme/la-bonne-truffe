@@ -1,0 +1,30 @@
+# La Bonne Truffe on the VPS: the API and the collection worker share one SQLite file.
+# The nginx reverse proxy of the VPS terminates HTTPS in front of the api service.
+services:
+  api:
+    build: ./api
+    container_name: la_bonne_truffe_api
+    restart: unless-stopped
+    env_file: ./api/.env
+    environment:
+      DATABASE_URL: sqlite:////app/data/la-bonne-truffe.db
+    volumes:
+      - data:/app/data
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  worker:
+    build: ./api
+    container_name: la_bonne_truffe_worker
+    restart: unless-stopped
+    command: ["python", "worker.py"]
+    env_file: ./api/.env
+    environment:
+      DATABASE_URL: sqlite:////app/data/la-bonne-truffe.db
+    volumes:
+      - data:/app/data
+    depends_on:
+      - api
+
+volumes:
+  data:
