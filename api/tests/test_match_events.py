@@ -48,3 +48,45 @@ def test_birth_of_a_preferred_or_followed_litter_raises_born_alone() -> None:
 def test_excluded_or_ignored_litters_raise_nothing() -> None:
     for tier in (MatchTier.EXCLUDED, MatchTier.IGNORED):
         assert EventService.detect(None, tier, {}, has_just_been_born=True, is_followed=False) == []
+
+
+def test_a_followed_litter_offering_fewer_puppies_raises_availability_change_at_every_drop() -> None:
+    first_drop = EventService.detect(
+        MatchTier.PREFERRED,
+        MatchTier.PREFERRED,
+        {"new_preferred": "x"},
+        has_just_been_born=False,
+        is_followed=True,
+        has_fewer_puppies_available=True,
+    )
+    second_drop = EventService.detect(
+        MatchTier.PREFERRED,
+        MatchTier.PREFERRED,
+        {"new_preferred": "x", "availability_change": "x"},
+        has_just_been_born=False,
+        is_followed=True,
+        has_fewer_puppies_available=True,
+    )
+
+    assert first_drop == second_drop == [MatchEventKind.AVAILABILITY_CHANGE]
+
+
+def test_fewer_puppies_raise_nothing_on_a_litter_not_followed_or_excluded() -> None:
+    not_followed = EventService.detect(
+        MatchTier.PREFERRED,
+        MatchTier.PREFERRED,
+        {"new_preferred": "x"},
+        has_just_been_born=False,
+        is_followed=False,
+        has_fewer_puppies_available=True,
+    )
+    excluded = EventService.detect(
+        MatchTier.ACCEPTABLE,
+        MatchTier.EXCLUDED,
+        {"new_acceptable": "x"},
+        has_just_been_born=False,
+        is_followed=True,
+        has_fewer_puppies_available=True,
+    )
+
+    assert not_followed == excluded == []

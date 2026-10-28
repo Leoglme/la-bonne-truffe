@@ -24,7 +24,7 @@ L'ancre du dédoublonnage.
 
 ### `litter_groups`
 Une portée réelle, vue sur une ou plusieurs sources.
-`id`, `breed_id`, `breeder_id` (nullable si éleveur inconnu), `birth_date` (nullable), `expected_birth_date` (nullable, calculée), `mating_date` (nullable), `available_from` (calculée), `is_active`, `is_grouping_probable`, `confirmed_colors` (JSON, couleurs confirmées à la main, ajoutée au jalon 2), `first_seen_at`, `last_seen_at`.
+`id`, `breed_id`, `breeder_id` (nullable si éleveur inconnu), `birth_date` (nullable), `expected_birth_date` (nullable, calculée), `mating_date` (nullable), `available_from` (calculée), `is_active`, `is_grouping_probable`, `confirmed_colors` (JSON, couleurs confirmées à la main, ajoutée au jalon 2), `puppies_available` (nullable, calculée : les chiots encore proposés, ajoutée le 29/10/2026 pour `availability_change`), `first_seen_at`, `last_seen_at`.
 
 ### `listings`
 Une annonce ou une déclaration, par source. Une ligne par couple `source` + `external_id`.

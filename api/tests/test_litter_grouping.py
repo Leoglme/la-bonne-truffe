@@ -28,6 +28,7 @@ def add_listing(
     mating_date: date | None = None,
     male_count: int | None = None,
     female_count: int | None = None,
+    puppies_available: int | None = None,
 ) -> Listing:
     """
     Store a listing of the cocker for a breeder.
@@ -43,6 +44,7 @@ def add_listing(
         mating_date: Mating date, if known.
         male_count: Males, if known.
         female_count: Females, if known.
+        puppies_available: Puppies still offered, if the ad says.
 
     Returns:
         The listing, flushed.
@@ -59,6 +61,7 @@ def add_listing(
         mating_date=mating_date,
         male_count=male_count,
         female_count=female_count,
+        puppies_available=puppies_available,
         first_seen_at=NOW,
         last_seen_at=NOW,
     )
@@ -157,3 +160,63 @@ def test_matings_days_apart_stay_two_litters_while_a_mother_is_unknown(db: Sessi
     litter_grouping_service.regroup(db, NOW)
 
     assert announced.litter_group_id != declared.litter_group_id
+
+
+def test_a_litter_ad_offering_fewer_puppies_is_reported_once_its_count_was_known(db: Session) -> None:
+    breeder = seeded_breeder(db)
+    litter_ad = add_listing(
+        db,
+        breeder,
+        ListingSource.CHIOTS_DE_FRANCE,
+        "annonce-1",
+        ListingKind.LITTER_BORN,
+        "Mère 1",
+        date(2026, 9, 1),
+        None,
+        2,
+        2,
+        puppies_available=4,
+    )
+
+    first_regrouping = litter_grouping_service.regroup(db, NOW)
+    litter_ad.puppies_available = 2
+    second_regrouping = litter_grouping_service.regroup(db, NOW)
+    third_regrouping = litter_grouping_service.regroup(db, NOW)
+
+    group = db.get(LitterGroup, litter_ad.litter_group_id)
+    assert group is not None
+    assert group.puppies_available == 2
+    assert first_regrouping.fewer_puppies_group_ids == []
+    assert second_regrouping.fewer_puppies_group_ids == [group.id]
+    assert third_regrouping.fewer_puppies_group_ids == []
+
+
+def test_a_puppy_ad_reserved_or_gone_lowers_the_puppies_its_litter_offers(db: Session) -> None:
+    breeder = seeded_breeder(db)
+    puppy_ads = [
+        add_listing(
+            db,
+            breeder,
+            ListingSource.CHIENS_DE_FRANCE,
+            f"chiot-{index}",
+            ListingKind.PUPPY_AD,
+            "Mère 1",
+            date(2026, 9, 1),
+            None,
+            1,
+            0,
+            puppies_available=1,
+        )
+        for index in range(3)
+    ]
+    litter_grouping_service.regroup(db, NOW)
+
+    puppy_ads[0].puppies_available = 0
+    after_a_reservation = litter_grouping_service.regroup(db, NOW)
+    puppy_ads[1].is_active = False
+    after_an_ad_left = litter_grouping_service.regroup(db, NOW)
+
+    group = db.get(LitterGroup, puppy_ads[0].litter_group_id)
+    assert group is not None
+    assert after_a_reservation.fewer_puppies_group_ids == after_an_ad_left.fewer_puppies_group_ids == [group.id]
+    assert group.puppies_available == 1

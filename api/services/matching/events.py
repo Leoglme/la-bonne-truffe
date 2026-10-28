@@ -7,11 +7,16 @@ from enums.match_tier import MatchTier
 
 NEWS_WINDOW_DAYS = 3
 
-ALWAYS_NEWS_EVENTS: frozenset[MatchEventKind] = frozenset({MatchEventKind.BORN, MatchEventKind.UPGRADED})
+ALWAYS_NEWS_EVENTS: frozenset[MatchEventKind] = frozenset(
+    {MatchEventKind.BORN, MatchEventKind.UPGRADED, MatchEventKind.AVAILABILITY_CHANGE}
+)
 
 
 class EventService:
-    """Compares the previous and the new verdict of a group; each (group, event) is raised once."""
+    """
+    Compares the previous and the new verdict of a group; each (group, event) is raised once, except a drop of
+    the puppies left on a followed litter, raised at every drop.
+    """
 
     @staticmethod
     def detect(
@@ -20,6 +25,7 @@ class EventService:
         notified_events: dict[str, str],
         has_just_been_born: bool,
         is_followed: bool,
+        has_fewer_puppies_available: bool = False,
     ) -> list[MatchEventKind]:
         """
         Raise the events of a group for one profile.
@@ -33,6 +39,7 @@ class EventService:
             notified_events: Events already notified for this group and profile.
             has_just_been_born: Whether the litter went from « à naître » to « née » during this run.
             is_followed: Whether the litter is in the user's follow-ups.
+            has_fewer_puppies_available: Whether the litter offers fewer puppies than before this run.
 
         Returns:
             The events to notify, possibly none.
@@ -57,6 +64,8 @@ class EventService:
             and not was_ever_preferred
         ):
             events.append(MatchEventKind.NEW_ACCEPTABLE)
+        if has_fewer_puppies_available and is_followed and new_tier != MatchTier.EXCLUDED:
+            events.append(MatchEventKind.AVAILABILITY_CHANGE)
         return events
 
     @staticmethod

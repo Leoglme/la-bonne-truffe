@@ -80,23 +80,32 @@ class NotificationTexts:
         return f"{opening}{place} : une portée {color} déclarée{expected}."
 
     @classmethod
-    def evening_digest(cls, snapshots: list[LitterSnapshot]) -> str:
+    def evening_digest(
+        cls, acceptable_snapshots: list[LitterSnapshot], followed_with_fewer_puppies: list[LitterSnapshot]
+    ) -> str:
         """
-        Body of the evening digest.
+        Body of the evening digest: the new acceptable litters, then the followed litters offering fewer puppies.
 
         Args:
-            snapshots: The acceptable litters of the day, at least one.
+            acceptable_snapshots: The acceptable litters of the day.
+            followed_with_fewer_puppies: The followed litters whose puppies left dropped; one whose count is
+                unknown is left out. The two lists hold at least one litter between them.
 
         Returns:
-            « Récap du soir : 2 portées acceptables, dont 1 noir et feu (Finistère). »
+            « Récap du soir : 2 portées acceptables, dont 1 noir et feu (Finistère). De Kerlann, plus que
+            2 chiots disponibles. »
         """
-        count = len(snapshots)
-        summary = f"Récap du soir : {count} portée{'s' if count > 1 else ''} acceptable{'s' if count > 1 else ''}"
-        first = snapshots[0]
-        place = f" ({first.department_name})" if first.department_name else ""
-        if count == 1:
-            return f"{summary} : une portée {cls._color_phrase(first)}{place}."
-        return f"{summary}, dont 1 {cls._color_phrase(first)}{place}."
+        sentences: list[str] = []
+        if acceptable_snapshots:
+            sentences.append(cls._acceptable_litters_sentence(acceptable_snapshots))
+        puppies_left_phrases = [
+            cls._puppies_left_phrase(snapshot.name, snapshot.puppies_available)
+            for snapshot in followed_with_fewer_puppies
+            if snapshot.puppies_available is not None
+        ]
+        if puppies_left_phrases:
+            sentences.append(f"{' ; '.join(puppies_left_phrases)}.")
+        return f"Récap du soir : {' '.join(sentences)}"
 
     @staticmethod
     def source_down(source: ListingSource, failed_run_count: int, error_message: str | None) -> str:
@@ -113,6 +122,44 @@ class NotificationTexts:
         """
         reason = f" Dernière erreur : {error_message}" if error_message else ""
         return f"{SOURCE_NAMES[source]} ne répond plus depuis {failed_run_count} relevés.{reason}"
+
+    @classmethod
+    def _acceptable_litters_sentence(cls, snapshots: list[LitterSnapshot]) -> str:
+        """
+        The acceptable litters of the evening digest.
+
+        Args:
+            snapshots: The acceptable litters of the day, at least one.
+
+        Returns:
+            « 2 portées acceptables, dont 1 noir et feu (Finistère). »
+        """
+        count = len(snapshots)
+        summary = f"{count} portée{'s' if count > 1 else ''} acceptable{'s' if count > 1 else ''}"
+        first = snapshots[0]
+        place = f" ({first.department_name})" if first.department_name else ""
+        if count == 1:
+            return f"{summary} : une portée {cls._color_phrase(first)}{place}."
+        return f"{summary}, dont 1 {cls._color_phrase(first)}{place}."
+
+    @staticmethod
+    def _puppies_left_phrase(litter_name: str, puppies_left: int) -> str:
+        """
+        The puppies a followed litter still offers.
+
+        Args:
+            litter_name: Name of the litter, as its card shows it.
+            puppies_left: Puppies still offered.
+
+        Returns:
+            « De Kerlann, plus que 2 chiots disponibles », « … plus qu'un chiot disponible » or
+            « … plus aucun chiot disponible ».
+        """
+        if puppies_left == 0:
+            return f"{litter_name}, plus aucun chiot disponible"
+        if puppies_left == 1:
+            return f"{litter_name}, plus qu’un chiot disponible"
+        return f"{litter_name}, plus que {puppies_left} chiots disponibles"
 
     @staticmethod
     def _color_phrase(snapshot: LitterSnapshot) -> str:

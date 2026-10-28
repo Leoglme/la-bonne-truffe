@@ -121,7 +121,7 @@ Il n'y a ni couleur ni téléphone sur la page (le contact passe par un formulai
 - Chaque carte est un `a.box` de `div.list-box.result`, vers `/detail-annonce-<race>_<id>_<n>.html`.
 - Le département est dans le titre du lieu : `.lieu .txt`, `title="LE MANS dans le departement 72 - Sarthe"`.
 - Le badge `.vign` « LOF » de la carte marque une portée LOF. Celui de la page de l'annonce ne vaut rien : il s'affiche aussi sur une annonce non LOF.
-- La loi réserve le nom d'une race aux chiens inscrits à un livre généalogique : le site range les autres sous « Type Cocker Spaniel Anglais » (`.race`), cockers sans papiers et croisements mêlés. Le seul du 28/10/2026 était un « Aussiecocker ». Le collecteur écarte ces cartes (question ouverte dans `08`).
+- La loi réserve le nom d'une race aux chiens inscrits à un livre généalogique : le site range les autres sous « Type Cocker Spaniel Anglais » (`.race`), cockers sans papiers et croisements mêlés. Le seul du 28/10/2026 était un « Aussiecocker ». Le collecteur garde ces cartes en non LOF, quel que soit leur badge : le critère « Pedigree LOF », sur « Obligatoire » par défaut, décide si elles s'affichent (décision du 29/10/2026, `04`).
 
 **Page d'une annonce** :
 

@@ -15,7 +15,7 @@ La **Centrale Canine** (Société Centrale Canine, qui tient le LOF) publie un *
 1. Un **worker** relève toutes les heures la Centrale Canine (JSON), Chiens de France (HTML) et Chiots de France (HTML) pour les races du profil.
 2. Il **normalise** chaque portée dans un vocabulaire commun (couleurs, statut LOF, dates, sexes), la **rattache à son éleveur** et **regroupe** les annonces d'une même portée vues sur plusieurs sources.
 3. Il passe chaque portée au crible des **critères** de Léo et lui donne un **score** et un **palier** (préférée, acceptable, ignorée).
-4. Il **notifie** par Web Push : tout de suite pour une portée préférée ou la naissance d'une portée suivie, dans un récap du soir pour les acceptables.
+4. Il **notifie** par Web Push : tout de suite pour une portée préférée ou la naissance d'une portée suivie, dans un récap du soir pour les acceptables et pour une portée suivie qui propose moins de chiots.
 5. Un **dashboard** (iPad portrait d'abord, puis iPhone et desktop) montre les portées, le détail avec le « pourquoi ce score », les critères modifiables, et un **suivi** des échanges avec les éleveurs (statut, notes, rappels).
 
 ## Ce que l'outil ne fait pas (V1)
@@ -34,7 +34,7 @@ La **Centrale Canine** (Société Centrale Canine, qui tient le LOF) publie un *
 | Format principal | **iPad en portrait** | C'est là que Léo l'utilisera le plus |
 | Nom | **La Bonne Truffe** | Clin d'œil au Bon Coin, la truffe du chien qui flaire |
 | Direction artistique | Crème, corail, titres ronds (Fredoka), illustrations de cocker, photos quand il y en a | Léo a rejeté une première version éditoriale (papier, serif, trois colonnes) comme trop chargée et hors thème |
-| LOF | Préféré, pas obligatoire | Une annonce non LOF reste visible en « acceptable » |
+| LOF | **Obligatoire par défaut**, modifiable dans Critères (« Pedigree LOF » : obligatoire, préféré, peu importe) | Tranché le 29/10/2026 : les annonces sans papiers de Chiots de France mêlent cockers et croisements ; en « préféré », elles restent visibles en « acceptable » |
 | Couleurs | Gold préférée, noir et feu acceptable, **les autres ignorées** | Tranché par Léo le 28/10/2026 |
 | Sexe | **Indifférent** (`any`) | Tranché par Léo le 28/10/2026 |
 | Prix | **Pas de plafond** | Tranché par Léo le 28/10/2026 |

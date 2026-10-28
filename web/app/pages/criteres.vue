@@ -136,7 +136,7 @@
         <div class="flex items-center justify-between gap-3">
           <span class="flex flex-col">
             <span class="text-[17px] font-bold">Récap du soir</span>
-            <span class="text-sm text-ink-muted">Les acceptables, à {{ draft.digest_hour }} h</span>
+            <span class="text-sm text-ink-muted">Les acceptables et tes suivis, à {{ draft.digest_hour }} h</span>
           </span>
           <USwitch v-model="draft.notify_acceptable_in_digest" aria-label="Recevoir le récap du soir" />
         </div>

@@ -1,8 +1,10 @@
 """
 Chiots de France collector: the France listing of a breed, filtered on the departments of the profiles,
 then the page of each ad (docs/02-sources.md). An ad is a born litter with the puppies still available.
-Its LOF status is the badge of its card: the ad page shows the same badges on every ad. Politeness: one
-request per second, the honest User-Agent, and only the paths robots.txt allows.
+Its LOF status is the badge of its card: the ad page shows the same badges on every ad. A « Type Cocker… »
+card, a cocker without papers or a crossbreed, is a non-LOF ad: the « Pedigree LOF » criterion decides
+whether it shows. Politeness: one request per second, the honest User-Agent, and only the paths robots.txt
+allows.
 """
 
 import json
@@ -142,7 +144,7 @@ class ChiotsDeFranceCollector:
         """
         Find the ads of the France listing. A dog outside the LOF may not carry the breed's name, so the
         site lists it as « Type Cocker… », whether a cocker without papers or a crossbreed: such a card is
-        left out (docs/08), like a card without department.
+        kept as non-LOF, whatever its badges. A card without department is left out.
 
         Args:
             html: The listing page.
@@ -153,8 +155,7 @@ class ChiotsDeFranceCollector:
         tree = LexborHTMLParser(html)
         listed_ads: list[ListedLitterAd] = []
         for card in tree.css("div.list-box.result a.box"):
-            if HtmlAdParser.text_of(card.css_first(".race")).startswith(LOOKALIKE_BREED_PREFIX):
-                continue
+            is_lookalike_breed = HtmlAdParser.text_of(card.css_first(".race")).startswith(LOOKALIKE_BREED_PREFIX)
             url = card.attributes.get("href") or ""
             id_match = AD_ID_PATTERN.search(url)
             place = card.css_first(".lieu .txt")
@@ -166,7 +167,7 @@ class ChiotsDeFranceCollector:
                     external_id=f"annonce-{id_match.group(1)}",
                     url=url,
                     department_code=department_match.group(1),
-                    is_lof=HtmlAdParser.text_of(card.css_first(".vign")) == LOF_BADGE,
+                    is_lof=not is_lookalike_breed and HtmlAdParser.text_of(card.css_first(".vign")) == LOF_BADGE,
                 )
             )
         return listed_ads

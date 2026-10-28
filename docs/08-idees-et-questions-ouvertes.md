@@ -7,7 +7,8 @@ Tranchées le 28/10/2026 (détail dans `01-cadrage.md`) : autres couleurs ignor�
 Restent ouvertes :
 
 1. **Le relevé une fois l'API sur le VPS** (jalon 5). L'app Windows de Léo, lancée au démarrage dans la zone de notification comme celle de DevLeadHunter, relèvera chaque heure avec le même `curl` et enverra les pages à l'API, qui fera le reste : regroupement, correspondance, notifications. Les portées de la Centrale Canine n'arriveront alors que quand le PC est allumé. En attendant, elles n'arrivent pas du tout dans le dashboard en ligne : le worker du VPS ne relève pas la Centrale Canine (`COLLECT_SKIPPED_SOURCES`), qui refuse le `curl` de Linux (`02-sources.md`, `11-deploiement.md`).
-2. **Les annonces « Type Cocker Spaniel Anglais » de Chiots de France.** La loi réserve le nom d'une race aux chiens LOF : le site range sous ce titre tous les autres, cockers sans papiers et croisements mêlés, sans moyen sûr de les distinguer. Le collecteur les écarte pour l'instant. Le cadrage dit pourtant qu'une annonce non LOF reste visible en « acceptable » : faut-il les montrer quand même, en sachant qu'un croisement y passera pour un cocker ?
+
+Tranchée le 29/10/2026 : **les annonces « Type Cocker Spaniel Anglais » de Chiots de France** (cockers sans papiers et croisements mêlés) sont relevées en non LOF, et le critère « Pedigree LOF », sur « Obligatoire » par défaut, décide si elles s'affichent (`04`).
 
 ## Idées V1.5 (après que ça tourne)
 

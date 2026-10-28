@@ -37,6 +37,7 @@ class MatchRefreshService:
         born_group_ids: set[int] | None = None,
         should_notify: bool = True,
         profile_ids: set[int] | None = None,
+        fewer_puppies_group_ids: set[int] | None = None,
     ) -> RefreshSummary:
         """
         Evaluate every active group against every active profile.
@@ -51,6 +52,7 @@ class MatchRefreshService:
             born_group_ids: Groups whose birth appeared during this run.
             should_notify: Whether the raised events are sent.
             profile_ids: Only these profiles (a new account); every active profile when None.
+            fewer_puppies_group_ids: Groups that offer fewer puppies since the previous run.
 
         Returns:
             The summary.
@@ -63,6 +65,7 @@ class MatchRefreshService:
             profile_query = profile_query.filter(SearchProfile.id.in_(profile_ids))
         profiles = profile_query.order_by(SearchProfile.id).all()
         just_born = born_group_ids or set()
+        offering_fewer_puppies = fewer_puppies_group_ids or set()
 
         for profile in profiles:
             criteria = ProfileCriteria.from_profile(profile)
@@ -87,6 +90,7 @@ class MatchRefreshService:
                     notified_events=match.notified_events,
                     has_just_been_born=group.id in just_born,
                     is_followed=is_followed,
+                    has_fewer_puppies_available=group.id in offering_fewer_puppies,
                 )
                 if not events:
                     continue

@@ -234,6 +234,7 @@ class CollectionRunner:
             now,
             set(grouping.born_group_ids),
             should_notify=CollectionRunner._has_succeeded_before(db, source_run),
+            fewer_puppies_group_ids=set(grouping.fewer_puppies_group_ids),
         )
         return summary, grouping, refresh
 

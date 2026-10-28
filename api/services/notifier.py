@@ -32,6 +32,10 @@ IMMEDIATE_EVENT_KINDS: dict[MatchEventKind, NotificationKind] = {
     MatchEventKind.UPGRADED: NotificationKind.UPGRADED,
 }
 
+DIGEST_EVENT_KINDS: frozenset[MatchEventKind] = frozenset(
+    {MatchEventKind.NEW_ACCEPTABLE, MatchEventKind.AVAILABILITY_CHANGE}
+)
+
 
 class NotifierService:
     """Turns events into pushes and history rows; a push failure never stops a run."""
@@ -48,9 +52,9 @@ class NotifierService:
         """
         Send or queue each event, as the profile asks.
 
-        A preferred litter is pushed right away, a birth too, an acceptable litter waits for the
-        evening digest. An event the profile turned off is still recorded as handled, so turning
-        the setting back on later never floods the phone with old litters.
+        A preferred litter is pushed right away, a birth too; an acceptable litter, or a followed one
+        offering fewer puppies, waits for the evening digest. An event the profile turned off is still
+        recorded as handled, so turning the setting back on later never floods the phone with old litters.
 
         Args:
             db: Database session; the caller commits.
@@ -64,9 +68,9 @@ class NotifierService:
             The events handled, to record in ``ListingMatch.notified_events``.
         """
         for event in events:
-            if event == MatchEventKind.NEW_ACCEPTABLE:
+            if event in DIGEST_EVENT_KINDS:
                 if profile.notify_acceptable_in_digest:
-                    self._queue_for_digest(db, profile.user_id, snapshot.group_id, event)
+                    self._queue_for_digest(db, profile.user_id, snapshot.group_id, event, now)
                 continue
             is_wanted = profile.notify_preferred_immediately
             if event == MatchEventKind.BORN and is_followed:
@@ -152,20 +156,26 @@ class NotifierService:
                 .order_by(DigestEntry.id)
                 .all()
             )
-            snapshots: list[LitterSnapshot] = []
+            acceptable_snapshots: list[LitterSnapshot] = []
+            followed_with_fewer_puppies: list[LitterSnapshot] = []
             for entry in entries:
                 group = db.get(LitterGroup, entry.litter_group_id)
                 snapshot = LitterSnapshotBuilder.build(db, group) if group is not None and group.is_active else None
-                if snapshot is not None:
-                    snapshots.append(snapshot)
                 entry.sent_at = now
-            if snapshots:
+                if snapshot is None:
+                    continue
+                if entry.event_kind != MatchEventKind.AVAILABILITY_CHANGE:
+                    acceptable_snapshots.append(snapshot)
+                elif snapshot.puppies_available is not None:
+                    followed_with_fewer_puppies.append(snapshot)
+            litter_group_ids = {snapshot.group_id for snapshot in [*acceptable_snapshots, *followed_with_fewer_puppies]}
+            if litter_group_ids:
                 self.send(
                     db,
                     user_id=user_id,
                     kind=NotificationKind.EVENING_DIGEST,
-                    body=NotificationTexts.evening_digest(snapshots),
-                    litter_group_id=snapshots[0].group_id if len(snapshots) == 1 else None,
+                    body=NotificationTexts.evening_digest(acceptable_snapshots, followed_with_fewer_puppies),
+                    litter_group_id=next(iter(litter_group_ids)) if len(litter_group_ids) == 1 else None,
                     now=now,
                 )
                 sent_count += 1
@@ -218,17 +228,21 @@ class NotifierService:
         return True
 
     @staticmethod
-    def _queue_for_digest(db: Session, user_id: int, litter_group_id: int, event: MatchEventKind) -> None:
+    def _queue_for_digest(
+        db: Session, user_id: int, litter_group_id: int, event: MatchEventKind, now: datetime
+    ) -> None:
         """
-        Keep an event for the evening digest, once.
+        Keep an event for the evening digest: a new acceptable litter once, a drop of the puppies left at every
+        drop. The table keeps one entry per litter and event, so an entry already sent goes back in the queue.
 
         Args:
             db: Database session.
             user_id: Recipient.
             litter_group_id: The litter.
             event: The event.
+            now: Run time, naive UTC.
         """
-        exists = (
+        entry = (
             db.query(DigestEntry)
             .filter(
                 DigestEntry.user_id == user_id,
@@ -237,8 +251,11 @@ class NotifierService:
             )
             .first()
         )
-        if exists is None:
-            db.add(DigestEntry(user_id=user_id, litter_group_id=litter_group_id, event_kind=event))
+        if entry is None:
+            db.add(DigestEntry(user_id=user_id, litter_group_id=litter_group_id, event_kind=event, created_at=now))
+        elif event == MatchEventKind.AVAILABILITY_CHANGE and entry.sent_at is not None:
+            entry.sent_at = None
+            entry.created_at = now
 
 
 notifier_service = NotifierService()

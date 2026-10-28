@@ -36,6 +36,7 @@ LEO = ProfileCriteria(
 
 GOLD_BORN_IN_35 = LitterSnapshot(
     group_id=1,
+    name="Du Clos de l'Élevage A",
     breed_slug="cocker-spaniel-anglais",
     kind=ListingKind.LITTER_BORN,
     department_code="35",
@@ -44,6 +45,7 @@ GOLD_BORN_IN_35 = LitterSnapshot(
     lof_status=LofStatus.LOF,
     male_count=2,
     female_count=3,
+    puppies_available=None,
     price_cents=None,
     appeared_on=date(2026, 10, 24),
     birth_date=date(2026, 10, 27),

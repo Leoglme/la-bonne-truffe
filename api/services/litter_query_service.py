@@ -254,7 +254,7 @@ class LitterQueryService:
         city = breeder.city if breeder is not None else None
         return LitterCard(
             id=group.id,
-            name=cls._litter_name(breeder, listings),
+            name=snapshot.name,
             place=city or snapshot.department_name,
             town=city,
             department_code=snapshot.department_code,
@@ -275,26 +275,6 @@ class LitterQueryService:
             sources=list(dict.fromkeys(listing.source for listing in listings)),
             follow_up_status=follow_up.status if follow_up is not None else None,
         )
-
-    @staticmethod
-    def _litter_name(breeder: Breeder | None, listings: list[Listing]) -> str:
-        """
-        Name of a litter: the breeder's affix, else the mother's name, else its LOF number.
-
-        Args:
-            breeder: The breeder, if known.
-            listings: Listings of the litter.
-
-        Returns:
-            The name; never an invented one.
-        """
-        if breeder is not None and (breeder.affix or breeder.display_name):
-            return breeder.affix or breeder.display_name or ""
-        dam_name = next((listing.dam_name for listing in listings if listing.dam_name), None)
-        if dam_name:
-            return f"Portée de {dam_name}"
-        litter_number = next((listing.litter_number for listing in listings if listing.litter_number), None)
-        return f"Portée {litter_number}" if litter_number else "Portée sans nom"
 
     @staticmethod
     def _breeder(breeder: Breeder) -> LitterBreeder:

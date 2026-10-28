@@ -42,7 +42,7 @@ Exemple de la maquette : portée née cette nuit, gold certain (+40), LOF (+20),
 
 ## Les événements qui notifient
 
-Les notifications suivent des **événements**, pas des lignes. Chaque couple (groupe, type d'événement) n'est notifié qu'une fois, grâce à `listing_matches.notified_events`.
+Les notifications suivent des **événements**, pas des lignes. Chaque couple (groupe, type d'événement) n'est notifié qu'une fois, grâce à `listing_matches.notified_events`, sauf `availability_change`, qui part à chaque baisse.
 
 | Événement | Quand | Canal |
 |---|---|---|
@@ -65,6 +65,7 @@ Titre : « La Bonne Truffe ». Corps : couleur, lieu, sexes, en une phrase. Exem
 - « Née cette nuit à Redon : une portée gold, 2 mâles et 3 femelles. Dispo vers le 22 décembre. »
 - « À naître à Ploërmel : une portée gold déclarée, naissance vers le 7 novembre. »
 - « Récap du soir : 2 portées acceptables, dont 1 noir et feu à Quimper. »
+- « Récap du soir : De Kerlann, plus que 2 chiots disponibles. » (portée suivie, nommée comme sur sa carte)
 
 L'URL de la notification ouvre le détail du groupe dans le dashboard.
 
@@ -77,7 +78,7 @@ L'URL de la notification ouvre le détail du groupe dans le dashboard.
   "department_codes": ["35", "56", "22", "29", "44", "53", "49", "72", "85"],
   "include_expected_litters": true,
   "sex_preference": "any",
-  "lof_preference": "preferred",
+  "lof_preference": "required",
   "color_preferences": { "gold": "preferred", "noir_et_feu": "acceptable" },
   "price_max_cents": null,
   "notify_preferred_immediately": true,
@@ -87,7 +88,9 @@ L'URL de la notification ouvre le détail du groupe dans le dashboard.
 }
 ```
 
-Les couleurs absentes de `color_preferences` prennent la valeur `ignored` : Léo l'a confirmé le 28/10/2026, comme le sexe indifférent et l'absence de plafond de prix. Ce profil est créé par `api/seeders/search_profile_seeder.py`.
+Les couleurs absentes de `color_preferences` prennent la valeur `ignored` : Léo l'a confirmé le 28/10/2026, comme le sexe indifférent et l'absence de plafond de prix. Ce profil est créé par `api/seeders/search_profile_seeder.py`, et chaque inscription reçoit le même.
+
+**LOF obligatoire par défaut** (décidé le 29/10/2026) : seules les portées LOF s'affichent tant que le critère « Pedigree LOF » ne change pas. « Préféré » montre aussi les portées sans papiers, en `acceptable` (récap du soir, jamais de push immédiat) ; « Peu importe » les traite comme les autres. Les profils restés sur « Préféré » sont passés à « Obligatoire » par la migration `require_lof_on_profiles_left_on_preferred` : jusque-là, aucune portée non LOF n'arrivait dans l'app, les deux réglages montraient donc les mêmes portées.
 
 ## Mise en œuvre (jalon 2)
 
@@ -100,5 +103,5 @@ Code : `api/services/matching/` (`tiers.py`, `scoring.py`, `matching_service.py`
 - **Réglages coupés** : un événement que le profil ne veut pas recevoir est quand même noté comme traité, pour qu'un réglage rallumé ne déverse pas d'anciennes portées.
 - **Critères modifiés** : l'enregistrement relance l'évaluation **sans notifier** (Léo regarde l'app à ce moment-là).
 - **Regroupement** : deux annonces d'une même source ne sont jamais regroupées sur une supposition (une source liste une portée une fois), seulement par numéro de portée ; la règle « une seule portée candidate en 60 jours » ne vaut que pour une annonce sans date de naissance.
-- **Pas encore fait** : `availability_change` (aucune source relevée ne donne encore le nombre de chiots disponibles).
+- **Chiots encore disponibles** (`availability_change`, ajouté le 29/10/2026) : chaque regroupement recalcule `litter_groups.puppies_available` depuis les annonces actives : le plus petit nombre donné par une annonce de portée (Chiots de France), sinon un chiot par annonce de chiot encore à vendre (Chiens de France ; une annonce réservée, vendue ou retirée ne compte plus). La Centrale Canine ne donne pas ce nombre. Quand il baisse sur une portée du suivi qui n'est pas exclue, une ligne part dans le récap du soir, à chaque baisse ; le récap donne le nombre au moment de l'envoi. Couper le récap du soir coupe aussi ces lignes.
 - Le texte des notifications met le département entre parenthèses quand la ville n'est pas connue : « Née le 27 octobre (Ille-et-Vilaine) : une portée gold, 2 mâles et 3 femelles. Dispo vers le 22 décembre. »

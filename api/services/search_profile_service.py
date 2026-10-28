@@ -28,7 +28,8 @@ class SearchProfileService:
     def create_starting_profile(db: Session, user_id: int) -> SearchProfile:
         """
         Add the starting profile of an account (docs/04-correspondance-et-notifications.md): cocker, gold
-        preferred, black and tan acceptable, the other colours ignored, the nine departments around Rennes.
+        preferred, black and tan acceptable, the other colours ignored, the nine departments around Rennes,
+        LOF litters only (the « Pedigree LOF » criterion opens the others).
 
         Args:
             db: Database session; flushed, not committed.
@@ -45,7 +46,7 @@ class SearchProfileService:
             department_codes=list(STARTING_DEPARTMENT_CODES),
             include_expected_litters=True,
             sex_preference=SexPreference.ANY,
-            lof_preference=LofPreference.PREFERRED,
+            lof_preference=LofPreference.REQUIRED,
             color_preferences={
                 CoatColor.GOLD.value: ColorPreferenceLevel.PREFERRED.value,
                 CoatColor.NOIR_ET_FEU.value: ColorPreferenceLevel.ACCEPTABLE.value,

@@ -49,6 +49,7 @@ class LitterSnapshotBuilder:
 
         return LitterSnapshot(
             group_id=group.id,
+            name=cls.litter_name(breeder, listings),
             breed_slug=breed.slug if breed is not None else "",
             kind=cls._merged_kind(active_listings),
             department_code=department_code,
@@ -57,6 +58,7 @@ class LitterSnapshotBuilder:
             lof_status=cls._merged_lof_status(active_listings),
             male_count=male_count,
             female_count=female_count,
+            puppies_available=group.puppies_available,
             price_cents=min(
                 (listing.price_cents for listing in active_listings if listing.price_cents is not None), default=None
             ),
@@ -68,6 +70,26 @@ class LitterSnapshotBuilder:
             sire_rating=cls._first_known([listing.sire_rating for listing in active_listings]),
             dam_rating=cls._first_known([listing.dam_rating for listing in active_listings]),
         )
+
+    @staticmethod
+    def litter_name(breeder: Breeder | None, listings: list[Listing]) -> str:
+        """
+        Name of a litter: the breeder's affix, else the mother's name, else its LOF number.
+
+        Args:
+            breeder: The breeder, if known.
+            listings: Listings of the litter.
+
+        Returns:
+            The name; never an invented one.
+        """
+        if breeder is not None and (breeder.affix or breeder.display_name):
+            return breeder.affix or breeder.display_name or ""
+        dam_name = next((listing.dam_name for listing in listings if listing.dam_name), None)
+        if dam_name:
+            return f"Portée de {dam_name}"
+        litter_number = next((listing.litter_number for listing in listings if listing.litter_number), None)
+        return f"Portée {litter_number}" if litter_number else "Portée sans nom"
 
     @staticmethod
     def _appeared_on(group: LitterGroup, listings: list[Listing]) -> date:

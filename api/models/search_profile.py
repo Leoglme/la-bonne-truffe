@@ -45,7 +45,7 @@ class SearchProfile(TimestampMixin, Base):
         str_enum_column(SexPreference), default=SexPreference.ANY, nullable=False
     )
     lof_preference: Mapped[LofPreference] = mapped_column(
-        str_enum_column(LofPreference), default=LofPreference.PREFERRED, nullable=False
+        str_enum_column(LofPreference), default=LofPreference.REQUIRED, nullable=False
     )
     color_preferences: Mapped[dict[str, str]] = mapped_column(JSON, default=dict, nullable=False)
     price_max_cents: Mapped[int | None]

@@ -2,10 +2,12 @@
 
 from pathlib import Path
 
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import Engine, create_engine, inspect
 from sqlalchemy.orm import Session
 
 from core.config import settings
+from enums.lof_preference import LofPreference
+from migrations import require_lof_on_profiles_left_on_preferred
 from migrations.run_migrations import MigrationRunner
 from models.breed_variety import BreedVariety
 from models.department import Department
@@ -70,6 +72,7 @@ def test_starting_profile_matches_leo_answers(db: Session) -> None:
     assert profile.user_id == user.id
     assert profile.department_codes == ["35", "56", "22", "29", "44", "53", "49", "72", "85"]
     assert profile.sex_preference == "any"
+    assert profile.lof_preference == "required"
     assert profile.price_max_cents is None
     assert profile.color_preferences == {"gold": "preferred", "noir_et_feu": "acceptable"}
 
@@ -83,7 +86,26 @@ def test_migrations_create_every_table_and_record_themselves(tmp_path: Path) -> 
         "add_litter_group_confirmed_colors",
         "add_digest_entries_table",
         "add_breeder_coordinates_and_listing_publication",
+        "add_litter_group_puppies_available",
+        "require_lof_on_profiles_left_on_preferred",
     ]
     assert runner.run() == []
     tables = set(inspect(database_engine).get_table_names())
     assert {"listings", "litter_groups", "push_subscriptions", "schema_migrations", "source_runs"} <= tables
+
+
+def test_profiles_left_on_lof_preferred_now_ask_for_the_lof(db: Session, engine: Engine) -> None:
+    SeederRunner.run(db)
+    starting_profile = db.query(SearchProfile).one()
+    starting_profile.lof_preference = LofPreference.PREFERRED
+    open_profile = SearchProfile(
+        user_id=starting_profile.user_id, name="Tous les cockers", lof_preference=LofPreference.ANY
+    )
+    db.add(open_profile)
+    db.commit()
+
+    require_lof_on_profiles_left_on_preferred.run_migration(engine)
+
+    db.expire_all()
+    assert starting_profile.lof_preference == LofPreference.REQUIRED
+    assert open_profile.lof_preference == LofPreference.ANY

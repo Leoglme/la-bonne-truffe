@@ -1,5 +1,6 @@
 """ChiotsDeFranceCollector: real (anonymized) pages, the France listing, crossbreeds, withdrawn ads."""
 
+import re
 from datetime import date, datetime
 
 import httpx
@@ -20,14 +21,25 @@ PLAN = HtmlCollectionPlan(
 )
 
 
-def test_listing_page_lists_the_ads_with_their_department_and_leaves_the_type_ads_out() -> None:
+def test_listing_page_lists_the_ads_with_their_department_and_keeps_the_type_ads_as_non_lof() -> None:
     listed_ads = ChiotsDeFranceCollector.parse_listing_page(recorded_page("listing_france.html"))
 
     assert [(ad.external_id, ad.department_code, ad.is_lof) for ad in listed_ads] == [
         ("annonce-494858", "50", True),
         ("annonce-487726", "72", True),
+        ("annonce-60927", "28", False),
         ("annonce-486970", "35", True),
     ]
+
+
+def test_a_type_card_stays_non_lof_even_with_a_lof_badge() -> None:
+    listing_page = re.sub(
+        r"(<img[^>]*TN_carte-60927)", r'<div class="vign">LOF</div>\1', recorded_page("listing_france.html"), count=1
+    )
+
+    listed_ads = ChiotsDeFranceCollector.parse_listing_page(listing_page)
+
+    assert [ad.is_lof for ad in listed_ads if ad.external_id == "annonce-60927"] == [False]
 
 
 def test_ad_page_gives_a_born_litter_with_its_available_puppies_and_breeder() -> None:

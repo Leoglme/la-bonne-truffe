@@ -74,9 +74,12 @@ class LitterSnapshot:
 
     ``appeared_on`` is the day the litter went online on a source (the earliest one), or the day a
     collection first saw it when no source gives that date.
+
+    ``name`` is the one the cards show, so a notification names the litter as the app does.
     """
 
     group_id: int
+    name: str
     breed_slug: str
     kind: ListingKind
     department_code: str | None
@@ -85,6 +88,7 @@ class LitterSnapshot:
     lof_status: LofStatus
     male_count: int | None
     female_count: int | None
+    puppies_available: int | None
     price_cents: int | None
     appeared_on: date
     birth_date: date | None

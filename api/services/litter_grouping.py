@@ -34,6 +34,7 @@ class GroupingResult:
 
     new_group_ids: list[int] = field(default_factory=list)
     born_group_ids: list[int] = field(default_factory=list)
+    fewer_puppies_group_ids: list[int] = field(default_factory=list)
 
 
 class LitterGroupingService:
@@ -48,7 +49,8 @@ class LitterGroupingService:
             now: Run time, naive UTC.
 
         Returns:
-            The groups created, and the existing groups whose birth appeared during this regrouping.
+            The groups created, and the existing groups whose birth appeared, or which offer fewer puppies,
+            since the previous regrouping.
         """
         result = GroupingResult()
         ungrouped = db.query(Listing).filter(Listing.litter_group_id.is_(None)).order_by(Listing.id).all()
@@ -69,9 +71,18 @@ class LitterGroupingService:
 
         for group in db.query(LitterGroup).all():
             was_born = group.birth_date is not None
+            puppies_available_before = group.puppies_available
             self._refresh_group(db, group)
-            if not was_born and group.birth_date is not None and group.id not in result.new_group_ids:
+            if group.id in result.new_group_ids:
+                continue
+            if not was_born and group.birth_date is not None:
                 result.born_group_ids.append(group.id)
+            if (
+                puppies_available_before is not None
+                and group.puppies_available is not None
+                and group.puppies_available < puppies_available_before
+            ):
+                result.fewer_puppies_group_ids.append(group.id)
         db.commit()
         return result
 
@@ -220,8 +231,36 @@ class LitterGroupingService:
         group.first_seen_at = min(listing.first_seen_at for listing in listings)
         group.last_seen_at = max(listing.last_seen_at for listing in listings)
         group.is_active = any(listing.is_active for listing in listings)
+        group.puppies_available = LitterGroupingService._puppies_still_offered(listings)
         if group.breeder_id is None:
             group.breeder_id = next((listing.breeder_id for listing in listings if listing.breeder_id), None)
+
+    @staticmethod
+    def _puppies_still_offered(listings: list[Listing]) -> int | None:
+        """
+        Puppies a litter still offers, from its active listings: the lowest count of its litter ads, else
+        one per puppy ad still for sale (a puppy ad that left its source no longer counts).
+
+        Args:
+            listings: Every listing of the group.
+
+        Returns:
+            The count, or None while no active listing tells.
+        """
+        active_listings = [listing for listing in listings if listing.is_active]
+        litter_ad_counts = [
+            listing.puppies_available
+            for listing in active_listings
+            if listing.kind != ListingKind.PUPPY_AD and listing.puppies_available is not None
+        ]
+        if litter_ad_counts:
+            return min(litter_ad_counts)
+        puppy_ad_counts = [
+            listing.puppies_available
+            for listing in active_listings
+            if listing.kind == ListingKind.PUPPY_AD and listing.puppies_available is not None
+        ]
+        return sum(puppy_ad_counts) if puppy_ad_counts else None
 
 
 litter_grouping_service = LitterGroupingService()
