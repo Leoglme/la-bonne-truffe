@@ -1,6 +1,6 @@
+import type { ApiErrorBody } from '~/types/ApiClient'
 import type { LoginCredentials, TokenResponse, User } from '~/types/api'
 
-/** Answers by which the API turns a token down: invalid or expired (401), account deactivated (400). */
 const TOKEN_REJECTION_STATUSES: number[] = [400, 401, 403]
 
 /**
@@ -8,7 +8,7 @@ const TOKEN_REJECTION_STATUSES: number[] = [400, 401, 403]
  */
 export class TokenRejectedError extends Error {}
 
-/** HTTP client for the /auth API resource, called before any token is stored. */
+/** HTTP client for the /auth API resource, with the token passed in rather than the stored one. */
 export class AuthService {
   /**
    * Exchange the email and password for a bearer token.
@@ -24,7 +24,7 @@ export class AuthService {
       body: JSON.stringify(credentials),
     })
     if (!response.ok) {
-      const error: { detail?: unknown } = await response.json().catch((): { detail?: unknown } => ({}))
+      const error: ApiErrorBody = await response.json().catch((): ApiErrorBody => ({}))
       throw new Error(typeof error.detail === 'string' ? error.detail : 'Connexion impossible')
     }
     return response.json()

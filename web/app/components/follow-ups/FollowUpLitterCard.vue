@@ -17,7 +17,7 @@
           {{ props.followUp.litter.name }}
         </span>
         <span class="text-[13px] text-ink-muted md:text-[15px]">{{
-          FollowUpPresentation.summaryLine(props.followUp)
+          FollowUpPresentation.buildSummaryLine(props.followUp)
         }}</span>
         <span
           v-if="reminderChip"
@@ -47,12 +47,11 @@
 <script lang="ts" setup>
 import type { ComputedRef, PropType } from 'vue'
 import type { FollowUpCard } from '~/types/api'
+import type { FollowUpReminderChip } from '~/types/FollowUp'
 import type { FollowUpLitterCardEmits, FollowUpLitterCardProps } from '~/types/FollowUpLitterCard'
-import type { FollowUpReminderChip } from '~/utils/followUpPresentation'
 import { computed } from 'vue'
 import { FollowUpPresentation } from '~/utils/followUpPresentation'
 
-/** A followed litter: tile, name, summary, reminder chip, and the last note when in discussion. */
 const props: FollowUpLitterCardProps = defineProps({
   followUp: { type: Object as PropType<FollowUpCard>, required: true },
   isNoteShown: { type: Boolean, default: false },
@@ -63,6 +62,6 @@ const emit: FollowUpLitterCardEmits = defineEmits<{
 }>()
 
 const reminderChip: ComputedRef<FollowUpReminderChip | null> = computed((): FollowUpReminderChip | null =>
-  FollowUpPresentation.reminderChip(props.followUp, new Date()),
+  FollowUpPresentation.buildReminderChip(props.followUp, new Date()),
 )
 </script>

@@ -5,7 +5,8 @@
       :key="option.value"
       type="button"
       :aria-pressed="props.modelValue === option.value"
-      class="min-h-10 rounded-full border-0 px-3 text-[13px] font-extrabold whitespace-nowrap md:px-3.5 md:text-sm"
+      :disabled="props.isDisabled"
+      class="min-h-10 rounded-full border-0 px-3 text-[13px] font-extrabold whitespace-nowrap disabled:opacity-60 md:px-3.5 md:text-sm"
       :class="props.modelValue === option.value ? 'bg-ink text-cream' : 'bg-transparent text-ink-secondary'"
       @click="emit('update:modelValue', option.value)"
     >
@@ -16,16 +17,16 @@
 
 <script lang="ts" setup>
 import type { PropType } from 'vue'
-import type { UiSegmentedControlOption, UiSegmentedControlProps } from '~/types/UiSegmentedControl'
+import type { UiChoiceButtonsEmits, UiChoiceButtonsOption, UiChoiceButtonsProps } from '~/types/UiChoiceButtons'
 
-/** Pill group of exclusive choices (« Préférée · Acceptable · Ignorée »), each a pressed-state button. */
-const props: UiSegmentedControlProps = defineProps({
+const props: UiChoiceButtonsProps = defineProps({
   modelValue: { type: String, required: true },
-  options: { type: Array as PropType<UiSegmentedControlOption[]>, required: true },
+  options: { type: Array as PropType<UiChoiceButtonsOption[]>, required: true },
   label: { type: String, required: true },
+  isDisabled: { type: Boolean, default: false },
 })
 
-const emit: UiSegmentedControlEmits = defineEmits<{
+const emit: UiChoiceButtonsEmits = defineEmits<{
   (event: 'update:modelValue', value: string): void
 }>()
 </script>

@@ -1,140 +1,78 @@
-import type { LitterCard, LitterDetail, LitterSourceListing, ListingSource } from '~/types/api'
+import type { LitterCard, LitterDetail, LitterSourceListing } from '~/types/api'
+import type { LitterKeyFact, LitterPrimaryAction } from '~/types/Litter'
+import { LISTING_KIND_LABELS, LISTING_SOURCE_LABELS, LISTING_SOURCE_LINK_LABELS } from '~/constants/litterLabels'
+import { FrenchDate } from '~/utils/frenchDate'
 import { LitterPresentation } from '~/utils/litterPresentation'
 
-/** One of the three key facts of the detail screen (« Née le », « Chiots », « Départ »). */
-export type LitterKeyFact = {
-  label: string
-  value: string
-  compactValue: string
-}
-
-/** Where the primary button of the detail leads. */
-export type LitterPrimaryAction = {
-  href: string
-  label: string
-  isCall: boolean
-}
-
-const SOURCE_LABELS: Readonly<Record<ListingSource, string>> = {
-  centrale_canine: 'Centrale Canine',
-  chiens_de_france: 'Chiens de France',
-  chiots_de_france: 'Chiots de France',
-}
-
-const SOURCE_LINK_LABELS: Readonly<Record<ListingSource, string>> = {
-  centrale_canine: 'Voir sur la Centrale Canine',
-  chiens_de_france: 'Voir sur Chiens de France',
-  chiots_de_france: 'Voir sur Chiots de France',
-}
+const UNKNOWN_FACT_LABEL: string = 'À confirmer'
 
 /** How the detail screen and the desktop panel word a litter. */
 export class LitterDetailPresentation {
   /**
-   * The badge over the photo.
+   * Build the badge over the photo.
    *
    * @param litter - The litter.
-   * @param today - Current day.
+   * @param now - Current time.
    * @returns « NÉE CETTE NUIT », « À NAÎTRE », or null.
    */
-  static badge(litter: LitterCard, today: Date): string | null {
+  static buildPhotoBadge(litter: LitterCard, now: Date): string | null {
     if (litter.kind === 'litter_expected') {
       return 'À NAÎTRE'
     }
-    if (litter.birth_date !== null && LitterPresentation.isLastNight(litter.birth_date, today)) {
+    if (LitterPresentation.isBornLastNight(litter, now)) {
       return 'NÉE CETTE NUIT'
     }
     return null
   }
 
   /**
-   * The place line under the name.
+   * Build the place line under the name: the town and its department.
    *
    * @param litter - The litter.
    * @returns « Redon, Ille-et-Vilaine », or the department alone.
    */
-  static placeLine(litter: LitterCard): string {
+  static buildTownAndDepartment(litter: LitterCard): string {
     const parts: string[] = [litter.town, litter.department_name].filter(
       (part: string | null): part is string => part !== null,
     )
-    return parts.length > 0 ? parts.join(', ') : 'Lieu à confirmer'
-  }
-
-  /**
-   * The tier label under the score.
-   *
-   * @param litter - The litter.
-   * @returns « préférée », « acceptable »…
-   */
-  static tierLabel(litter: LitterCard): string {
-    switch (litter.tier) {
-      case 'preferred':
-        return 'préférée'
-      case 'acceptable':
-        return 'acceptable'
-      case 'ignored':
-        return 'ignorée'
-      case 'excluded':
-        return 'exclue'
-      default:
-        return 'à évaluer'
+    if (parts.length === 0) {
+      return LitterPresentation.buildPlace(litter)
     }
+    return parts.join(', ')
   }
 
   /**
-   * The three key facts.
+   * Build the three key facts.
    *
    * @param litter - The litter.
    * @returns Birth (or expected birth), puppies, departure.
    */
-  static keyFacts(litter: LitterCard): LitterKeyFact[] {
-    const birth: LitterKeyFact =
-      litter.kind === 'litter_expected'
-        ? {
-            label: 'Naissance',
-            value: litter.expected_birth_date
-              ? `vers le ${LitterPresentation.shortDay(litter.expected_birth_date)}`
-              : 'À confirmer',
-            compactValue: litter.expected_birth_date
-              ? LitterPresentation.shortDay(litter.expected_birth_date)
-              : 'À confirmer',
-          }
-        : {
-            label: 'Née le',
-            value: litter.birth_date ? LitterPresentation.longDay(litter.birth_date) : 'À confirmer',
-            compactValue: litter.birth_date ? LitterPresentation.shortDay(litter.birth_date) : 'À confirmer',
-          }
-    const puppies: string = LitterPresentation.sexLine(litter)
-    const departure: LitterKeyFact = {
-      label: 'Départ',
-      value: litter.available_from ? `vers le ${LitterPresentation.shortDay(litter.available_from)}` : 'À confirmer',
-      compactValue: litter.available_from ? LitterPresentation.shortDay(litter.available_from) : 'À confirmer',
-    }
-    return [birth, { label: 'Chiots', value: puppies, compactValue: puppies }, departure]
+  static buildKeyFacts(litter: LitterCard): LitterKeyFact[] {
+    const puppies: string = LitterPresentation.buildSexLine(litter)
+    return [
+      this.buildBirthFact(litter),
+      { label: 'Chiots', value: puppies, compactValue: puppies },
+      this.buildApproximateDayFact('Départ', litter.available_from),
+    ]
   }
 
   /**
-   * The « Vu sur » line of a listing.
+   * Build the « Vu sur » line of a listing.
    *
    * @param listing - The listing.
    * @returns « Centrale Canine · déclaration de naissance ».
    */
-  static sourceLine(listing: LitterSourceListing): string {
-    const what: string =
-      listing.kind === 'litter_expected'
-        ? 'déclaration de saillie'
-        : listing.kind === 'litter_born'
-          ? 'déclaration de naissance'
-          : 'annonce'
-    return `${SOURCE_LABELS[listing.source]} · ${what}`
+  static buildSourceLine(listing: LitterSourceListing): string {
+    return `${LISTING_SOURCE_LABELS[listing.source]} · ${LISTING_KIND_LABELS[listing.kind]}`
   }
 
   /**
-   * Where the primary button leads: the breeder's phone when known, else the litter on its source.
+   * Pick where the primary button leads: the breeder's phone when known, else the litter on its source.
    *
    * @param litter - The litter.
    * @returns The link and its label, or null when nothing is known.
    */
-  static primaryAction(litter: LitterDetail): LitterPrimaryAction | null {
+  static resolvePrimaryAction(litter: LitterDetail): LitterPrimaryAction | null {
     const phone: string | null = litter.breeder?.phone_e164 ?? null
     if (phone !== null) {
       return { href: `tel:${phone}`, label: 'Appeler l’éleveur', isCall: true }
@@ -145,10 +83,46 @@ export class LitterDetailPresentation {
     if (sourceListing?.external_url) {
       return {
         href: sourceListing.external_url,
-        label: SOURCE_LINK_LABELS[sourceListing.source],
+        label: LISTING_SOURCE_LINK_LABELS[sourceListing.source],
         isCall: false,
       }
     }
     return null
+  }
+
+  /**
+   * Build the birth fact: the expected day for a litter to come, the birth day otherwise.
+   *
+   * @param litter - The litter.
+   * @returns « Naissance vers le 7 nov. » or « Née le 27 octobre ».
+   */
+  private static buildBirthFact(litter: LitterCard): LitterKeyFact {
+    if (litter.kind === 'litter_expected') {
+      return this.buildApproximateDayFact('Naissance', litter.expected_birth_date)
+    }
+    if (litter.birth_date === null) {
+      return { label: 'Née le', value: UNKNOWN_FACT_LABEL, compactValue: UNKNOWN_FACT_LABEL }
+    }
+    const birthDay: Date = FrenchDate.parseDay(litter.birth_date)
+    return {
+      label: 'Née le',
+      value: FrenchDate.formatDayAndLongMonth(birthDay),
+      compactValue: FrenchDate.formatDayAndShortMonth(birthDay),
+    }
+  }
+
+  /**
+   * Build a fact that holds an approximate day.
+   *
+   * @param label - « Naissance » or « Départ ».
+   * @param isoDay - The day from the API, null while unknown.
+   * @returns « vers le 22 déc. » on the iPad, « 22 déc. » on the phone and the panel.
+   */
+  private static buildApproximateDayFact(label: string, isoDay: string | null): LitterKeyFact {
+    if (isoDay === null) {
+      return { label, value: UNKNOWN_FACT_LABEL, compactValue: UNKNOWN_FACT_LABEL }
+    }
+    const shortDay: string = FrenchDate.formatDayAndShortMonth(FrenchDate.parseDay(isoDay))
+    return { label, value: `vers le ${shortDay}`, compactValue: shortDay }
   }
 }

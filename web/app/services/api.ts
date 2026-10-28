@@ -1,11 +1,6 @@
-type ApiQueryParams = Record<string, string | number | boolean | null | undefined>
+import type { ApiErrorBody, ApiQueryParams } from '~/types/ApiClient'
 
-/**
- * HTTP client every service goes through: bearer token, JSON encoding, and error unwrapping.
- *
- * The API answers 204s on several routes, so every response is read as text first and only
- * parsed when it carries something — `response.json()` would throw otherwise.
- */
+/** HTTP client every service goes through: bearer token, JSON encoding, and error unwrapping. */
 export class ApiClient {
   /**
    * Send a GET request.
@@ -92,7 +87,7 @@ export class ApiClient {
    * @param endpoint - Path starting with `/api/`.
    * @param options - Fetch options; the auth and content-type headers are added here.
    * @returns The parsed body, or undefined when the response has none.
-   * @throws Error carrying the API `detail` message when the status is not ok.
+   * @throws Error carrying the API `detail` message when the status is not ok, or when the API cannot be reached.
    */
   private static async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const userStore: ReturnType<typeof useUserStore> = useUserStore()
@@ -105,12 +100,15 @@ export class ApiClient {
         ...(userStore.token && { Authorization: `Bearer ${userStore.token}` }),
         ...options.headers,
       },
+    }).catch((): never => {
+      throw new Error('L’API ne répond pas')
     })
 
     if (!response.ok) {
       throw new Error(await this.readErrorMessage(response))
     }
 
+    // Several routes answer 204: response.json() would throw on their empty body.
     const text: string = await response.text()
     if (!text.trim()) {
       return undefined as T
@@ -128,7 +126,7 @@ export class ApiClient {
     const fallback: string = `Erreur de l'API : ${response.status} ${response.statusText}`
     const body: string = await response.text().catch((): string => '')
     try {
-      const parsed: { detail?: unknown } = JSON.parse(body)
+      const parsed: ApiErrorBody = JSON.parse(body)
       return typeof parsed.detail === 'string' ? parsed.detail : fallback
     } catch {
       return fallback

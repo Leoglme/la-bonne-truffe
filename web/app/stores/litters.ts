@@ -1,23 +1,19 @@
 import type { ComputedRef, Ref } from 'vue'
 import type { LitterCard, LitterDetail } from '~/types/api'
+import type { LitterFilterKey } from '~/types/Litter'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { LittersService } from '~/services/littersService'
 import { LitterPresentation } from '~/utils/litterPresentation'
 
-/** Filter chips of the home screen. */
-export type LitterFilterKey = 'all' | 'preferred' | 'expected'
-
 const PREVIOUS_VISIT_STORAGE_KEY: string = 'lbt-litters-visited-at'
 
 /** Pinia store of the litters: the home list, its filter, and the litter opened in the desktop panel. */
-// Pinia ne fournit pas de type nommé pour un store : TypeScript l'élide, il est inécrivable.
-// eslint-disable-next-line @typescript-eslint/typedef
 export const useLittersStore = defineStore('litters', () => {
   const cards: Ref<LitterCard[]> = ref([])
   const selectedFilterKey: Ref<LitterFilterKey> = ref('all')
   const selectedLitter: Ref<LitterDetail | null> = ref(null)
-  const isLoading: Ref<boolean> = ref(false)
+  const isLoading: Ref<boolean> = ref(true)
   const loadError: Ref<string | null> = ref(null)
   const previousVisitAt: Ref<Date | null> = ref(null)
 
@@ -36,10 +32,7 @@ export const useLittersStore = defineStore('litters', () => {
   )
 
   const bornLastNightCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
-    preferredCards.value.filter(
-      (card: LitterCard): boolean =>
-        card.birth_date !== null && LitterPresentation.isLastNight(card.birth_date, new Date()),
-    ),
+    preferredCards.value.filter((card: LitterCard): boolean => LitterPresentation.isBornLastNight(card, new Date())),
   )
 
   /**
@@ -82,6 +75,7 @@ export const useLittersStore = defineStore('litters', () => {
       return litter
     }
     const detail: LitterDetail = await LittersService.setFollowUp(litter.id, { status: 'to_contact' })
+
     if (selectedLitter.value?.id === litter.id) {
       selectedLitter.value = detail
     }

@@ -36,11 +36,6 @@
 import type { PropType } from 'vue'
 import type { UiAppLogoPlacement, UiAppLogoProps } from '~/types/UiAppLogo'
 
-/**
- * The app logo: the rounded coral icon, without the reflection of the home-screen icon, followed by
- * the name in Fredoka (design/mockup/Icone.dc.html, « Le logo dans l'app »). 32 px on iPhone, 36 px on
- * iPad, 38 px in the desktop sidebar, where the name wraps on two lines exactly as in the mockup.
- */
 const props: UiAppLogoProps = defineProps({
   placement: { type: String as PropType<UiAppLogoPlacement>, default: 'header' },
 })

@@ -6,6 +6,17 @@ import eslintPluginUnusedImports from 'eslint-plugin-unused-imports'
 import eslintPluginTypeScript from '@typescript-eslint/eslint-plugin'
 import withNuxt from './.nuxt/eslint.config.mjs'
 
+const typedefOptions = {
+  arrayDestructuring: true,
+  arrowParameter: true,
+  memberVariableDeclaration: true,
+  objectDestructuring: true,
+  parameter: true,
+  propertyDeclaration: true,
+  variableDeclaration: true,
+  variableDeclarationIgnoreFunction: false,
+}
+
 export default withNuxt(
   {
     name: 'la-bonne-truffe/ignores',
@@ -42,22 +53,9 @@ export default withNuxt(
       'jsdoc/reject-any-type': 'off',
       'jsdoc/tag-lines': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
-      // A class of static methods is the house style for a cohesive helper set (see the standards).
-      '@typescript-eslint/no-extraneous-class': 'off',
+      '@typescript-eslint/no-extraneous-class': ['error', { allowStaticOnly: true }],
       '@typescript-eslint/explicit-function-return-type': ['error'],
-      '@typescript-eslint/typedef': [
-        'error',
-        {
-          arrayDestructuring: true,
-          arrowParameter: true,
-          memberVariableDeclaration: true,
-          objectDestructuring: true,
-          parameter: true,
-          propertyDeclaration: true,
-          variableDeclaration: true,
-          variableDeclarationIgnoreFunction: false,
-        },
-      ],
+      '@typescript-eslint/typedef': ['error', typedefOptions],
       '@typescript-eslint/no-unused-vars': 'off',
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
@@ -108,7 +106,14 @@ export default withNuxt(
     },
   },
   {
-    // Scripts d'outillage en JavaScript : une annotation de type y est un péché de syntaxe.
+    files: ['app/stores/**/*.ts'],
+    rules: {
+      // Pinia has no type that can be written for a setup store: `export const useXStore = defineStore(…)` stays bare.
+      '@typescript-eslint/typedef': ['error', { ...typedefOptions, variableDeclaration: false }],
+    },
+  },
+  {
+    // JavaScript tooling scripts cannot carry type annotations.
     files: ['**/*.mjs', '**/*.js'],
     rules: {
       '@typescript-eslint/typedef': 'off',

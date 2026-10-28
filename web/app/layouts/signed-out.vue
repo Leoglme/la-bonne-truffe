@@ -3,7 +3,3 @@
     <slot />
   </main>
 </template>
-
-<script lang="ts" setup>
-/** Frame of the login screen: no navigation, the card centred on the cream background. */
-</script>

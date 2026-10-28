@@ -2,8 +2,6 @@
 import { defineNuxtConfig } from 'nuxt/config'
 
 const isDesktopBuild: boolean = process.env['NUXT_DESKTOP_BUILD'] === '1'
-
-// Dedicated build dir for `scripts/typecheck.mjs`: the running dev server owns `.nuxt`.
 const typecheckBuildDirectory: string | undefined = process.env['NUXT_TYPECHECK_BUILD_DIR']
 
 export default defineNuxtConfig({
@@ -11,7 +9,6 @@ export default defineNuxtConfig({
 
   modules: ['@nuxt/eslint', '@nuxt/ui', '@pinia/nuxt'],
 
-  // The Tauri window loads a static generation; the web app is served with SSR.
   ssr: !isDesktopBuild,
 
   components: [
@@ -54,7 +51,6 @@ export default defineNuxtConfig({
   ui: {
     // Fredoka and Nunito are self-hosted through @fontsource (see main.css), not by @nuxt/fonts.
     fonts: false,
-    // A single light theme: the validated mockup has no dark variant.
     colorMode: false,
     theme: {
       colors: ['primary', 'neutral', 'success', 'warning', 'error'],
@@ -68,9 +64,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      // The production domain is not chosen yet (docs/08): set NUXT_PUBLIC_API_BASE when building for the VPS.
       apiBase: process.env['NUXT_PUBLIC_API_BASE'] || 'http://localhost:8000',
-      // True for the Tauri build: no Web Push there, the iPhone and iPad receive the notifications.
       isDesktop: isDesktopBuild,
     },
   },
@@ -84,7 +78,6 @@ export default defineNuxtConfig({
     typeCheck: false,
     tsConfig: {
       compilerOptions: {
-        // Stricter than `strict`: an index access may be undefined, every path returns, no fallthrough.
         noUncheckedIndexedAccess: true,
         noImplicitReturns: true,
         noImplicitOverride: true,

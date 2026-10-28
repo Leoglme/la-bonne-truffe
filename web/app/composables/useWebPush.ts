@@ -1,27 +1,16 @@
 import type { Ref } from 'vue'
 import type { TestNotificationResult } from '~/types/api'
-import type { WebPushError } from '~/types/Composables'
+import type { UseWebPushReturn, WebPushError } from '~/types/Composables'
 import { onMounted, ref } from 'vue'
 import { NotificationsService } from '~/services/notificationsService'
 import { WebPush } from '~/utils/webPush'
 
-/** Reactive state and actions behind the notifications switch. */
-export type UseWebPush = {
-  isSupported: Ref<boolean>
-  isStandalone: Ref<boolean>
-  isSubscribed: Ref<boolean>
-  isBusy: Ref<boolean>
-  error: Ref<WebPushError | null>
-  toggle: (shouldBeEnabled: boolean) => Promise<void>
-  sendTest: () => Promise<TestNotificationResult>
-}
-
 /**
- * Manage the push subscription of the current device (settings switch). Copied from DevLeadHunter.
+ * Manage the push subscription of the current device (settings switch).
  *
  * @returns Support flags, subscription state, and the toggle and test actions.
  */
-export function useWebPush(): UseWebPush {
+export function useWebPush(): UseWebPushReturn {
   const isSupported: Ref<boolean> = ref(false)
   const isStandalone: Ref<boolean> = ref(false)
   const isSubscribed: Ref<boolean> = ref(false)
@@ -87,9 +76,7 @@ export function useWebPush(): UseWebPush {
     return NotificationsService.test()
   }
 
-  onMounted((): void => {
-    void refresh()
-  })
+  onMounted(refresh)
 
   return { isSupported, isStandalone, isSubscribed, isBusy, error, toggle, sendTest }
 }

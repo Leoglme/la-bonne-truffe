@@ -5,12 +5,12 @@ import { computed, ref } from 'vue'
 import { ProfilesService } from '~/services/profilesService'
 
 /** Pinia store of the criteria screen: the active profile, its edited copy, and the departments. */
-// Pinia ne fournit pas de type nommé pour un store : TypeScript l'élide, il est inécrivable.
-// eslint-disable-next-line @typescript-eslint/typedef
 export const useCriteriaStore = defineStore('criteria', () => {
   const savedProfile: Ref<SearchProfile | null> = ref(null)
   const draft: Ref<SearchProfileUpdate | null> = ref(null)
   const departments: Ref<Department[]> = ref([])
+  const isLoading: Ref<boolean> = ref(true)
+  const loadError: Ref<string | null> = ref(null)
   const isSaving: Ref<boolean> = ref(false)
   const saveError: Ref<string | null> = ref(null)
 
@@ -18,7 +18,7 @@ export const useCriteriaStore = defineStore('criteria', () => {
     if (savedProfile.value === null || draft.value === null) {
       return false
     }
-    return JSON.stringify(toUpdate(savedProfile.value)) !== JSON.stringify(draft.value)
+    return JSON.stringify(buildProfileUpdate(savedProfile.value)) !== JSON.stringify(draft.value)
   })
 
   /**
@@ -27,7 +27,7 @@ export const useCriteriaStore = defineStore('criteria', () => {
    * @param profile - Stored profile.
    * @returns Its criteria, detached from the stored object.
    */
-  function toUpdate(profile: SearchProfile): SearchProfileUpdate {
+  function buildProfileUpdate(profile: SearchProfile): SearchProfileUpdate {
     return {
       name: profile.name,
       is_active: profile.is_active,
@@ -49,22 +49,30 @@ export const useCriteriaStore = defineStore('criteria', () => {
    * Load the first profile of the user and the departments.
    */
   async function load(): Promise<void> {
-    const [profiles, loadedDepartments]: [SearchProfile[], Department[]] = await Promise.all([
-      ProfilesService.list(),
-      ProfilesService.listDepartments(),
-    ])
-    departments.value = loadedDepartments
-    savedProfile.value = profiles[0] ?? null
-    draft.value = savedProfile.value ? toUpdate(savedProfile.value) : null
+    isLoading.value = true
+    loadError.value = null
+    try {
+      const [profiles, loadedDepartments]: [SearchProfile[], Department[]] = await Promise.all([
+        ProfilesService.list(),
+        ProfilesService.listDepartments(),
+      ])
+      departments.value = loadedDepartments
+      savedProfile.value = profiles[0] ?? null
+      draft.value = savedProfile.value ? buildProfileUpdate(savedProfile.value) : null
+    } catch (error: unknown) {
+      loadError.value = error instanceof Error ? error.message : 'Chargement impossible'
+    } finally {
+      isLoading.value = false
+    }
   }
 
   /**
-   * Level of a colour in the edited criteria; a colour left out is ignored.
+   * Read the level of a colour in the edited criteria; a colour left out is ignored.
    *
    * @param color - Canonical colour.
    * @returns Its level.
    */
-  function levelOf(color: CoatColor): ColorPreferenceLevel {
+  function getColorLevel(color: CoatColor): ColorPreferenceLevel {
     return draft.value?.color_preferences[color] ?? 'ignored'
   }
 
@@ -81,12 +89,12 @@ export const useCriteriaStore = defineStore('criteria', () => {
   }
 
   /**
-   * Codes of the departments of a region.
+   * List the codes of the departments of a region.
    *
    * @param region - Region name.
    * @returns Its department codes.
    */
-  function departmentCodesOf(region: string): string[] {
+  function listRegionDepartmentCodes(region: string): string[] {
     return departments.value
       .filter((department: Department): boolean => department.region === region)
       .map((department: Department): string => department.code)
@@ -99,7 +107,7 @@ export const useCriteriaStore = defineStore('criteria', () => {
    * @returns True when the region is fully in the list.
    */
   function isRegionSelected(region: string): boolean {
-    const codes: string[] = departmentCodesOf(region)
+    const codes: string[] = listRegionDepartmentCodes(region)
     return (
       codes.length > 0 && codes.every((code: string): boolean => draft.value?.department_codes.includes(code) ?? false)
     )
@@ -114,7 +122,8 @@ export const useCriteriaStore = defineStore('criteria', () => {
     if (draft.value === null) {
       return
     }
-    const regionCodes: string[] = departmentCodesOf(region)
+    const regionCodes: string[] = listRegionDepartmentCodes(region)
+
     if (isRegionSelected(region)) {
       draft.value.department_codes = draft.value.department_codes.filter(
         (code: string): boolean => !regionCodes.includes(code),
@@ -140,7 +149,7 @@ export const useCriteriaStore = defineStore('criteria', () => {
     saveError.value = null
     try {
       savedProfile.value = await ProfilesService.update(savedProfile.value.id, draft.value)
-      draft.value = toUpdate(savedProfile.value)
+      draft.value = buildProfileUpdate(savedProfile.value)
     } catch (error: unknown) {
       saveError.value = error instanceof Error ? error.message : 'Enregistrement impossible'
     } finally {
@@ -152,11 +161,13 @@ export const useCriteriaStore = defineStore('criteria', () => {
     savedProfile,
     draft,
     departments,
+    isLoading,
+    loadError,
     isSaving,
     saveError,
     hasUnsavedChanges,
     load,
-    levelOf,
+    getColorLevel,
     setColorLevel,
     isRegionSelected,
     toggleRegion,

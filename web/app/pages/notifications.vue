@@ -1,13 +1,16 @@
 <template>
   <UiTabScreen title="Notifications" subtitle="Ce que la truffe t’a signalé.">
     <div class="flex flex-col gap-3">
+      <p v-if="bellStore.loadError" role="alert" class="m-0 text-[15px] font-bold text-coral-text">
+        {{ bellStore.loadError }}
+      </p>
       <UiEmptyStateCard
-        v-if="bellStore.notifications.length === 0"
+        v-else-if="!bellStore.isLoading && bellStore.notifications.length === 0"
         title="Rien pour l’instant"
         description="Une portée préférée, une naissance ou le récap du soir s’afficheront ici."
       >
         <template #illustration>
-          <UiMockupIcon name="bell" :size-in-pixels="36" :stroke-width="2" class="shrink-0 text-coral" />
+          <UiCustomIcon name="bell" :size-in-pixels="36" :stroke-width="2" class="shrink-0 text-coral" />
         </template>
       </UiEmptyStateCard>
       <NuxtLink
@@ -18,7 +21,7 @@
       >
         <span class="flex items-center justify-between gap-3 text-[13px]">
           <span class="font-extrabold">{{ notification.title }}</span>
-          <span class="text-ink-muted">{{ RelativeTime.since(new Date(`${notification.sent_at}Z`), new Date()) }}</span>
+          <span class="text-ink-muted">{{ formatTimeSinceSent(notification.sent_at) }}</span>
         </span>
         <span class="text-[15px] leading-[1.4]">{{ notification.body }}</span>
       </NuxtLink>
@@ -28,11 +31,21 @@
 
 <script lang="ts" setup>
 import { onMounted } from 'vue'
-import { RelativeTime } from '~/utils/relativeTime'
+import { FrenchDate } from '~/utils/frenchDate'
 
 useHead({ title: 'Notifications · La Bonne Truffe' })
 
 const bellStore: ReturnType<typeof useBellStore> = useBellStore()
+
+/**
+ * Write how long ago a notification was sent.
+ *
+ * @param sentAt - Sending time, from the API.
+ * @returns « il y a 12 min ».
+ */
+function formatTimeSinceSent(sentAt: string): string {
+  return FrenchDate.formatTimeSince(FrenchDate.parseApiDate(sentAt), new Date())
+}
 
 onMounted(async (): Promise<void> => {
   await bellStore.load()

@@ -1,4 +1,4 @@
-import type { CockerCoat } from '~/constants/cockerCoatPalettes'
+import type { CockerCoat } from '~/types/CockerCoat'
 
 export type CockerIllustrationProps = {
   coat: CockerCoat

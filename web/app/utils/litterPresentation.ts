@@ -1,111 +1,36 @@
-import type { CockerCoat } from '~/constants/cockerCoatPalettes'
-import type { CoatColor, LitterCard, LitterColor } from '~/types/api'
+import type { LitterCard, LitterColor } from '~/types/api'
+import type { CockerCoat } from '~/types/CockerCoat'
 import { COAT_COLOR_LABELS } from '~/constants/coatColorLabels'
+import { COCKER_COAT_PALETTES, ILLUSTRATED_COATS } from '~/constants/cockerCoatPalettes'
+import { FrenchDate } from '~/utils/frenchDate'
+import { FrenchText } from '~/utils/frenchText'
 
-const LONG_MONTHS: readonly string[] = [
-  'janvier',
-  'février',
-  'mars',
-  'avril',
-  'mai',
-  'juin',
-  'juillet',
-  'août',
-  'septembre',
-  'octobre',
-  'novembre',
-  'décembre',
-]
+const UNKNOWN_PLACE_LABEL: string = 'Lieu à confirmer'
 
-const SHORT_MONTHS: readonly string[] = [
-  'janv.',
-  'févr.',
-  'mars',
-  'avr.',
-  'mai',
-  'juin',
-  'juil.',
-  'août',
-  'sept.',
-  'oct.',
-  'nov.',
-  'déc.',
-]
-
-const NUMBER_WORDS: readonly string[] = ['Aucune', 'Une', 'Deux', 'Trois', 'Quatre', 'Cinq', 'Six', 'Sept', 'Huit']
-
-/** Coats the illustration can paint; any other colour falls back to « couleur à confirmer ». */
-const ILLUSTRATED_COATS: Readonly<Partial<Record<CoatColor, CockerCoat>>> = {
-  gold: 'gold',
-  noir_et_feu: 'noir_et_feu',
-  noir: 'noir',
-  marron: 'marron',
-  bleu_rouan: 'bleu_rouan',
-}
-
-/**
- * How a litter reads on screen: French dates, sexes, colour label, coat of the illustration.
- * An unknown fact is written as unknown, never filled in.
- */
+/** How a litter reads on screen: colours, sexes, place, coat of the illustration; an unknown fact stays unknown. */
 export class LitterPresentation {
   /**
-   * Parse an ISO day (`2026-10-27`) as a local calendar day.
-   *
-   * @param isoDay - Day from the API.
-   * @returns The date at local midnight.
-   */
-  static parseDay(isoDay: string): Date {
-    const [year, month, day]: number[] = isoDay.split('-').map(Number)
-    return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1)
-  }
-
-  /**
-   * A day written in full, as on the detail screen.
-   *
-   * @param isoDay - Day from the API.
-   * @returns « 27 octobre ».
-   */
-  static longDay(isoDay: string): string {
-    const day: Date = this.parseDay(isoDay)
-    return `${day.getDate()} ${LONG_MONTHS[day.getMonth()] ?? ''}`
-  }
-
-  /**
-   * A day written short, as on the cards.
-   *
-   * @param isoDay - Day from the API.
-   * @returns « 22 déc. ».
-   */
-  static shortDay(isoDay: string): string {
-    const day: Date = this.parseDay(isoDay)
-    return `${day.getDate()} ${SHORT_MONTHS[day.getMonth()] ?? ''}`
-  }
-
-  /**
-   * Whether a day is today or yesterday: a litter born « cette nuit ».
-   *
-   * @param isoDay - Day from the API.
-   * @param today - Current day.
-   * @returns True for today or yesterday.
-   */
-  static isLastNight(isoDay: string, today: Date): boolean {
-    const startOfToday: Date = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-    const ageInDays: number = Math.round((startOfToday.getTime() - this.parseDay(isoDay).getTime()) / 86_400_000)
-    return ageInDays >= 0 && ageInDays <= 1
-  }
-
-  /**
-   * The coat the cocker illustration takes for a litter.
+   * Pick the coat the cocker illustration takes for a litter.
    *
    * @param colors - Colours of the litter.
    * @returns A known coat for a single certain colour, otherwise the « à confirmer » coat.
    */
-  static coatOf(colors: readonly LitterColor[]): CockerCoat {
+  static resolveIllustrationCoat(colors: LitterColor[]): CockerCoat {
     const firstColor: LitterColor | undefined = colors[0]
     if (colors.length !== 1 || firstColor === undefined || firstColor.confidence === 'ambiguous') {
       return 'inconnue'
     }
     return ILLUSTRATED_COATS[firstColor.color] ?? 'inconnue'
+  }
+
+  /**
+   * Pick the pastel background of the tile a litter is shown on.
+   *
+   * @param colors - Colours of the litter.
+   * @returns The Tailwind class of its coat's tile.
+   */
+  static resolveTileClass(colors: LitterColor[]): string {
+    return COCKER_COAT_PALETTES[this.resolveIllustrationCoat(colors)].tileClass
   }
 
   /**
@@ -124,13 +49,13 @@ export class LitterPresentation {
   }
 
   /**
-   * Label of the colour chip.
+   * Build the label of the colour chip.
    *
    * @param colors - Colours of the litter.
    * @param isCompact - Phone and desktop say « À confirmer », the iPad « Couleur à confirmer ».
    * @returns « Gold », « Marron et feu », « Gold ou Noir et feu »…
    */
-  static colorLabel(colors: LitterColor[], isCompact: boolean): string {
+  static buildColorLabel(colors: LitterColor[], isCompact: boolean): string {
     if (!this.hasKnownColors(colors)) {
       return isCompact ? 'À confirmer' : 'Couleur à confirmer'
     }
@@ -138,12 +63,12 @@ export class LitterPresentation {
   }
 
   /**
-   * The colour as written in a sentence.
+   * Build the colour as written inside a sentence.
    *
    * @param colors - Colours of the litter.
    * @returns « gold », « marron et feu », or « de couleur à confirmer ».
    */
-  static colorInSentence(colors: LitterColor[]): string {
+  static buildColorPhrase(colors: LitterColor[]): string {
     if (!this.hasKnownColors(colors)) {
       return 'de couleur à confirmer'
     }
@@ -151,12 +76,12 @@ export class LitterPresentation {
   }
 
   /**
-   * The sexes line of a card.
+   * Build the sexes line of a card.
    *
    * @param card - The litter.
    * @returns « 2 ♂ · 3 ♀ », « 2 ♀ », « À naître » or « Sexes à confirmer ».
    */
-  static sexLine(card: LitterCard): string {
+  static buildSexLine(card: LitterCard): string {
     if (card.kind === 'litter_expected') {
       return 'À naître'
     }
@@ -170,34 +95,49 @@ export class LitterPresentation {
     if (card.female_count > 0) {
       parts.push(`${card.female_count} ♀`)
     }
-    return parts.length > 0 ? parts.join(' · ') : 'Plus de chiot'
+    if (parts.length === 0) {
+      return 'Plus de chiot'
+    }
+    return parts.join(' · ')
   }
 
   /**
-   * The sexes in words, for the hero card and the notification-like sentences.
+   * List the puppies of each sex in words, for sentences.
    *
    * @param card - The litter.
-   * @returns « 2 mâles et 3 femelles », or null while unknown.
+   * @returns « 2 mâles » and « 3 femelles », or nothing while the sexes are unknown.
    */
-  static sexSentence(card: LitterCard): string | null {
+  static listSexCounts(card: LitterCard): string[] {
     if (card.male_count === null || card.female_count === null) {
-      return null
+      return []
     }
-    const males: string = `${card.male_count} mâle${card.male_count > 1 ? 's' : ''}`
-    const females: string = `${card.female_count} femelle${card.female_count > 1 ? 's' : ''}`
-    return `${males} et ${females}`
+    return [
+      `${card.male_count} ${FrenchText.pickForm(card.male_count, 'mâle', 'mâles')}`,
+      `${card.female_count} ${FrenchText.pickForm(card.female_count, 'femelle', 'femelles')}`,
+    ]
   }
 
   /**
-   * The place line of a card: town or department, then what matters next.
+   * Build the place of a litter: its town, else its department.
+   *
+   * @param card - The litter.
+   * @returns « Redon », « Ille-et-Vilaine » or « Lieu à confirmer ».
+   */
+  static buildPlace(card: LitterCard): string {
+    return card.place ?? UNKNOWN_PLACE_LABEL
+  }
+
+  /**
+   * Build the place line of a card: the place, then what matters next.
    *
    * @param card - The litter.
    * @returns « Redon », « Ploërmel · naissance vers le 7 nov. », « Ancenis · non LOF ».
    */
-  static placeLine(card: LitterCard): string {
-    const parts: string[] = [card.place ?? 'Lieu à confirmer']
+  static buildPlaceLine(card: LitterCard): string {
+    const parts: string[] = [this.buildPlace(card)]
     if (card.kind === 'litter_expected' && card.expected_birth_date) {
-      parts.push(`naissance vers le ${this.shortDay(card.expected_birth_date)}`)
+      const expectedBirthDay: Date = FrenchDate.parseDay(card.expected_birth_date)
+      parts.push(`naissance vers le ${FrenchDate.formatDayAndShortMonth(expectedBirthDay)}`)
     }
     if (card.lof_status === 'non_lof') {
       parts.push('non LOF')
@@ -206,26 +146,40 @@ export class LitterPresentation {
   }
 
   /**
-   * The greeting subtitle of the home screen.
+   * Build the greeting subtitle of the home screen.
    *
    * @param preferredCount - Litters at the « préférée » tier.
    * @param bornLastNightCount - Of those, litters born today or yesterday.
    * @returns « Trois portées te correspondent. Une est née cette nuit. »
    */
-  static greetingSubtitle(preferredCount: number, bornLastNightCount: number): string {
+  static buildGreetingSubtitle(preferredCount: number, bornLastNightCount: number): string {
     if (preferredCount === 0) {
       return 'Aucune portée ne te correspond pour l’instant. La truffe continue de chercher.'
     }
-    const countWord: string = NUMBER_WORDS[preferredCount] ?? String(preferredCount)
-    const correspond: string =
-      preferredCount === 1 ? `${countWord} portée te correspond.` : `${countWord} portées te correspondent.`
+    const preferredWord: string = FrenchText.spellOutCount(preferredCount, 'feminine')
+    const correspond: string = FrenchText.pickForm(preferredCount, 'portée te correspond', 'portées te correspondent')
+    const preferredSentence: string = `${preferredWord} ${correspond}.`
     if (bornLastNightCount === 0) {
-      return correspond
+      return preferredSentence
     }
-    const bornWord: string = NUMBER_WORDS[bornLastNightCount] ?? String(bornLastNightCount)
-    return bornLastNightCount === 1
-      ? `${correspond} ${bornWord} est née cette nuit.`
-      : `${correspond} ${bornWord} sont nées cette nuit.`
+    const bornWord: string = FrenchText.spellOutCount(bornLastNightCount, 'feminine')
+    const born: string = FrenchText.pickForm(bornLastNightCount, 'est née cette nuit', 'sont nées cette nuit')
+    return `${preferredSentence} ${bornWord} ${born}.`
+  }
+
+  /**
+   * Whether a litter was born today or yesterday: « née cette nuit ».
+   *
+   * @param card - The litter.
+   * @param now - Current time.
+   * @returns False for a litter to come or born earlier.
+   */
+  static isBornLastNight(card: LitterCard, now: Date): boolean {
+    if (card.birth_date === null) {
+      return false
+    }
+    const daysSinceBirth: number = FrenchDate.countDaysAgo(FrenchDate.parseDay(card.birth_date), now)
+    return daysSinceBirth >= 0 && daysSinceBirth <= 1
   }
 
   /**
@@ -239,6 +193,6 @@ export class LitterPresentation {
     if (previousVisitAt === null) {
       return false
     }
-    return new Date(`${card.first_seen_at}Z`).getTime() > previousVisitAt.getTime()
+    return FrenchDate.parseApiDate(card.first_seen_at).getTime() > previousVisitAt.getTime()
   }
 }

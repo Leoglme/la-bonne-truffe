@@ -6,13 +6,9 @@ import { AuthService, TokenRejectedError } from '~/services/authService'
 
 const TOKEN_STORAGE_KEY: string = 'lbt-token'
 const USER_STORAGE_KEY: string = 'lbt-user'
-
-// The token is checked against the API at most once a minute, not on every tab change.
 const SESSION_VALIDATION_INTERVAL_MS: number = 60_000
 
 /** Pinia store of the session: bearer token and signed-in user, kept in localStorage. */
-// Pinia ne fournit pas de type nommé pour un store : TypeScript l'élide, il est inécrivable.
-// eslint-disable-next-line @typescript-eslint/typedef
 export const useUserStore = defineStore('user', () => {
   const user: Ref<User | null> = ref(null)
   const token: Ref<string | null> = ref(null)

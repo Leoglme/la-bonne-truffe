@@ -1,4 +1,5 @@
 import type { ComputedRef } from 'vue'
+import type { TauriWindow } from '~/types/Browser'
 import type { UseDesktopRuntimeReturn } from '~/types/Composables'
 import { computed } from 'vue'
 
@@ -12,13 +13,9 @@ export function useDesktopRuntime(): UseDesktopRuntimeReturn {
     if (!import.meta.client) {
       return false
     }
-    const tauriWindow: Window & { __TAURI_INTERNALS__?: unknown } = window as Window & {
-      __TAURI_INTERNALS__?: unknown
-    }
-    return tauriWindow.__TAURI_INTERNALS__ !== undefined
+    return (window as TauriWindow).__TAURI_INTERNALS__ !== undefined
   })
 
-  // Dev has no valid updater endpoint: only a packaged app checks for updates.
   const isProdDesktop: ComputedRef<boolean> = computed((): boolean => isDesktopApp.value && !import.meta.dev)
 
   return { isDesktopApp, isProdDesktop }

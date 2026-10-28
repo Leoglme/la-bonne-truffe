@@ -7,18 +7,18 @@
       v-for="entry in tabEntries"
       :key="entry.path"
       :to="entry.path"
-      :aria-current="isNavigationEntryActive(entry, route.path) ? 'page' : undefined"
+      :aria-current="MainNavigation.isEntryActive(entry, route.path) ? 'page' : undefined"
       class="flex min-h-[52px] flex-col items-center justify-center gap-[3px] text-[11px] no-underline md:min-h-[60px] md:gap-1 md:text-[13px]"
       :class="
-        isNavigationEntryActive(entry, route.path)
+        MainNavigation.isEntryActive(entry, route.path)
           ? 'font-extrabold text-coral hover:text-coral'
           : 'font-bold text-ink-label hover:text-ink-label'
       "
     >
-      <UiMockupIcon
-        :name="isNavigationEntryActive(entry, route.path) ? entry.activeIcon : entry.icon"
+      <UiCustomIcon
+        :name="MainNavigation.isEntryActive(entry, route.path) ? entry.activeIcon : entry.icon"
         :size-in-pixels="26"
-        :stroke-width="isNavigationEntryActive(entry, route.path) ? 2.2 : 2"
+        :stroke-width="MainNavigation.isEntryActive(entry, route.path) ? 2.2 : 2"
         class="size-6 md:size-[26px]"
       />
       <span>{{ entry.label }}</span>
@@ -28,12 +28,13 @@
 
 <script lang="ts" setup>
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
-import type { MainNavigationEntry } from '~/constants/mainNavigation'
-import { isNavigationEntryActive, MAIN_NAVIGATION_ENTRIES } from '~/constants/mainNavigation'
+import type { MainNavigationEntry } from '~/types/MainNavigation'
+import { MAIN_NAVIGATION_ENTRIES } from '~/constants/mainNavigation'
+import { MainNavigation } from '~/utils/mainNavigation'
 
 const route: RouteLocationNormalizedLoaded = useRoute()
 
-const tabEntries: readonly MainNavigationEntry[] = MAIN_NAVIGATION_ENTRIES.filter(
+const tabEntries: MainNavigationEntry[] = MAIN_NAVIGATION_ENTRIES.filter(
   (entry: MainNavigationEntry): boolean => entry.isInTabBar,
 )
 </script>

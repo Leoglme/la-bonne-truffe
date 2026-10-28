@@ -15,7 +15,6 @@ import type { ComputedRef } from 'vue'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import { computed } from 'vue'
 
-/** App frame: sidebar on desktop, bottom tab bar on iPad and iPhone except on pushed screens. */
 const route: RouteLocationNormalizedLoaded = useRoute()
 
 const isPushedScreen: ComputedRef<boolean> = computed((): boolean => route.meta.isPushedScreen === true)

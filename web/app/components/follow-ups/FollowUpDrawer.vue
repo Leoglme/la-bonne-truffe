@@ -10,9 +10,10 @@
         <div class="flex flex-col gap-2">
           <span class="text-[13px] font-extrabold tracking-[0.04em] text-ink-label uppercase">Statut</span>
           <div class="flex flex-wrap gap-2">
-            <UiSegmentedControl
+            <UiChoiceButtons
               :model-value="litter.follow_up.status"
               :options="FOLLOW_UP_STATUS_OPTIONS"
+              :is-disabled="followUpsStore.isSaving"
               label="Statut de l’échange"
               class="flex-wrap"
               @update:model-value="changeStatus"
@@ -25,12 +26,13 @@
           <input
             type="date"
             :value="reminderDay"
-            class="min-h-11 rounded-2xl border-2 border-line-strong bg-card px-3.5 text-base text-ink"
+            :disabled="followUpsStore.isSaving"
+            class="min-h-11 rounded-2xl border-2 border-line-strong bg-card px-3.5 text-base text-ink disabled:opacity-60"
             @change="changeReminder"
           />
         </label>
 
-        <form class="flex flex-col gap-2" @submit.prevent="addNote">
+        <div class="flex flex-col gap-2">
           <span class="text-[13px] font-extrabold tracking-[0.04em] text-ink-label uppercase">Nouvelle note</span>
           <textarea
             v-model="noteText"
@@ -38,10 +40,10 @@
             placeholder="Appel du jour, liste d’attente, photos reçues…"
             class="rounded-2xl border-2 border-line-strong bg-card px-3.5 py-2.5 text-base text-ink"
           />
-          <UButton type="submit" size="xl" class="self-start" :disabled="noteText.trim() === ''"
-            >Ajouter la note</UButton
-          >
-        </form>
+          <UButton size="xl" class="self-start" :disabled="noteText.trim() === ''" loading-auto @click="addNote">
+            Ajouter la note
+          </UButton>
+        </div>
 
         <ul v-if="litter.follow_up.notes.length > 0" class="m-0 flex list-none flex-col gap-2.5 p-0">
           <li
@@ -49,7 +51,7 @@
             :key="note.id"
             class="rounded-[14px] bg-cream px-3.5 py-2.5 text-[15px] leading-[1.45] text-ink-secondary"
           >
-            <span class="block text-[13px] font-extrabold text-ink-label">{{ noteDay(note.created_at) }}</span>
+            <span class="block text-[13px] font-extrabold text-ink-label">{{ formatNoteDay(note.created_at) }}</span>
             {{ note.text }}
           </li>
         </ul>
@@ -64,17 +66,24 @@
 import type { ComputedRef, Ref } from 'vue'
 import type { LitterDetail } from '~/types/api'
 import { computed, ref } from 'vue'
-import { FOLLOW_UP_STATUS_OPTIONS, isFollowUpStatus } from '~/constants/followUpOptions'
-import { LitterPresentation } from '~/utils/litterPresentation'
+import { FOLLOW_UP_STATUS_OPTIONS } from '~/constants/followUpOptions'
+import { ChoiceValues } from '~/utils/choiceValues'
+import { FrenchDate } from '~/utils/frenchDate'
 
 const followUpsStore: ReturnType<typeof useFollowUpsStore> = useFollowUpsStore()
+
+const REMINDER_HOUR: number = 9
 
 const noteText: Ref<string> = ref('')
 
 const litter: ComputedRef<LitterDetail | null> = computed((): LitterDetail | null => followUpsStore.openedLitter)
-const reminderDay: ComputedRef<string> = computed((): string =>
-  litter.value?.follow_up?.next_reminder_at ? litter.value.follow_up.next_reminder_at.slice(0, 10) : '',
-)
+const reminderDay: ComputedRef<string> = computed((): string => {
+  const nextReminderAt: string | null | undefined = litter.value?.follow_up?.next_reminder_at
+  if (!nextReminderAt) {
+    return ''
+  }
+  return FrenchDate.formatInputDay(FrenchDate.parseApiDate(nextReminderAt))
+})
 
 /**
  * Close the drawer when the user dismisses it.
@@ -93,7 +102,7 @@ function onOpenChange(isOpen: boolean): void {
  * @param value - Emitted status.
  */
 async function changeStatus(value: string): Promise<void> {
-  if (!isFollowUpStatus(value) || !litter.value?.follow_up) {
+  if (!ChoiceValues.isFollowUpStatus(value) || !litter.value?.follow_up) {
     return
   }
   await followUpsStore.saveFollowUp({
@@ -104,7 +113,7 @@ async function changeStatus(value: string): Promise<void> {
 }
 
 /**
- * Save the reminder day (9 a.m. local time), or remove it.
+ * Save the reminder day, at the reminder hour in local time, or remove it.
  *
  * @param event - Change of the date input.
  */
@@ -113,9 +122,13 @@ async function changeReminder(event: Event): Promise<void> {
   if (!(input instanceof HTMLInputElement) || !litter.value?.follow_up) {
     return
   }
-  const [year, month, day]: number[] = input.value.split('-').map(Number)
-  const reminder: string | null =
-    input.value === '' ? null : new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1, 9).toISOString()
+  let reminder: string | null = null
+
+  if (input.value !== '') {
+    const reminderDate: Date = FrenchDate.parseDay(input.value)
+    reminderDate.setHours(REMINDER_HOUR)
+    reminder = reminderDate.toISOString()
+  }
   await followUpsStore.saveFollowUp({
     status: litter.value.follow_up.status,
     next_reminder_at: reminder,
@@ -136,14 +149,12 @@ async function addNote(): Promise<void> {
 }
 
 /**
- * The day of a note.
+ * Write the day of a note.
  *
- * @param createdAt - Naive UTC time of the note.
+ * @param createdAt - Time of the note, from the API.
  * @returns « 24 octobre ».
  */
-function noteDay(createdAt: string): string {
-  const moment: Date = new Date(`${createdAt}Z`)
-  const isoDay: string = `${moment.getFullYear()}-${String(moment.getMonth() + 1).padStart(2, '0')}-${String(moment.getDate()).padStart(2, '0')}`
-  return LitterPresentation.longDay(isoDay)
+function formatNoteDay(createdAt: string): string {
+  return FrenchDate.formatDayAndLongMonth(FrenchDate.parseApiDate(createdAt))
 }
 </script>

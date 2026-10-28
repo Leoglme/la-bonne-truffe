@@ -1,5 +1,11 @@
 <template>
-  <svg :width="sizeInPixels" :height="sizeInPixels" viewBox="0 0 160 160" role="img" :aria-label="accessibleLabel">
+  <svg
+    :width="props.sizeInPixels"
+    :height="props.sizeInPixels"
+    viewBox="0 0 160 160"
+    role="img"
+    :aria-label="accessibleLabel"
+  >
     <path d="M38 62 C18 70 14 112 30 128 C44 142 58 126 56 100 Z" :fill="palette.ear" />
     <path d="M122 62 C142 70 146 112 130 128 C116 142 102 126 104 100 Z" :fill="palette.ear" />
     <circle cx="80" cy="78" r="44" :fill="palette.coat" />
@@ -25,13 +31,12 @@
 
 <script lang="ts" setup>
 import type { ComputedRef, PropType } from 'vue'
-import type { CockerCoat, CockerCoatPalette } from '~/constants/cockerCoatPalettes'
+import type { CockerCoat, CockerCoatPalette } from '~/types/CockerCoat'
 import type { CockerIllustrationProps } from '~/types/CockerIllustration'
 import { computed } from 'vue'
 import { COAT_COLOR_LABELS } from '~/constants/coatColorLabels'
 import { COCKER_COAT_PALETTES } from '~/constants/cockerCoatPalettes'
 
-/** Cocker head drawn in flat colours, painted with the coat of a litter (design/illustration-cocker.svg). */
 const props: CockerIllustrationProps = defineProps({
   coat: {
     type: String as PropType<CockerCoat>,
@@ -44,9 +49,10 @@ const props: CockerIllustrationProps = defineProps({
 })
 
 const palette: ComputedRef<CockerCoatPalette> = computed((): CockerCoatPalette => COCKER_COAT_PALETTES[props.coat])
-const accessibleLabel: ComputedRef<string> = computed((): string =>
-  props.coat === 'inconnue'
-    ? 'Chiot cocker, couleur à confirmer'
-    : `Chiot cocker ${COAT_COLOR_LABELS[props.coat].toLowerCase()}`,
-)
+const accessibleLabel: ComputedRef<string> = computed((): string => {
+  if (props.coat === 'inconnue') {
+    return 'Chiot cocker, couleur à confirmer'
+  }
+  return `Chiot cocker ${COAT_COLOR_LABELS[props.coat].toLowerCase()}`
+})
 </script>

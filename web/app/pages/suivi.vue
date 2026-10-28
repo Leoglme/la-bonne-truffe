@@ -3,31 +3,34 @@
     <div class="flex flex-col gap-[26px]">
       <FollowUpTodayCard v-if="todayFollowUp" :follow-up="todayFollowUp" @open="followUpsStore.open" />
 
+      <p v-if="followUpsStore.loadError" role="alert" class="m-0 text-[15px] font-bold text-coral-text">
+        {{ followUpsStore.loadError }}
+      </p>
       <UiEmptyStateCard
-        v-if="!followUpsStore.isLoading && followUpsStore.cards.length === 0"
+        v-else-if="!followUpsStore.isLoading && followUpsStore.cards.length === 0"
         title="Aucune portée suivie"
         description="Touche « Suivre » sur une portée : elle arrive ici, avec ses rappels et tes notes."
       >
         <template #illustration>
-          <UiMockupIcon name="heart" :size-in-pixels="36" :stroke-width="2" class="shrink-0 text-coral" />
+          <UiCustomIcon name="heart" :size-in-pixels="36" :stroke-width="2" class="shrink-0 text-coral" />
         </template>
       </UiEmptyStateCard>
 
-      <template v-else>
+      <template v-else-if="followUpsStore.cards.length > 0">
         <section v-for="section in visibleSections" :key="section.title" class="flex flex-col gap-3">
           <h2 class="m-0 font-display text-[22px] font-semibold">{{ section.title }}</h2>
           <FollowUpLitterCard
-            v-for="followUp in cardsOf(section)"
+            v-for="followUp in listSectionFollowUps(section)"
             :key="followUp.litter.id"
             :follow-up="followUp"
             :is-note-shown="section.title === 'En discussion'"
             @open="followUpsStore.open"
           />
           <div
-            v-if="cardsOf(section).length === 0 && section.emptyMessage"
+            v-if="listSectionFollowUps(section).length === 0 && section.emptyMessage"
             class="flex items-center gap-4 rounded-card-compact border-2 border-dashed border-line-strong px-[22px] py-5 text-base text-ink-muted"
           >
-            <UiMockupIcon name="truffle" :size-in-pixels="38" class="shrink-0 text-line-strong" />
+            <UiCustomIcon name="truffle" :size-in-pixels="38" class="shrink-0 text-line-strong" />
             <span>{{ section.emptyMessage }}</span>
           </div>
         </section>
@@ -40,9 +43,10 @@
 <script lang="ts" setup>
 import type { ComputedRef } from 'vue'
 import type { FollowUpCard } from '~/types/api'
-import type { FollowUpSection } from '~/utils/followUpPresentation'
+import type { FollowUpSection } from '~/types/FollowUp'
 import { computed, onMounted } from 'vue'
-import { FOLLOW_UP_SECTIONS, FollowUpPresentation } from '~/utils/followUpPresentation'
+import { FOLLOW_UP_SECTIONS } from '~/constants/followUpOptions'
+import { FollowUpPresentation } from '~/utils/followUpPresentation'
 
 useHead({ title: 'Suivi · La Bonne Truffe' })
 
@@ -53,23 +57,21 @@ const todayFollowUp: ComputedRef<FollowUpCard | null> = computed(
     followUpsStore.cards.find((card: FollowUpCard): boolean => FollowUpPresentation.isDue(card, new Date())) ?? null,
 )
 
-const visibleSections: ComputedRef<readonly FollowUpSection[]> = computed((): readonly FollowUpSection[] =>
+const visibleSections: ComputedRef<FollowUpSection[]> = computed((): FollowUpSection[] =>
   FOLLOW_UP_SECTIONS.filter(
-    (section: FollowUpSection): boolean => section.emptyMessage !== null || cardsOf(section).length > 0,
+    (section: FollowUpSection): boolean => section.emptyMessage !== null || listSectionFollowUps(section).length > 0,
   ),
 )
 
 /**
- * Follow-ups of a section, in the order of the API (next reminder first).
+ * List the follow-ups of a section, in the order of the API (next reminder first).
  *
  * @param section - The section.
  * @returns Its cards.
  */
-function cardsOf(section: FollowUpSection): FollowUpCard[] {
+function listSectionFollowUps(section: FollowUpSection): FollowUpCard[] {
   return followUpsStore.cards.filter((card: FollowUpCard): boolean => section.statuses.includes(card.status))
 }
 
-onMounted((): void => {
-  void followUpsStore.load()
-})
+onMounted((): Promise<void> => followUpsStore.load())
 </script>

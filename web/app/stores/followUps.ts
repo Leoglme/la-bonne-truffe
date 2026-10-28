@@ -5,20 +5,23 @@ import { ref } from 'vue'
 import { LittersService } from '~/services/littersService'
 
 /** Pinia store of the follow-up screen, and of the follow-up drawer. */
-// Pinia ne fournit pas de type nommé pour un store : TypeScript l'élide, il est inécrivable.
-// eslint-disable-next-line @typescript-eslint/typedef
 export const useFollowUpsStore = defineStore('followUps', () => {
   const cards: Ref<FollowUpCard[]> = ref([])
   const openedLitter: Ref<LitterDetail | null> = ref(null)
-  const isLoading: Ref<boolean> = ref(false)
+  const isLoading: Ref<boolean> = ref(true)
+  const loadError: Ref<string | null> = ref(null)
+  const isSaving: Ref<boolean> = ref(false)
 
   /**
    * Load the followed litters.
    */
   async function load(): Promise<void> {
     isLoading.value = true
+    loadError.value = null
     try {
       cards.value = await LittersService.listFollowUps()
+    } catch (error: unknown) {
+      loadError.value = error instanceof Error ? error.message : 'Chargement impossible'
     } finally {
       isLoading.value = false
     }
@@ -49,8 +52,13 @@ export const useFollowUpsStore = defineStore('followUps', () => {
     if (openedLitter.value === null) {
       return
     }
-    openedLitter.value = await LittersService.setFollowUp(openedLitter.value.id, update)
-    await load()
+    isSaving.value = true
+    try {
+      openedLitter.value = await LittersService.setFollowUp(openedLitter.value.id, update)
+      await load()
+    } finally {
+      isSaving.value = false
+    }
   }
 
   /**
@@ -62,10 +70,15 @@ export const useFollowUpsStore = defineStore('followUps', () => {
     if (openedLitter.value === null) {
       return
     }
-    await LittersService.addNote(openedLitter.value.id, text)
-    openedLitter.value = await LittersService.get(openedLitter.value.id)
-    await load()
+    isSaving.value = true
+    try {
+      await LittersService.addNote(openedLitter.value.id, text)
+      openedLitter.value = await LittersService.get(openedLitter.value.id)
+      await load()
+    } finally {
+      isSaving.value = false
+    }
   }
 
-  return { cards, openedLitter, isLoading, load, open, close, saveFollowUp, addNote }
+  return { cards, openedLitter, isLoading, loadError, isSaving, load, open, close, saveFollowUp, addNote }
 })

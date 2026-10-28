@@ -1,9 +1,6 @@
 import type { Update } from '@tauri-apps/plugin-updater'
 
-/**
- * Packaged desktop app only: look for a newer release at startup and offer to install it.
- * The updater reads `latest.json` from the GitHub releases (see src-tauri/tauri.conf.json).
- */
+/** Packaged desktop app only: look for a newer release at startup and offer to install it. */
 export default defineNuxtPlugin((): void => {
   const { isProdDesktop }: ReturnType<typeof useDesktopRuntime> = useDesktopRuntime()
   if (!isProdDesktop.value) {
@@ -37,13 +34,13 @@ export default defineNuxtPlugin((): void => {
       actions: [
         {
           label: 'Installer et redémarrer',
-          onClick: (): void => {
-            void installUpdate(update)
-          },
+          loadingAuto: true,
+          closeOnClick: false,
+          onClick: (): Promise<void> => installUpdate(update),
         },
       ],
     })
   }
 
-  void offerUpdate().catch((): void => {})
+  offerUpdate()
 })

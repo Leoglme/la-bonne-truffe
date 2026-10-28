@@ -67,7 +67,7 @@
               :litter="litter"
               :is-new="LitterPresentation.isNew(litter, littersStore.previousVisitAt)"
               :is-selected="littersStore.selectedLitter?.id === litter.id"
-              @activate="(clickEvent: MouseEvent): void => openInSidePanel(clickEvent, litter.id)"
+              @activate="(clickEvent: MouseEvent): Promise<void> => openInSidePanel(clickEvent, litter.id)"
             />
           </div>
         </div>
@@ -88,21 +88,26 @@ import type { LitterCard } from '~/types/api'
 import { computed, onMounted } from 'vue'
 import { LitterPresentation } from '~/utils/litterPresentation'
 
-/** Width from which the desktop shows the side panel instead of opening the detail screen. */
-const SIDE_PANEL_MEDIA_QUERY: string = '(min-width: 1280px)'
-
 useHead({ title: 'Portées · La Bonne Truffe' })
 
 const userStore: ReturnType<typeof useUserStore> = useUserStore()
 const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
 
+const SIDE_PANEL_MEDIA_QUERY: string = '(min-width: 1280px)'
+
 const greeting: ComputedRef<string> = computed((): string =>
   userStore.firstName ? `Bonjour ${userStore.firstName}` : 'Bonjour',
 )
 const userInitial: ComputedRef<string> = computed((): string => userStore.firstName.charAt(0).toUpperCase())
-const greetingSubtitle: ComputedRef<string> = computed((): string =>
-  LitterPresentation.greetingSubtitle(littersStore.preferredCards.length, littersStore.bornLastNightCards.length),
-)
+const greetingSubtitle: ComputedRef<string> = computed((): string => {
+  if (littersStore.isLoading && littersStore.cards.length === 0) {
+    return ''
+  }
+  return LitterPresentation.buildGreetingSubtitle(
+    littersStore.preferredCards.length,
+    littersStore.bornLastNightCards.length,
+  )
+})
 const bornLastNightLitter: ComputedRef<LitterCard | null> = computed(
   (): LitterCard | null => littersStore.bornLastNightCards[0] ?? null,
 )
@@ -113,17 +118,18 @@ const bornLastNightLitter: ComputedRef<LitterCard | null> = computed(
  * @param clickEvent - The click on the card.
  * @param litterId - The litter.
  */
-function openInSidePanel(clickEvent: MouseEvent, litterId: number): void {
+async function openInSidePanel(clickEvent: MouseEvent, litterId: number): Promise<void> {
   if (!window.matchMedia(SIDE_PANEL_MEDIA_QUERY).matches) {
     return
   }
   clickEvent.preventDefault()
-  void littersStore.select(litterId)
+  await littersStore.select(litterId)
 }
 
 onMounted(async (): Promise<void> => {
   await littersStore.load()
   const firstLitter: LitterCard | undefined = littersStore.visibleCards[0]
+
   if (littersStore.selectedLitter === null && firstLitter !== undefined) {
     await littersStore.select(firstLitter.id)
   }

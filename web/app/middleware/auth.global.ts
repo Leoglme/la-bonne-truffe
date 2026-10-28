@@ -1,12 +1,8 @@
 import type { RouteLocationNormalized } from 'vue-router'
 
-/** The only page reachable without a session. */
 const LOGIN_PATH: string = '/connexion'
 
-/**
- * Keep every page behind the session; send a signed-in user away from the login page.
- * Runs on the client only: the session lives in localStorage.
- */
+/** Keeps every page behind the session and sends a signed-in user away from the login page, on the client only. */
 export default defineNuxtRouteMiddleware(async (to: RouteLocationNormalized) => {
   if (!import.meta.client) {
     return

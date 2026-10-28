@@ -1,20 +1,55 @@
-/** Coat of the cocker illustration: the colours of the mockup, plus the fallback for an unknown colour. */
-export type CockerCoat = 'gold' | 'noir_et_feu' | 'noir' | 'marron' | 'bleu_rouan' | 'inconnue'
+import type { CoatColor } from '~/types/api'
+import type { CockerCoat, CockerCoatPalette } from '~/types/CockerCoat'
 
-/** Fill colours of the illustration for one coat, and the pastel tile it sits on. */
-export type CockerCoatPalette = {
-  coat: string
-  ear: string
-  muzzle: string
-  tile: string
+export const COCKER_COAT_PALETTES: Record<CockerCoat, CockerCoatPalette> = {
+  gold: {
+    coat: '#E9B363',
+    ear: '#CF8F3A',
+    muzzle: '#F3CF95',
+    tileClass: 'bg-gold-pastel',
+    chipTextClass: 'text-gold-ink',
+  },
+  noir_et_feu: {
+    coat: '#3A2F2A',
+    ear: '#2B2420',
+    muzzle: '#C98A4B',
+    tileClass: 'bg-lilac-pastel',
+    chipTextClass: 'text-ink-secondary',
+  },
+  noir: {
+    coat: '#2F2724',
+    ear: '#1E1816',
+    muzzle: '#4A3C34',
+    tileClass: 'bg-neutral-pastel',
+    chipTextClass: 'text-ink-secondary',
+  },
+  marron: {
+    coat: '#7B5033',
+    ear: '#5E3A22',
+    muzzle: '#A97A55',
+    tileClass: 'bg-neutral-pastel',
+    chipTextClass: 'text-ink-secondary',
+  },
+  bleu_rouan: {
+    coat: '#8B8F99',
+    ear: '#4E525C',
+    muzzle: '#D9DBE0',
+    tileClass: 'bg-neutral-pastel',
+    chipTextClass: 'text-ink-secondary',
+  },
+  inconnue: {
+    coat: '#6B5A50',
+    ear: '#4A3C34',
+    muzzle: '#B59A86',
+    tileClass: 'bg-neutral-pastel',
+    chipTextClass: 'text-ink-secondary',
+  },
 }
 
-/** Palettes from docs/06-maquette-et-design.md and design/mockup/Criteres.dc.html. */
-export const COCKER_COAT_PALETTES: Readonly<Record<CockerCoat, CockerCoatPalette>> = {
-  gold: { coat: '#E9B363', ear: '#CF8F3A', muzzle: '#F3CF95', tile: '#FBE7CC' },
-  noir_et_feu: { coat: '#3A2F2A', ear: '#2B2420', muzzle: '#C98A4B', tile: '#E9E3F2' },
-  noir: { coat: '#2F2724', ear: '#1E1816', muzzle: '#4A3C34', tile: '#EAE2DA' },
-  marron: { coat: '#7B5033', ear: '#5E3A22', muzzle: '#A97A55', tile: '#EAE2DA' },
-  bleu_rouan: { coat: '#8B8F99', ear: '#4E525C', muzzle: '#D9DBE0', tile: '#EAE2DA' },
-  inconnue: { coat: '#6B5A50', ear: '#4A3C34', muzzle: '#B59A86', tile: '#EAE2DA' },
+export const ILLUSTRATED_COATS: Partial<Record<CoatColor, CockerCoat>> = {
+  gold: 'gold',
+  noir_et_feu: 'noir_et_feu',
+  noir: 'noir',
+  marron: 'marron',
+  bleu_rouan: 'bleu_rouan',
 }

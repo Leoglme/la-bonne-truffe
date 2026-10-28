@@ -5,16 +5,9 @@ import type {
   FollowUpUpdate,
   LitterCard,
   LitterDetail,
-  ListingKind,
-  MatchTier,
 } from '~/types/api'
+import type { LitterListFilters } from '~/types/Litter'
 import { ApiClient } from './api'
-
-/** Filters of the home screen list. */
-export type LitterListFilters = {
-  tier?: MatchTier
-  kind?: ListingKind
-}
 
 /** HTTP client for the /litters and /follow-ups API resources. */
 export class LittersService {

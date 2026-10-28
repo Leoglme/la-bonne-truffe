@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 @import '@nuxt/ui';
 
-/* Fredoka (titres, chiffres clés) and Nunito (tout le reste), self-hosted: no Google Fonts call at runtime. */
+/* Fredoka for the titles and key figures, Nunito for the rest, self-hosted. */
 @import '@fontsource/fredoka/500.css';
 @import '@fontsource/fredoka/600.css';
 @import '@fontsource/fredoka/700.css';
@@ -10,14 +10,9 @@
 @import '@fontsource/nunito/700.css';
 @import '@fontsource/nunito/800.css';
 
-/* The app opened from the home screen (installed PWA), not from a browser tab. */
 @custom-variant standalone (@media (display-mode: standalone));
 
-/*
- * Design tokens of the validated mockup (docs/06-maquette-et-design.md, design/mockup/).
- * Each token becomes Tailwind utilities (`bg-cream`, `text-coral-text`, `rounded-card`, `shadow-card`…) and,
- * being `static`, a CSS variable even when no class uses it: Nuxt UI reads the `truffe` palette at runtime.
- */
+/* static: Nuxt UI reads the truffe palette at runtime, even where no class uses it. */
 @theme static {
   --font-display: 'Fredoka', 'Nunito', system-ui, sans-serif;
   --font-sans: 'Nunito', system-ui, sans-serif;
@@ -46,7 +41,6 @@
   --color-lof-ink: #3e6630;
   --color-online: #4a6b3b;
 
-  /* Nuxt UI primary palette, centred on the mockup coral (500). */
   --color-truffe-50: #fff4ee;
   --color-truffe-100: #ffe3d3;
   --color-truffe-200: #fdc6ab;
@@ -59,7 +53,6 @@
   --color-truffe-900: #6a2a19;
   --color-truffe-950: #3a130a;
 
-  /* Text inherits the line height of the page, as in the mockup (1.45 on iPhone, 1.5 from the iPad). */
   --text-xs--line-height: inherit;
   --text-sm--line-height: inherit;
   --text-base--line-height: inherit;
@@ -75,7 +68,10 @@
   --radius-tile-compact: 18px;
 
   --shadow-card: 0 2px 12px rgba(66, 43, 30, 0.06);
+  --shadow-chip: 0 2px 10px rgba(66, 43, 30, 0.06);
   --shadow-floating: 0 2px 10px rgba(66, 43, 30, 0.08);
+  --shadow-floating-over-photo: 0 2px 10px rgba(66, 43, 30, 0.12);
+  --shadow-switch-thumb: 0 1px 3px rgba(43, 36, 32, 0.3);
 }
 
 :root {
@@ -112,13 +108,11 @@
     color: var(--color-coral-hover);
   }
 
-  /* Tailwind v4 dropped the default pointer cursor on buttons. */
   button:not(:disabled),
   [role='button']:not([aria-disabled='true']) {
     cursor: pointer;
   }
 
-  /* Visible focus everywhere, in coral (docs/06, Accessibilité). */
   :focus-visible {
     outline: 3px solid var(--color-coral);
     outline-offset: 3px;

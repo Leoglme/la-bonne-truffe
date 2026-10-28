@@ -5,34 +5,35 @@
   >
     <div class="flex flex-col gap-[22px]">
       <NuxtLink to="/reglages" class="inline-flex items-center gap-1.5 self-start text-[15px] font-extrabold">
-        <UiMockupIcon name="chevron-left" :size-in-pixels="18" :stroke-width="2.4" />
+        <UIcon name="i-lucide-chevron-left" class="size-[18px]" />
         Réglages
       </NuxtLink>
 
-      <section class="flex flex-col gap-4 rounded-[26px] bg-card px-[22px] py-5 shadow-card">
+      <UiSectionCard class="gap-4">
         <div class="flex items-center justify-between gap-4">
           <span class="flex min-w-0 flex-col">
             <span class="text-[17px] font-bold">Sur cet appareil</span>
-            <span class="text-sm text-ink-muted">{{ hint }}</span>
+            <span class="text-sm text-ink-muted">{{ deviceStatusDescription }}</span>
           </span>
-          <UiToggleSwitch
+          <USwitch
             v-if="isSupported && !config.public.isDesktop"
             :model-value="isSubscribed"
-            :is-disabled="isBusy"
-            label="Notifications sur cet appareil"
+            :loading="isBusy"
+            aria-label="Notifications sur cet appareil"
             @update:model-value="toggle"
           />
         </div>
-        <button
+        <UButton
           v-if="isSubscribed"
-          type="button"
-          class="box-content min-h-11 self-start rounded-full border-2 border-ink bg-transparent px-[18px] text-[15px] font-extrabold text-ink disabled:opacity-60"
+          color="neutral"
+          variant="outline"
+          class="self-start"
           :disabled="isSendingTest"
           @click="sendTestNotification"
         >
           {{ isSendingTest ? 'Envoi…' : 'Envoyer une notification de test' }}
-        </button>
-      </section>
+        </UButton>
+      </UiSectionCard>
 
       <section
         v-if="isSupported && !isStandalone && !config.public.isDesktop"
@@ -51,19 +52,19 @@
 
 <script lang="ts" setup>
 import type { ComputedRef, Ref } from 'vue'
-import type { UseWebPush } from '~/composables/useWebPush'
 import type { TestNotificationResult } from '~/types/api'
+import type { UseWebPushReturn } from '~/types/Composables'
 import { computed, ref } from 'vue'
 
 useHead({ title: 'Notifications · La Bonne Truffe' })
 
 const config: ReturnType<typeof useRuntimeConfig> = useRuntimeConfig()
 const toast: ReturnType<typeof useToast> = useToast()
-const { isSupported, isStandalone, isSubscribed, isBusy, error, toggle, sendTest }: UseWebPush = useWebPush()
+const { isSupported, isStandalone, isSubscribed, isBusy, error, toggle, sendTest }: UseWebPushReturn = useWebPush()
 
 const isSendingTest: Ref<boolean> = ref(false)
 
-const hint: ComputedRef<string> = computed((): string => {
+const deviceStatusDescription: ComputedRef<string> = computed((): string => {
   if (config.public.isDesktop) {
     return 'Les notifications arrivent sur l’iPhone et l’iPad où l’app est installée.'
   }

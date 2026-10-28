@@ -25,32 +25,32 @@
 <script lang="ts" setup>
 import type { ComputedRef, PropType } from 'vue'
 import type { LitterDetail, LitterParent } from '~/types/api'
-import type { LitterDetailVariant } from '~/types/LitterDetailVariant'
-import type { LitterParentsListProps } from '~/types/LitterParentsList'
+import type { LitterParentLine, LitterParentsListProps } from '~/types/LitterParentsList'
 import { computed } from 'vue'
 
-/** One parent line: role, name and Centrale Canine rating. */
-type ParentLine = {
-  role: string
-  name: string
-  rating: string
-  compactRating: string
-}
-
-/** Father and mother of the litter with their rating (« Cotation 4 / 6 »). */
 const props: LitterParentsListProps = defineProps({
   litter: { type: Object as PropType<LitterDetail>, required: true },
-  variant: { type: String as PropType<LitterDetailVariant>, default: 'responsive' },
+})
+
+const parents: ComputedRef<LitterParentLine[]> = computed((): LitterParentLine[] => {
+  const lines: LitterParentLine[] = []
+  if (props.litter.sire) {
+    lines.push(buildParentLine('PÈRE', props.litter.sire))
+  }
+  if (props.litter.dam) {
+    lines.push(buildParentLine('MÈRE', props.litter.dam))
+  }
+  return lines
 })
 
 /**
- * Turn a parent into its line.
+ * Build the line of a parent: role, name and Centrale Canine rating.
  *
  * @param role - « PÈRE » or « MÈRE ».
  * @param parent - The parent.
- * @returns The line.
+ * @returns The line, with the full and the compact rating.
  */
-function toParentLine(role: string, parent: LitterParent): ParentLine {
+function buildParentLine(role: string, parent: LitterParent): LitterParentLine {
   return {
     role,
     name: parent.name,
@@ -58,15 +58,4 @@ function toParentLine(role: string, parent: LitterParent): ParentLine {
     compactRating: parent.rating === null ? 'Sans cot.' : `Cot. ${parent.rating} / 6`,
   }
 }
-
-const parents: ComputedRef<ParentLine[]> = computed((): ParentLine[] => {
-  const lines: ParentLine[] = []
-  if (props.litter.sire) {
-    lines.push(toParentLine('PÈRE', props.litter.sire))
-  }
-  if (props.litter.dam) {
-    lines.push(toParentLine('MÈRE', props.litter.dam))
-  }
-  return lines
-})
 </script>

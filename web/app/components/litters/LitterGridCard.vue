@@ -22,14 +22,14 @@
       </LitterTileFrame>
       <span class="flex flex-col gap-0.5 px-1.5">
         <span class="font-display text-[21px] leading-[1.2] font-semibold lg:text-[19px]">{{ props.litter.name }}</span>
-        <span class="text-[15px] text-ink-muted lg:text-sm">{{ LitterPresentation.placeLine(props.litter) }}</span>
+        <span class="text-[15px] text-ink-muted lg:text-sm">{{ LitterPresentation.buildPlaceLine(props.litter) }}</span>
       </span>
       <span class="flex items-center gap-2 px-1.5 text-[15px] font-bold text-ink-secondary lg:text-sm">
         <span class="rounded-full bg-chip px-2.5 py-1 lg:px-[9px] lg:py-[3px]">
-          <span class="lg:hidden">{{ LitterPresentation.colorLabel(props.litter.colors, false) }}</span>
-          <span class="hidden lg:inline">{{ LitterPresentation.colorLabel(props.litter.colors, true) }}</span>
+          <span class="lg:hidden">{{ LitterPresentation.buildColorLabel(props.litter.colors, false) }}</span>
+          <span class="hidden lg:inline">{{ LitterPresentation.buildColorLabel(props.litter.colors, true) }}</span>
         </span>
-        <span>{{ LitterPresentation.sexLine(props.litter) }}</span>
+        <span>{{ LitterPresentation.buildSexLine(props.litter) }}</span>
       </span>
     </a>
   </NuxtLink>
@@ -41,7 +41,6 @@ import type { LitterCard } from '~/types/api'
 import type { LitterGridCardEmits, LitterGridCardProps } from '~/types/LitterGridCard'
 import { LitterPresentation } from '~/utils/litterPresentation'
 
-/** Litter card of the grid: two per row on iPad, three on desktop with the selected one outlined. */
 const props: LitterGridCardProps = defineProps({
   litter: { type: Object as PropType<LitterCard>, required: true },
   isNew: { type: Boolean, default: false },

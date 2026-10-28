@@ -1,13 +1,10 @@
 import type { VapidKeyResponse } from '~/types/api'
+import type { IosNavigator } from '~/types/Browser'
 import { NotificationsService } from '~/services/notificationsService'
 
-/** localStorage flag: the user turned notifications off on this device, so don't auto-resubscribe. */
 const PUSH_DISABLED_STORAGE_KEY: string = 'lbt-push-disabled'
 
-/**
- * Web Push helpers shared by the settings switch (`useWebPush`) and the auto-subscribe plugin.
- * Copied from DevLeadHunter, gathered in a class.
- */
+/** Web Push on this device: support, subscription, and the choice to keep it turned off. */
 export class WebPush {
   /**
    * Whether this browser can do Web Push at all.
@@ -27,7 +24,7 @@ export class WebPush {
     if (!import.meta.client) {
       return false
     }
-    const isIosStandalone: boolean = (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+    const isIosStandalone: boolean = (window.navigator as IosNavigator).standalone === true
     return window.matchMedia('(display-mode: standalone)').matches || isIosStandalone
   }
 
@@ -55,8 +52,7 @@ export class WebPush {
   }
 
   /**
-   * Register the service worker, subscribe to push and save the subscription server-side.
-   * Assumes the notification permission is already granted.
+   * Register the service worker, subscribe to push and save the subscription server-side, permission granted.
    *
    * @returns True on success, false when push is unsupported or not configured on the server.
    */

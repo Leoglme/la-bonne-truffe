@@ -1,35 +1,33 @@
 <template>
-  <div
-    class="flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[820px]"
-    :style="{ backgroundColor: tileColor }"
-  >
+  <div class="flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[820px]" :class="tileClass">
     <div class="relative flex h-[330px] shrink-0 items-center justify-center overflow-hidden md:h-[400px]">
-      <template v-if="litter">
-        <img
-          v-if="litter.photo_url"
-          :src="litter.photo_url"
-          :alt="`Photo de la portée ${litter.name}`"
-          class="absolute inset-0 size-full object-cover"
-          style="object-position: center 30%"
-        />
-        <CockerIllustration v-else :coat="coat" :size-in-pixels="200" class="mb-6" />
-      </template>
+      <LitterVisual
+        v-if="litter"
+        :litter="litter"
+        :illustration-size-in-pixels="200"
+        photo-position="center 30%"
+        illustration-class="mb-6"
+      />
       <NuxtLink
         to="/"
         aria-label="Retour aux portées"
-        class="absolute top-14 left-5 inline-flex size-11 items-center justify-center rounded-full bg-card text-ink shadow-[0_2px_10px_rgba(66,43,30,0.12)] hover:text-ink md:top-9 md:left-8 md:size-[52px] md:shadow-floating"
+        class="absolute top-14 left-5 inline-flex size-11 items-center justify-center rounded-full bg-card text-ink shadow-floating-over-photo hover:text-ink md:top-9 md:left-8 md:size-[52px] md:shadow-floating"
       >
-        <UiMockupIcon name="chevron-left" :size-in-pixels="22" :stroke-width="2.2" class="size-5 md:size-[22px]" />
+        <UIcon name="i-lucide-chevron-left" class="size-5 md:size-[22px]" />
       </NuxtLink>
       <button
         v-if="litter"
         type="button"
         :aria-label="litter.follow_up ? 'Portée suivie' : 'Ajouter au suivi'"
         :aria-pressed="litter.follow_up !== null"
-        class="absolute top-14 right-5 inline-flex size-11 items-center justify-center rounded-full bg-card text-coral shadow-[0_2px_10px_rgba(66,43,30,0.12)] md:top-9 md:right-8 md:size-[52px] md:shadow-floating"
+        :aria-busy="isFollowing"
+        :disabled="isFollowing"
+        class="absolute top-14 right-5 inline-flex size-11 items-center justify-center rounded-full bg-card text-coral shadow-floating-over-photo md:top-9 md:right-8 md:size-[52px] md:shadow-floating"
         @click="follow"
       >
-        <UiMockupIcon
+        <UIcon v-if="isFollowing" name="i-lucide-loader-circle" class="size-5 animate-spin md:size-[22px]" />
+        <UiCustomIcon
+          v-else
           :name="litter.follow_up ? 'heart-filled' : 'heart'"
           :size-in-pixels="22"
           :stroke-width="2.2"
@@ -37,10 +35,10 @@
         />
       </button>
       <span
-        v-if="badge"
+        v-if="photoBadge"
         class="absolute top-11 left-1/2 hidden -translate-x-1/2 rounded-full bg-card px-4 py-1.5 text-sm leading-normal font-extrabold tracking-[0.02em] whitespace-nowrap text-coral-text md:inline"
       >
-        {{ badge }}
+        {{ photoBadge }}
       </span>
     </div>
 
@@ -54,13 +52,13 @@
       >
         <div class="flex shrink-0 items-start justify-between gap-3 md:gap-4">
           <div class="flex min-w-0 flex-col gap-0.5 md:gap-1">
-            <span v-if="badge" class="text-xs font-extrabold tracking-[0.04em] text-coral-text md:hidden">{{
-              badge
+            <span v-if="photoBadge" class="text-xs font-extrabold tracking-[0.04em] text-coral-text md:hidden">{{
+              photoBadge
             }}</span>
             <h1 class="m-0 font-display text-[26px] leading-[1.1] font-semibold md:text-[34px]">{{ litter.name }}</h1>
             <span class="inline-flex items-center gap-1.5 text-sm text-ink-muted md:text-[17px]">
-              <UiMockupIcon name="pin" :size-in-pixels="18" :stroke-width="2" class="hidden md:block" />
-              {{ LitterDetailPresentation.placeLine(litter) }}
+              <UiCustomIcon name="pin" :size-in-pixels="18" :stroke-width="2" class="hidden md:block" />
+              {{ LitterDetailPresentation.buildTownAndDepartment(litter) }}
             </span>
           </div>
           <LitterScoreBubble :litter="litter" />
@@ -94,50 +92,55 @@
         >
           <span class="flex flex-col">
             <span class="text-[11px] font-extrabold text-ink-label md:text-[13px]">VU SUR</span>
-            <span class="text-[15px] font-bold md:text-[17px]">{{ LitterDetailPresentation.sourceLine(listing) }}</span>
+            <span class="text-[15px] font-bold md:text-[17px]">{{
+              LitterDetailPresentation.buildSourceLine(listing)
+            }}</span>
           </span>
-          <UiMockupIcon
-            name="external-link"
-            :size-in-pixels="20"
-            :stroke-width="2.2"
-            class="shrink-0 text-coral-text"
-          />
+          <UIcon name="i-lucide-external-link" class="size-5 shrink-0 text-coral-text" />
         </a>
       </div>
 
       <div
         class="flex shrink-0 gap-2.5 border-t border-line bg-cream px-5 pt-3 pb-[26px] md:gap-3 md:px-8 md:pt-4 md:pb-[30px]"
       >
-        <a
+        <UButton
           v-if="primaryAction"
-          :href="primaryAction.href"
+          :to="primaryAction.href"
           :target="primaryAction.isCall ? undefined : '_blank'"
-          :rel="primaryAction.isCall ? undefined : 'noopener'"
-          class="inline-flex min-h-[54px] grow items-center justify-center gap-2 rounded-full bg-coral px-4 text-[17px] font-extrabold text-white no-underline hover:text-white md:min-h-[60px] md:gap-2.5 md:text-[19px]"
+          size="xl"
+          class="min-h-[54px] grow justify-center gap-2 px-4 text-[17px] md:min-h-[60px] md:gap-2.5 md:text-[19px]"
         >
-          <UiMockupIcon
-            :name="primaryAction.isCall ? 'phone' : 'external-link'"
-            :size-in-pixels="20"
-            :stroke-width="2.2"
-            class="size-[18px] md:size-5"
-          />
+          <template #leading>
+            <UiCustomIcon
+              v-if="primaryAction.isCall"
+              name="phone"
+              :size-in-pixels="20"
+              :stroke-width="2.2"
+              class="size-[18px] md:size-5"
+            />
+            <UIcon v-else name="i-lucide-external-link" class="size-[18px] md:size-5" />
+          </template>
           {{ primaryAction.label }}
-        </a>
-        <button
-          type="button"
+        </UButton>
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="lg"
+          :loading="isFollowing"
           :aria-pressed="litter.follow_up !== null"
           :aria-label="litter.follow_up ? 'Portée suivie' : 'Suivre cette portée'"
-          class="inline-flex size-[58px] shrink-0 items-center justify-center rounded-full border-2 border-ink bg-card text-ink md:size-auto md:min-h-16 md:px-[28px] md:text-[19px] md:font-extrabold"
+          class="size-[58px] shrink-0 justify-center px-0 md:size-auto md:min-h-16 md:px-[30px] md:text-[19px]"
           @click="follow"
         >
-          <UiMockupIcon
+          <UiCustomIcon
+            v-if="!isFollowing"
             :name="litter.follow_up ? 'heart-filled' : 'heart'"
             :size-in-pixels="22"
             :stroke-width="2.2"
             class="md:hidden"
           />
           <span class="hidden md:inline">{{ litter.follow_up ? 'Suivie' : 'Suivre' }}</span>
-        </button>
+        </UButton>
       </div>
     </div>
   </div>
@@ -146,37 +149,33 @@
 <script lang="ts" setup>
 import type { ComputedRef, Ref } from 'vue'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
-import type { CockerCoat } from '~/constants/cockerCoatPalettes'
 import type { LitterDetail } from '~/types/api'
-import type { LitterPrimaryAction } from '~/utils/litterDetailPresentation'
+import type { LitterPrimaryAction } from '~/types/Litter'
 import { computed, onMounted, ref } from 'vue'
-import { COCKER_COAT_PALETTES } from '~/constants/cockerCoatPalettes'
 import { LittersService } from '~/services/littersService'
 import { LitterDetailPresentation } from '~/utils/litterDetailPresentation'
 import { LitterPresentation } from '~/utils/litterPresentation'
-
-/** Photos shown in the gallery before the « + N » tile. */
-const GALLERY_VISIBLE_PHOTO_COUNT: number = 3
 
 definePageMeta({ isPushedScreen: true })
 
 const route: RouteLocationNormalizedLoaded = useRoute()
 const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
 
+const GALLERY_VISIBLE_PHOTO_COUNT: number = 3
+
 const litter: Ref<LitterDetail | null> = ref(null)
 const loadError: Ref<string | null> = ref(null)
+const isFollowing: Ref<boolean> = ref(false)
 
-const coat: ComputedRef<CockerCoat> = computed((): CockerCoat =>
-  litter.value ? LitterPresentation.coatOf(litter.value.colors) : 'inconnue',
+const tileClass: ComputedRef<string> = computed((): string =>
+  LitterPresentation.resolveTileClass(litter.value?.colors ?? []),
 )
-const tileColor: ComputedRef<string> = computed((): string => COCKER_COAT_PALETTES[coat.value].tile)
-const badge: ComputedRef<string | null> = computed((): string | null =>
-  litter.value ? LitterDetailPresentation.badge(litter.value, new Date()) : null,
+const photoBadge: ComputedRef<string | null> = computed((): string | null =>
+  litter.value ? LitterDetailPresentation.buildPhotoBadge(litter.value, new Date()) : null,
 )
 const primaryAction: ComputedRef<LitterPrimaryAction | null> = computed((): LitterPrimaryAction | null =>
-  litter.value ? LitterDetailPresentation.primaryAction(litter.value) : null,
+  litter.value ? LitterDetailPresentation.resolvePrimaryAction(litter.value) : null,
 )
-// The first photo heads the screen; the gallery shows the others.
 const otherPhotos: ComputedRef<string[]> = computed((): string[] => (litter.value?.photos ?? []).slice(1))
 const galleryPhotos: ComputedRef<string[]> = computed((): string[] =>
   otherPhotos.value.slice(0, GALLERY_VISIBLE_PHOTO_COUNT),
@@ -184,17 +183,24 @@ const galleryPhotos: ComputedRef<string[]> = computed((): string[] =>
 const hiddenPhotoCount: ComputedRef<number> = computed((): number =>
   Math.max(0, otherPhotos.value.length - GALLERY_VISIBLE_PHOTO_COUNT),
 )
-
-useHead({ title: (): string => `${litter.value?.name ?? 'Portée'} · La Bonne Truffe` })
+const pageTitle: ComputedRef<string> = computed((): string => `${litter.value?.name ?? 'Portée'} · La Bonne Truffe`)
 
 /**
  * Follow the litter (« Suivre »), which starts its follow-up at « à appeler ».
  */
 async function follow(): Promise<void> {
-  if (litter.value !== null) {
+  if (litter.value === null) {
+    return
+  }
+  isFollowing.value = true
+  try {
     litter.value = await littersStore.follow(litter.value)
+  } finally {
+    isFollowing.value = false
   }
 }
+
+useHead({ title: pageTitle })
 
 onMounted(async (): Promise<void> => {
   try {

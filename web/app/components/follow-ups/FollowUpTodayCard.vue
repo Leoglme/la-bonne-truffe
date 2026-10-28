@@ -5,7 +5,7 @@
     @click="emit('open', props.followUp.litter.id)"
   >
     <span class="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-card text-coral md:size-14">
-      <UiMockupIcon name="phone" :size-in-pixels="26" :stroke-width="2.2" class="size-[22px] md:size-[26px]" />
+      <UiCustomIcon name="phone" :size-in-pixels="26" :stroke-width="2.2" class="size-[22px] md:size-[26px]" />
     </span>
     <span class="flex min-w-0 grow flex-col gap-0.5">
       <span class="text-xs font-extrabold tracking-[0.04em] text-coral-text md:text-[13px]">AUJOURD’HUI</span>
@@ -14,7 +14,7 @@
       >
       <span class="text-sm text-ink-secondary md:text-[15px]">{{ description }}</span>
     </span>
-    <UiMockupIcon name="chevron-right" :size-in-pixels="22" :stroke-width="2.4" class="shrink-0 text-coral-text" />
+    <UIcon name="i-lucide-chevron-right" class="size-[22px] shrink-0 text-coral-text" />
   </button>
 </template>
 
@@ -25,7 +25,6 @@ import type { FollowUpTodayCardEmits, FollowUpTodayCardProps } from '~/types/Fol
 import { computed } from 'vue'
 import { FollowUpPresentation } from '~/utils/followUpPresentation'
 
-/** « Aujourd’hui : appeler… », the reminder of the day at the top of the follow-up screen. */
 const props: FollowUpTodayCardProps = defineProps({
   followUp: { type: Object as PropType<FollowUpCard>, required: true },
 })
@@ -35,6 +34,6 @@ const emit: FollowUpTodayCardEmits = defineEmits<{
 }>()
 
 const description: ComputedRef<string> = computed(
-  (): string => props.followUp.last_note?.text ?? FollowUpPresentation.summaryLine(props.followUp),
+  (): string => props.followUp.last_note?.text ?? FollowUpPresentation.buildSummaryLine(props.followUp),
 )
 </script>
