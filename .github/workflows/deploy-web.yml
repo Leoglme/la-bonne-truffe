@@ -135,11 +135,19 @@ jobs:
             }
             command -v pm2 > /dev/null || npm install -g pm2
 
+            # Nuxt 4 needs Node 20 or later and the pm2 daemon runs on an older one: start Nitro with the node of an interactive shell.
+            NODE_BIN="$(bash -ic 'command -v node' 2>/dev/null | tail -n 1)"
+            NODE_MAJOR="$("$NODE_BIN" -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+            if [ "$NODE_MAJOR" -lt 20 ]; then
+              echo "Nitro needs Node 20 or later, found ${NODE_BIN:-no node} (major version $NODE_MAJOR)."
+              exit 1
+            fi
+
             # Nitro serves sw.js, the manifest and the icons from ../public: point it to html/.
             ln -sfn "$SITE_DIR/html" "$SITE_DIR/public"
 
             pm2 delete "${{ env.PM2_PROCESS_NAME }}" > /dev/null 2>&1 || true
-            NODE_ENV=production HOST=127.0.0.1 PORT=${{ env.NITRO_PORT }} pm2 start index.mjs --name "${{ env.PM2_PROCESS_NAME }}"
+            NODE_ENV=production HOST=127.0.0.1 PORT=${{ env.NITRO_PORT }} pm2 start index.mjs --name "${{ env.PM2_PROCESS_NAME }}" --interpreter "$NODE_BIN"
             pm2 save
 
       - name: 🩺 Health check (SSH)

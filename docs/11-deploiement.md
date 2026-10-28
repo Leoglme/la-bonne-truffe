@@ -6,7 +6,7 @@ La Bonne Truffe tourne sur le VPS, à côté de DevLeadHunter et avec la même m
 
 | Quoi | Adresse publique | Sur le VPS |
 |---|---|---|
-| Dashboard Nuxt 4 (SSR) | https://la-bonne-truffe.dibodev.fr | pm2 `la-bonne-truffe.dibodev.fr` sur `127.0.0.1:5630` ; serveur Nitro dans `/var/www/la-bonne-truffe.dibodev.fr/server/`, fichiers publics dans `html/` |
+| Dashboard Nuxt 4 (SSR) | https://la-bonne-truffe.dibodev.fr | pm2 `la-bonne-truffe.dibodev.fr` sur `127.0.0.1:5630`, lancé avec le `node` du shell interactif de `debian` : Nuxt 4 demande Node 20 ou plus, le démon pm2 tourne en Node 18 ; serveur Nitro dans `/var/www/la-bonne-truffe.dibodev.fr/server/`, fichiers publics dans `html/` |
 | API FastAPI | https://api.la-bonne-truffe.dibodev.fr (documentation sur `/docs`) | service systemd `la-bonne-truffe-api`, uvicorn sur `127.0.0.1:8030` ; code et venv dans `/var/www/api.la-bonne-truffe.dibodev.fr/html/` |
 | Worker de collecte | — | service systemd `la-bonne-truffe-worker` (`python worker.py`), même code et même venv que l'API |
 | Base SQLite | — | `/var/www/api.la-bonne-truffe.dibodev.fr/data/la-bonne-truffe.db`, hors du dossier `api/` que chaque déploiement remplace |
