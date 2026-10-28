@@ -60,5 +60,47 @@ export default defineAppConfig({
         },
       },
     },
+    formField: {
+      slots: {
+        labelWrapper: 'flex items-baseline justify-between gap-3',
+        label: 'text-sm font-extrabold text-ink-secondary md:text-[15px]',
+        hint: 'text-[13px] text-ink-muted md:text-sm',
+      },
+      variants: {
+        orientation: {
+          vertical: { container: 'mt-1.5 md:mt-2' },
+        },
+      },
+    },
+    input: {
+      slots: {
+        base: 'rounded-2xl font-bold shadow-card placeholder:font-semibold placeholder:text-ink-muted focus-visible:outline-offset-0 md:rounded-tile-compact',
+      },
+      variants: {
+        size: {
+          xl: {
+            base: 'h-[52px] px-[18px] text-base md:h-[58px] md:px-5 md:text-[17px] lg:h-[54px] lg:px-[18px] lg:text-base',
+            trailing: 'pe-1.5 md:pe-[9px] lg:pe-1.5',
+          },
+        },
+        variant: {
+          outline: 'bg-card text-ink ring-2 ring-card',
+        },
+      },
+      compoundVariants: [
+        { trailing: true, size: 'xl', class: 'pe-14 md:pe-[60px] lg:pe-14' },
+        {
+          color: 'primary',
+          variant: 'outline',
+          class: 'outline-coral-pastel focus-visible:outline-4 focus-visible:ring-coral',
+        },
+        {
+          color: 'error',
+          variant: 'outline',
+          class: 'outline-coral-pastel focus-visible:outline-4 focus-visible:ring-coral',
+        },
+        { color: 'error', highlight: true, class: 'ring-2 ring-coral' },
+      ],
+    },
   },
 })

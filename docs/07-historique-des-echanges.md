@@ -69,3 +69,9 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 - **Défaut trouvé par les vraies données** : le regroupement ne voyait pas les annonces regroupées un instant plus tôt dans le même passage, l'app ouvrant ses sessions sans écriture automatique et les tests avec. Corrigé, et les tests ouvrent désormais leurs sessions comme l'app.
 - **Chiots de France** : la liste France de la race, puis la page de chaque annonce des départements du profil. Pour le cocker, il reprend surtout les portées de Chiens de France. Premier relevé réel : 3 requêtes, 2 annonces d'un éleveur de la Sarthe, qui ont rejoint ses chiots de Chiens de France. Les annonces « Type Cocker Spaniel Anglais » (non LOF) sont écartées en attendant une décision (`08`).
 - **Deux défauts trouvés en ajoutant cette source** : une annonce vue avant la déclaration de la Centrale Canine imposait ses chiots encore disponibles à la place des mâles et femelles déclarés ; un éleveur sans SIREN, téléphone ni affixe (un particulier) aurait été recréé à chaque relevé. Corrigés, chacun avec son test.
+
+## 28 octobre (nuit) : écrans de connexion et d'inscription
+
+- Léo trouve la page de connexion « beaucoup trop simpliste » face au reste de la maquette et demande connexion, inscription et le reste, en maquette d'abord.
+- Première version rejetée : formulaire dans une carte blanche, « Pas encore de compte ? » en lien à gauche d'un bouton (« pas logique au niveau UX »), photo à reprendre. Deuxième version validée : le gabarit des autres écrans, champs blancs sur le crème, deux boutons pleine largeur empilés, photos chaudes (`06-maquette-et-design.md`).
+- Léo : « Tu peux commit et push sur main sans souci », puis coder toutes les pages ajoutées à la maquette. L'API gagne l'inscription et le mot de passe oublié ; l'inscription reste ouverte par défaut, `SIGNUP_ENABLED=false` la ferme.

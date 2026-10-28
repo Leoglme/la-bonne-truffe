@@ -22,6 +22,9 @@ describe('dashboard', async (): Promise<void> => {
     '/sources',
     '/notifications',
     '/connexion',
+    '/inscription',
+    '/mot-de-passe-oublie',
+    '/nouveau-mot-de-passe',
     '/portees/1',
   ])('renders %s', async (path: string): Promise<void> => {
     const html: string = await $fetch<string>(path)

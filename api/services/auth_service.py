@@ -1,11 +1,14 @@
 """Authentication: password hashing, JWT tokens, and the FastAPI auth dependencies."""
 
+import hashlib
+import hmac
 from datetime import UTC, datetime, timedelta
 
 import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from core.config import settings
@@ -13,6 +16,8 @@ from core.database import get_db
 from models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.api_prefix}/auth/login")
+
+PASSWORD_RESET_PURPOSE = "password_reset"
 
 
 class AuthService:
@@ -63,7 +68,7 @@ class AuthService:
     @staticmethod
     def get_user_by_email(db: Session, email: str) -> User | None:
         """
-        Look a user up by email.
+        Look a user up by email, whatever its case: a phone keyboard capitalises the first letter.
 
         Args:
             db: Active database session.
@@ -72,7 +77,78 @@ class AuthService:
         Returns:
             The user, or None when no row matches.
         """
-        return db.query(User).filter(User.email == email).first()
+        return db.query(User).filter(func.lower(User.email) == email.strip().lower()).first()
+
+    @classmethod
+    def create_password_reset_token(cls, user: User) -> str:
+        """
+        Issue the short-lived token of the « Mot de passe oublié » link.
+
+        The token carries a fingerprint of the current password hash: once the password changes, every
+        link sent before stops working, which makes each one single-use without storing anything.
+
+        Args:
+            user: Account the link resets.
+
+        Returns:
+            The encoded token.
+        """
+        expire = datetime.now(UTC) + timedelta(minutes=settings.password_reset_token_expire_minutes)
+        payload = {
+            "sub": user.email,
+            "purpose": PASSWORD_RESET_PURPOSE,
+            "pwd": cls._password_fingerprint(user.hashed_password),
+            "exp": expire,
+        }
+        return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
+    @classmethod
+    def resolve_password_reset_token(cls, db: Session, token: str) -> User:
+        """
+        Resolve the account a reset link belongs to.
+
+        Args:
+            db: Active database session.
+            token: Token read from the link.
+
+        Returns:
+            The account, active and with the password the link was issued for.
+
+        Raises:
+            HTTPException: 400 when the link is malformed, expired, already used, or not a reset link.
+        """
+        invalid_link_exception = HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Ce lien a expiré ou a déjà servi."
+        )
+        try:
+            payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        except jwt.PyJWTError as error:
+            raise invalid_link_exception from error
+
+        email = payload.get("sub")
+        fingerprint = payload.get("pwd")
+        if payload.get("purpose") != PASSWORD_RESET_PURPOSE or not isinstance(email, str):
+            raise invalid_link_exception
+        user = cls.get_user_by_email(db, email)
+        if user is None or not user.is_active or not isinstance(fingerprint, str):
+            raise invalid_link_exception
+        if not hmac.compare_digest(fingerprint, cls._password_fingerprint(user.hashed_password)):
+            raise invalid_link_exception
+        return user
+
+    @staticmethod
+    def _password_fingerprint(hashed_password: str) -> str:
+        """
+        Keyed fingerprint of a password hash, short enough for a link.
+
+        Args:
+            hashed_password: bcrypt hash stored on the user row.
+
+        Returns:
+            The first 16 hexadecimal characters of its HMAC-SHA256 under the secret key.
+        """
+        digest = hmac.new(settings.secret_key.encode("utf-8"), hashed_password.encode("utf-8"), hashlib.sha256)
+        return digest.hexdigest()[:16]
 
     @classmethod
     def authenticate_user(cls, db: Session, email: str, password: str) -> User | None:
@@ -121,7 +197,7 @@ class AuthService:
             raise credentials_exception from error
 
         email = payload.get("sub")
-        if not isinstance(email, str):
+        if not isinstance(email, str) or payload.get("purpose") is not None:
             raise credentials_exception
         user = cls.get_user_by_email(db, email)
         if user is None or not user.is_active:

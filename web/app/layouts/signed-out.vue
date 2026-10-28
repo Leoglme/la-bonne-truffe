@@ -1,5 +1,5 @@
 <template>
-  <main class="flex min-h-dvh items-center justify-center bg-cream px-5 py-10">
+  <main class="min-h-dvh bg-cream">
     <slot />
   </main>
 </template>

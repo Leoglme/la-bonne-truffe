@@ -1,18 +1,64 @@
-"""Reads and saves the search profiles; a save re-evaluates every litter."""
+"""Creates, reads and saves the search profiles; a save re-evaluates every litter."""
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.clock import naive_utc_now
+from enums.coat_color import CoatColor
+from enums.color_preference_level import ColorPreferenceLevel
+from enums.lof_preference import LofPreference
+from enums.sex_preference import SexPreference
 from models.breed import Breed
 from models.department import Department
 from models.search_profile import SearchProfile
 from schemas.search_profile import SearchProfileUpdate
+from seeders.breed_seeder import COCKER_SLUG
 from services.matching.match_refresh import match_refresh_service
+
+STARTING_PROFILE_NAME = "Cocker gold Bretagne"
+
+# From the closest to the farthest, driving from Rennes (validated by Léo).
+STARTING_DEPARTMENT_CODES: tuple[str, ...] = ("35", "56", "22", "29", "44", "53", "49", "72", "85")
 
 
 class SearchProfileService:
     """Profile operations, always scoped to the signed-in user."""
+
+    @staticmethod
+    def create_starting_profile(db: Session, user_id: int) -> SearchProfile:
+        """
+        Add the starting profile of an account (docs/04-correspondance-et-notifications.md): cocker, gold
+        preferred, black and tan acceptable, the other colours ignored, the nine departments around Rennes.
+
+        Args:
+            db: Database session; flushed, not committed.
+            user_id: Owner.
+
+        Returns:
+            The profile, with its id.
+        """
+        profile = SearchProfile(
+            user_id=user_id,
+            name=STARTING_PROFILE_NAME,
+            is_active=True,
+            breed_ids=[COCKER_SLUG],
+            department_codes=list(STARTING_DEPARTMENT_CODES),
+            include_expected_litters=True,
+            sex_preference=SexPreference.ANY,
+            lof_preference=LofPreference.PREFERRED,
+            color_preferences={
+                CoatColor.GOLD.value: ColorPreferenceLevel.PREFERRED.value,
+                CoatColor.NOIR_ET_FEU.value: ColorPreferenceLevel.ACCEPTABLE.value,
+            },
+            price_max_cents=None,
+            notify_preferred_immediately=True,
+            notify_acceptable_in_digest=True,
+            digest_hour=19,
+            notify_birth_of_followed=True,
+        )
+        db.add(profile)
+        db.flush()
+        return profile
 
     @staticmethod
     def list_for_user(db: Session, user_id: int) -> list[SearchProfile]:

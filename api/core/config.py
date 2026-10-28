@@ -47,6 +47,28 @@ class Settings(BaseSettings):
     admin_email: str = Field(default="contact@dibodev.fr", alias="ADMIN_EMAIL")
     admin_password: str = Field(default="change-me", alias="ADMIN_PASSWORD")
 
+    signup_enabled: bool = Field(
+        default=True,
+        alias="SIGNUP_ENABLED",
+        description="Whether the signup screen may create accounts; false keeps the instance to the accounts it has",
+    )
+    password_reset_token_expire_minutes: int = Field(
+        default=30,
+        alias="PASSWORD_RESET_TOKEN_EXPIRE_MINUTES",
+        description="Lifetime of the link sent by « Mot de passe oublié »",
+    )
+
+    resend_api_key: str = Field(
+        default="",
+        alias="RESEND_API_KEY",
+        description="Resend API key; when empty (development), the emails are written to the log instead",
+    )
+    email_from: str = Field(
+        default="La Bonne Truffe <contact@dibodev.fr>",
+        alias="EMAIL_FROM",
+        description="Sender of the account emails, on a domain verified in Resend",
+    )
+
     vapid_public_key: str | None = Field(default=None, alias="VAPID_PUBLIC_KEY")
     vapid_private_key_b64: str | None = Field(
         default=None,

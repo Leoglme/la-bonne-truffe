@@ -1,5 +1,15 @@
 import type { ApiErrorBody } from '~/types/ApiClient'
-import type { LoginCredentials, TokenResponse, User } from '~/types/api'
+import type {
+  LoginCredentials,
+  PasswordResetConfirm,
+  PasswordResetRequest,
+  PasswordResetRequested,
+  PasswordResetTarget,
+  PasswordResetToken,
+  SignupPayload,
+  TokenResponse,
+  User,
+} from '~/types/api'
 
 const TOKEN_REJECTION_STATUSES: number[] = [400, 401, 403]
 
@@ -8,26 +18,81 @@ const TOKEN_REJECTION_STATUSES: number[] = [400, 401, 403]
  */
 export class TokenRejectedError extends Error {}
 
-/** HTTP client for the /auth API resource, with the token passed in rather than the stored one. */
+/**
+ * The API answered and refused a signed-out request (wrong password, address already used, expired link),
+ * as opposed to an API out of reach. Its status tells the screen which field to point at.
+ */
+export class RefusedRequestError extends Error {
+  /**
+   * @param message - Message to show, the API one when it gave one a person can read.
+   * @param status - HTTP status of the refusal.
+   */
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message)
+  }
+}
+
+/** HTTP client for the /auth API resource: what a signed-out visitor sends, and the check of a stored token. */
 export class AuthService {
   /**
    * Exchange the email and password for a bearer token.
    *
    * @param credentials - Email and password typed on the login screen.
    * @returns The token.
-   * @throws Error with the API message when the credentials are refused.
+   * @throws RefusedRequestError when the credentials are refused, Error when the API cannot be reached.
    */
-  static async login(credentials: LoginCredentials): Promise<TokenResponse> {
-    const response: Response = await fetch(`${this.apiBase()}/api/v1/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials),
-    })
-    if (!response.ok) {
-      const error: ApiErrorBody = await response.json().catch((): ApiErrorBody => ({}))
-      throw new Error(typeof error.detail === 'string' ? error.detail : 'Connexion impossible')
-    }
-    return response.json()
+  static login(credentials: LoginCredentials): Promise<TokenResponse> {
+    return this.postAsVisitor<TokenResponse>('/login', credentials, 'Connexion impossible')
+  }
+
+  /**
+   * Create an account and receive its bearer token.
+   *
+   * @param account - Name, email and password typed on the signup screen.
+   * @returns The token of the new account.
+   * @throws RefusedRequestError when the account is refused (address already used, signups closed).
+   */
+  static signup(account: SignupPayload): Promise<TokenResponse> {
+    return this.postAsVisitor<TokenResponse>('/signup', account, 'Création du compte impossible')
+  }
+
+  /**
+   * Ask for a reset link. The API answers the same whether or not the address has an account.
+   *
+   * @param request - Address typed on the « Mot de passe oublié » screen.
+   * @returns The lifetime of the link and the delay before another one may be asked.
+   */
+  static requestPasswordReset(request: PasswordResetRequest): Promise<PasswordResetRequested> {
+    return this.postAsVisitor<PasswordResetRequested>('/forgot-password', request, 'Envoi du lien impossible')
+  }
+
+  /**
+   * Check the link of a reset email before asking for the new password.
+   *
+   * @param resetToken - Token read from the link.
+   * @returns The address of the account the link resets.
+   * @throws RefusedRequestError when the link is expired or already used.
+   */
+  static verifyPasswordResetLink(resetToken: PasswordResetToken): Promise<PasswordResetTarget> {
+    return this.postAsVisitor<PasswordResetTarget>(
+      '/reset-password/verify',
+      resetToken,
+      'Ce lien a expiré ou a déjà servi.',
+    )
+  }
+
+  /**
+   * Set the password chosen from a reset link and receive the bearer token of the account.
+   *
+   * @param confirmation - Token read from the link, and the new password.
+   * @returns The token.
+   * @throws RefusedRequestError when the link is expired or already used.
+   */
+  static resetPassword(confirmation: PasswordResetConfirm): Promise<TokenResponse> {
+    return this.postAsVisitor<TokenResponse>('/reset-password', confirmation, 'Changement du mot de passe impossible')
   }
 
   /**
@@ -46,6 +111,30 @@ export class AuthService {
     }
     if (!response.ok) {
       throw new Error("L'API ne répond pas")
+    }
+    return response.json()
+  }
+
+  /**
+   * POST to an /auth route without a token, and unwrap the message of a refusal.
+   *
+   * @param path - Route under `/api/v1/auth`.
+   * @param body - Request body, JSON-encoded.
+   * @param fallbackMessage - Message shown when the API gives none a person can read (a validation error).
+   * @returns The parsed response body.
+   * @throws RefusedRequestError when the API refuses, Error when it cannot be reached.
+   */
+  private static async postAsVisitor<T>(path: string, body: unknown, fallbackMessage: string): Promise<T> {
+    const response: Response = await fetch(`${this.apiBase()}/api/v1/auth${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).catch((): never => {
+      throw new Error('L’API ne répond pas')
+    })
+    if (!response.ok) {
+      const error: ApiErrorBody = await response.json().catch((): ApiErrorBody => ({}))
+      throw new RefusedRequestError(typeof error.detail === 'string' ? error.detail : fallbackMessage, response.status)
     }
     return response.json()
   }

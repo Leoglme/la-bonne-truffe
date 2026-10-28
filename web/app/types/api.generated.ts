@@ -64,6 +64,124 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/signup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signup
+         * @description Create an account and sign it in.
+         *
+         *     Args:
+         *         payload: Name, email and password typed on the signup screen.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The access token of the new account.
+         *
+         *     Raises:
+         *         HTTPException: 403 when signups are closed, 409 when the email already has an account.
+         */
+        post: operations["signup_api_v1_auth_signup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/forgot-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Forgot Password
+         * @description Email a reset link to the address when it has an account; the answer never tells whether it does.
+         *
+         *     Args:
+         *         payload: Address typed on the « Mot de passe oublié » screen.
+         *         background_tasks: Where the email waits for the response to leave.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The lifetime of the link and the delay before another one may be asked.
+         */
+        post: operations["forgot_password_api_v1_auth_forgot_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/reset-password/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify Password Reset Link
+         * @description Check a reset link before the screen asks for the new password.
+         *
+         *     Args:
+         *         payload: Token read from the link.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The address of the account the link resets.
+         *
+         *     Raises:
+         *         HTTPException: 400 when the link is expired or already used.
+         */
+        post: operations["verify_password_reset_link_api_v1_auth_reset_password_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Password
+         * @description Set the password chosen from a reset link, and sign the account in.
+         *
+         *     Args:
+         *         payload: Token read from the link, and the new password.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The access token of the account.
+         *
+         *     Raises:
+         *         HTTPException: 400 when the link is expired or already used.
+         */
+        post: operations["reset_password_api_v1_auth_reset_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/me": {
         parameters: {
             query?: never;
@@ -982,6 +1100,53 @@ export interface components {
             read_at: string | null;
         };
         /**
+         * PasswordResetConfirm
+         * @description New password chosen from the link of the reset email.
+         */
+        PasswordResetConfirm: {
+            /** Token */
+            token: string;
+            /** Password */
+            password: string;
+        };
+        /**
+         * PasswordResetRequest
+         * @description Email typed on the « Mot de passe oublié » screen.
+         */
+        PasswordResetRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
+        /**
+         * PasswordResetRequested
+         * @description What the « Regarde tes e-mails » screen says, whether or not the account exists.
+         */
+        PasswordResetRequested: {
+            /** Expires In Minutes */
+            expires_in_minutes: number;
+            /** Resend Delay Seconds */
+            resend_delay_seconds: number;
+        };
+        /**
+         * PasswordResetTarget
+         * @description Account a valid reset link belongs to, shown on the « Nouveau mot de passe » screen.
+         */
+        PasswordResetTarget: {
+            /** Email */
+            email: string;
+        };
+        /**
+         * PasswordResetToken
+         * @description Token read from the link of the reset email.
+         */
+        PasswordResetToken: {
+            /** Token */
+            token: string;
+        };
+        /**
          * PushKeys
          * @description Client encryption keys from a browser PushSubscription.
          */
@@ -1147,7 +1312,7 @@ export interface components {
         };
         /**
          * Token
-         * @description Bearer token returned after a successful login.
+         * @description Bearer token returned after a successful login, signup or password reset.
          */
         Token: {
             /** Access Token */
@@ -1189,6 +1354,21 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * UserSignup
+         * @description Account submitted by the signup screen.
+         */
+        UserSignup: {
+            /** Name */
+            name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Password */
+            password: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -1255,6 +1435,138 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UserLogin"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Token"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    signup_api_v1_auth_signup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserSignup"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Token"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    forgot_password_api_v1_auth_forgot_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordResetRequested"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_password_reset_link_api_v1_auth_reset_password_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetToken"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordResetTarget"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_password_api_v1_auth_reset_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirm"];
             };
         };
         responses: {

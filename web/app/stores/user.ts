@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue'
-import type { LoginCredentials, TokenResponse, User } from '~/types/api'
+import type { LoginCredentials, PasswordResetConfirm, SignupPayload, TokenResponse, User } from '~/types/api'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { AuthService, TokenRejectedError } from '~/services/authService'
@@ -12,6 +12,7 @@ const SESSION_VALIDATION_INTERVAL_MS: number = 60_000
 export const useUserStore = defineStore('user', () => {
   const user: Ref<User | null> = ref(null)
   const token: Ref<string | null> = ref(null)
+  const emailTypedWhileSignedOut: Ref<string> = ref('')
   let lastValidatedAt: number = 0
 
   const isAuthenticated: ComputedRef<boolean> = computed((): boolean => user.value !== null && token.value !== null)
@@ -33,10 +34,38 @@ export const useUserStore = defineStore('user', () => {
    * Sign in and save the session on this device.
    *
    * @param credentials - Email and password.
-   * @throws Error with the API message when the credentials are refused.
+   * @throws RefusedRequestError with the API message when the credentials are refused.
    */
   async function login(credentials: LoginCredentials): Promise<void> {
-    const tokenResponse: TokenResponse = await AuthService.login(credentials)
+    await startSession(await AuthService.login(credentials))
+  }
+
+  /**
+   * Create the account, then sign it in on this device.
+   *
+   * @param account - Name, email and password typed on the signup screen.
+   * @throws RefusedRequestError with the API message when the account is refused.
+   */
+  async function signup(account: SignupPayload): Promise<void> {
+    await startSession(await AuthService.signup(account))
+  }
+
+  /**
+   * Set the password chosen from a reset link, then sign the account in on this device.
+   *
+   * @param confirmation - Token read from the link, and the new password.
+   * @throws RefusedRequestError with the API message when the link is expired or already used.
+   */
+  async function resetPassword(confirmation: PasswordResetConfirm): Promise<void> {
+    await startSession(await AuthService.resetPassword(confirmation))
+  }
+
+  /**
+   * Save the session a token opens: read its user, keep both on this device.
+   *
+   * @param tokenResponse - Token returned by the login, the signup or the password reset.
+   */
+  async function startSession(tokenResponse: TokenResponse): Promise<void> {
     const signedInUser: User = await AuthService.getCurrentUser(tokenResponse.access_token)
     token.value = tokenResponse.access_token
     user.value = signedInUser
@@ -82,5 +111,17 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem(USER_STORAGE_KEY)
   }
 
-  return { user, token, isAuthenticated, firstName, restoreSession, login, validateSession, logout }
+  return {
+    user,
+    token,
+    emailTypedWhileSignedOut,
+    isAuthenticated,
+    firstName,
+    restoreSession,
+    login,
+    signup,
+    resetPassword,
+    validateSession,
+    logout,
+  }
 })

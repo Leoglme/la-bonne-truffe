@@ -28,6 +28,8 @@ Dans `.env`, changer au moins `SECRET_KEY` et `ADMIN_PASSWORD`. L'adresse `conta
 
 `init-db` est idempotent : il ne recrée ni ne modifie ce qui existe déjà. La base SQLite vit dans `api/data/` (ignoré par git).
 
+**Comptes** : `init-db` crée le compte du `.env`, l'écran « Créer un compte » en crée d'autres (`SIGNUP_ENABLED=false` le ferme). Sans `RESEND_API_KEY`, le lien de « Mot de passe oublié » ne part pas : l'API l'écrit dans ses logs, il suffit de l'ouvrir dans le navigateur. Il pointe vers `WEB_BASE_URL`. En production, renseigner la clé Resend et un `EMAIL_FROM` sur un domaine vérifié dans Resend.
+
 ### Commandes à la main
 
 | Commande | Rôle |

@@ -11,3 +11,5 @@ Photos Unsplash (licence Unsplash : utilisation libre, attribution appréciée).
 | cocker-gold-balle.jpg (galerie du détail) | https://unsplash.com/fr/photos/chien-brun-a-poil-long-sur-le-champ-dherbe-verte-pendant-la-journee--7ac4wXLouE | /_blob/9b0d30f3e8e83fb8c6dea44eeaee658e |
 
 Dans l'application réelle, les photos viendront des annonces (Chiens de France, Chiots de France). Sans photo, on affiche l'illustration de cocker colorée selon la robe.
+
+Les écrans de connexion de l'app servent trois de ces photos, copiées dans `web/public/images/auth/` : chiot-gold-plaid (connexion), cocker-gold-dos (inscription, recompressée à 324 Ko), cocker-gold-balle (lien envoyé).
