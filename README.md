@@ -2,7 +2,13 @@
 
 Outil personnel de Léo Guillaume pour trouver un chiot cocker spaniel anglais : il surveille toutes les heures les sources d'annonces de portées en France, applique les critères de Léo (race, couleur, LOF, départements, sexe), et le prévient par notification dès qu'une portée correspond, y compris les portées **à naître** déclarées à la Centrale Canine.
 
-Ce dépôt contient le **cadrage complet** pour l'IA ou le développeur qui construira l'application. Rien n'est encore codé.
+Ce dépôt contient le **cadrage complet** et le code de l'application :
+
+- `api/` : FastAPI, SQLAlchemy et SQLite, worker APScheduler, collecteur Centrale Canine, Web Push.
+- `web/` : Nuxt 4, Tailwind v4 et Nuxt UI, PWA avec Web Push, empaquetée en Tauri 2 pour Windows (`web/src-tauri/`).
+- `docker-compose.yml` : l'API et le worker sur le VPS, la base SQLite dans un volume.
+
+Pour lancer le projet en local : [docs/10-developpement-local.md](docs/10-developpement-local.md).
 
 ## À lire dans l'ordre
 
@@ -17,6 +23,7 @@ Ce dépôt contient le **cadrage complet** pour l'IA ou le développeur qui cons
 | [docs/06-maquette-et-design.md](docs/06-maquette-et-design.md) | La maquette validée, la direction artistique, les composants, l'icône |
 | [docs/07-historique-des-echanges.md](docs/07-historique-des-echanges.md) | Le résumé chronologique des discussions de cadrage |
 | [docs/08-idees-et-questions-ouvertes.md](docs/08-idees-et-questions-ouvertes.md) | Ce qui est gardé pour plus tard |
+| [docs/10-developpement-local.md](docs/10-developpement-local.md) | Lancer l'API, le worker, le dashboard, Tauri et Docker en local ; les commandes `cli.py` |
 
 ## La maquette
 
@@ -28,4 +35,4 @@ Les sources HTML de chaque écran sont dans [design/mockup/](design/mockup/), l'
 
 ## Stack imposée
 
-Même gabarit que les autres projets de Léo (DevLeadHunter) : `api/` en **FastAPI** (Python) avec un worker de collecte, `web/` en **Nuxt 4 + TypeScript strict** servi en PWA et empaqueté en **Tauri 2** pour Windows. Notifications iPhone par **Web Push VAPID** (gratuit, sans compte Apple), reçues par l'app web ajoutée à l'écran d'accueil. Détail dans `docs/05-architecture.md`.
+Même gabarit que les autres projets de Léo (DevLeadHunter) : `api/` en **FastAPI** (Python) avec un worker de collecte, `web/` en **Nuxt 4 + TypeScript strict + Tailwind v4 + Nuxt UI** servi en PWA et empaqueté en **Tauri 2** pour Windows. Notifications iPhone par **Web Push VAPID** (gratuit, sans compte Apple), reçues par l'app web ajoutée à l'écran d'accueil. Détail dans `docs/05-architecture.md`.

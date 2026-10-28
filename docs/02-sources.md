@@ -60,6 +60,13 @@ GET https://www.centrale-canine.fr/api/breed/le-chien-de-race--cocker-spaniel-an
 
 **Limites** : la liste ne dit pas s'il reste des chiots disponibles ; une portée peut être entièrement réservée. La couleur du paquet `159` est ambiguë. Rien ne prouve que cent pour cent des portées LOF y figurent, mais la liste est très complète.
 
+**Comment le collecteur lit cette source** (`api/services/collectors/centrale_canine.py`, jalon 1) :
+- un appel par race du profil, **par département du profil** (`department=<t_ID>`, `variety=all`, `is_borned=all`, `sort=0`) puis page par page jusqu'à `litters.count` ; le tableau des champs ne donne pas de champ département, c'est donc le filtre qui fixe le département de chaque portée. Un département sans `t_ID` connu n'est pas relevé (le journal le signale) ;
+- une requête par seconde au plus, User-Agent de navigateur, `Accept: application/json` ; un `403` arrête le relevé et s'inscrit dans `source_runs`, sans relance ;
+- `n_is_borned` faux → `litter_expected`, et les compteurs mâles et femelles (0 avant la naissance) sont stockés **inconnus** (null), pas zéro ; la variété donne les couleurs (`317` certaine, `159` ambiguë) ; tous les champs sont lus avec tolérance (nombre ou chaîne) tant que le type réel n'est pas vérifié ;
+- `external_id` = `n_id`. **Hypothèse à vérifier sur un vrai relevé** : la déclaration de naissance garde-t-elle le `n_id` de la déclaration de saillie ? Si oui, la naissance apparaît comme un changement de la même annonce (`kind`, `birth_date`, compteurs dans `listing_changes`) ; sinon il faudra rapprocher les deux par `n_servicing_number` lors du regroupement en portées (jalon 4).
+- Une annonce absente de deux relevés de suite (dans les départements relevés) passe inactive, de même qu'une portée née depuis plus de six mois.
+
 **Autres pages SCC utiles plus tard** : `ÉLEVEURS DE LA RACE` (annuaire), LOF Select (base de pedigrees, cotations, généalogie), la fiche du club de race (Spaniel Club Français).
 
 ## 2. Chiens de France
