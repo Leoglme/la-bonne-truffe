@@ -41,7 +41,7 @@ Avec `gh`, depuis la racine du dépôt, dans Git Bash. Les mots de passe sont lu
 
 ```bash
 gh secret set SSH_HOST --body "IP_DU_VPS"
-gh secret set SSH_PORT --body "22"
+gh secret set SSH_PORT --body "PORT_SSH_DU_VPS"
 gh secret set SSH_USERNAME --body "debian"
 gh secret set SSH_PRIVATE_KEY < chemin/vers/la/cle/privee
 read -rsp "Mot de passe du dashboard : " admin_password; echo; printf '%s' "$admin_password" | gh secret set ADMIN_PASSWORD; unset admin_password
