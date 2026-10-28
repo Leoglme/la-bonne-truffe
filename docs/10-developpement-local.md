@@ -46,6 +46,7 @@ Dans `.env`, changer au moins `SECRET_KEY` et `ADMIN_PASSWORD`. L'adresse `conta
 ```bash
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
+.venv/bin/python -m mypy .
 .venv/bin/python -m pytest
 ```
 

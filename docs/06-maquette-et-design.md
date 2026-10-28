@@ -57,13 +57,13 @@ Dans le code, ces valeurs sont des tokens Tailwind v4 déclarés dans le bloc `@
 
 ### Icônes
 
-Icônes **Lucide** via Nuxt UI (`<UIcon name="i-lucide-paw-print">`, collection `@iconify-json/lucide` embarquée dans le bundle client pour la fenêtre Tauri hors ligne), 22 à 26 px. Barre d'onglets : `paw-print`, `heart`, `sliders-horizontal`, `settings`. Pas d'icône seule sans libellé accessible (`aria-label`). Décoratives : `aria-hidden="true"`. Seuls le logo et l'illustration de cocker restent en SVG inline.
+Les icônes de la maquette sont des SVG dessinés à la main dans le style Lucide (patte pleine quand l'onglet est actif, cœur plein sur Suivi, curseurs, engrenage, cloche, flux, coche, chevrons, épingle, téléphone, lien externe, truffe). Pour que les écrans collent au pixel, elles sont reprises forme pour forme dans `web/app/constants/mockupIcons.ts` et dessinées par `UiMockupIcon` (taille et épaisseur du trait de chaque emplacement de la maquette : 26 px sur iPad, 24 px sur iPhone, 22 px sur desktop, trait 2, 2,2 pour l'onglet actif). Lucide reste disponible via Nuxt UI (`<UIcon name="i-lucide-…">`, embarqué hors ligne pour Tauri) pour toute icône que la maquette ne dessine pas. Pas d'icône seule sans libellé accessible (`aria-label`). Décoratives : `aria-hidden="true"`.
 
 ### L'icône de l'app et le logo
 
 `design/icone-app.svg` : carré arrondi corail `#E2552F` (rayon 22,5 % du côté, comme iOS), truffe crème `#FFF3E6` avec deux narines corail et un reflet blanc. Déclinaisons PNG à générer : 1024, 512, 192, 180, 120, 60. Variante claire (fond crème, truffe brune `#2B2420`) pour les contextes sombres.
 
-Dans l'app, le logo = la même icône arrondie à 32 à 38 px suivie du nom « La Bonne Truffe » en Fredoka 600, **sur tous les écrans** (composant `UiAppLogo`). La maquette iPad `Main.dc.html` est en retard sur ce point : elle montre encore une truffe brune seule ; c'est ce document qui fait foi (validé par Léo le 28/10/2026). Dans la bannière de notification iOS, c'est l'icône de l'app qui apparaît.
+Dans l'app, le logo = la même icône arrondie, **sans le reflet blanc** de l'icône d'écran d'accueil (comme « Le logo dans l'app » de `Icone.dc.html`), suivie du nom « La Bonne Truffe » en Fredoka 600, **sur tous les écrans** (composant `UiAppLogo`) : 32 px et 19 px sur iPhone, 36 px et 22 px sur iPad, 38 px et 21 px dans la barre latérale desktop, où le nom passe sur deux lignes exactement comme dans `Desktop.dc.html` (la barre fait 236 px). La maquette iPad `Main.dc.html` est en retard sur ce point : elle montre encore une truffe brune seule ; c'est ce document qui fait foi (validé par Léo le 28/10/2026). Dans la bannière de notification iOS, c'est l'icône de l'app qui apparaît.
 
 Les PNG sont générés dans `web/public/icons/` (1024, 512, 192, 120, 60), plus `web/public/apple-touch-icon.png` (180, **carré plein** : iOS arrondit lui-même et noircirait des coins transparents), `icons/icon-maskable-512.png` (carré plein, la truffe tient dans la zone sûre) et `favicon-32x32.png`. Les icônes Windows de Tauri sont dans `web/src-tauri/icons/` (`npx tauri icon`).
 
@@ -85,3 +85,15 @@ Les PNG sont générés dans `web/public/icons/` (1024, 512, 192, 120, 60), plus
 ## Accessibilité
 
 Contraste texte ≥ 4,5:1 (le corail `#E2552F` ne porte que du texte blanc en gras ≥ 18 px ; pour du texte courant sur fond clair, utiliser `#C94A28`), focus visible (`outline` corail 3 px), vrais `<button>` et `<a>`, `aria-current="page"` sur l'onglet actif, `prefers-reduced-motion` respecté sur les transitions (200 ms ease-out sur les interrupteurs).
+
+## Fidélité au pixel : comment c'est vérifié
+
+Les maquettes `.dc.html` n'embarquent pas leur moteur de rendu. Pour comparer, chaque écran est rendu à sa taille exacte (820 × 1180, 390 × 844, 1440 × 900) en évaluant le composant de la maquette, puis comparé côte à côte à la même vue de l'app, alimentée par une base de travail contenant les portées fictives de la maquette (jamais commitée). Constats et choix :
+
+- **Écarts dus aux données, voulus** : la maquette affiche un temps de route (« 1 h de route ») qui n'est pas calculé (idée V1.5) ; l'app montre la ville, ou le département quand la source ne donne pas de ville. Les scores sont ceux de l'algorithme, pas ceux inventés de la maquette.
+- **Bug de la maquette iPhone** : dans une colonne flex qui défile, la carte « née cette nuit » (`overflow: hidden`) se compresse à zéro de hauteur. Son code montre qu'elle est voulue : l'app l'affiche.
+- **`box-sizing`** : la maquette mesure en `content-box`. Un bouton de 54 px avec une bordure de 2 px y fait donc 58 px (« Suivre ») ; l'app reproduit les hauteurs rendues, pas les valeurs écrites.
+- **Hauteur de ligne** : le texte hérite de 1,45 sur iPhone et 1,5 à partir de l'iPad, comme la maquette (les tailles Tailwind n'imposent plus leur propre hauteur de ligne).
+- **« Pourquoi ce score »** : trois lignes sur iPhone et dans le volet desktop, jusqu'à cinq sur iPad (les raisons les plus fortes d'abord).
+- **Desktop** : barre latérale + grille de trois colonnes + volet de détail à partir de 1280 px ; entre 1024 et 1280 px, deux colonnes et l'écran de détail s'ouvre en plein. La barre latérale ajoute Réglages sous Sources (absent de la maquette, nécessaire pour la déconnexion).
+- Écrans sans maquette (Réglages, Sources, historique des notifications, connexion, Critères et Suivi sur iPhone et desktop) : mêmes composants, mêmes cotes que les écrans iPad.

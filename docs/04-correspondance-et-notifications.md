@@ -84,3 +84,17 @@ L'URL de la notification ouvre le détail du groupe dans le dashboard.
 ```
 
 Les couleurs absentes de `color_preferences` prennent la valeur `ignored` : Léo l'a confirmé le 28/10/2026, comme le sexe indifférent et l'absence de plafond de prix. Ce profil est créé par `api/seeders/search_profile_seeder.py`.
+
+## Mise en œuvre (jalon 2)
+
+Code : `api/services/matching/` (`tiers.py`, `scoring.py`, `matching_service.py` pur et testé, `events.py`, `match_refresh.py`), `api/services/litter_grouping.py`, `api/services/notifier.py`. Précisions prises en codant, à valider :
+
+- **Fraîcheur** : l'âge compte depuis la première apparition du groupe (`first_seen_at`, en heure française). Une portée à naître apparaît avec sa déclaration de saillie, ce qui suit la règle.
+- **Raisons** : une raison par critère (« Gold, ta couleur préférée », « Portée LOF », « 2 mâles et 3 femelles », « Apparue il y a 4 jours », « Ille-et-Vilaine, ton département le plus proche », bonus). L'exemple de la maquette donne bien **96** (test `test_mockup_example_scores_96_and_is_preferred`).
+- **Département inconnu** : il ne filtre pas (une information inconnue ne filtre jamais) ; drapeau `department_unknown`.
+- **Naissance** : quand une portée naît et passe « préférée » dans le même relevé, seul `born` part (il porte la nouvelle) ; `new_preferred` est noté comme traité.
+- **Réglages coupés** : un événement que le profil ne veut pas recevoir est quand même noté comme traité, pour qu'un réglage rallumé ne déverse pas d'anciennes portées.
+- **Critères modifiés** : l'enregistrement relance l'évaluation **sans notifier** (Léo regarde l'app à ce moment-là).
+- **Regroupement** : deux annonces d'une même source ne sont jamais regroupées sur une supposition (une source liste une portée une fois), seulement par numéro de portée ; la règle « une seule portée candidate en 60 jours » ne vaut que pour une annonce sans date de naissance.
+- **Pas encore fait** : `availability_change` (aucune source relevée ne donne encore le nombre de chiots disponibles).
+- Le texte des notifications met le département entre parenthèses quand la ville n'est pas connue : « Née le 27 octobre (Ille-et-Vilaine) : une portée gold, 2 mâles et 3 femelles. Dispo vers le 22 décembre. »

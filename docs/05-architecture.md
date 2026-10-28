@@ -39,7 +39,7 @@ la-bonne-truffe/
 - **Événements** : `EventService.detect(previous_match, new_match, changes) -> list[Event]`, puis `NotifierService` qui envoie les push et écrit `notifications`.
 - **Push** : copier `api/services/push_service.py` de DevLeadHunter (pywebpush + py_vapid, best-effort, purge des endpoints 404/410), les routes `notifications.py` (clé publique VAPID, subscribe, unsubscribe, test), le modèle `push_subscription`, et les variables `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY_B64`.
 - **Auth** : un seul utilisateur, JWT comme DevLeadHunter. L'API est exposée sur internet (le worker et l'iPhone doivent la joindre) : HTTPS obligatoire derrière le reverse proxy du VPS.
-- **Qualité** : `ruff check` et `ruff format`, `pytest`. Les tests des collecteurs tournent sur des réponses **enregistrées** (fixtures), jamais sur les sites réels.
+- **Qualité** : `ruff check` et `ruff format`, **mypy en mode strict** (`python -m mypy .`, plugin pydantic), `pytest`. Les colonnes à valeurs fermées sont des `StrEnum` typées côté SQLAlchemy (`models/enum_column.py`). Les tests des collecteurs tournent sur des réponses **enregistrées** (fixtures), jamais sur les sites réels.
 
 ### Endpoints REST (v1)
 
@@ -71,7 +71,7 @@ Toutes les routes sont préfixées par `/api/v1`.
 ## Standards de code de Léo (résumé)
 
 **TypeScript / Vue**
-- `any` interdit ; `unknown` + narrowing. Chaque `ref()` typé : `const x: Ref<T> = ref<T>(…)`. Chaque `computed()` typé : `ComputedRef<T>`. Callbacks et hooks typés : `onMounted((): void => { … })`. Paramètres et retours de fonction explicites.
+- `any` interdit ; `unknown` + narrowing. En plus de `strict`, `noUncheckedIndexedAccess`, `noImplicitReturns`, `noImplicitOverride`, `noFallthroughCasesInSwitch` et `noPropertyAccessFromIndexSignature` sont actifs (`nuxt.config.ts`). `defineEmits` garde sa signature en ligne (le compilateur de SFC ne résout pas les imports `~/`), la variable `emit` est annotée avec le type exporté de `app/types/`. Chaque `ref()` typé : `const x: Ref<T> = ref<T>(…)`. Chaque `computed()` typé : `ComputedRef<T>`. Callbacks et hooks typés : `onMounted((): void => { … })`. Paramètres et retours de fonction explicites.
 - Ordre d'un SFC : `<template>`, `<script lang="ts" setup>`, `<style scoped>`.
 - Props : interface exportée depuis `app/types/<ComponentName>.ts`, `defineProps({ … })` runtime avec `as PropType<T>` pour les unions, `default` explicite sur chaque prop optionnelle, JSDoc au-dessus. `withDefaults(defineProps<…>())` interdit.
 - Ordre dans `<script setup>` : imports (types d'abord), props + emits, composables, refs, computed, fonctions (JSDoc), watchers, hooks.

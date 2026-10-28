@@ -44,3 +44,10 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 - **Écart avec les docs** : depuis le conteneur cloud de la session, la Centrale Canine répond `403` (challenge Cloudflare sur l'IP, `cf-mitigated: challenge`), même avec le User-Agent de navigateur. Rien n'a été contourné. Les `t_ID` des départements (sauf `t_41`) et l'identifiant « autres couleurs » restent à lire avec `python cli.py scc-sync` depuis une IP acceptée ; la fixture de test du collecteur suit la forme documentée et sera remplacée par un vrai relevé. Détail dans `02-sources.md`.
 - **Choix techniques** : TypeScript 5.9 (TypeScript 7 n'expose plus l'API JavaScript dont `vue-tsc` a besoin, et `openapi-typescript` exige TypeScript 5) ; PyJWT au lieu de python-jose ; polices auto-hébergées via `@fontsource`.
 
+## 28 octobre : jalons 2 et 3
+
+- Léo demande de passer aux jalons suivants, avec une intégration de la maquette **au pixel près** sur téléphone, iPad et desktop (logo compris), et un typage très strict côté Python et TypeScript.
+- **Typage** : mypy strict sur toute l'API, colonnes en `StrEnum`, options TypeScript plus strictes que `strict`.
+- **Jalon 2** : regroupement en portées, matching de `04`, événements, push immédiats, récap du soir, alerte « source en panne », API des critères.
+- **Jalon 3** : routes du dashboard (portées, détail, couleurs confirmées, suivi et notes, sources) et écrans Accueil, Détail, Critères, Suivi, Réglages, Sources, historique, comparés écran par écran à la maquette rendue (méthode et écarts dans `06`).
+
