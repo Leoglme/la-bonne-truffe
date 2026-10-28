@@ -49,7 +49,7 @@
         type="button"
         class="inline-flex min-h-[58px] items-center justify-center rounded-full border-2 border-ink bg-card px-[22px] text-base font-extrabold text-ink"
         :aria-pressed="props.litter.follow_up !== null"
-        @click="littersStore.follow(props.litter.id)"
+        @click="littersStore.follow(props.litter)"
       >
         {{ props.litter.follow_up ? 'Suivie' : 'Suivre' }}
       </button>

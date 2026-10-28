@@ -28,6 +28,7 @@ import type { ComputedRef, PropType } from 'vue'
 import type { CockerCoat, CockerCoatPalette } from '~/constants/cockerCoatPalettes'
 import type { CockerIllustrationProps } from '~/types/CockerIllustration'
 import { computed } from 'vue'
+import { COAT_COLOR_LABELS } from '~/constants/coatColorLabels'
 import { COCKER_COAT_PALETTES } from '~/constants/cockerCoatPalettes'
 
 /** Cocker head drawn in flat colours, painted with the coat of a litter (design/illustration-cocker.svg). */
@@ -44,6 +45,8 @@ const props: CockerIllustrationProps = defineProps({
 
 const palette: ComputedRef<CockerCoatPalette> = computed((): CockerCoatPalette => COCKER_COAT_PALETTES[props.coat])
 const accessibleLabel: ComputedRef<string> = computed((): string =>
-  props.coat === 'inconnue' ? 'Chiot cocker, couleur à confirmer' : `Chiot cocker ${palette.value.label.toLowerCase()}`,
+  props.coat === 'inconnue'
+    ? 'Chiot cocker, couleur à confirmer'
+    : `Chiot cocker ${COAT_COLOR_LABELS[props.coat].toLowerCase()}`,
 )
 </script>

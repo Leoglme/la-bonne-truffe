@@ -48,12 +48,12 @@
           >
             <span class="inline-flex items-center gap-3 text-[17px] font-bold">
               <CockerIllustration :coat="row.coat" :size-in-pixels="40" />
-              {{ row.label }}
+              {{ COAT_COLOR_LABELS[row.color] }}
             </span>
             <UiSegmentedControl
               :model-value="criteriaStore.levelOf(row.color)"
               :options="COLOR_LEVEL_OPTIONS"
-              :label="`Niveau pour la couleur ${row.label}`"
+              :label="`Niveau pour la couleur ${COAT_COLOR_LABELS[row.color]}`"
               @update:model-value="(level: string): void => setColorLevel(row.color, level)"
             />
           </li>
@@ -150,6 +150,7 @@ import type { ComputedRef, Ref } from 'vue'
 import type { CriteriaColorRow } from '~/constants/criteriaOptions'
 import type { CoatColor, SearchProfileUpdate } from '~/types/api'
 import { computed, onMounted, ref } from 'vue'
+import { COAT_COLOR_LABELS } from '~/constants/coatColorLabels'
 import {
   COLOR_LEVEL_OPTIONS,
   CriteriaValues,

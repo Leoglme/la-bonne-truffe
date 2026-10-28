@@ -72,18 +72,21 @@ export const useLittersStore = defineStore('litters', () => {
   }
 
   /**
-   * Follow a litter (« Suivre »): it starts at « à appeler ».
+   * Follow a litter (« Suivre »): it starts at « à appeler ». A litter already followed keeps its follow-up.
    *
-   * @param litterId - The litter.
-   * @returns The updated detail.
+   * @param litter - The litter.
+   * @returns The detail, updated when the litter was not followed yet.
    */
-  async function follow(litterId: number): Promise<LitterDetail> {
-    const detail: LitterDetail = await LittersService.setFollowUp(litterId, { status: 'to_contact' })
-    if (selectedLitter.value?.id === litterId) {
+  async function follow(litter: LitterDetail): Promise<LitterDetail> {
+    if (litter.follow_up !== null) {
+      return litter
+    }
+    const detail: LitterDetail = await LittersService.setFollowUp(litter.id, { status: 'to_contact' })
+    if (selectedLitter.value?.id === litter.id) {
       selectedLitter.value = detail
     }
     cards.value = cards.value.map((card: LitterCard): LitterCard =>
-      card.id === litterId ? { ...card, follow_up_status: 'to_contact' } : card,
+      card.id === litter.id ? { ...card, follow_up_status: 'to_contact' } : card,
     )
     return detail
   }

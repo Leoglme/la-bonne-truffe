@@ -1,6 +1,6 @@
 import type { CockerCoat } from '~/constants/cockerCoatPalettes'
 import type { CoatColor, LitterCard, LitterColor } from '~/types/api'
-import { COCKER_COAT_PALETTES } from '~/constants/cockerCoatPalettes'
+import { COAT_COLOR_LABELS } from '~/constants/coatColorLabels'
 
 const LONG_MONTHS: readonly string[] = [
   'janvier',
@@ -109,29 +109,45 @@ export class LitterPresentation {
   }
 
   /**
+   * Whether every colour of a litter is known: certain or confirmed, never a bundle of the source.
+   *
+   * @param colors - Colours of the litter.
+   * @returns False with no colour, an ambiguous one or an unknown one.
+   */
+  static hasKnownColors(colors: LitterColor[]): boolean {
+    return (
+      colors.length > 0 &&
+      colors.every(
+        (reading: LitterColor): boolean => reading.confidence !== 'ambiguous' && reading.color !== 'inconnue',
+      )
+    )
+  }
+
+  /**
    * Label of the colour chip.
    *
    * @param colors - Colours of the litter.
    * @param isCompact - Phone and desktop say « À confirmer », the iPad « Couleur à confirmer ».
-   * @returns « Gold », « Noir et feu »…
+   * @returns « Gold », « Marron et feu », « Gold ou Noir et feu »…
    */
-  static colorLabel(colors: readonly LitterColor[], isCompact: boolean): string {
-    const coat: CockerCoat = this.coatOf(colors)
-    if (coat === 'inconnue') {
+  static colorLabel(colors: LitterColor[], isCompact: boolean): string {
+    if (!this.hasKnownColors(colors)) {
       return isCompact ? 'À confirmer' : 'Couleur à confirmer'
     }
-    return COCKER_COAT_PALETTES[coat].label
+    return colors.map((reading: LitterColor): string => COAT_COLOR_LABELS[reading.color]).join(' ou ')
   }
 
   /**
    * The colour as written in a sentence.
    *
    * @param colors - Colours of the litter.
-   * @returns « gold », or « de couleur à confirmer ».
+   * @returns « gold », « marron et feu », or « de couleur à confirmer ».
    */
-  static colorInSentence(colors: readonly LitterColor[]): string {
-    const coat: CockerCoat = this.coatOf(colors)
-    return coat === 'inconnue' ? 'de couleur à confirmer' : COCKER_COAT_PALETTES[coat].label.toLowerCase()
+  static colorInSentence(colors: LitterColor[]): string {
+    if (!this.hasKnownColors(colors)) {
+      return 'de couleur à confirmer'
+    }
+    return colors.map((reading: LitterColor): string => COAT_COLOR_LABELS[reading.color].toLowerCase()).join(' ou ')
   }
 
   /**

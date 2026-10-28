@@ -2,29 +2,28 @@ import type { CockerCoat } from '~/constants/cockerCoatPalettes'
 import type { CoatColor, ColorPreferenceLevel, LofPreference, SexPreference } from '~/types/api'
 import type { UiSegmentedControlOption } from '~/types/UiSegmentedControl'
 
-/** A colour row of the criteria screen: canonical colour, label, and the coat of its illustration. */
+/** A colour row of the criteria screen: canonical colour and the coat of its illustration. */
 export type CriteriaColorRow = {
   color: CoatColor
-  label: string
   coat: CockerCoat
 }
 
 /** The five colours shown first (design/mockup/Criteres.dc.html), then the others behind « Voir les… ». */
 export const MAIN_COLOR_ROWS: readonly CriteriaColorRow[] = [
-  { color: 'gold', label: 'Gold', coat: 'gold' },
-  { color: 'noir_et_feu', label: 'Noir et feu', coat: 'noir_et_feu' },
-  { color: 'noir', label: 'Noir', coat: 'noir' },
-  { color: 'marron', label: 'Marron', coat: 'marron' },
-  { color: 'bleu_rouan', label: 'Bleu rouan', coat: 'bleu_rouan' },
+  { color: 'gold', coat: 'gold' },
+  { color: 'noir_et_feu', coat: 'noir_et_feu' },
+  { color: 'noir', coat: 'noir' },
+  { color: 'marron', coat: 'marron' },
+  { color: 'bleu_rouan', coat: 'bleu_rouan' },
 ]
 
 export const OTHER_COLOR_ROWS: readonly CriteriaColorRow[] = [
-  { color: 'marron_et_feu', label: 'Marron et feu', coat: 'inconnue' },
-  { color: 'orange_rouan', label: 'Orange rouan', coat: 'inconnue' },
-  { color: 'marron_rouan', label: 'Marron rouan', coat: 'inconnue' },
-  { color: 'tricolore', label: 'Tricolore', coat: 'inconnue' },
-  { color: 'particolore', label: 'Particolore', coat: 'inconnue' },
-  { color: 'zibeline', label: 'Zibeline', coat: 'inconnue' },
+  { color: 'marron_et_feu', coat: 'inconnue' },
+  { color: 'orange_rouan', coat: 'inconnue' },
+  { color: 'marron_rouan', coat: 'inconnue' },
+  { color: 'tricolore', coat: 'inconnue' },
+  { color: 'particolore', coat: 'inconnue' },
+  { color: 'zibeline', coat: 'inconnue' },
 ]
 
 export const COLOR_LEVEL_OPTIONS: UiSegmentedControlOption[] = [

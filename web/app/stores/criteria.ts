@@ -106,7 +106,7 @@ export const useCriteriaStore = defineStore('criteria', () => {
   }
 
   /**
-   * Add a region at the end of the ordered list, or remove it.
+   * Remove a region, or add it back: saved departments return to their place, new ones go at the end.
    *
    * @param region - Region name.
    */
@@ -114,13 +114,19 @@ export const useCriteriaStore = defineStore('criteria', () => {
     if (draft.value === null) {
       return
     }
-    const codes: string[] = departmentCodesOf(region)
-    draft.value.department_codes = isRegionSelected(region)
-      ? draft.value.department_codes.filter((code: string): boolean => !codes.includes(code))
-      : [
-          ...draft.value.department_codes,
-          ...codes.filter((code: string): boolean => !draft.value?.department_codes.includes(code)),
-        ]
+    const regionCodes: string[] = departmentCodesOf(region)
+    if (isRegionSelected(region)) {
+      draft.value.department_codes = draft.value.department_codes.filter(
+        (code: string): boolean => !regionCodes.includes(code),
+      )
+      return
+    }
+    const wantedCodes: Set<string> = new Set([...draft.value.department_codes, ...regionCodes])
+    const savedCodes: string[] = savedProfile.value?.department_codes ?? []
+    draft.value.department_codes = [
+      ...savedCodes.filter((code: string): boolean => wantedCodes.has(code)),
+      ...[...wantedCodes].filter((code: string): boolean => !savedCodes.includes(code)),
+    ]
   }
 
   /**

@@ -66,7 +66,7 @@ function dotClass(status: SourceStatus): string {
  */
 function statusLine(status: SourceStatus): string {
   if (!status.is_collected) {
-    return 'Pas encore relevée : elle arrive avec un prochain jalon.'
+    return 'Pas encore relevée.'
   }
   if (status.last_run_at === null) {
     return 'Aucun relevé pour l’instant.'
