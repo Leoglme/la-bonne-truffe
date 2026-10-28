@@ -88,10 +88,18 @@ def test_migrations_create_every_table_and_record_themselves(tmp_path: Path) -> 
         "add_breeder_coordinates_and_listing_publication",
         "add_litter_group_puppies_available",
         "require_lof_on_profiles_left_on_preferred",
+        "add_signup_requests_table",
     ]
     assert runner.run() == []
     tables = set(inspect(database_engine).get_table_names())
-    assert {"listings", "litter_groups", "push_subscriptions", "schema_migrations", "source_runs"} <= tables
+    assert {
+        "listings",
+        "litter_groups",
+        "push_subscriptions",
+        "schema_migrations",
+        "signup_requests",
+        "source_runs",
+    } <= tables
 
 
 def test_profiles_left_on_lof_preferred_now_ask_for_the_lof(db: Session, engine: Engine) -> None:

@@ -6,7 +6,10 @@ import type {
   PasswordResetRequested,
   PasswordResetTarget,
   PasswordResetToken,
+  SignupAvailability,
   SignupPayload,
+  SignupRequestPayload,
+  SignupRequestRecorded,
   TokenResponse,
   User,
 } from '~/types/api'
@@ -57,6 +60,33 @@ export class AuthService {
    */
   static signup(account: SignupPayload): Promise<TokenResponse> {
     return this.postAsVisitor<TokenResponse>('/signup', account, 'Création du compte impossible')
+  }
+
+  /**
+   * Tell whether the signup screen creates an account, or keeps a signup request while signups are closed.
+   *
+   * @returns Whether signups are open.
+   * @throws Error when the API cannot be reached.
+   */
+  static async getSignupAvailability(): Promise<SignupAvailability> {
+    const response: Response = await fetch(`${this.apiBase()}/api/v1/auth/signup-availability`).catch((): never => {
+      throw new Error('L’API ne répond pas')
+    })
+    if (!response.ok) {
+      throw new Error('L’API ne répond pas')
+    }
+    return response.json()
+  }
+
+  /**
+   * Keep the name and address typed on the signup screen while signups are closed; the password is not sent.
+   *
+   * @param request - Name and address typed on the signup screen.
+   * @returns The address told when signups open.
+   * @throws RefusedRequestError when the address is refused, Error when the API cannot be reached.
+   */
+  static requestSignup(request: SignupRequestPayload): Promise<SignupRequestRecorded> {
+    return this.postAsVisitor<SignupRequestRecorded>('/signup-requests', request, 'Envoi de la demande impossible')
   }
 
   /**

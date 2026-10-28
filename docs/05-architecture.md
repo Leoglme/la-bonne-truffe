@@ -40,7 +40,7 @@ la-bonne-truffe/
 - **Matching** : `MatchingService.evaluate(group, profile) -> Match` (palier, score, raisons, drapeaux). Pur, sans effet de bord, testé unitairement.
 - **Événements** : `EventService.detect(previous_match, new_match, changes) -> list[Event]`, puis `NotifierService` qui envoie les push et écrit `notifications`.
 - **Push** : copier `api/services/push_service.py` de DevLeadHunter (pywebpush + py_vapid, best-effort, purge des endpoints 404/410), les routes `notifications.py` (clé publique VAPID, subscribe, unsubscribe, test), le modèle `push_subscription`, et les variables `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY_B64`.
-- **Auth** : JWT comme DevLeadHunter. Le seeder crée le compte du `.env` ; l'écran « Créer un compte » en ouvre d'autres tant que `SIGNUP_ENABLED` vaut `true` (le passer à `false` sur le VPS ferme l'instance), chacun avec le profil de départ, ses suivis et ses notifications. Mot de passe oublié : un lien signé, valable 30 minutes (`PASSWORD_RESET_TOKEN_EXPIRE_MINUTES`) et à usage unique (le jeton porte une empreinte du hash du mot de passe), envoyé par Resend (`RESEND_API_KEY`, `EMAIL_FROM`) ou, sans clé, écrit dans les logs de l'API ; la réponse est la même que l'adresse ait un compte ou non, et un deuxième e-mail attend 45 secondes. L'API est exposée sur internet (le worker et l'iPhone doivent la joindre) : HTTPS obligatoire derrière le reverse proxy du VPS.
+- **Auth** : JWT comme DevLeadHunter. Le seeder crée le compte du `.env`. L'inscription est **fermée par défaut** (`SIGNUP_ENABLED=false`) : l'écran « Créer un compte » reste affiché, mais une tentative garde le prénom et l'adresse dans `signup_requests` (jamais le mot de passe), affiche « C'est noté ! » et pousse la demande au compte du `.env`, une fois par adresse ; la réponse est la même si l'adresse a déjà un compte. `SIGNUP_ENABLED=true` ouvre la création de comptes, chacun avec le profil de départ, ses suivis et ses notifications. Mot de passe oublié : un lien signé, valable 30 minutes (`PASSWORD_RESET_TOKEN_EXPIRE_MINUTES`) et à usage unique (le jeton porte une empreinte du hash du mot de passe), envoyé par Resend (`RESEND_API_KEY`, `EMAIL_FROM`) ou, sans clé, écrit dans les logs de l'API ; la réponse est la même que l'adresse ait un compte ou non, et un deuxième e-mail attend 45 secondes. L'API est exposée sur internet (le worker et l'iPhone doivent la joindre) : HTTPS obligatoire derrière le reverse proxy du VPS.
 - **Qualité** : `ruff check` et `ruff format`, **mypy en mode strict** (`python -m mypy .`, plugin pydantic), `pytest`. Les colonnes à valeurs fermées sont des `StrEnum` typées côté SQLAlchemy (`models/enum_column.py`). Les tests des collecteurs tournent sur des réponses **enregistrées** (fixtures), jamais sur les sites réels.
 
 ### Endpoints REST (v1)
@@ -48,7 +48,8 @@ la-bonne-truffe/
 | Méthode et route | Rôle |
 |---|---|
 | `POST /auth/login`, `GET /auth/me` | Connexion |
-| `POST /auth/signup` | Créer un compte avec le profil de départ, et l'ouvrir |
+| `POST /auth/signup` | Créer un compte avec le profil de départ, et l'ouvrir ; `403` tant que l'inscription est fermée |
+| `GET /auth/signup-availability`, `POST /auth/signup-requests` | Inscription ouverte ou non ; demande d'inscription gardée tant qu'elle est fermée (`202`, même réponse que l'adresse ait un compte ou non) |
 | `POST /auth/forgot-password`, `POST /auth/reset-password/verify`, `POST /auth/reset-password` | Mot de passe oublié : envoi du lien, vérification du lien, nouveau mot de passe (qui connecte) |
 | `GET /litters` | Groupes de portées avec leur match, filtres `tier`, `kind`, `active`, tri par score ou fraîcheur |
 | `GET /litters/{id}` | Détail : listings par source, éleveur, raisons du score, changements, suivi |

@@ -37,6 +37,7 @@ MIGRATION_MODULES: list[tuple[str, str]] = [
     ),
     ("add_litter_group_puppies_available", "migrations.add_litter_group_puppies_available"),
     ("require_lof_on_profiles_left_on_preferred", "migrations.require_lof_on_profiles_left_on_preferred"),
+    ("add_signup_requests_table", "migrations.add_signup_requests_table"),
 ]
 
 _NON_MIGRATION_MODULES: set[str] = {"__init__", "run_migrations"}

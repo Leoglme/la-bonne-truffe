@@ -123,6 +123,20 @@ class NotificationTexts:
         reason = f" Dernière erreur : {error_message}" if error_message else ""
         return f"{SOURCE_NAMES[source]} ne répond plus depuis {failed_run_count} relevés.{reason}"
 
+    @staticmethod
+    def signup_request(name: str, email: str) -> str:
+        """
+        Body of the push telling the admin that someone tried to sign up while signups are closed.
+
+        Args:
+            name: First name typed on the signup screen.
+            email: Address typed on the signup screen.
+
+        Returns:
+            « Demande d'inscription : Marie (marie@exemple.fr) aimerait utiliser La Bonne Truffe. »
+        """
+        return f"Demande d’inscription : {name} ({email}) aimerait utiliser La Bonne Truffe."
+
     @classmethod
     def _acceptable_litters_sentence(cls, snapshots: list[LitterSnapshot]) -> str:
         """

@@ -1,5 +1,5 @@
 <template>
-  <AuthScreen title="Créer ton compte">
+  <AuthScreen v-if="recordedSignupRequestEmail === null" title="Créer ton compte">
     <template #subtitle>
       <span class="md:hidden">Deux minutes, et la truffe se met au travail.</span>
       <span class="hidden md:inline">Deux minutes, et la truffe se met à flairer pour toi.</span>
@@ -90,14 +90,28 @@
       </div>
     </form>
   </AuthScreen>
+
+  <AuthScreen v-else title="C’est noté !">
+    <template #subtitle>
+      La Bonne Truffe n’ouvre pas encore les inscriptions. On garde
+      <strong class="font-extrabold text-ink">{{ recordedSignupRequestEmail }}</strong> pour te prévenir dès qu’elles
+      ouvrent.
+    </template>
+    <template #visual>
+      <AuthIllustrationVisual coat="gold" badge-icon-name="i-lucide-bell-ring" height-class="h-[200px] md:h-[420px]" />
+    </template>
+
+    <UButton to="/connexion" block size="xl" class="md:min-h-[58px] lg:min-h-14">Retour à la connexion</UButton>
+  </AuthScreen>
 </template>
 
 <script lang="ts" setup>
 import type { Ref } from 'vue'
+import type { SignupAvailability, SignupRequestRecorded } from '~/types/api'
 import { ref } from 'vue'
 import { PASSWORD_RULE_HINT, PASSWORD_RULE_MESSAGE, PASSWORD_RULE_SHORT_HINT } from '~/constants/passwordRules'
 import { SIGNUP_HIGHLIGHTS } from '~/constants/signupHighlights'
-import { RefusedRequestError } from '~/services/authService'
+import { AuthService, RefusedRequestError } from '~/services/authService'
 import { PasswordRules } from '~/utils/passwordRules'
 
 const EMAIL_ALREADY_USED_STATUS: number = 409
@@ -113,9 +127,10 @@ const isSubmitting: Ref<boolean> = ref(false)
 const errorMessage: Ref<string | null> = ref(null)
 const hasRefusedEmail: Ref<boolean> = ref(false)
 const hasRefusedPassword: Ref<boolean> = ref(false)
+const recordedSignupRequestEmail: Ref<string | null> = ref(null)
 
 /**
- * Create the account, sign it in, then open the criteria; the password rule is checked before the API.
+ * Create the account, or keep the signup request while signups are closed; the password rule is checked first.
  */
 async function submit(): Promise<void> {
   errorMessage.value = null
@@ -127,17 +142,40 @@ async function submit(): Promise<void> {
   }
   isSubmitting.value = true
   try {
-    await userStore.signup({
-      name: name.value.trim(),
-      email: userStore.emailTypedWhileSignedOut.trim(),
-      password: password.value,
-    })
-    await navigateTo('/criteres')
+    const availability: SignupAvailability = await AuthService.getSignupAvailability()
+    if (availability.is_open) {
+      await createAccount()
+    } else {
+      await keepSignupRequest()
+    }
   } catch (error: unknown) {
     errorMessage.value = error instanceof Error ? error.message : 'Création du compte impossible'
     hasRefusedEmail.value = error instanceof RefusedRequestError && error.status === EMAIL_ALREADY_USED_STATUS
   } finally {
     isSubmitting.value = false
   }
+}
+
+/**
+ * Create the account, sign it in, then open the criteria.
+ */
+async function createAccount(): Promise<void> {
+  await userStore.signup({
+    name: name.value.trim(),
+    email: userStore.emailTypedWhileSignedOut.trim(),
+    password: password.value,
+  })
+  await navigateTo('/criteres')
+}
+
+/**
+ * Keep the name and address while signups are closed, then show « C’est noté ».
+ */
+async function keepSignupRequest(): Promise<void> {
+  const recordedSignupRequest: SignupRequestRecorded = await AuthService.requestSignup({
+    name: name.value.trim(),
+    email: userStore.emailTypedWhileSignedOut.trim(),
+  })
+  recordedSignupRequestEmail.value = recordedSignupRequest.email
 }
 </script>

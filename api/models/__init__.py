@@ -15,6 +15,7 @@ from models.litter_group import LitterGroup
 from models.notification import Notification
 from models.push_subscription import PushSubscription
 from models.search_profile import SearchProfile
+from models.signup_request import SignupRequest
 from models.source_run import SourceRun
 from models.user import User
 
@@ -33,6 +34,7 @@ __all__ = [
     "Notification",
     "PushSubscription",
     "SearchProfile",
+    "SignupRequest",
     "SourceRun",
     "User",
 ]

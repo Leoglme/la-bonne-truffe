@@ -1,8 +1,9 @@
-"""Authentication routes: login, signup, the forgotten password, and the signed-in user."""
+"""Authentication routes: login, signup or the signup request while closed, the forgotten password, the user."""
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from core.config import settings
 from core.database import get_db
 from models.user import User
 from schemas.user import (
@@ -11,6 +12,9 @@ from schemas.user import (
     PasswordResetRequested,
     PasswordResetTarget,
     PasswordResetToken,
+    SignupAvailability,
+    SignupRequestCreate,
+    SignupRequestRecorded,
     Token,
     UserLogin,
     UserResponse,
@@ -64,6 +68,32 @@ async def signup(payload: UserSignup, db: Session = Depends(get_db)) -> Token:
     """
     user = account_service.sign_up(db, payload)
     return Token(access_token=AuthService.create_access_token(user.email))
+
+
+@router.get("/signup-availability", response_model=SignupAvailability)
+async def read_signup_availability() -> SignupAvailability:
+    """
+    Tell the signup screen whether it creates an account or keeps a signup request.
+
+    Returns:
+        Whether signups are open (``SIGNUP_ENABLED``).
+    """
+    return SignupAvailability(is_open=settings.signup_enabled)
+
+
+@router.post("/signup-requests", response_model=SignupRequestRecorded, status_code=status.HTTP_202_ACCEPTED)
+async def request_signup(payload: SignupRequestCreate, db: Session = Depends(get_db)) -> SignupRequestRecorded:
+    """
+    Keep a signup attempt made while signups are closed; the admin is pushed each new address.
+
+    Args:
+        payload: Name and address typed on the signup screen.
+        db: Database session.
+
+    Returns:
+        The address told when signups open, whether or not it already has an account.
+    """
+    return account_service.record_signup_request(db, payload)
 
 
 @router.post("/forgot-password", response_model=PasswordResetRequested, status_code=status.HTTP_202_ACCEPTED)

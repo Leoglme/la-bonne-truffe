@@ -50,9 +50,9 @@ class Settings(BaseSettings):
     admin_password: str = Field(default="change-me", alias="ADMIN_PASSWORD")
 
     signup_enabled: bool = Field(
-        default=True,
+        default=False,
         alias="SIGNUP_ENABLED",
-        description="Whether the signup screen may create accounts; false keeps the instance to the accounts it has",
+        description="Whether the signup screen creates accounts; closed, it keeps each attempt and tells the admin",
     )
     password_reset_token_expire_minutes: int = Field(
         default=30,

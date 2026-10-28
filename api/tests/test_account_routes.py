@@ -1,4 +1,4 @@
-"""Signup and forgotten password routes."""
+"""Signup, signup requests while signups are closed, and forgotten password routes."""
 
 from urllib.parse import parse_qs, urlparse
 
@@ -8,7 +8,10 @@ from sqlalchemy.orm import Session
 
 from api.v1.routes import auth as auth_routes
 from core.config import settings
+from enums.notification_kind import NotificationKind
+from models.notification import Notification
 from models.search_profile import SearchProfile
+from models.signup_request import SignupRequest
 from models.user import User
 from services.account_service import AccountService
 from services.auth_service import AuthService
@@ -48,12 +51,19 @@ def sent_emails(monkeypatch: pytest.MonkeyPatch) -> list[EmailMessage]:
     return mailer.sent_messages
 
 
+@pytest.fixture
+def open_signups(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Signups open for the test (``SIGNUP_ENABLED=true``); they are closed by default."""
+    monkeypatch.setattr(settings, "signup_enabled", True)
+
+
 def reset_token_of(message: EmailMessage) -> str:
     """The token of the link written in a reset email."""
     link = next(word for word in message.text.split() if word.startswith("http"))
     return parse_qs(urlparse(link).query)["token"][0]
 
 
+@pytest.mark.usefixtures("open_signups")
 def test_signup_signs_in_with_the_starting_profile(client: TestClient, db: Session) -> None:
     response = client.post(
         "/api/v1/auth/signup", json={"name": "  Marie ", "email": "marie@exemple.fr", "password": "gold-et-redon-35"}
@@ -68,6 +78,7 @@ def test_signup_signs_in_with_the_starting_profile(client: TestClient, db: Sessi
     assert profile.department_codes[0] == "35"
 
 
+@pytest.mark.usefixtures("open_signups")
 def test_signup_stores_the_email_in_lowercase_and_login_ignores_case(client: TestClient) -> None:
     client.post("/api/v1/auth/signup", json={"name": "Marie", "email": "Marie@Exemple.FR", "password": "gold-35-gold"})
 
@@ -76,6 +87,7 @@ def test_signup_stores_the_email_in_lowercase_and_login_ignores_case(client: Tes
     assert login.status_code == 200
 
 
+@pytest.mark.usefixtures("open_signups")
 def test_signup_refuses_an_email_that_has_an_account(client: TestClient, user: User) -> None:
     response = client.post(
         "/api/v1/auth/signup", json={"name": "Léo", "email": user.email.upper(), "password": "gold-et-redon-35"}
@@ -94,14 +106,44 @@ def test_signup_refuses_a_password_below_the_announced_rule(client: TestClient, 
     assert response.status_code == 422
 
 
-def test_signup_can_be_closed(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(settings, "signup_enabled", False)
-
+def test_signup_is_closed_by_default(client: TestClient, db: Session) -> None:
     response = client.post(
         "/api/v1/auth/signup", json={"name": "Marie", "email": "marie@exemple.fr", "password": "gold-et-redon-35"}
     )
 
     assert response.status_code == 403
+    assert db.query(User).count() == 0
+
+
+def test_signup_availability_follows_the_setting(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    closed = client.get("/api/v1/auth/signup-availability").json()
+    monkeypatch.setattr(settings, "signup_enabled", True)
+    opened = client.get("/api/v1/auth/signup-availability").json()
+
+    assert (closed, opened) == ({"is_open": False}, {"is_open": True})
+
+
+def test_a_signup_request_is_kept_and_pushed_to_the_admin_once(client: TestClient, db: Session, user: User) -> None:
+    first = client.post("/api/v1/auth/signup-requests", json={"name": "Marie", "email": "marie@exemple.fr"})
+    again = client.post("/api/v1/auth/signup-requests", json={"name": "Marie-Anne", "email": "Marie@Exemple.fr"})
+
+    assert first.status_code == again.status_code == 202
+    assert first.json() == again.json() == {"email": "marie@exemple.fr"}
+    signup_request = db.query(SignupRequest).one()
+    assert (signup_request.name, signup_request.email) == ("Marie-Anne", "marie@exemple.fr")
+    notification = db.query(Notification).one()
+    assert (notification.user_id, notification.kind) == (user.id, NotificationKind.SIGNUP_REQUEST)
+    assert notification.body == "Demande d’inscription : Marie (marie@exemple.fr) aimerait utiliser La Bonne Truffe."
+
+
+def test_a_signup_request_from_an_account_is_answered_alike_and_not_kept(
+    client: TestClient, db: Session, user: User
+) -> None:
+    response = client.post("/api/v1/auth/signup-requests", json={"name": "Léo", "email": user.email.upper()})
+
+    assert response.status_code == 202
+    assert response.json() == {"email": user.email}
+    assert db.query(SignupRequest).count() == db.query(Notification).count() == 0
 
 
 def test_forgot_password_emails_a_link_that_opens_the_reset_screen(

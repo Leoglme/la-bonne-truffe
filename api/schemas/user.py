@@ -40,12 +40,34 @@ class UserLogin(BaseModel):
     password: str = Field(..., min_length=1)
 
 
+FirstName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+
+
 class UserSignup(BaseModel):
     """Account submitted by the signup screen."""
 
-    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+    name: FirstName
     email: EmailStr
     password: NewPassword
+
+
+class SignupAvailability(BaseModel):
+    """Whether the signup screen creates accounts, or keeps the attempt while signups are closed."""
+
+    is_open: bool
+
+
+class SignupRequestCreate(BaseModel):
+    """Name and address typed on the signup screen while signups are closed; the password is never kept."""
+
+    name: FirstName
+    email: EmailStr
+
+
+class SignupRequestRecorded(BaseModel):
+    """What the « C'est noté » screen says: the address told when signups open."""
+
+    email: str
 
 
 class Token(BaseModel):

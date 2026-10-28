@@ -11,4 +11,5 @@ class NotificationKind(StrEnum):
     UPGRADED = "upgraded"
     EVENING_DIGEST = "evening_digest"
     SOURCE_DOWN = "source_down"
+    SIGNUP_REQUEST = "signup_request"
     TEST = "test"

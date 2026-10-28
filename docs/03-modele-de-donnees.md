@@ -53,6 +53,9 @@ Le suivi perso.
 ### `digest_entries` (ajoutée au jalon 2)
 Les événements gardés pour le récap du soir : `id`, `user_id`, `litter_group_id`, `event_kind`, `created_at`, `sent_at` (null tant que le récap n'est pas parti). Une ligne par couple portée + événement.
 
+### `signup_requests` (ajoutée le 29/10/2026)
+Les inscriptions tentées pendant qu'elles sont fermées, pour mesurer l'intérêt pour l'app : `id`, `name`, `email` (unique, en minuscules), `requested_at`, `last_requested_at`. Jamais de mot de passe.
+
 ### `notifications`
 Historique des notifications envoyées, pour l'écran « cloche » et l'idempotence.
 `id`, `user_id`, `kind`, `title`, `body`, `url`, `litter_group_id`, `sent_at`, `delivered_count`, `failed_count`.

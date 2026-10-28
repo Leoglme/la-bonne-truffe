@@ -52,6 +52,7 @@ Les notifications suivent des **événements**, pas des lignes. Chaque couple (g
 | `upgraded` | Un groupe passe de `acceptable` à `preferred` (couleur confirmée, LOF précisé…) | Push immédiat |
 | `availability_change` | `puppies_available` baisse sur une portée suivie | Récap du soir |
 | `source_down` | Une source échoue trois relevés de suite | Push, une fois par panne |
+| `signup_request` | Quelqu'un tente de s'inscrire pendant que l'inscription est fermée (`05`) | Push au compte du `.env`, une fois par adresse |
 
 Une disparition (`is_active` → faux) ne notifie pas, elle grise la carte. Le récap du soir n'est envoyé que s'il contient quelque chose.
 

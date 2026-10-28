@@ -94,6 +94,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/signup-availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Signup Availability
+         * @description Tell the signup screen whether it creates an account or keeps a signup request.
+         *
+         *     Returns:
+         *         Whether signups are open (``SIGNUP_ENABLED``).
+         */
+        get: operations["read_signup_availability_api_v1_auth_signup_availability_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/signup-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Signup
+         * @description Keep a signup attempt made while signups are closed; the admin is pushed each new address.
+         *
+         *     Args:
+         *         payload: Name and address typed on the signup screen.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The address told when signups open, whether or not it already has an account.
+         */
+        post: operations["request_signup_api_v1_auth_signup_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/forgot-password": {
         parameters: {
             query?: never;
@@ -685,7 +735,7 @@ export interface paths {
          *         The statuses after the run.
          *
          *     Raises:
-         *         HTTPException: 501 for a source without collector yet.
+         *         HTTPException: 501 for a source this machine does not collect.
          */
         post: operations["run_source_api_v1_sources__source__run_post"];
         delete?: never;
@@ -1257,6 +1307,35 @@ export interface components {
          */
         SexPreference: "male" | "female" | "any";
         /**
+         * SignupAvailability
+         * @description Whether the signup screen creates accounts, or keeps the attempt while signups are closed.
+         */
+        SignupAvailability: {
+            /** Is Open */
+            is_open: boolean;
+        };
+        /**
+         * SignupRequestCreate
+         * @description Name and address typed on the signup screen while signups are closed; the password is never kept.
+         */
+        SignupRequestCreate: {
+            /** Name */
+            name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
+        /**
+         * SignupRequestRecorded
+         * @description What the « C'est noté » screen says: the address told when signups open.
+         */
+        SignupRequestRecorded: {
+            /** Email */
+            email: string;
+        };
+        /**
          * SourceRunStatus
          * @description Outcome of one collection run on a source; ``running`` until it ends.
          * @enum {string}
@@ -1478,6 +1557,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Token"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_signup_availability_api_v1_auth_signup_availability_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignupAvailability"];
+                };
+            };
+        };
+    };
+    request_signup_api_v1_auth_signup_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupRequestCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignupRequestRecorded"];
                 };
             };
             /** @description Validation Error */
