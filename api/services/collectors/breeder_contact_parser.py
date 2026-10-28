@@ -125,8 +125,8 @@ class BreederContactParser:
     @staticmethod
     def _capitalize_part(part: str, is_name_start: bool) -> str:
         """
-        Capitalize one hyphenated part; « d'opale » becomes « d'Opale », « o'neil » « O'Neil », « de »
-        stays « de ».
+        Capitalize one hyphenated part: « d'opale » becomes « d'Opale », « o'neil » « O'Neil »,
+        « dublin's » « Dublin's », and « de » stays « de ».
 
         Args:
             part: Lower-case part.
@@ -140,7 +140,9 @@ class BreederContactParser:
                 elision, _, rest = part.partition(apostrophe)
                 if is_name_start or elision not in ELIDED_ARTICLES:
                     elision = elision.capitalize()
-                return f"{elision}{apostrophe}{rest[:1].upper()}{rest[1:]}"
+                if len(elision) == 1:
+                    rest = rest[:1].upper() + rest[1:]
+                return f"{elision}{apostrophe}{rest}"
         if part in LOWERCASE_NAME_WORDS and not is_name_start:
             return part
         return part[:1].upper() + part[1:]

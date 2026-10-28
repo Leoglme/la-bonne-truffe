@@ -258,7 +258,7 @@ class CentraleCanineCollector:
 
         if response.status_code == 403:
             raise CentraleCanineError(
-                "Centrale Canine : 403, Cloudflare refuse cette adresse IP "
+                "Centrale Canine : 403, Cloudflare refuse ce client ou cette adresse "
                 f"(cf-mitigated={response.headers.get('cf-mitigated', 'absent')})"
             )
         if response.status_code >= 400:

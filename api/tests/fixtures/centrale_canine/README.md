@@ -17,7 +17,7 @@ Un même éleveur ou un même chien porte la même valeur de test dans les deux 
 Canine (`n_id`, `n_breeder`, `url`) sont gardés : ils mènent aux pages publiques des annonces, où l'éleveur publie
 lui-même ses coordonnées.
 
-Pour enregistrer de nouvelles pages, avec un client que la Centrale Canine accepte :
+Pour enregistrer de nouvelles pages depuis le PC de Léo, où le collecteur passe par le `curl` du système :
 
 ```bash
 python cli.py collect --save-raw tests/fixtures/centrale_canine/recorded

@@ -95,9 +95,10 @@ class SystemCurlTransport(httpx.BaseTransport):
             "--request",
             request.method,
         ]
-        for name, value in request.headers.items():
+        for raw_name, raw_value in request.headers.raw:
+            name = raw_name.decode("latin-1")
             if name.lower() not in SKIPPED_REQUEST_HEADERS:
-                command += ["--header", f"{name}: {value}"]
+                command += ["--header", f"{name}: {raw_value.decode('latin-1')}"]
         if has_body:
             command += ["--data-binary", "@-"]
         command.append(str(request.url))

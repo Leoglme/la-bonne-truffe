@@ -31,7 +31,7 @@ def fake_curl(monkeypatch: pytest.MonkeyPatch, dumped_headers: str, body: bytes,
     def run(command: list[str], **_options: Any) -> subprocess.CompletedProcess[bytes]:
         """Behave like curl."""
         commands.append(command)
-        Path(command[command.index("--dump-header") + 1]).write_text(dumped_headers, encoding="iso-8859-1")
+        Path(command[command.index("--dump-header") + 1]).write_bytes(dumped_headers.encode("iso-8859-1"))
         return subprocess.CompletedProcess(command, exit_code, stdout=body, stderr=b"curl: (6) Could not resolve host")
 
     monkeypatch.setattr(subprocess, "run", run)

@@ -13,6 +13,8 @@ from services.collectors.breeder_contact_parser import BreederContactParser
         ("L’ORÉE DES BOIS", "L’Orée des Bois"),
         ("DU CLOS DE L'ÉLEVAGE D", "Du Clos de l'Élevage D"),
         ("O'NEIL", "O'Neil"),
+        ("DUBLIN'S ROSE", "Dublin's Rose"),
+        ("DES JOYAUX DES KI'MILLACS", "Des Joyaux des Ki'millacs"),
         ("  LA   ROCHE-SUR-YON ", "La Roche-sur-Yon"),
         ("Élevage de la Vallée", "Élevage de la Vallée"),
         ("   ", None),
