@@ -44,7 +44,7 @@ La **Centrale Canine** (Société Centrale Canine, qui tient le LOF) publie un *
 | Adresse de contact | `contact@dibodev.fr` pour `ADMIN_EMAIL`, `VAPID_SUBJECT` et le User-Agent des sources HTML, toujours lue depuis le `.env` | Même adresse que DevLeadHunter |
 | Portées à naître | Incluses | C'est l'avantage décisif de la Centrale Canine |
 | Hébergement | `la-bonne-truffe.dibodev.fr` (dashboard) et `api.la-bonne-truffe.dibodev.fr` (API) sur le VPS, déployés par GitHub Actions comme DevLeadHunter | Sous-domaines créés le 28/10/2026 ; détail dans `11-deploiement.md` |
-| Centrale Canine sur le VPS | Pas relevée : le worker du VPS ne relève que Chiens de France et Chiots de France (`COLLECT_SKIPPED_SOURCES`) | Cloudflare refuse le `curl` de Linux même là où celui de Windows passe (28/10/2026, `02-sources.md`) |
+| Centrale Canine sur le VPS | Relayée par l'app Windows d'un PC allumé ; le worker du VPS ne relève que Chiens de France et Chiots de France (`COLLECT_SKIPPED_SOURCES`) | Cloudflare refuse les adresses de serveur, même avec le `curl` de Windows, et le `curl` de Linux même depuis le PC (28 et 29/10/2026, `02-sources.md`) |
 
 ## Questions encore ouvertes
 

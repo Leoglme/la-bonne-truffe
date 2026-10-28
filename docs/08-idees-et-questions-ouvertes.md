@@ -4,9 +4,9 @@
 
 Tranchées le 28/10/2026 (détail dans `01-cadrage.md`) : autres couleurs ignorées, sexe indifférent, pas de plafond de prix, départements 35, 56, 22, 29, 44, 53, 49, 72, 85, pas de notification native Windows, Tailwind v4 + Nuxt UI, adresse `contact@dibodev.fr`. **Relevé de la Centrale Canine** : sur le PC de Léo, par le `curl` du système, puisque Cloudflare refuse le client Python même depuis sa connexion (`02-sources.md`). Léo : « tu peux exécuter des commandes sur mon PC ». **Domaines** : `la-bonne-truffe.dibodev.fr` pour le dashboard et `api.la-bonne-truffe.dibodev.fr` pour l'API, déployés comme DevLeadHunter (`11-deploiement.md`).
 
-Restent ouvertes :
+Restent ouvertes : aucune pour l'instant.
 
-1. **Le relevé une fois l'API sur le VPS** (jalon 5). L'app Windows de Léo, lancée au démarrage dans la zone de notification comme celle de DevLeadHunter, relèvera chaque heure avec le même `curl` et enverra les pages à l'API, qui fera le reste : regroupement, correspondance, notifications. Les portées de la Centrale Canine n'arriveront alors que quand le PC est allumé. En attendant, elles n'arrivent pas du tout dans le dashboard en ligne : le worker du VPS ne relève pas la Centrale Canine (`COLLECT_SKIPPED_SOURCES`), qui refuse le `curl` de Linux (`02-sources.md`, `11-deploiement.md`).
+Tranchée le 29/10/2026 : **le relevé de la Centrale Canine une fois l'API sur le VPS** (jalon 5). Les serveurs étant tous refusés (`02-sources.md`), l'app Windows, lancée avec Windows et cachée dans la zone de notification, la relaie dès qu'un PC est allumé ; PC éteints, ses portées attendent le rallumage et les autres sources continuent (`11-deploiement.md`).
 
 Tranchée le 29/10/2026 : **les annonces « Type Cocker Spaniel Anglais » de Chiots de France** (cockers sans papiers et croisements mêlés) sont relevées en non LOF, et le critère « Pedigree LOF », sur « Obligatoire » par défaut, décide si elles s'affichent (`04`).
 

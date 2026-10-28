@@ -76,7 +76,7 @@ Si `nginx -t` signale une erreur, ne pas recharger : nginx continue de servir l'
 3. Merger sur `main` : `deploy-api` et `deploy-web` déploient, `desktop-release` publie la première release.
 4. Poser les confs nginx.
 5. Ouvrir https://la-bonne-truffe.dibodev.fr et se connecter avec `contact@dibodev.fr` et `ADMIN_PASSWORD`. Sur l'iPhone et l'iPad : Safari, Partager, « Sur l'écran d'accueil », puis Réglages → Notifications dans l'app.
-6. Installer l'app Windows depuis la dernière release ; les suivantes arrivent par la mise à jour intégrée.
+6. Installer l'app Windows depuis la dernière release sur chaque PC, et s'y connecter : elle démarre ensuite avec Windows, cachée dans la zone de notification, et relaie la Centrale Canine. Les versions suivantes arrivent par la mise à jour intégrée.
 
 ## Au quotidien
 
@@ -88,6 +88,14 @@ Si `nginx -t` signale une erreur, ne pas recharger : nginx continue de servir l'
 | Redémarrer | `sudo systemctl restart la-bonne-truffe-api la-bonne-truffe-worker`, `pm2 restart la-bonne-truffe.dibodev.fr` |
 | Lancer une commande de `cli.py` | `cd /var/www/api.la-bonne-truffe.dibodev.fr/html/api && ../.venv/bin/python cli.py push-test` |
 
-## La collecte depuis le VPS
+## La collecte
 
-Le worker du VPS relève Chiens de France et Chiots de France avec le `curl` de Debian ; les deux sites acceptent le User-Agent honnête (`02-sources.md`). Il ne relève pas la Centrale Canine : `deploy-api.yml` écrit `COLLECT_SKIPPED_SOURCES=centrale_canine` dans le `.env`, parce que Cloudflare refuse le `curl` de Linux même depuis une connexion où celui de Windows passe (`02-sources.md`). La page Sources du dashboard en ligne l'affiche donc « Pas encore relevée », sans bouton « Relever maintenant », et ses portées n'y arrivent pas.
+Le worker du VPS relève Chiens de France et Chiots de France avec le `curl` de Debian ; les deux sites acceptent le User-Agent honnête (`02-sources.md`). Il ne relève pas la Centrale Canine : `deploy-api.yml` écrit `COLLECT_SKIPPED_SOURCES=centrale_canine` dans le `.env`, parce que Cloudflare refuse les adresses de serveur et le `curl` de Linux (`02-sources.md`).
+
+La Centrale Canine est relayée par l'app Windows des PC où elle est installée et connectée :
+- l'app démarre avec Windows, cachée dans la zone de notification, et vérifie toutes les 5 minutes si le relevé de l'heure est dû ;
+- le premier PC qui le demande le fait : il lit les pages que l'API lui donne avec le `curl.exe` de Windows, sans fenêtre, et les renvoie à l'API, qui fait le relevé habituel ; l'autre PC passe son tour ;
+- quand aucun PC n'est allumé, ses portées attendent le prochain démarrage, et les autres sources continuent sans elle ;
+- la page Sources l'affiche « Relevée par l'app Windows » ; « Relever maintenant » n'y apparaît que dans l'app Windows.
+
+Un relais envoie environ 1 Mo de pages : la conf nginx de l'API accepte 10 Mo par requête (`client_max_body_size`).

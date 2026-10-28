@@ -87,6 +87,8 @@ npm run tauri:build   # installeur NSIS dans src-tauri/target/release/bundle/
 
 Le build desktop est une génération statique (`NUXT_DESKTOP_BUILD=1`). La fenêtre se cache dans la zone de notification à la fermeture, une seconde instance ramène la première, et l'app vérifie au démarrage les mises à jour publiées dans les releases GitHub. Les releases sont construites par le workflow `desktop-release.yml`, qui remplace `__TAURI_UPDATER_PUBKEY__` par la clé publique de l'updater et signe l'installeur, comme dans DevLeadHunter (clés dans `11-deploiement.md`). Pas de notification native sur Windows : les alertes arrivent sur l'iPhone et l'iPad.
 
+En release, l'app démarre avec Windows, cachée dans la zone de notification. Pour essayer le relais de la Centrale Canine en local, mettre `COLLECT_SKIPPED_SOURCES=centrale_canine` dans `api/.env` et relancer l'API : elle ne relève plus la source elle-même, et la fenêtre de `npm run tauri:dev`, une fois connectée, la relaie 30 secondes plus tard, ou tout de suite avec « Relever maintenant » sur la page Sources.
+
 ## Docker
 
 ```bash
