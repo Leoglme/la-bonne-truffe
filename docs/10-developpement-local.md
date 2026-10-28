@@ -1,0 +1,94 @@
+# Développement local
+
+Comment faire tourner La Bonne Truffe sur un poste de dev : l'API FastAPI et son worker, le dashboard Nuxt, la fenêtre Tauri, et la stack Docker du VPS.
+
+## Prérequis
+
+- Python 3.11 ou plus récent (l'image Docker utilise 3.12).
+- Node.js 22 ou plus récent.
+- Rust stable et, sous Windows, les outils de build de Visual Studio (pour Tauri uniquement).
+
+## API (`api/`)
+
+```bash
+cd api
+python -m venv .venv
+.venv/bin/pip install -r requirements.txt   # Windows : .venv\Scripts\pip
+cp .env.example .env
+```
+
+Dans `.env`, changer au moins `SECRET_KEY` et `ADMIN_PASSWORD`. L'adresse `contact@dibodev.fr` sert à `ADMIN_EMAIL`, `VAPID_SUBJECT` et au User-Agent des sources HTML ; elle n'est jamais écrite en dur dans le code.
+
+```bash
+.venv/bin/python cli.py init-db      # migrations + seeders (départements, cocker, utilisateur, profil de départ)
+.venv/bin/python cli.py vapid-keys   # coller les deux lignes affichées dans .env
+.venv/bin/python main.py             # API sur http://localhost:8000, documentation sur /docs
+.venv/bin/python worker.py           # worker APScheduler : relevé Centrale Canine à la 5e minute de chaque heure
+```
+
+`init-db` est idempotent : il ne recrée ni ne modifie ce qui existe déjà. La base SQLite vit dans `api/data/` (ignoré par git).
+
+### Commandes à la main
+
+| Commande | Rôle |
+|---|---|
+| `python cli.py init-db` | Appliquer les migrations puis les seeders |
+| `python cli.py vapid-keys` | Générer la paire de clés Web Push |
+| `python cli.py push-test` | Envoyer une notification de test aux appareils abonnés |
+| `python cli.py scc-sync` | Lire dans le JSON Centrale Canine (`litters.filters`) les `t_ID` des départements qui ont des portées, et signaler une variété inconnue des seeders |
+| `python cli.py scc-sync --save-raw DOSSIER` | Idem, en enregistrant la page JSON lue pour chaque race |
+| `python cli.py collect` | Relever la Centrale Canine maintenant et afficher les portées trouvées |
+| `python cli.py collect --save-raw DOSSIER` | Idem, en enregistrant chaque page JSON reçue (nouvelles fixtures, à anonymiser comme le dit `tests/fixtures/centrale_canine/README.md`) |
+
+**Premier lancement réel** : `init-db` puis `collect`. Les `t_ID` des 74 départements qui avaient des portées le 28/10/2026 sont seedés, et le relevé lit tout seul ceux qui manquent. Le relevé passe par le `curl` du système, celui de Windows 10 et plus ou de Git for Windows, parce que Cloudflare refuse le client Python (`02-sources.md`). Il marche depuis le PC de Léo : 85 portées au premier relevé du 28/10/2026.
+
+### Qualité
+
+```bash
+.venv/bin/ruff check .
+.venv/bin/ruff format --check .
+.venv/bin/python -m mypy .
+.venv/bin/python -m pytest
+```
+
+Les tests n'appellent jamais les sites réels : la base est en mémoire, les réponses HTTP passent par `httpx.MockTransport`, les fixtures sont dans `api/tests/fixtures/`.
+
+## Web (`web/`)
+
+```bash
+cd web
+npm install
+npm run dev          # http://localhost:3000, API attendue sur http://localhost:8000
+```
+
+Pour viser une autre API, définir `NUXT_PUBLIC_API_BASE` (voir `web/.env.example`). C'est obligatoire pour le build de production, le domaine du VPS n'étant pas encore choisi.
+
+| Script | Rôle |
+|---|---|
+| `npm run lint` | Prettier, ESLint, puis `vue-tsc` (le typecheck se fait dans `.nuxt-typecheck`, sans gêner un `nuxt dev` lancé) |
+| `npm run lint:fix` | Corriger ce que Prettier et ESLint savent corriger |
+| `npm test` | Test de fumée : construit l'app, vérifie que l'accueil se rend, que le manifest et le service worker sont servis |
+| `npm run types:api` | Régénérer `app/types/api.generated.ts` depuis l'OpenAPI de l'API lancée |
+
+### Notifications sur iPhone et iPad
+
+Le Web Push n'est livré par iOS qu'à l'app **ajoutée à l'écran d'accueil**, servie en HTTPS. En local, tester l'abonnement dans Chrome ou Firefox sur `localhost` ; sur l'iPhone, il faut le site déployé en HTTPS. Réglages → Notifications active l'abonnement et envoie une notification de test.
+
+## Desktop Windows (`web/src-tauri/`)
+
+```bash
+cd web
+npm run tauri:dev     # Nuxt en mode desktop sur le port 1420 + fenêtre Tauri
+npm run tauri:build   # installeur NSIS dans src-tauri/target/release/bundle/
+```
+
+Le build desktop est une génération statique (`NUXT_DESKTOP_BUILD=1`). La fenêtre se cache dans la zone de notification à la fermeture, une seconde instance ramène la première, et l'app vérifie au démarrage les mises à jour publiées dans les releases GitHub. Avant le premier build de release, générer la clé de signature de l'updater (`npx tauri signer generate`) et remplacer `__TAURI_UPDATER_PUBKEY__` dans `tauri.conf.json` par la clé publique, comme dans DevLeadHunter. Pas de notification native sur Windows : les alertes arrivent sur l'iPhone et l'iPad.
+
+## Docker (VPS)
+
+```bash
+cp api/.env.example api/.env    # puis le remplir
+docker compose up -d --build
+```
+
+Deux services sur la même image : `api` (migrations + seeders au démarrage, puis uvicorn sur `127.0.0.1:8000`, derrière le nginx du VPS en HTTPS) et `worker` (`python worker.py`). La base SQLite est dans le volume `data`, partagé par les deux.

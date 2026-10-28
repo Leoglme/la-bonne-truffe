@@ -1,0 +1,24 @@
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nuxt-typecheck
+.nitro
+.cache
+dist
+
+# Node dependencies
+node_modules
+
+# Logs
+*.log
+
+# Tauri
+src-tauri/target
+src-tauri/gen/schemas
+
+# Misc
+.env
+.env.local
+.DS_Store
+*.tsbuildinfo

@@ -1,0 +1,61 @@
+//! Keeps the app in the notification area (tray), as in DevLeadHunter.
+//!
+//! Closing the window only hides it; the tray icon brings it back or quits the app for good.
+//! Unlike DevLeadHunter, the app does not start with Windows: nothing runs in the background here.
+
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::{App, AppHandle, Manager, Window, WindowEvent};
+
+/// Label of the only window, declared in `tauri.conf.json`.
+const MAIN_WINDOW_LABEL: &str = "main";
+
+/// Show the main window, even when it is minimized or hidden in the tray.
+pub fn show_main_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
+/// Hide the main window instead of closing it.
+pub fn hide_main_window_on_close(window: &Window, event: &WindowEvent) {
+    if let WindowEvent::CloseRequested { api, .. } = event {
+        if window.label() == MAIN_WINDOW_LABEL {
+            api.prevent_close();
+            let _ = window.hide();
+        }
+    }
+}
+
+/// Add the tray icon: a left click opens the window, its menu opens or quits the app.
+pub fn build_tray_icon(app: &App) -> tauri::Result<()> {
+    let open_item = MenuItem::with_id(app, "open", "Ouvrir La Bonne Truffe", true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", "Quitter La Bonne Truffe", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&open_item, &quit_item])?;
+    let mut tray = TrayIconBuilder::with_id("main")
+        .tooltip("La Bonne Truffe")
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "open" => show_main_window(app),
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                show_main_window(tray.app_handle());
+            }
+        });
+    if let Some(icon) = app.default_window_icon() {
+        tray = tray.icon(icon.clone());
+    }
+    tray.build(app)?;
+    Ok(())
+}

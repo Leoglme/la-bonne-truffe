@@ -1,0 +1,2033 @@
+{
+  "cache_tags": [
+    "race_litters_list",
+    "user:85379",
+    "user:274854",
+    "user:72101",
+    "race_litters_list",
+    "litters_list:1728"
+  ],
+  "breed": {
+    "breed_title": "Cocker spaniel anglais",
+    "groups_titles": {
+      "1": "Élevages avec Affixe et sélectionnés",
+      "2": "Élevages avec Affixe",
+      "3": "Élevages sans Affixe"
+    }
+  },
+  "litters": {
+    "count": 19,
+    "empty_text": "",
+    "node": {
+      "2": {
+        "n4236807": {
+          "n_active": false,
+          "n_author": "",
+          "n_availability": [],
+          "n_average_notation": [
+            2
+          ],
+          "n_behavior": "",
+          "n_birth_date": [
+            1783252800
+          ],
+          "n_breed_club": "",
+          "n_breed_health": "",
+          "n_breed_id": [
+            237
+          ],
+          "n_breeder": [
+            85379
+          ],
+          "n_breeder_id": "379540",
+          "n_carac_block_image": "",
+          "n_changed": [
+            1790822166
+          ],
+          "n_city": "",
+          "n_city_living": "",
+          "n_coat": "",
+          "n_contact_address_1": "",
+          "n_contact_address_2": "",
+          "n_contact_address_3": "",
+          "n_contact_city": "",
+          "n_contact_email": "",
+          "n_contact_first_name": "",
+          "n_contact_last_name": "",
+          "n_contact_phone": "",
+          "n_contact_zip_code": "",
+          "n_created": [
+            1782116392
+          ],
+          "n_date": [],
+          "n_description": "",
+          "n_display_litter_breed_club": true,
+          "n_display_litter_breeder": true,
+          "n_dog_id": "",
+          "n_domain_access": "default",
+          "n_domain_all_affiliates": true,
+          "n_download_file_uri": "",
+          "n_download_label": "",
+          "n_end_date": [],
+          "n_event_canceled": false,
+          "n_expositions": "",
+          "n_father": [
+            4207565
+          ],
+          "n_father_lof": "000000/00001",
+          "n_father_name": "Père de test 1",
+          "n_father_notation": [
+            1
+          ],
+          "n_fci_race_id": "",
+          "n_female_number": [
+            1
+          ],
+          "n_field_type": "",
+          "n_foreign_litters": "",
+          "n_gender": false,
+          "n_genealogy_info": "",
+          "n_group_term_tid": [],
+          "n_history": "",
+          "n_id": "4236807",
+          "n_identifier": "",
+          "n_image": [],
+          "n_image_alt": "",
+          "n_image_title": "",
+          "n_image_type": "",
+          "n_image_uri": "",
+          "n_info_breed": [],
+          "n_is_borned": true,
+          "n_is_recommended": false,
+          "n_items": [],
+          "n_judge_name": "",
+          "n_lead_in": "",
+          "n_level": "",
+          "n_link_label": "",
+          "n_link_url": "",
+          "n_litter": [],
+          "n_litter_id": [
+            2817650
+          ],
+          "n_litter_link": "",
+          "n_litter_number": "LOF-2026016223-2026-11",
+          "n_litter_sort_date": [
+            1783252800
+          ],
+          "n_litter_status": [
+            3
+          ],
+          "n_location": [],
+          "n_lof": "",
+          "n_main_gallery": [],
+          "n_main_gallery_uri": "",
+          "n_male_number": [
+            2
+          ],
+          "n_map": [],
+          "n_mea_description": "",
+          "n_mea_file_label": "",
+          "n_mea_file_uri": "",
+          "n_mea_image_uri": "",
+          "n_mea_title": "",
+          "n_mother": [
+            3603208
+          ],
+          "n_mother_lof": "000000/00002",
+          "n_mother_name": "Mère de test 2",
+          "n_mother_notation": [
+            1
+          ],
+          "n_multi_gallery": [],
+          "n_name": "",
+          "n_notation": [],
+          "n_only_for_members": false,
+          "n_original_breed_name": "",
+          "n_overlay": "",
+          "n_partner_link": "",
+          "n_place": "",
+          "n_presentation_text": "",
+          "n_published_on_list": false,
+          "n_published_on_production": false,
+          "n_race": "1728",
+          "n_race_variety": [],
+          "n_related_content": [],
+          "n_results": "",
+          "n_search_image": "",
+          "n_selection": "2",
+          "n_servicing_date": [
+            1777723200
+          ],
+          "n_servicing_number": [
+            2026016223
+          ],
+          "n_show_in_footer": false,
+          "n_size": "",
+          "n_size_type": "",
+          "n_slideshow": [],
+          "n_sort_weight": [],
+          "n_start_date": [],
+          "n_status": true,
+          "n_title": "Portee-2817650",
+          "n_title_for_sorting": "Portee-2817650",
+          "n_type": "litter",
+          "n_usage_breed_name": "",
+          "n_uses": "",
+          "n_variety": "158",
+          "n_variety_id": [
+            345
+          ],
+          "n_variety_name": "",
+          "n_website": "",
+          "n_weight": "",
+          "n_widgets": [],
+          "n_zip_code": "",
+          "cache_tags": "a:23:{i:0;s:12:\"node:4236807\";i:1;s:10:\"user:85379\";i:2;s:9:\"node:1529\";i:3;s:17:\"taxonomy_term:107\";i:4;s:17:\"taxonomy_term:112\";i:5;s:17:\"taxonomy_term:113\";i:6;s:9:\"node:1534\";i:7;s:9:\"node:1565\";i:8;s:17:\"taxonomy_term:131\";i:9;s:9:\"node:1568\";i:10;s:9:\"node:1615\";i:11;s:9:\"node:1718\";i:12;s:17:\"taxonomy_term:142\";i:13;s:9:\"node:1728\";i:14;s:17:\"taxonomy_term:159\";i:15;s:17:\"taxonomy_term:158\";i:16;s:17:\"taxonomy_term:317\";i:17;s:9:\"node:1840\";i:18;s:9:\"node:1877\";i:19;s:16:\"taxonomy_term:41\";i:20;s:17:\"taxonomy_term:944\";i:21;s:12:\"node:4207565\";i:22;s:12:\"node:3603208\";}",
+          "glossary_field": "p",
+          "referenced_entities": "a:4:{s:4:\"user\";a:1:{i:0;s:5:\"85379\";}s:4:\"node\";a:11:{i:0;s:4:\"1529\";i:1;s:4:\"1534\";i:2;s:4:\"1565\";i:3;s:4:\"1568\";i:4;s:4:\"1615\";i:5;s:4:\"1718\";i:6;s:4:\"1728\";i:7;s:4:\"1840\";i:8;s:4:\"1877\";i:9;s:7:\"4207565\";i:10;s:7:\"3603208\";}s:13:\"taxonomy_term\";a:11:{i:0;s:3:\"107\";i:1;s:3:\"112\";i:2;s:3:\"113\";i:3;s:1:\"0\";i:4;s:3:\"131\";i:5;s:3:\"142\";i:6;s:3:\"159\";i:7;s:3:\"158\";i:8;s:3:\"317\";i:9;s:2:\"41\";i:10;s:3:\"944\";}s:6:\"widget\";a:3:{i:0;s:4:\"7883\";i:1;s:4:\"7978\";i:2;s:4:\"7889\";}}",
+          "sort_litters_badges": [
+            1
+          ],
+          "url": "/portee/2817650"
+        },
+        "n4236809": {
+          "n_active": false,
+          "n_author": "",
+          "n_availability": [],
+          "n_average_notation": [
+            2
+          ],
+          "n_behavior": "",
+          "n_birth_date": [
+            1782993600
+          ],
+          "n_breed_club": "",
+          "n_breed_health": "",
+          "n_breed_id": [
+            237
+          ],
+          "n_breeder": [
+            85379
+          ],
+          "n_breeder_id": "379540",
+          "n_carac_block_image": "",
+          "n_changed": [
+            1791212409
+          ],
+          "n_city": "",
+          "n_city_living": "",
+          "n_coat": "",
+          "n_contact_address_1": "",
+          "n_contact_address_2": "",
+          "n_contact_address_3": "",
+          "n_contact_city": "",
+          "n_contact_email": "",
+          "n_contact_first_name": "",
+          "n_contact_last_name": "",
+          "n_contact_phone": "",
+          "n_contact_zip_code": "",
+          "n_created": [
+            1782116392
+          ],
+          "n_date": [],
+          "n_description": "",
+          "n_display_litter_breed_club": true,
+          "n_display_litter_breeder": true,
+          "n_dog_id": "",
+          "n_domain_access": "default",
+          "n_domain_all_affiliates": true,
+          "n_download_file_uri": "",
+          "n_download_label": "",
+          "n_end_date": [],
+          "n_event_canceled": false,
+          "n_expositions": "",
+          "n_father": [
+            4207565
+          ],
+          "n_father_lof": "000000/00001",
+          "n_father_name": "Père de test 1",
+          "n_father_notation": [
+            1
+          ],
+          "n_fci_race_id": "",
+          "n_female_number": [
+            2
+          ],
+          "n_field_type": "",
+          "n_foreign_litters": "",
+          "n_gender": false,
+          "n_genealogy_info": "",
+          "n_group_term_tid": [],
+          "n_history": "",
+          "n_id": "4236809",
+          "n_identifier": "",
+          "n_image": [],
+          "n_image_alt": "",
+          "n_image_title": "",
+          "n_image_type": "",
+          "n_image_uri": "",
+          "n_info_breed": [],
+          "n_is_borned": true,
+          "n_is_recommended": false,
+          "n_items": [],
+          "n_judge_name": "",
+          "n_lead_in": "",
+          "n_level": "",
+          "n_link_label": "",
+          "n_link_url": "",
+          "n_litter": [],
+          "n_litter_id": [
+            2817651
+          ],
+          "n_litter_link": "",
+          "n_litter_number": "LOF-2026016224-2026-9",
+          "n_litter_sort_date": [
+            1782993600
+          ],
+          "n_litter_status": [
+            3
+          ],
+          "n_location": [],
+          "n_lof": "",
+          "n_main_gallery": [],
+          "n_main_gallery_uri": "",
+          "n_male_number": [
+            5
+          ],
+          "n_map": [],
+          "n_mea_description": "",
+          "n_mea_file_label": "",
+          "n_mea_file_uri": "",
+          "n_mea_image_uri": "",
+          "n_mea_title": "",
+          "n_mother": [
+            4236808
+          ],
+          "n_mother_lof": "000000/00002",
+          "n_mother_name": "Mère de test 3",
+          "n_mother_notation": [
+            1
+          ],
+          "n_multi_gallery": [],
+          "n_name": "",
+          "n_notation": [],
+          "n_only_for_members": false,
+          "n_original_breed_name": "",
+          "n_overlay": "",
+          "n_partner_link": "",
+          "n_place": "",
+          "n_presentation_text": "",
+          "n_published_on_list": false,
+          "n_published_on_production": false,
+          "n_race": "1728",
+          "n_race_variety": [],
+          "n_related_content": [],
+          "n_results": "",
+          "n_search_image": "",
+          "n_selection": "2",
+          "n_servicing_date": [
+            1777896000
+          ],
+          "n_servicing_number": [
+            2026016224
+          ],
+          "n_show_in_footer": false,
+          "n_size": "",
+          "n_size_type": "",
+          "n_slideshow": [],
+          "n_sort_weight": [],
+          "n_start_date": [],
+          "n_status": true,
+          "n_title": "Portee-2817651",
+          "n_title_for_sorting": "Portee-2817651",
+          "n_type": "litter",
+          "n_usage_breed_name": "",
+          "n_uses": "",
+          "n_variety": "158",
+          "n_variety_id": [
+            345
+          ],
+          "n_variety_name": "",
+          "n_website": "",
+          "n_weight": "",
+          "n_widgets": [],
+          "n_zip_code": "",
+          "cache_tags": "a:23:{i:0;s:12:\"node:4236809\";i:1;s:10:\"user:85379\";i:2;s:9:\"node:1529\";i:3;s:17:\"taxonomy_term:107\";i:4;s:17:\"taxonomy_term:112\";i:5;s:17:\"taxonomy_term:113\";i:6;s:9:\"node:1534\";i:7;s:9:\"node:1565\";i:8;s:17:\"taxonomy_term:131\";i:9;s:9:\"node:1568\";i:10;s:9:\"node:1615\";i:11;s:9:\"node:1718\";i:12;s:17:\"taxonomy_term:142\";i:13;s:9:\"node:1728\";i:14;s:17:\"taxonomy_term:159\";i:15;s:17:\"taxonomy_term:158\";i:16;s:17:\"taxonomy_term:317\";i:17;s:9:\"node:1840\";i:18;s:9:\"node:1877\";i:19;s:16:\"taxonomy_term:41\";i:20;s:17:\"taxonomy_term:944\";i:21;s:12:\"node:4207565\";i:22;s:12:\"node:4236808\";}",
+          "glossary_field": "p",
+          "referenced_entities": "a:4:{s:4:\"user\";a:1:{i:0;s:5:\"85379\";}s:4:\"node\";a:11:{i:0;s:4:\"1529\";i:1;s:4:\"1534\";i:2;s:4:\"1565\";i:3;s:4:\"1568\";i:4;s:4:\"1615\";i:5;s:4:\"1718\";i:6;s:4:\"1728\";i:7;s:4:\"1840\";i:8;s:4:\"1877\";i:9;s:7:\"4207565\";i:10;s:7:\"4236808\";}s:13:\"taxonomy_term\";a:11:{i:0;s:3:\"107\";i:1;s:3:\"112\";i:2;s:3:\"113\";i:3;s:1:\"0\";i:4;s:3:\"131\";i:5;s:3:\"142\";i:6;s:3:\"159\";i:7;s:3:\"158\";i:8;s:3:\"317\";i:9;s:2:\"41\";i:10;s:3:\"944\";}s:6:\"widget\";a:3:{i:0;s:4:\"7883\";i:1;s:4:\"7978\";i:2;s:4:\"7889\";}}",
+          "sort_litters_badges": [
+            1
+          ],
+          "url": "/portee/2817651"
+        },
+        "n4198846": {
+          "n_active": false,
+          "n_author": "",
+          "n_availability": [],
+          "n_average_notation": [
+            2
+          ],
+          "n_behavior": "",
+          "n_birth_date": [
+            1780488000
+          ],
+          "n_breed_club": "",
+          "n_breed_health": "",
+          "n_breed_id": [
+            237
+          ],
+          "n_breeder": [
+            274854
+          ],
+          "n_breeder_id": "460603",
+          "n_carac_block_image": "",
+          "n_changed": [
+            1785226325
+          ],
+          "n_city": "",
+          "n_city_living": "",
+          "n_coat": "",
+          "n_contact_address_1": "",
+          "n_contact_address_2": "",
+          "n_contact_address_3": "",
+          "n_contact_city": "",
+          "n_contact_email": "",
+          "n_contact_first_name": "",
+          "n_contact_last_name": "",
+          "n_contact_phone": "",
+          "n_contact_zip_code": "",
+          "n_created": [
+            1780404501
+          ],
+          "n_date": [],
+          "n_description": "",
+          "n_display_litter_breed_club": true,
+          "n_display_litter_breeder": true,
+          "n_dog_id": "",
+          "n_domain_access": "default",
+          "n_domain_all_affiliates": true,
+          "n_download_file_uri": "",
+          "n_download_label": "",
+          "n_end_date": [],
+          "n_event_canceled": false,
+          "n_expositions": "",
+          "n_father": [
+            3033642
+          ],
+          "n_father_lof": "000000/00001",
+          "n_father_name": "Père de test 4",
+          "n_father_notation": [
+            1
+          ],
+          "n_fci_race_id": "",
+          "n_female_number": [
+            0
+          ],
+          "n_field_type": "",
+          "n_foreign_litters": "",
+          "n_gender": false,
+          "n_genealogy_info": "",
+          "n_group_term_tid": [],
+          "n_history": "",
+          "n_id": "4198846",
+          "n_identifier": "",
+          "n_image": [],
+          "n_image_alt": "",
+          "n_image_title": "",
+          "n_image_type": "",
+          "n_image_uri": "",
+          "n_info_breed": [],
+          "n_is_borned": true,
+          "n_is_recommended": false,
+          "n_items": [],
+          "n_judge_name": "",
+          "n_lead_in": "",
+          "n_level": "",
+          "n_link_label": "",
+          "n_link_url": "",
+          "n_litter": [],
+          "n_litter_id": [
+            2819293
+          ],
+          "n_litter_link": "",
+          "n_litter_number": "LOF-2026017755-2026-11",
+          "n_litter_sort_date": [
+            1780488000
+          ],
+          "n_litter_status": [
+            3
+          ],
+          "n_location": [],
+          "n_lof": "",
+          "n_main_gallery": [],
+          "n_main_gallery_uri": "",
+          "n_male_number": [
+            1
+          ],
+          "n_map": [],
+          "n_mea_description": "",
+          "n_mea_file_label": "",
+          "n_mea_file_uri": "",
+          "n_mea_image_uri": "",
+          "n_mea_title": "",
+          "n_mother": [
+            3387595
+          ],
+          "n_mother_lof": "000000/00002",
+          "n_mother_name": "Mère de test 5",
+          "n_mother_notation": [
+            1
+          ],
+          "n_multi_gallery": [],
+          "n_name": "",
+          "n_notation": [],
+          "n_only_for_members": false,
+          "n_original_breed_name": "",
+          "n_overlay": "",
+          "n_partner_link": "",
+          "n_place": "",
+          "n_presentation_text": "",
+          "n_published_on_list": false,
+          "n_published_on_production": false,
+          "n_race": "1728",
+          "n_race_variety": [],
+          "n_related_content": [],
+          "n_results": "",
+          "n_search_image": "",
+          "n_selection": "2",
+          "n_servicing_date": [
+            1775217600
+          ],
+          "n_servicing_number": [
+            2026017755
+          ],
+          "n_show_in_footer": false,
+          "n_size": "",
+          "n_size_type": "",
+          "n_slideshow": [],
+          "n_sort_weight": [],
+          "n_start_date": [],
+          "n_status": true,
+          "n_title": "Portee-2819293",
+          "n_title_for_sorting": "Portee-2819293",
+          "n_type": "litter",
+          "n_usage_breed_name": "",
+          "n_uses": "",
+          "n_variety": "317",
+          "n_variety_id": [
+            346
+          ],
+          "n_variety_name": "",
+          "n_website": "",
+          "n_weight": "",
+          "n_widgets": [],
+          "n_zip_code": "",
+          "cache_tags": "a:49:{i:0;s:12:\"node:4198846\";i:1;s:11:\"user:274854\";i:2;s:9:\"node:1529\";i:3;s:17:\"taxonomy_term:107\";i:4;s:17:\"taxonomy_term:112\";i:5;s:17:\"taxonomy_term:113\";i:6;s:9:\"node:1544\";i:7;s:9:\"node:1561\";i:8;s:17:\"taxonomy_term:124\";i:9;s:17:\"taxonomy_term:310\";i:10;s:17:\"taxonomy_term:309\";i:11;s:9:\"node:1562\";i:12;s:9:\"node:1568\";i:13;s:17:\"taxonomy_term:131\";i:14;s:9:\"node:1575\";i:15;s:9:\"node:1656\";i:16;s:17:\"taxonomy_term:141\";i:17;s:9:\"node:1664\";i:18;s:9:\"node:1667\";i:19;s:9:\"node:1693\";i:20;s:17:\"taxonomy_term:151\";i:21;s:9:\"node:1728\";i:22;s:17:\"taxonomy_term:142\";i:23;s:17:\"taxonomy_term:159\";i:24;s:17:\"taxonomy_term:158\";i:25;s:17:\"taxonomy_term:317\";i:26;s:9:\"node:1746\";i:27;s:17:\"taxonomy_term:144\";i:28;s:17:\"taxonomy_term:198\";i:29;s:17:\"taxonomy_term:328\";i:30;s:17:\"taxonomy_term:327\";i:31;s:17:\"taxonomy_term:329\";i:32;s:9:\"node:1759\";i:33;s:9:\"node:1773\";i:34;s:17:\"taxonomy_term:212\";i:35;s:9:\"node:1830\";i:36;s:17:\"taxonomy_term:137\";i:37;s:9:\"node:1831\";i:38;s:9:\"node:1837\";i:39;s:9:\"node:1855\";i:40;s:17:\"taxonomy_term:215\";i:41;s:17:\"taxonomy_term:216\";i:42;s:17:\"taxonomy_term:217\";i:43;s:17:\"taxonomy_term:218\";i:44;s:16:\"taxonomy_term:41\";i:45;s:17:\"taxonomy_term:944\";i:46;s:17:\"taxonomy_term:311\";i:47;s:12:\"node:3033642\";i:48;s:12:\"node:3387595\";}",
+          "glossary_field": "p",
+          "referenced_entities": "a:4:{s:4:\"user\";a:1:{i:0;s:6:\"274854\";}s:4:\"node\";a:21:{i:0;s:4:\"1529\";i:1;s:4:\"1544\";i:2;s:4:\"1561\";i:3;s:4:\"1562\";i:4;s:4:\"1568\";i:5;s:4:\"1575\";i:6;s:4:\"1656\";i:7;s:4:\"1664\";i:8;s:4:\"1667\";i:9;s:4:\"1693\";i:10;s:4:\"1728\";i:11;s:4:\"1746\";i:12;s:4:\"1759\";i:13;s:4:\"1773\";i:14;s:4:\"1830\";i:15;s:4:\"1831\";i:16;s:4:\"1837\";i:17;s:4:\"1855\";i:18;s:7:\"3033642\";i:19;s:7:\"3387595\";i:20;s:7:\"3320288\";}s:13:\"taxonomy_term\";a:28:{i:0;s:3:\"107\";i:1;s:3:\"112\";i:2;s:3:\"113\";i:3;s:1:\"0\";i:4;s:3:\"124\";i:5;s:3:\"310\";i:6;s:3:\"309\";i:7;s:3:\"131\";i:8;s:3:\"141\";i:9;s:3:\"151\";i:10;s:3:\"142\";i:11;s:3:\"159\";i:12;s:3:\"158\";i:13;s:3:\"317\";i:14;s:3:\"144\";i:15;s:3:\"198\";i:16;s:3:\"328\";i:17;s:3:\"327\";i:18;s:3:\"329\";i:19;s:3:\"212\";i:20;s:3:\"137\";i:21;s:3:\"215\";i:22;s:3:\"216\";i:23;s:3:\"217\";i:24;s:3:\"218\";i:25;s:2:\"41\";i:26;s:3:\"944\";i:27;s:3:\"311\";}s:6:\"widget\";a:10:{i:0;s:4:\"7883\";i:1;s:4:\"7902\";i:2;s:4:\"7909\";i:3;s:4:\"7881\";i:4;s:5:\"12927\";i:5;s:4:\"7978\";i:6;s:5:\"12938\";i:7;s:5:\"39784\";i:8;s:4:\"7887\";i:9;s:3:\"606\";}}",
+          "sort_litters_badges": [
+            1
+          ],
+          "url": "/portee/2819293"
+        },
+        "n4298742": {
+          "n_active": false,
+          "n_author": "",
+          "n_availability": [],
+          "n_average_notation": [
+            2
+          ],
+          "n_behavior": "",
+          "n_birth_date": [
+            1788091200
+          ],
+          "n_breed_club": "",
+          "n_breed_health": "",
+          "n_breed_id": [
+            237
+          ],
+          "n_breeder": [
+            274854
+          ],
+          "n_breeder_id": "460603",
+          "n_carac_block_image": "",
+          "n_changed": [
+            1791212409
+          ],
+          "n_city": "",
+          "n_city_living": "",
+          "n_coat": "",
+          "n_contact_address_1": "",
+          "n_contact_address_2": "",
+          "n_contact_address_3": "",
+          "n_contact_city": "",
+          "n_contact_email": "",
+          "n_contact_first_name": "",
+          "n_contact_last_name": "",
+          "n_contact_phone": "",
+          "n_contact_zip_code": "",
+          "n_created": [
+            1789460902
+          ],
+          "n_date": [],
+          "n_description": "",
+          "n_display_litter_breed_club": true,
+          "n_display_litter_breeder": true,
+          "n_dog_id": "",
+          "n_domain_access": "default",
+          "n_domain_all_affiliates": true,
+          "n_download_file_uri": "",
+          "n_download_label": "",
+          "n_end_date": [],
+          "n_event_canceled": false,
+          "n_expositions": "",
+          "n_father": [
+            1542322
+          ],
+          "n_father_lof": "000000/00001",
+          "n_father_name": "Père de test 6",
+          "n_father_notation": [
+            1
+          ],
+          "n_fci_race_id": "",
+          "n_female_number": [
+            0
+          ],
+          "n_field_type": "",
+          "n_foreign_litters": "",
+          "n_gender": false,
+          "n_genealogy_info": "",
+          "n_group_term_tid": [],
+          "n_history": "",
+          "n_id": "4298742",
+          "n_identifier": "",
+          "n_image": [],
+          "n_image_alt": "",
+          "n_image_title": "",
+          "n_image_type": "",
+          "n_image_uri": "",
+          "n_info_breed": [],
+          "n_is_borned": true,
+          "n_is_recommended": false,
+          "n_items": [],
+          "n_judge_name": "",
+          "n_lead_in": "",
+          "n_level": "",
+          "n_link_label": "",
+          "n_link_url": "",
+          "n_litter": [],
+          "n_litter_id": [
+            2829171
+          ],
+          "n_litter_link": "",
+          "n_litter_number": "LOF-2026027006-2026-13",
+          "n_litter_sort_date": [
+            1788091200
+          ],
+          "n_litter_status": [
+            3
+          ],
+          "n_location": [],
+          "n_lof": "",
+          "n_main_gallery": [],
+          "n_main_gallery_uri": "",
+          "n_male_number": [
+            3
+          ],
+          "n_map": [],
+          "n_mea_description": "",
+          "n_mea_file_label": "",
+          "n_mea_file_uri": "",
+          "n_mea_image_uri": "",
+          "n_mea_title": "",
+          "n_mother": [
+            3675299
+          ],
+          "n_mother_lof": "000000/00002",
+          "n_mother_name": "Mère de test 7",
+          "n_mother_notation": [
+            1
+          ],
+          "n_multi_gallery": [],
+          "n_name": "",
+          "n_notation": [],
+          "n_only_for_members": false,
+          "n_original_breed_name": "",
+          "n_overlay": "",
+          "n_partner_link": "",
+          "n_place": "",
+          "n_presentation_text": "",
+          "n_published_on_list": false,
+          "n_published_on_production": false,
+          "n_race": "1728",
+          "n_race_variety": [],
+          "n_related_content": [],
+          "n_results": "",
+          "n_search_image": "",
+          "n_selection": "2",
+          "n_servicing_date": [
+            1782820800
+          ],
+          "n_servicing_number": [
+            2026027006
+          ],
+          "n_show_in_footer": false,
+          "n_size": "",
+          "n_size_type": "",
+          "n_slideshow": [],
+          "n_sort_weight": [],
+          "n_start_date": [],
+          "n_status": true,
+          "n_title": "Portee-2829171",
+          "n_title_for_sorting": "Portee-2829171",
+          "n_type": "litter",
+          "n_usage_breed_name": "",
+          "n_uses": "",
+          "n_variety": "317",
+          "n_variety_id": [
+            346
+          ],
+          "n_variety_name": "",
+          "n_website": "",
+          "n_weight": "",
+          "n_widgets": [],
+          "n_zip_code": "",
+          "cache_tags": "a:49:{i:0;s:12:\"node:4298742\";i:1;s:11:\"user:274854\";i:2;s:9:\"node:1529\";i:3;s:17:\"taxonomy_term:107\";i:4;s:17:\"taxonomy_term:112\";i:5;s:17:\"taxonomy_term:113\";i:6;s:9:\"node:1544\";i:7;s:9:\"node:1561\";i:8;s:17:\"taxonomy_term:124\";i:9;s:17:\"taxonomy_term:310\";i:10;s:17:\"taxonomy_term:309\";i:11;s:9:\"node:1562\";i:12;s:9:\"node:1568\";i:13;s:17:\"taxonomy_term:131\";i:14;s:9:\"node:1575\";i:15;s:9:\"node:1656\";i:16;s:17:\"taxonomy_term:141\";i:17;s:9:\"node:1664\";i:18;s:9:\"node:1667\";i:19;s:9:\"node:1693\";i:20;s:17:\"taxonomy_term:151\";i:21;s:9:\"node:1728\";i:22;s:17:\"taxonomy_term:142\";i:23;s:17:\"taxonomy_term:159\";i:24;s:17:\"taxonomy_term:158\";i:25;s:17:\"taxonomy_term:317\";i:26;s:9:\"node:1746\";i:27;s:17:\"taxonomy_term:144\";i:28;s:17:\"taxonomy_term:198\";i:29;s:17:\"taxonomy_term:328\";i:30;s:17:\"taxonomy_term:327\";i:31;s:17:\"taxonomy_term:329\";i:32;s:9:\"node:1759\";i:33;s:9:\"node:1773\";i:34;s:17:\"taxonomy_term:212\";i:35;s:9:\"node:1830\";i:36;s:17:\"taxonomy_term:137\";i:37;s:9:\"node:1831\";i:38;s:9:\"node:1837\";i:39;s:9:\"node:1855\";i:40;s:17:\"taxonomy_term:215\";i:41;s:17:\"taxonomy_term:216\";i:42;s:17:\"taxonomy_term:217\";i:43;s:17:\"taxonomy_term:218\";i:44;s:16:\"taxonomy_term:41\";i:45;s:17:\"taxonomy_term:944\";i:46;s:17:\"taxonomy_term:311\";i:47;s:12:\"node:1542322\";i:48;s:12:\"node:3675299\";}",
+          "glossary_field": "p",
+          "referenced_entities": "a:4:{s:4:\"user\";a:1:{i:0;s:6:\"274854\";}s:4:\"node\";a:22:{i:0;s:4:\"1529\";i:1;s:4:\"1544\";i:2;s:4:\"1561\";i:3;s:4:\"1562\";i:4;s:4:\"1568\";i:5;s:4:\"1575\";i:6;s:4:\"1656\";i:7;s:4:\"1664\";i:8;s:4:\"1667\";i:9;s:4:\"1693\";i:10;s:4:\"1728\";i:11;s:4:\"1746\";i:12;s:4:\"1759\";i:13;s:4:\"1773\";i:14;s:4:\"1830\";i:15;s:4:\"1831\";i:16;s:4:\"1837\";i:17;s:4:\"1855\";i:18;s:7:\"1542322\";i:19;s:7:\"1488171\";i:20;s:7:\"3675299\";i:21;s:7:\"3604418\";}s:13:\"taxonomy_term\";a:28:{i:0;s:3:\"107\";i:1;s:3:\"112\";i:2;s:3:\"113\";i:3;s:1:\"0\";i:4;s:3:\"124\";i:5;s:3:\"310\";i:6;s:3:\"309\";i:7;s:3:\"131\";i:8;s:3:\"141\";i:9;s:3:\"151\";i:10;s:3:\"142\";i:11;s:3:\"159\";i:12;s:3:\"158\";i:13;s:3:\"317\";i:14;s:3:\"144\";i:15;s:3:\"198\";i:16;s:3:\"328\";i:17;s:3:\"327\";i:18;s:3:\"329\";i:19;s:3:\"212\";i:20;s:3:\"137\";i:21;s:3:\"215\";i:22;s:3:\"216\";i:23;s:3:\"217\";i:24;s:3:\"218\";i:25;s:2:\"41\";i:26;s:3:\"944\";i:27;s:3:\"311\";}s:6:\"widget\";a:10:{i:0;s:4:\"7883\";i:1;s:4:\"7902\";i:2;s:4:\"7909\";i:3;s:4:\"7881\";i:4;s:5:\"12927\";i:5;s:4:\"7978\";i:6;s:5:\"12938\";i:7;s:5:\"39784\";i:8;s:4:\"7887\";i:9;s:3:\"606\";}}",
+          "sort_litters_badges": [
+            1
+          ],
+          "url": "/portee/2829171"
+        },
+        "n4320577": {
+          "n_active": false,
+          "n_author": "",
+          "n_availability": [],
+          "n_average_notation": [
+            2
+          ],
+          "n_behavior": "",
+          "n_birth_date": [
+            1790856000
+          ],
+          "n_breed_club": "",
+          "n_breed_health": "",
+          "n_breed_id": [
+            237
+          ],
+          "n_breeder": [
+            274854
+          ],
+          "n_breeder_id": "460603",
+          "n_carac_block_image": "",
+          "n_changed": [
+            1790822166
+          ],
+          "n_city": "",
+          "n_city_living": "",
+          "n_coat": "",
+          "n_contact_address_1": "",
+          "n_contact_address_2": "",
+          "n_contact_address_3": "",
+          "n_contact_city": "",
+          "n_contact_email": "",
+          "n_contact_first_name": "",
+          "n_contact_last_name": "",
+          "n_contact_phone": "",
+          "n_contact_zip_code": "",
+          "n_created": [
+            1790822166
+          ],
+          "n_date": [],
+          "n_description": "",
+          "n_display_litter_breed_club": true,
+          "n_display_litter_breeder": true,
+          "n_dog_id": "",
+          "n_domain_access": "default",
+          "n_domain_all_affiliates": true,
+          "n_download_file_uri": "",
+          "n_download_label": "",
+          "n_end_date": [],
+          "n_event_canceled": false,
+          "n_expositions": "",
+          "n_father": [
+            1542322
+          ],
+          "n_father_lof": "000000/00001",
+          "n_father_name": "Père de test 6",
+          "n_father_notation": [
+            1
+          ],
+          "n_fci_race_id": "",
+          "n_female_number": [
+            3
+          ],
+          "n_field_type": "",
+          "n_foreign_litters": "",
+          "n_gender": false,
+          "n_genealogy_info": "",
+          "n_group_term_tid": [],
+          "n_history": "",
+          "n_id": "4320577",
+          "n_identifier": "",
+          "n_image": [],
+          "n_image_alt": "",
+          "n_image_title": "",
+          "n_image_type": "",
+          "n_image_uri": "",
+          "n_info_breed": [],
+          "n_is_borned": true,
+          "n_is_recommended": false,
+          "n_items": [],
+          "n_judge_name": "",
+          "n_lead_in": "",
+          "n_level": "",
+          "n_link_label": "",
+          "n_link_url": "",
+          "n_litter": [],
+          "n_litter_id": [
+            2832966
+          ],
+          "n_litter_link": "",
+          "n_litter_number": "LOF-2026030580-2026-16",
+          "n_litter_sort_date": [
+            1790856000
+          ],
+          "n_litter_status": [
+            2
+          ],
+          "n_location": [],
+          "n_lof": "",
+          "n_main_gallery": [],
+          "n_main_gallery_uri": "",
+          "n_male_number": [
+            6
+          ],
+          "n_map": [],
+          "n_mea_description": "",
+          "n_mea_file_label": "",
+          "n_mea_file_uri": "",
+          "n_mea_image_uri": "",
+          "n_mea_title": "",
+          "n_mother": [
+            3127968
+          ],
+          "n_mother_lof": "000000/00002",
+          "n_mother_name": "Mère de test 8",
+          "n_mother_notation": [
+            1
+          ],
+          "n_multi_gallery": [],
+          "n_name": "",
+          "n_notation": [],
+          "n_only_for_members": false,
+          "n_original_breed_name": "",
+          "n_overlay": "",
+          "n_partner_link": "",
+          "n_place": "",
+          "n_presentation_text": "",
+          "n_published_on_list": false,
+          "n_published_on_production": false,
+          "n_race": "1728",
+          "n_race_variety": [],
+          "n_related_content": [],
+          "n_results": "",
+          "n_search_image": "",
+          "n_selection": "2",
+          "n_servicing_date": [
+            1785672000
+          ],
+          "n_servicing_number": [
+            2026030580
+          ],
+          "n_show_in_footer": false,
+          "n_size": "",
+          "n_size_type": "",
+          "n_slideshow": [],
+          "n_sort_weight": [],
+          "n_start_date": [],
+          "n_status": true,
+          "n_title": "Portee-2832966",
+          "n_title_for_sorting": "Portee-2832966",
+          "n_type": "litter",
+          "n_usage_breed_name": "",
+          "n_uses": "",
+          "n_variety": "159",
+          "n_variety_id": [
+            344
+          ],
+          "n_variety_name": "",
+          "n_website": "",
+          "n_weight": "",
+          "n_widgets": [],
+          "n_zip_code": "",
+          "cache_tags": "a:49:{i:0;s:12:\"node:4320577\";i:1;s:11:\"user:274854\";i:2;s:9:\"node:1529\";i:3;s:17:\"taxonomy_term:107\";i:4;s:17:\"taxonomy_term:112\";i:5;s:17:\"taxonomy_term:113\";i:6;s:9:\"node:1544\";i:7;s:9:\"node:1561\";i:8;s:17:\"taxonomy_term:124\";i:9;s:17:\"taxonomy_term:310\";i:10;s:17:\"taxonomy_term:309\";i:11;s:9:\"node:1562\";i:12;s:9:\"node:1568\";i:13;s:17:\"taxonomy_term:131\";i:14;s:9:\"node:1575\";i:15;s:9:\"node:1656\";i:16;s:17:\"taxonomy_term:141\";i:17;s:9:\"node:1664\";i:18;s:9:\"node:1667\";i:19;s:9:\"node:1693\";i:20;s:17:\"taxonomy_term:151\";i:21;s:9:\"node:1728\";i:22;s:17:\"taxonomy_term:142\";i:23;s:17:\"taxonomy_term:159\";i:24;s:17:\"taxonomy_term:158\";i:25;s:17:\"taxonomy_term:317\";i:26;s:9:\"node:1746\";i:27;s:17:\"taxonomy_term:144\";i:28;s:17:\"taxonomy_term:198\";i:29;s:17:\"taxonomy_term:328\";i:30;s:17:\"taxonomy_term:327\";i:31;s:17:\"taxonomy_term:329\";i:32;s:9:\"node:1759\";i:33;s:9:\"node:1773\";i:34;s:17:\"taxonomy_term:212\";i:35;s:9:\"node:1830\";i:36;s:17:\"taxonomy_term:137\";i:37;s:9:\"node:1831\";i:38;s:9:\"node:1837\";i:39;s:9:\"node:1855\";i:40;s:17:\"taxonomy_term:215\";i:41;s:17:\"taxonomy_term:216\";i:42;s:17:\"taxonomy_term:217\";i:43;s:17:\"taxonomy_term:218\";i:44;s:16:\"taxonomy_term:41\";i:45;s:17:\"taxonomy_term:944\";i:46;s:17:\"taxonomy_term:311\";i:47;s:12:\"node:1542322\";i:48;s:12:\"node:3127968\";}",
+          "glossary_field": "p",
+          "referenced_entities": "a:4:{s:4:\"user\";a:1:{i:0;s:6:\"274854\";}s:4:\"node\";a:22:{i:0;s:4:\"1529\";i:1;s:4:\"1544\";i:2;s:4:\"1561\";i:3;s:4:\"1562\";i:4;s:4:\"1568\";i:5;s:4:\"1575\";i:6;s:4:\"1656\";i:7;s:4:\"1664\";i:8;s:4:\"1667\";i:9;s:4:\"1693\";i:10;s:4:\"1728\";i:11;s:4:\"1746\";i:12;s:4:\"1759\";i:13;s:4:\"1773\";i:14;s:4:\"1830\";i:15;s:4:\"1831\";i:16;s:4:\"1837\";i:17;s:4:\"1855\";i:18;s:7:\"1542322\";i:19;s:7:\"1488171\";i:20;s:7:\"3127968\";i:21;s:7:\"3033643\";}s:13:\"taxonomy_term\";a:28:{i:0;s:3:\"107\";i:1;s:3:\"112\";i:2;s:3:\"113\";i:3;s:1:\"0\";i:4;s:3:\"124\";i:5;s:3:\"310\";i:6;s:3:\"309\";i:7;s:3:\"131\";i:8;s:3:\"141\";i:9;s:3:\"151\";i:10;s:3:\"142\";i:11;s:3:\"159\";i:12;s:3:\"158\";i:13;s:3:\"317\";i:14;s:3:\"144\";i:15;s:3:\"198\";i:16;s:3:\"328\";i:17;s:3:\"327\";i:18;s:3:\"329\";i:19;s:3:\"212\";i:20;s:3:\"137\";i:21;s:3:\"215\";i:22;s:3:\"216\";i:23;s:3:\"217\";i:24;s:3:\"218\";i:25;s:2:\"41\";i:26;s:3:\"944\";i:27;s:3:\"311\";}s:6:\"widget\";a:10:{i:0;s:4:\"7883\";i:1;s:4:\"7902\";i:2;s:4:\"7909\";i:3;s:4:\"7881\";i:4;s:5:\"12927\";i:5;s:4:\"7978\";i:6;s:5:\"12938\";i:7;s:5:\"39784\";i:8;s:4:\"7887\";i:9;s:3:\"606\";}}",
+          "sort_litters_badges": [
+            1
+          ],
+          "url": "/portee/2832966"
+        },
+        "n4163707": {
+          "n_active": false,
+          "n_author": "",
+          "n_availability": [],
+          "n_average_notation": [
+            2
+          ],
+          "n_behavior": "",
+          "n_birth_date": [
+            1780660800
+          ],
+          "n_breed_club": "",
+          "n_breed_health": "",
+          "n_breed_id": [
+            237
+          ],
+          "n_breeder": [
+            72101
+          ],
+          "n_breeder_id": "266172",
+          "n_carac_block_image": "",
+          "n_changed": [
+            1785226325
+          ],
+          "n_city": "",
+          "n_city_living": "",
+          "n_coat": "",
+          "n_contact_address_1": "",
+          "n_contact_address_2": "",
+          "n_contact_address_3": "",
+          "n_contact_city": "",
+          "n_contact_email": "",
+          "n_contact_first_name": "",
+          "n_contact_last_name": "",
+          "n_contact_phone": "",
+          "n_contact_zip_code": "",
+          "n_created": [
+            1776865655
+          ],
+          "n_date": [],
+          "n_description": "",
+          "n_display_litter_breed_club": true,
+          "n_display_litter_breeder": true,
+          "n_dog_id": "",
+          "n_domain_access": "default",
+          "n_domain_all_affiliates": true,
+          "n_download_file_uri": "",
+          "n_download_label": "",
+          "n_end_date": [],
+          "n_event_canceled": false,
+          "n_expositions": "",
+          "n_father": [
+            2485978
+          ],
+          "n_father_lof": "000000/00001",
+          "n_father_name": "Père de test 9",
+          "n_father_notation": [
+            1
+          ],
+          "n_fci_race_id": "",
+          "n_female_number": [
+            4
+          ],
+          "n_field_type": "",
+          "n_foreign_litters": "",
+          "n_gender": false,
+          "n_genealogy_info": "",
+          "n_group_term_tid": [],
+          "n_history": "",
+          "n_id": "4163707",
+          "n_identifier": "",
+          "n_image": [],
+          "n_image_alt": "",
+          "n_image_title": "",
+          "n_image_type": "",
+          "n_image_uri": "",
+          "n_info_breed": [],
+          "n_is_borned": true,
+          "n_is_recommended": false,
+          "n_items": [],
+          "n_judge_name": "",
+          "n_lead_in": "",
+          "n_level": "",
+          "n_link_label": "",
+          "n_link_url": "",
+          "n_litter": [],
+          "n_litter_id": [
+            2814929
+          ],
+          "n_litter_link": "",
+          "n_litter_number": "LOF-2026013714-2026-10",
+          "n_litter_sort_date": [
+            1780660800
+          ],
+          "n_litter_status": [
+            3
+          ],
+          "n_location": [],
+          "n_lof": "",
+          "n_main_gallery": [],
+          "n_main_gallery_uri": "",
+          "n_male_number": [
+            4
+          ],
+          "n_map": [],
+          "n_mea_description": "",
+          "n_mea_file_label": "",
+          "n_mea_file_uri": "",
+          "n_mea_image_uri": "",
+          "n_mea_title": "",
+          "n_mother": [
+            1135833
+          ],
+          "n_mother_lof": "000000/00002",
+          "n_mother_name": "Mère de test 10",
+          "n_mother_notation": [
+            1
+          ],
+          "n_multi_gallery": [],
+          "n_name": "",
+          "n_notation": [],
+          "n_only_for_members": false,
+          "n_original_breed_name": "",
+          "n_overlay": "",
+          "n_partner_link": "",
+          "n_place": "",
+          "n_presentation_text": "",
+          "n_published_on_list": false,
+          "n_published_on_production": false,
+          "n_race": "1728",
+          "n_race_variety": [],
+          "n_related_content": [],
+          "n_results": "",
+          "n_search_image": "",
+          "n_selection": "2",
+          "n_servicing_date": [
+            1775304000
+          ],
+          "n_servicing_number": [
+            2026013714
+          ],
+          "n_show_in_footer": false,
+          "n_size": "",
+          "n_size_type": "",
+          "n_slideshow": [],
+          "n_sort_weight": [],
+          "n_start_date": [],
+          "n_status": true,
+          "n_title": "Portee-2814929",
+          "n_title_for_sorting": "Portee-2814929",
+          "n_type": "litter",
+          "n_usage_breed_name": "",
+          "n_uses": "",
+          "n_variety": "317",
+          "n_variety_id": [
+            346
+          ],
+          "n_variety_name": "",
+          "n_website": "",
+          "n_weight": "",
+          "n_widgets": [],
+          "n_zip_code": "",
+          "cache_tags": "a:13:{i:0;s:12:\"node:4163707\";i:1;s:10:\"user:72101\";i:2;s:9:\"node:1728\";i:3;s:17:\"taxonomy_term:142\";i:4;s:17:\"taxonomy_term:159\";i:5;s:17:\"taxonomy_term:158\";i:6;s:17:\"taxonomy_term:317\";i:7;s:9:\"node:1831\";i:8;s:17:\"taxonomy_term:107\";i:9;s:16:\"taxonomy_term:41\";i:10;s:17:\"taxonomy_term:944\";i:11;s:12:\"node:2485978\";i:12;s:12:\"node:1135833\";}",
+          "glossary_field": "p",
+          "referenced_entities": "a:4:{s:4:\"user\";a:1:{i:0;s:5:\"72101\";}s:4:\"node\";a:4:{i:0;s:4:\"1728\";i:1;s:4:\"1831\";i:2;s:7:\"2485978\";i:3;s:7:\"1135833\";}s:13:\"taxonomy_term\";a:8:{i:0;s:3:\"142\";i:1;s:3:\"159\";i:2;s:3:\"158\";i:3;s:3:\"317\";i:4;s:3:\"107\";i:5;s:1:\"0\";i:6;s:2:\"41\";i:7;s:3:\"944\";}s:6:\"widget\";a:2:{i:0;s:4:\"7978\";i:1;s:4:\"7887\";}}",
+          "sort_litters_badges": [
+            1
+          ],
+          "url": "/portee/2814929"
+        },
+        "n4320820": {
+          "n_active": false,
+          "n_author": "",
+          "n_availability": [],
+          "n_average_notation": [
+            2
+          ],
+          "n_behavior": "",
+          "n_birth_date": [
+            1787918400
+          ],
+          "n_breed_club": "",
+          "n_breed_health": "",
+          "n_breed_id": [
+            237
+          ],
+          "n_breeder": [
+            72101
+          ],
+          "n_breeder_id": "266172",
+          "n_carac_block_image": "",
+          "n_changed": [
+            1790822166
+          ],
+          "n_city": "",
+          "n_city_living": "",
+          "n_coat": "",
+          "n_contact_address_1": "",
+          "n_contact_address_2": "",
+          "n_contact_address_3": "",
+          "n_contact_city": "",
+          "n_contact_email": "",
+          "n_contact_first_name": "",
+          "n_contact_last_name": "",
+          "n_contact_phone": "",
+          "n_contact_zip_code": "",
+          "n_created": [
+            1790822166
+          ],
+          "n_date": [],
+          "n_description": "",
+          "n_display_litter_breed_club": true,
+          "n_display_litter_breeder": true,
+          "n_dog_id": "",
+          "n_domain_access": "default",
+          "n_domain_all_affiliates": true,
+          "n_download_file_uri": "",
+          "n_download_label": "",
+          "n_end_date": [],
+          "n_event_canceled": false,
+          "n_expositions": "",
+          "n_father": [
+            2895638
+          ],
+          "n_father_lof": "000000/00001",
+          "n_father_name": "Père de test 11",
+          "n_father_notation": [
+            1
+          ],
+          "n_fci_race_id": "",
+          "n_female_number": [
+            1
+          ],
+          "n_field_type": "",
+          "n_foreign_litters": "",
+          "n_gender": false,
+          "n_genealogy_info": "",
+          "n_group_term_tid": [],
+          "n_history": "",
+          "n_id": "4320820",
+          "n_identifier": "",
+          "n_image": [],
+          "n_image_alt": "",
+          "n_image_title": "",
+          "n_image_type": "",
+          "n_image_uri": "",
+          "n_info_breed": [],
+          "n_is_borned": true,
+          "n_is_recommended": false,
+          "n_items": [],
+          "n_judge_name": "",
+          "n_lead_in": "",
+          "n_level": "",
+          "n_link_label": "",
+          "n_link_url": "",
+          "n_litter": [],
+          "n_litter_id": [
+            2826917
+          ],
+          "n_litter_link": "",
+          "n_litter_number": "LOF-2026024873-2026-13",
+          "n_litter_sort_date": [
+            1787918400
+          ],
+          "n_litter_status": [
+            2
+          ],
+          "n_location": [],
+          "n_lof": "",
+          "n_main_gallery": [],
+          "n_main_gallery_uri": "",
+          "n_male_number": [
+            3
+          ],
+          "n_map": [],
+          "n_mea_description": "",
+          "n_mea_file_label": "",
+          "n_mea_file_uri": "",
+          "n_mea_image_uri": "",
+          "n_mea_title": "",
+          "n_mother": [
+            4268581
+          ],
+          "n_mother_lof": "000000/00002",
+          "n_mother_name": "Mère de test 12",
+          "n_mother_notation": [
+            1
+          ],
+          "n_multi_gallery": [],
+          "n_name": "",
+          "n_notation": [],
+          "n_only_for_members": false,
+          "n_original_breed_name": "",
+          "n_overlay": "",
+          "n_partner_link": "",
+          "n_place": "",
+          "n_presentation_text": "",
+          "n_published_on_list": false,
+          "n_published_on_production": false,
+          "n_race": "1728",
+          "n_race_variety": [],
+          "n_related_content": [],
+          "n_results": "",
+          "n_search_image": "",
+          "n_selection": "2",
+          "n_servicing_date": [
+            1782734400
+          ],
+          "n_servicing_number": [
+            2026024873
+          ],
+          "n_show_in_footer": false,
+          "n_size": "",
+          "n_size_type": "",
+          "n_slideshow": [],
+          "n_sort_weight": [],
+          "n_start_date": [],
+          "n_status": true,
+          "n_title": "Portee-2826917",
+          "n_title_for_sorting": "Portee-2826917",
+          "n_type": "litter",
+          "n_usage_breed_name": "",
+          "n_uses": "",
+          "n_variety": "317",
+          "n_variety_id": [
+            346
+          ],
+          "n_variety_name": "",
+          "n_website": "",
+          "n_weight": "",
+          "n_widgets": [],
+          "n_zip_code": "",
+          "cache_tags": "a:13:{i:0;s:12:\"node:4320820\";i:1;s:10:\"user:72101\";i:2;s:9:\"node:1728\";i:3;s:17:\"taxonomy_term:142\";i:4;s:17:\"taxonomy_term:159\";i:5;s:17:\"taxonomy_term:158\";i:6;s:17:\"taxonomy_term:317\";i:7;s:9:\"node:1831\";i:8;s:17:\"taxonomy_term:107\";i:9;s:16:\"taxonomy_term:41\";i:10;s:17:\"taxonomy_term:944\";i:11;s:12:\"node:2895638\";i:12;s:12:\"node:4268581\";}",
+          "glossary_field": "p",
+          "referenced_entities": "a:4:{s:4:\"user\";a:1:{i:0;s:5:\"72101\";}s:4:\"node\";a:4:{i:0;s:4:\"1728\";i:1;s:4:\"1831\";i:2;s:7:\"2895638\";i:3;s:7:\"4268581\";}s:13:\"taxonomy_term\";a:8:{i:0;s:3:\"142\";i:1;s:3:\"159\";i:2;s:3:\"158\";i:3;s:3:\"317\";i:4;s:3:\"107\";i:5;s:1:\"0\";i:6;s:2:\"41\";i:7;s:3:\"944\";}s:6:\"widget\";a:2:{i:0;s:4:\"7978\";i:1;s:4:\"7887\";}}",
+          "sort_litters_badges": [
+            1
+          ],
+          "url": "/portee/2826917"
+        },
+        "n4337061": {
+          "n_active": false,
+          "n_author": "",
+          "n_availability": [],
+          "n_average_notation": [
+            2
+          ],
+          "n_behavior": "",
+          "n_birth_date": [
+            1791806400
+          ],
+          "n_breed_club": "",
+          "n_breed_health": "",
+          "n_breed_id": [
+            237
+          ],
+          "n_breeder": [
+            72101
+          ],
+          "n_breeder_id": "266172",
+          "n_carac_block_image": "",
+          "n_changed": [
+            1791212409
+          ],
+          "n_city": "",
+          "n_city_living": "",
+          "n_coat": "",
+          "n_contact_address_1": "",
+          "n_contact_address_2": "",
+          "n_contact_address_3": "",
+          "n_contact_city": "",
+          "n_contact_email": "",
+          "n_contact_first_name": "",
+          "n_contact_last_name": "",
+          "n_contact_phone": "",
+          "n_contact_zip_code": "",
+          "n_created": [
+            1791212409
+          ],
+          "n_date": [],
+          "n_description": "",
+          "n_display_litter_breed_club": true,
+          "n_display_litter_breeder": true,
+          "n_dog_id": "",
+          "n_domain_access": "default",
+          "n_domain_all_affiliates": true,
+          "n_download_file_uri": "",
+          "n_download_label": "",
+          "n_end_date": [],
+          "n_event_canceled": false,
+          "n_expositions": "",
+          "n_father": [
+            2895638
+          ],
+          "n_father_lof": "000000/00001",
+          "n_father_name": "Père de test 11",
+          "n_father_notation": [
+            1
+          ],
+          "n_fci_race_id": "",
+          "n_female_number": [
+            5
+          ],
+          "n_field_type": "",
+          "n_foreign_litters": "",
+          "n_gender": false,
+          "n_genealogy_info": "",
+          "n_group_term_tid": [],
+          "n_history": "",
+          "n_id": "4337061",
+          "n_identifier": "",
+          "n_image": [],
+          "n_image_alt": "",
+          "n_image_title": "",
+          "n_image_type": "",
+          "n_image_uri": "",
+          "n_info_breed": [],
+          "n_is_borned": true,
+          "n_is_recommended": false,
+          "n_items": [],
+          "n_judge_name": "",
+          "n_lead_in": "",
+          "n_level": "",
+          "n_link_label": "",
+          "n_link_url": "",
+          "n_litter": [],
+          "n_litter_id": [
+            2834966
+          ],
+          "n_litter_link": "",
+          "n_litter_number": "LOF-2026032499-2026-14",
+          "n_litter_sort_date": [
+            1791806400
+          ],
+          "n_litter_status": [
+            2
+          ],
+          "n_location": [],
+          "n_lof": "",
+          "n_main_gallery": [],
+          "n_main_gallery_uri": "",
+          "n_male_number": [
+            2
+          ],
+          "n_map": [],
+          "n_mea_description": "",
+          "n_mea_file_label": "",
+          "n_mea_file_uri": "",
+          "n_mea_image_uri": "",
+          "n_mea_title": "",
+          "n_mother": [
+            3305081
+          ],
+          "n_mother_lof": "000000/00002",
+          "n_mother_name": "Mère de test 13",
+          "n_mother_notation": [
+            1
+          ],
+          "n_multi_gallery": [],
+          "n_name": "",
+          "n_notation": [],
+          "n_only_for_members": false,
+          "n_original_breed_name": "",
+          "n_overlay": "",
+          "n_partner_link": "",
+          "n_place": "",
+          "n_presentation_text": "",
+          "n_published_on_list": false,
+          "n_published_on_production": false,
+          "n_race": "1728",
+          "n_race_variety": [],
+          "n_related_content": [],
+          "n_results": "",
+          "n_search_image": "",
+          "n_selection": "2",
+          "n_servicing_date": [
+            1786795200
+          ],
+          "n_servicing_number": [
+            2026032499
+          ],
+          "n_show_in_footer": false,
+          "n_size": "",
+          "n_size_type": "",
+          "n_slideshow": [],
+          "n_sort_weight": [],
+          "n_start_date": [],
+          "n_status": true,
+          "n_title": "Portee-2834966",
+          "n_title_for_sorting": "Portee-2834966",
+          "n_type": "litter",
+          "n_usage_breed_name": "",
+          "n_uses": "",
+          "n_variety": "317",
+          "n_variety_id": [
+            346
+          ],
+          "n_variety_name": "",
+          "n_website": "",
+          "n_weight": "",
+          "n_widgets": [],
+          "n_zip_code": "",
+          "cache_tags": "a:13:{i:0;s:12:\"node:4337061\";i:1;s:10:\"user:72101\";i:2;s:9:\"node:1728\";i:3;s:17:\"taxonomy_term:142\";i:4;s:17:\"taxonomy_term:159\";i:5;s:17:\"taxonomy_term:158\";i:6;s:17:\"taxonomy_term:317\";i:7;s:9:\"node:1831\";i:8;s:17:\"taxonomy_term:107\";i:9;s:16:\"taxonomy_term:41\";i:10;s:17:\"taxonomy_term:944\";i:11;s:12:\"node:2895638\";i:12;s:12:\"node:3305081\";}",
+          "glossary_field": "p",
+          "referenced_entities": "a:4:{s:4:\"user\";a:1:{i:0;s:5:\"72101\";}s:4:\"node\";a:4:{i:0;s:4:\"1728\";i:1;s:4:\"1831\";i:2;s:7:\"2895638\";i:3;s:7:\"3305081\";}s:13:\"taxonomy_term\";a:8:{i:0;s:3:\"142\";i:1;s:3:\"159\";i:2;s:3:\"158\";i:3;s:3:\"317\";i:4;s:3:\"107\";i:5;s:1:\"0\";i:6;s:2:\"41\";i:7;s:3:\"944\";}s:6:\"widget\";a:2:{i:0;s:4:\"7978\";i:1;s:4:\"7887\";}}",
+          "sort_litters_badges": [
+            1
+          ],
+          "url": "/portee/2834966"
+        },
+        "n4337069": {
+          "n_active": false,
+          "n_author": "",
+          "n_availability": [],
+          "n_average_notation": [
+            2
+          ],
+          "n_behavior": "",
+          "n_birth_date": [
+            1792843200
+          ],
+          "n_breed_club": "",
+          "n_breed_health": "",
+          "n_breed_id": [
+            237
+          ],
+          "n_breeder": [
+            72101
+          ],
+          "n_breeder_id": "266172",
+          "n_carac_block_image": "",
+          "n_changed": [
+            1791212409
+          ],
+          "n_city": "",
+          "n_city_living": "",
+          "n_coat": "",
+          "n_contact_address_1": "",
+          "n_contact_address_2": "",
+          "n_contact_address_3": "",
+          "n_contact_city": "",
+          "n_contact_email": "",
+          "n_contact_first_name": "",
+          "n_contact_last_name": "",
+          "n_contact_phone": "",
+          "n_contact_zip_code": "",
+          "n_created": [
+            1791212409
+          ],
+          "n_date": [],
+          "n_description": "",
+          "n_display_litter_breed_club": true,
+          "n_display_litter_breeder": true,
+          "n_dog_id": "",
+          "n_domain_access": "default",
+          "n_domain_all_affiliates": true,
+          "n_download_file_uri": "",
+          "n_download_label": "",
+          "n_end_date": [],
+          "n_event_canceled": false,
+          "n_expositions": "",
+          "n_father": [
+            2485978
+          ],
+          "n_father_lof": "000000/00001",
+          "n_father_name": "Père de test 9",
+          "n_father_notation": [
+            1
+          ],
+          "n_fci_race_id": "",
+          "n_female_number": [
+            2
+          ],
+          "n_field_type": "",
+          "n_foreign_litters": "",
+          "n_gender": false,
+          "n_genealogy_info": "",
+          "n_group_term_tid": [],
+          "n_history": "",
+          "n_id": "4337069",
+          "n_identifier": "",
+          "n_image": [],
+          "n_image_alt": "",
+          "n_image_title": "",
+          "n_image_type": "",
+          "n_image_uri": "",
+          "n_info_breed": [],
+          "n_is_borned": true,
+          "n_is_recommended": false,
+          "n_items": [],
+          "n_judge_name": "",
+          "n_lead_in": "",
+          "n_level": "",
+          "n_link_label": "",
+          "n_link_url": "",
+          "n_litter": [],
+          "n_litter_id": [
+            2834967
+          ],
+          "n_litter_link": "",
+          "n_litter_number": "LOF-2026032500-2026-15",
+          "n_litter_sort_date": [
+            1792843200
+          ],
+          "n_litter_status": [
+            2
+          ],
+          "n_location": [],
+          "n_lof": "",
+          "n_main_gallery": [],
+          "n_main_gallery_uri": "",
+          "n_male_number": [
+            0
+          ],
+          "n_map": [],
+          "n_mea_description": "",
+          "n_mea_file_label": "",
+          "n_mea_file_uri": "",
+          "n_mea_image_uri": "",
+          "n_mea_title": "",
+          "n_mother": [
+            1282154
+          ],
+          "n_mother_lof": "000000/00002",
+          "n_mother_name": "Mère de test 14",
+          "n_mother_notation": [
+            1
+          ],
+          "n_multi_gallery": [],
+          "n_name": "",
+          "n_notation": [],
+          "n_only_for_members": false,
+          "n_original_breed_name": "",
+          "n_overlay": "",
+          "n_partner_link": "",
+          "n_place": "",
+          "n_presentation_text": "",
+          "n_published_on_list": false,
+          "n_published_on_production": false,
+          "n_race": "1728",
+          "n_race_variety": [],
+          "n_related_content": [],
+          "n_results": "",
+          "n_search_image": "",
+          "n_selection": "2",
+          "n_servicing_date": [
+            1787832000
+          ],
+          "n_servicing_number": [
+            2026032500
+          ],
+          "n_show_in_footer": false,
+          "n_size": "",
+          "n_size_type": "",
+          "n_slideshow": [],
+          "n_sort_weight": [],
+          "n_start_date": [],
+          "n_status": true,
+          "n_title": "Portee-2834967",
+          "n_title_for_sorting": "Portee-2834967",
+          "n_type": "litter",
+          "n_usage_breed_name": "",
+          "n_uses": "",
+          "n_variety": "317",
+          "n_variety_id": [
+            346
+          ],
+          "n_variety_name": "",
+          "n_website": "",
+          "n_weight": "",
+          "n_widgets": [],
+          "n_zip_code": "",
+          "cache_tags": "a:13:{i:0;s:12:\"node:4337069\";i:1;s:10:\"user:72101\";i:2;s:9:\"node:1728\";i:3;s:17:\"taxonomy_term:142\";i:4;s:17:\"taxonomy_term:159\";i:5;s:17:\"taxonomy_term:158\";i:6;s:17:\"taxonomy_term:317\";i:7;s:9:\"node:1831\";i:8;s:17:\"taxonomy_term:107\";i:9;s:16:\"taxonomy_term:41\";i:10;s:17:\"taxonomy_term:944\";i:11;s:12:\"node:2485978\";i:12;s:12:\"node:1282154\";}",
+          "glossary_field": "p",
+          "referenced_entities": "a:4:{s:4:\"user\";a:1:{i:0;s:5:\"72101\";}s:4:\"node\";a:4:{i:0;s:4:\"1728\";i:1;s:4:\"1831\";i:2;s:7:\"2485978\";i:3;s:7:\"1282154\";}s:13:\"taxonomy_term\";a:8:{i:0;s:3:\"142\";i:1;s:3:\"159\";i:2;s:3:\"158\";i:3;s:3:\"317\";i:4;s:3:\"107\";i:5;s:1:\"0\";i:6;s:2:\"41\";i:7;s:3:\"944\";}s:6:\"widget\";a:2:{i:0;s:4:\"7978\";i:1;s:4:\"7887\";}}",
+          "sort_litters_badges": [
+            1
+          ],
+          "url": "/portee/2834967"
+        },
+        "n4337070": {
+          "n_active": false,
+          "n_author": "",
+          "n_availability": [],
+          "n_average_notation": [
+            2
+          ],
+          "n_behavior": "",
+          "n_birth_date": [],
+          "n_breed_club": "",
+          "n_breed_health": "",
+          "n_breed_id": [
+            237
+          ],
+          "n_breeder": [
+            72101
+          ],
+          "n_breeder_id": "266172",
+          "n_carac_block_image": "",
+          "n_changed": [
+            1791212409
+          ],
+          "n_city": "",
+          "n_city_living": "",
+          "n_coat": "",
+          "n_contact_address_1": "",
+          "n_contact_address_2": "",
+          "n_contact_address_3": "",
+          "n_contact_city": "",
+          "n_contact_email": "",
+          "n_contact_first_name": "",
+          "n_contact_last_name": "",
+          "n_contact_phone": "",
+          "n_contact_zip_code": "",
+          "n_created": [
+            1791212409
+          ],
+          "n_date": [],
+          "n_description": "",
+          "n_display_litter_breed_club": true,
+          "n_display_litter_breeder": true,
+          "n_dog_id": "",
+          "n_domain_access": "default",
+          "n_domain_all_affiliates": true,
+          "n_download_file_uri": "",
+          "n_download_label": "",
+          "n_end_date": [],
+          "n_event_canceled": false,
+          "n_expositions": "",
+          "n_father": [
+            2895638
+          ],
+          "n_father_lof": "000000/00001",
+          "n_father_name": "Père de test 11",
+          "n_father_notation": [
+            1
+          ],
+          "n_fci_race_id": "",
+          "n_female_number": [
+            0
+          ],
+          "n_field_type": "",
+          "n_foreign_litters": "",
+          "n_gender": false,
+          "n_genealogy_info": "",
+          "n_group_term_tid": [],
+          "n_history": "",
+          "n_id": "4337070",
+          "n_identifier": "",
+          "n_image": [],
+          "n_image_alt": "",
+          "n_image_title": "",
+          "n_image_type": "",
+          "n_image_uri": "",
+          "n_info_breed": [],
+          "n_is_borned": false,
+          "n_is_recommended": false,
+          "n_items": [],
+          "n_judge_name": "",
+          "n_lead_in": "",
+          "n_level": "",
+          "n_link_label": "",
+          "n_link_url": "",
+          "n_litter": [],
+          "n_litter_id": [
+            2834968
+          ],
+          "n_litter_link": "",
+          "n_litter_number": "",
+          "n_litter_sort_date": [
+            1788177600
+          ],
+          "n_litter_status": [
+            1
+          ],
+          "n_location": [],
+          "n_lof": "",
+          "n_main_gallery": [],
+          "n_main_gallery_uri": "",
+          "n_male_number": [
+            0
+          ],
+          "n_map": [],
+          "n_mea_description": "",
+          "n_mea_file_label": "",
+          "n_mea_file_uri": "",
+          "n_mea_image_uri": "",
+          "n_mea_title": "",
+          "n_mother": [
+            2804897
+          ],
+          "n_mother_lof": "000000/00002",
+          "n_mother_name": "Mère de test 15",
+          "n_mother_notation": [
+            1
+          ],
+          "n_multi_gallery": [],
+          "n_name": "",
+          "n_notation": [],
+          "n_only_for_members": false,
+          "n_original_breed_name": "",
+          "n_overlay": "",
+          "n_partner_link": "",
+          "n_place": "",
+          "n_presentation_text": "",
+          "n_published_on_list": false,
+          "n_published_on_production": false,
+          "n_race": "1728",
+          "n_race_variety": [],
+          "n_related_content": [],
+          "n_results": "",
+          "n_search_image": "",
+          "n_selection": "2",
+          "n_servicing_date": [
+            1788177600
+          ],
+          "n_servicing_number": [
+            2026032501
+          ],
+          "n_show_in_footer": false,
+          "n_size": "",
+          "n_size_type": "",
+          "n_slideshow": [],
+          "n_sort_weight": [],
+          "n_start_date": [],
+          "n_status": true,
+          "n_title": "Portee-2834968",
+          "n_title_for_sorting": "Portee-2834968",
+          "n_type": "litter",
+          "n_usage_breed_name": "",
+          "n_uses": "",
+          "n_variety": "317",
+          "n_variety_id": [
+            346
+          ],
+          "n_variety_name": "",
+          "n_website": "",
+          "n_weight": "",
+          "n_widgets": [],
+          "n_zip_code": "",
+          "cache_tags": "a:13:{i:0;s:12:\"node:4337070\";i:1;s:10:\"user:72101\";i:2;s:9:\"node:1728\";i:3;s:17:\"taxonomy_term:142\";i:4;s:17:\"taxonomy_term:159\";i:5;s:17:\"taxonomy_term:158\";i:6;s:17:\"taxonomy_term:317\";i:7;s:9:\"node:1831\";i:8;s:17:\"taxonomy_term:107\";i:9;s:16:\"taxonomy_term:41\";i:10;s:17:\"taxonomy_term:944\";i:11;s:12:\"node:2895638\";i:12;s:12:\"node:2804897\";}",
+          "glossary_field": "p",
+          "referenced_entities": "a:4:{s:4:\"user\";a:1:{i:0;s:5:\"72101\";}s:4:\"node\";a:4:{i:0;s:4:\"1728\";i:1;s:4:\"1831\";i:2;s:7:\"2895638\";i:3;s:7:\"2804897\";}s:13:\"taxonomy_term\";a:8:{i:0;s:3:\"142\";i:1;s:3:\"159\";i:2;s:3:\"158\";i:3;s:3:\"317\";i:4;s:3:\"107\";i:5;s:1:\"0\";i:6;s:2:\"41\";i:7;s:3:\"944\";}s:6:\"widget\";a:2:{i:0;s:4:\"7978\";i:1;s:4:\"7887\";}}",
+          "sort_litters_badges": [
+            1
+          ],
+          "url": "/portee/2834968"
+        }
+      }
+    },
+    "breeders": {
+      "72101": {
+        "mail": "",
+        "status": false,
+        "u_breed": [
+          "1728",
+          "1831"
+        ],
+        "u_breeder_address_3": "1 RUE DE TEST",
+        "u_breeder_country": "FRANCE",
+        "u_breeder_department": "41",
+        "u_breeder_id": [
+          266172
+        ],
+        "u_breeder_number": "353781",
+        "u_breeder_owner_id": [
+          1119022
+        ],
+        "u_breeder_phone": "0600000001",
+        "u_breeder_place": "",
+        "u_breeder_siren": "000000001",
+        "u_breeder_site": "elevage-de-test-a",
+        "u_breeder_status": true,
+        "u_breeder_town": "SAINT-AUBIN-DU-CORMIER",
+        "u_breeder_zip_code": "35140",
+        "u_changed": [
+          1791212409
+        ],
+        "u_country": "",
+        "u_created": [
+          1501887778
+        ],
+        "u_domain_access": "default",
+        "u_farming_affix": "DU CLOS DE L'ÉLEVAGE A",
+        "u_farming_name": "ÉLEVEUR A",
+        "u_first_name": "",
+        "u_hide_all_litters": false,
+        "u_hide_widget": false,
+        "u_id": "72101",
+        "u_is_breeder": true,
+        "u_last_litter_date": [
+          1792843200
+        ],
+        "u_last_name": "",
+        "u_location": [
+          "48.26,-1.40"
+        ],
+        "u_related_breeder": "",
+        "u_roles": "",
+        "u_selected_breed": "",
+        "u_selected_variety": "",
+        "u_user_picture_uri": "/sites/default/files/test/logo.jpg",
+        "u_variety": [
+          "158",
+          "159",
+          "317"
+        ],
+        "cache_tags": "a:10:{i:0;s:10:\"user:72101\";i:1;s:9:\"node:1728\";i:2;s:17:\"taxonomy_term:142\";i:3;s:17:\"taxonomy_term:159\";i:4;s:17:\"taxonomy_term:158\";i:5;s:17:\"taxonomy_term:317\";i:6;s:9:\"node:1831\";i:7;s:17:\"taxonomy_term:107\";i:8;s:16:\"taxonomy_term:41\";i:9;s:17:\"taxonomy_term:944\";}",
+        "referenced_entities": "a:3:{s:4:\"node\";a:2:{i:0;s:4:\"1728\";i:1;s:4:\"1831\";}s:13:\"taxonomy_term\";a:8:{i:0;s:3:\"142\";i:1;s:3:\"159\";i:2;s:3:\"158\";i:3;s:3:\"317\";i:4;s:3:\"107\";i:5;s:1:\"0\";i:6;s:2:\"41\";i:7;s:3:\"944\";}s:6:\"widget\";a:2:{i:0;s:4:\"7978\";i:1;s:4:\"7887\";}}",
+        "responsive_images": {},
+        "url": "/user/72101",
+        "is_member": false
+      },
+      "85379": {
+        "mail": "",
+        "status": false,
+        "u_breed": [
+          "1529",
+          "1534",
+          "1565",
+          "1568",
+          "1615",
+          "1718",
+          "1728",
+          "1840",
+          "1877"
+        ],
+        "u_breeder_address_3": "2 RUE DE TEST",
+        "u_breeder_country": "FRANCE",
+        "u_breeder_department": "41",
+        "u_breeder_id": [
+          379540
+        ],
+        "u_breeder_number": "354706",
+        "u_breeder_owner_id": [
+          1509993
+        ],
+        "u_breeder_phone": "0600000002",
+        "u_breeder_place": "GUIPRY",
+        "u_breeder_siren": "",
+        "u_breeder_site": "",
+        "u_breeder_status": true,
+        "u_breeder_town": "SAINT-AUBIN-DU-CORMIER",
+        "u_breeder_zip_code": "35140",
+        "u_changed": [
+          1791212409
+        ],
+        "u_country": "",
+        "u_created": [
+          1501923133
+        ],
+        "u_domain_access": "default",
+        "u_farming_affix": "DU CLOS DE L'ÉLEVAGE B",
+        "u_farming_name": "ÉLEVEUR B",
+        "u_first_name": "",
+        "u_hide_all_litters": false,
+        "u_hide_widget": false,
+        "u_id": "85379",
+        "u_is_breeder": true,
+        "u_last_litter_date": [
+          1785844800
+        ],
+        "u_last_name": "",
+        "u_location": [
+          "48.26,-1.40"
+        ],
+        "u_related_breeder": "",
+        "u_roles": "",
+        "u_selected_breed": "",
+        "u_selected_variety": "",
+        "u_user_picture_uri": "",
+        "u_variety": [
+          "112",
+          "158"
+        ],
+        "cache_tags": "a:20:{i:0;s:10:\"user:85379\";i:1;s:9:\"node:1529\";i:2;s:17:\"taxonomy_term:107\";i:3;s:17:\"taxonomy_term:112\";i:4;s:17:\"taxonomy_term:113\";i:5;s:9:\"node:1534\";i:6;s:9:\"node:1565\";i:7;s:17:\"taxonomy_term:131\";i:8;s:9:\"node:1568\";i:9;s:9:\"node:1615\";i:10;s:9:\"node:1718\";i:11;s:17:\"taxonomy_term:142\";i:12;s:9:\"node:1728\";i:13;s:17:\"taxonomy_term:159\";i:14;s:17:\"taxonomy_term:158\";i:15;s:17:\"taxonomy_term:317\";i:16;s:9:\"node:1840\";i:17;s:9:\"node:1877\";i:18;s:16:\"taxonomy_term:41\";i:19;s:17:\"taxonomy_term:944\";}",
+        "referenced_entities": "a:3:{s:4:\"node\";a:9:{i:0;s:4:\"1529\";i:1;s:4:\"1534\";i:2;s:4:\"1565\";i:3;s:4:\"1568\";i:4;s:4:\"1615\";i:5;s:4:\"1718\";i:6;s:4:\"1728\";i:7;s:4:\"1840\";i:8;s:4:\"1877\";}s:13:\"taxonomy_term\";a:11:{i:0;s:3:\"107\";i:1;s:3:\"112\";i:2;s:3:\"113\";i:3;s:1:\"0\";i:4;s:3:\"131\";i:5;s:3:\"142\";i:6;s:3:\"159\";i:7;s:3:\"158\";i:8;s:3:\"317\";i:9;s:2:\"41\";i:10;s:3:\"944\";}s:6:\"widget\";a:3:{i:0;s:4:\"7883\";i:1;s:4:\"7978\";i:2;s:4:\"7889\";}}",
+        "url": "/user/85379",
+        "is_member": false,
+        "responsive_images": {}
+      },
+      "274854": {
+        "mail": "",
+        "status": false,
+        "u_breed": [
+          "1529",
+          "1544",
+          "1561",
+          "1562",
+          "1568",
+          "1575",
+          "1656",
+          "1664",
+          "1667",
+          "1693",
+          "1728",
+          "1746",
+          "1759",
+          "1773",
+          "1830",
+          "1831",
+          "1837",
+          "1855"
+        ],
+        "u_breeder_address_3": "3 RUE DE TEST",
+        "u_breeder_country": "FRANCE",
+        "u_breeder_department": "41",
+        "u_breeder_id": [
+          460603
+        ],
+        "u_breeder_number": "355442",
+        "u_breeder_owner_id": [
+          1780471
+        ],
+        "u_breeder_phone": "0600000003",
+        "u_breeder_place": "",
+        "u_breeder_siren": "000000003",
+        "u_breeder_site": "",
+        "u_breeder_status": true,
+        "u_breeder_town": "SAINT-AUBIN-DU-CORMIER",
+        "u_breeder_zip_code": "35140",
+        "u_changed": [
+          1791212409
+        ],
+        "u_country": "",
+        "u_created": [
+          1640095502
+        ],
+        "u_domain_access": "",
+        "u_farming_affix": "DU CLOS DE L'ÉLEVAGE C",
+        "u_farming_name": "ÉLEVEUR C",
+        "u_first_name": "",
+        "u_hide_all_litters": false,
+        "u_hide_widget": false,
+        "u_id": "274854",
+        "u_is_breeder": true,
+        "u_last_litter_date": [
+          1793016000
+        ],
+        "u_last_name": "",
+        "u_location": [
+          "48.26,-1.40"
+        ],
+        "u_related_breeder": "",
+        "u_roles": "",
+        "u_selected_breed": "",
+        "u_selected_variety": "",
+        "u_user_picture_uri": "",
+        "u_variety": [
+          "112",
+          "311",
+          "309",
+          "159",
+          "317",
+          "328",
+          "198",
+          "218"
+        ],
+        "cache_tags": "a:46:{i:0;s:11:\"user:274854\";i:1;s:9:\"node:1529\";i:2;s:17:\"taxonomy_term:107\";i:3;s:17:\"taxonomy_term:112\";i:4;s:17:\"taxonomy_term:113\";i:5;s:9:\"node:1544\";i:6;s:9:\"node:1561\";i:7;s:17:\"taxonomy_term:124\";i:8;s:17:\"taxonomy_term:310\";i:9;s:17:\"taxonomy_term:309\";i:10;s:9:\"node:1562\";i:11;s:9:\"node:1568\";i:12;s:17:\"taxonomy_term:131\";i:13;s:9:\"node:1575\";i:14;s:9:\"node:1656\";i:15;s:17:\"taxonomy_term:141\";i:16;s:9:\"node:1664\";i:17;s:9:\"node:1667\";i:18;s:9:\"node:1693\";i:19;s:17:\"taxonomy_term:151\";i:20;s:9:\"node:1728\";i:21;s:17:\"taxonomy_term:142\";i:22;s:17:\"taxonomy_term:159\";i:23;s:17:\"taxonomy_term:158\";i:24;s:17:\"taxonomy_term:317\";i:25;s:9:\"node:1746\";i:26;s:17:\"taxonomy_term:144\";i:27;s:17:\"taxonomy_term:198\";i:28;s:17:\"taxonomy_term:328\";i:29;s:17:\"taxonomy_term:327\";i:30;s:17:\"taxonomy_term:329\";i:31;s:9:\"node:1759\";i:32;s:9:\"node:1773\";i:33;s:17:\"taxonomy_term:212\";i:34;s:9:\"node:1830\";i:35;s:17:\"taxonomy_term:137\";i:36;s:9:\"node:1831\";i:37;s:9:\"node:1837\";i:38;s:9:\"node:1855\";i:39;s:17:\"taxonomy_term:215\";i:40;s:17:\"taxonomy_term:216\";i:41;s:17:\"taxonomy_term:217\";i:42;s:17:\"taxonomy_term:218\";i:43;s:16:\"taxonomy_term:41\";i:44;s:17:\"taxonomy_term:944\";i:45;s:17:\"taxonomy_term:311\";}",
+        "referenced_entities": "a:3:{s:4:\"node\";a:18:{i:0;s:4:\"1529\";i:1;s:4:\"1544\";i:2;s:4:\"1561\";i:3;s:4:\"1562\";i:4;s:4:\"1568\";i:5;s:4:\"1575\";i:6;s:4:\"1656\";i:7;s:4:\"1664\";i:8;s:4:\"1667\";i:9;s:4:\"1693\";i:10;s:4:\"1728\";i:11;s:4:\"1746\";i:12;s:4:\"1759\";i:13;s:4:\"1773\";i:14;s:4:\"1830\";i:15;s:4:\"1831\";i:16;s:4:\"1837\";i:17;s:4:\"1855\";}s:13:\"taxonomy_term\";a:28:{i:0;s:3:\"107\";i:1;s:3:\"112\";i:2;s:3:\"113\";i:3;s:1:\"0\";i:4;s:3:\"124\";i:5;s:3:\"310\";i:6;s:3:\"309\";i:7;s:3:\"131\";i:8;s:3:\"141\";i:9;s:3:\"151\";i:10;s:3:\"142\";i:11;s:3:\"159\";i:12;s:3:\"158\";i:13;s:3:\"317\";i:14;s:3:\"144\";i:15;s:3:\"198\";i:16;s:3:\"328\";i:17;s:3:\"327\";i:18;s:3:\"329\";i:19;s:3:\"212\";i:20;s:3:\"137\";i:21;s:3:\"215\";i:22;s:3:\"216\";i:23;s:3:\"217\";i:24;s:3:\"218\";i:25;s:2:\"41\";i:26;s:3:\"944\";i:27;s:3:\"311\";}s:6:\"widget\";a:10:{i:0;s:4:\"7883\";i:1;s:4:\"7902\";i:2;s:4:\"7909\";i:3;s:4:\"7881\";i:4;s:5:\"12927\";i:5;s:4:\"7978\";i:6;s:5:\"12938\";i:7;s:5:\"39784\";i:8;s:4:\"7887\";i:9;s:3:\"606\";}}",
+        "url": "/user/274854",
+        "is_member": false,
+        "responsive_images": {}
+      }
+    },
+    "filters": {
+      "is_borned": {
+        "yes": "Disponibles",
+        "no": "A naître",
+        "all": "Toutes"
+      },
+      "department": {
+        "t_4": "01 - Ain",
+        "t_7": "02 - Aisne",
+        "t_8": "03 - Allier",
+        "t_10": "04 - Alpes-de-Haute-Provence",
+        "t_12": "07 - Ardèche",
+        "t_13": "08 - Ardennes",
+        "t_15": "10 - Aube",
+        "t_16": "11 - Aude",
+        "t_17": "12 - Aveyron",
+        "t_18": "13 - Bouches-du-Rhône",
+        "t_19": "14 - Calvados",
+        "t_22": "17 - Charente-Maritime",
+        "t_23": "18 - Cher",
+        "t_24": "19 - Corrèze",
+        "t_27": "21 - Côte-d'or",
+        "t_28": "22 - Côtes-d'armor",
+        "t_29": "23 - Creuse",
+        "t_30": "24 - Dordogne",
+        "t_32": "26 - Drôme",
+        "t_33": "27 - Eure",
+        "t_34": "28 - Eure-et-Loir",
+        "t_35": "29 - Finistère",
+        "t_36": "30 - Gard",
+        "t_37": "31 - Haute-Garonne",
+        "t_38": "32 - Gers",
+        "t_39": "33 - Gironde",
+        "t_40": "34 - Hérault",
+        "t_41": "35 - Ile-et-Vilaine",
+        "t_42": "36 - Indre",
+        "t_43": "37 - Indre-et-Loire",
+        "t_44": "38 - Isère",
+        "t_45": "39 - Jura",
+        "t_46": "40 - Landes",
+        "t_47": "41 - Loir-et-Cher",
+        "t_48": "42 - Loire",
+        "t_50": "44 - Loire-Atlantique",
+        "t_51": "45 - Loiret",
+        "t_52": "46 - Lot",
+        "t_53": "47 - Lot-et-Garonne",
+        "t_55": "49 - Maine-et-Loire",
+        "t_56": "50 - Manche",
+        "t_57": "51 - Marne",
+        "t_59": "53 - Mayenne",
+        "t_60": "54 - Meurthe-et-Moselle",
+        "t_61": "55 - Meuse",
+        "t_62": "56 - Morbihan",
+        "t_63": "57 - Moselle",
+        "t_64": "58 - Nièvre",
+        "t_65": "59 - Nord",
+        "t_67": "61 - Orne",
+        "t_68": "62 - Pas-de-Calais",
+        "t_69": "63 - Puy-de-Dôme",
+        "t_71": "65 - Hautes-Pyrénées",
+        "t_73": "67 - Bas-Rhin",
+        "t_76": "70 - Haute-Saône",
+        "t_77": "71 - Saône-et-Loire",
+        "t_78": "72 - Sarthe",
+        "t_80": "74 - Haute-Savoie",
+        "t_82": "76 - Seine-Maritime",
+        "t_83": "77 - Seine-et-Marne",
+        "t_84": "78 - Yvelines",
+        "t_85": "79 - Deux-Sèvres",
+        "t_86": "80 - Somme",
+        "t_87": "81 - Tarn",
+        "t_88": "82 - Tarn-et-Garonne",
+        "t_89": "83 - Var",
+        "t_90": "84 - Vaucluse",
+        "t_91": "85 - Vendée",
+        "t_92": "86 - Vienne",
+        "t_93": "87 - Haute-Vienne",
+        "t_94": "88 - Vosges",
+        "t_95": "89 - Yonne",
+        "t_97": "91 - Essonne",
+        "t_106": "974 - Réunion"
+      },
+      "variety": {
+        "158": "rouge et dore",
+        "159": "noir - noir et feu marron - marron et feu",
+        "317": "autres couleurs"
+      }
+    },
+    "sort": [
+      "Cotation globale",
+      "Cotation du père",
+      "Cotation de la mère",
+      "Date"
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+[package]
+name = "la-bonne-truffe-desktop"
+version = "0.1.0"
+description = "La Bonne Truffe Desktop (Nuxt + Tauri)"
+authors = ["Léo Guillaume"]
+edition = "2021"
+
+[lib]
+name = "la_bonne_truffe_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.4", features = [] }
+
+[dependencies]
+tauri = { version = "2.12.5", features = ["tray-icon"] }
+tauri-plugin-updater = "2.14.1"
+tauri-plugin-process = "2.4.0"
+tauri-plugin-single-instance = "2.5.5"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+log = "0.4"

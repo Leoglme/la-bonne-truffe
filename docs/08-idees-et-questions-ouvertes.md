@@ -2,12 +2,12 @@
 
 ## Questions à trancher par Léo avant ou pendant la V1
 
-1. Les couleurs autres que gold et noir et feu : « acceptable » ou « ignorée » par défaut ?
-2. Un sexe préféré ou indifférent ?
-3. Un plafond de prix ?
-4. La liste des départements et leur ordre (temps de route depuis chez lui).
-5. Notification native sur Windows depuis la fenêtre Tauri, ou le navigateur suffit ?
-6. Le nom de domaine, le sous-domaine sur le VPS, l'adresse mail du User-Agent.
+Tranchées le 28/10/2026 (détail dans `01-cadrage.md`) : autres couleurs ignorées, sexe indifférent, pas de plafond de prix, départements 35, 56, 22, 29, 44, 53, 49, 72, 85, pas de notification native Windows, Tailwind v4 + Nuxt UI, adresse `contact@dibodev.fr`. **Relevé de la Centrale Canine** : sur le PC de Léo, par le `curl` du système, puisque Cloudflare refuse le client Python même depuis sa connexion (`02-sources.md`). Léo : « tu peux exécuter des commandes sur mon PC ».
+
+Restent ouvertes :
+
+1. Le nom de domaine et le sous-domaine sur le VPS.
+2. **Le relevé une fois l'API sur le VPS** (jalon 5). L'app Windows de Léo, lancée au démarrage dans la zone de notification comme celle de DevLeadHunter, relèvera chaque heure avec le même `curl` et enverra les pages à l'API, qui fera le reste : regroupement, correspondance, notifications. Le worker du VPS ne doit pas relever la Centrale Canine : son image Docker n'a pas `curl`, il échouerait et déclencherait l'alerte « source en panne ». Les portées n'arrivent que quand le PC est allumé.
 
 ## Idées V1.5 (après que ça tourne)
 

@@ -35,3 +35,27 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 ## 28 octobre : passation
 
 - Léo demande un dossier de markdowns (cadrage, sources, idées, échanges) pour une autre session d'IA, moins coûteuse, qui codera l'application à partir de la maquette. C'est ce dossier.
+
+## 28 octobre : première session de code (jalon 0)
+
+- Léo répond aux questions ouvertes : autres couleurs ignorées, sexe indifférent, pas de plafond de prix, départements 35, 56, 22, 29, 44, 53, 49, 72, 85, pas de notification native sur Windows, adresse `contact@dibodev.fr` (comme DevLeadHunter, lue depuis le `.env`).
+- **Styles** : Léo choisit Tailwind v4 + Nuxt UI 4 + icônes Lucide, exactement comme DevLeadHunter, après avoir vérifié son code. Les docs 05 et 06 disaient « pas de Tailwind » : mis à jour. Les couleurs, typographies et rayons de la maquette deviennent des tokens de thème.
+- **Logo** : l'icône corail arrondie partout, comme le dit le doc 06 ; la maquette iPad `Main.dc.html` (truffe brune seule) est en retard.
+- **Écart avec les docs** : depuis le conteneur cloud de la session, la Centrale Canine répond `403` (challenge Cloudflare sur l'IP, `cf-mitigated: challenge`), même avec le User-Agent de navigateur. Rien n'a été contourné. Les `t_ID` des départements (sauf `t_41`) et l'identifiant « autres couleurs » restent à lire avec `python cli.py scc-sync` depuis une IP acceptée ; la fixture de test du collecteur suit la forme documentée et sera remplacée par un vrai relevé. Détail dans `02-sources.md`.
+- **Choix techniques** : TypeScript 5.9 (TypeScript 7 n'expose plus l'API JavaScript dont `vue-tsc` a besoin, et `openapi-typescript` exige TypeScript 5) ; PyJWT au lieu de python-jose ; polices auto-hébergées via `@fontsource`.
+
+## 28 octobre : jalons 2 et 3
+
+- Léo demande de passer aux jalons suivants, avec une intégration de la maquette **au pixel près** sur téléphone, iPad et desktop (logo compris), et un typage très strict côté Python et TypeScript.
+- **Typage** : mypy strict sur toute l'API, colonnes en `StrEnum`, options TypeScript plus strictes que `strict`.
+- **Jalon 2** : regroupement en portées, matching de `04`, événements, push immédiats, récap du soir, alerte « source en panne », API des critères.
+- **Jalon 3** : routes du dashboard (portées, détail, couleurs confirmées, suivi et notes, sources) et écrans Accueil, Détail, Critères, Suivi, Réglages, Sources, historique, comparés écran par écran à la maquette rendue (méthode et écarts dans `06`).
+
+## 28 octobre (soir) : relecture et vraie réponse de la Centrale Canine
+
+- Léo demande de relire le code des jalons 0 à 3, de corriger et d'améliorer les conventions, en plusieurs sessions si besoin.
+- **Vraie réponse SCC** relevée depuis la connexion de Léo : la forme écrite le 27/10 était fausse sur plusieurs points. `317` est « autres couleurs » et le gold est `158` ; `is_borned` prend `yes`, `no`, `all` ; les filtres et les coordonnées des éleveurs sont dans le JSON ; les valeurs sont des listes Drupal. Collecteur, seeders, synchronisation des identifiants et tests réécrits sur deux vraies pages anonymisées (détail dans `02-sources.md`).
+- **Nouveautés** : une portée en ligne depuis plus de 3 jours n'est plus poussée, pour que le premier relevé ou l'ajout d'un département ne déverse pas des semaines de portées. La fraîcheur part de la date de publication.
+- **Premier relevé réel refusé** : depuis le PC de Léo, Cloudflare refuse le client Python sur son empreinte TLS, alors que le navigateur et `curl` passent. Léo laisse le choix : « tu peux exécuter des commandes sur mon PC ». Le collecteur passe donc par le `curl` du système : 85 portées au premier relevé réel, aucun changement au deuxième, aucune notification (rien de publié depuis moins de 3 jours).
+- **Front** : cinq défauts corrigés. Re-cliquer « Suivie » effaçait le suivi ; le volet desktop ne s'ouvrait jamais ; une couleur connue s'affichait « à confirmer » ; recocher une région déplaçait ses départements en fin de liste ; le détail d'une portée en erreur n'avait plus de bouton retour. Fins de ligne LF imposées (`.gitattributes`), sans quoi le lint échouait sous Windows.
+

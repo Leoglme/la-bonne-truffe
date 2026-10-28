@@ -35,13 +35,16 @@ La **Centrale Canine** (Société Centrale Canine, qui tient le LOF) publie un *
 | Nom | **La Bonne Truffe** | Clin d'œil au Bon Coin, la truffe du chien qui flaire |
 | Direction artistique | Crème, corail, titres ronds (Fredoka), illustrations de cocker, photos quand il y en a | Léo a rejeté une première version éditoriale (papier, serif, trois colonnes) comme trop chargée et hors thème |
 | LOF | Préféré, pas obligatoire | Une annonce non LOF reste visible en « acceptable » |
-| Couleurs | Gold préférée, noir et feu acceptable | Les autres : à trancher par Léo (acceptable ou ignorée) |
+| Couleurs | Gold préférée, noir et feu acceptable, **les autres ignorées** | Tranché par Léo le 28/10/2026 |
+| Sexe | **Indifférent** (`any`) | Tranché par Léo le 28/10/2026 |
+| Prix | **Pas de plafond** | Tranché par Léo le 28/10/2026 |
+| Départements | **35, 56, 22, 29, 44, 53, 49, 72, 85**, du plus proche au plus loin depuis Rennes | Validé par Léo le 28/10/2026 |
+| Notification Windows | **Non** : pas de notification native depuis Tauri, les push arrivent sur l'iPhone et l'iPad | Comme DevLeadHunter, tranché le 28/10/2026 |
+| Styles | **Tailwind v4 + Nuxt UI 4 + Lucide**, comme DevLeadHunter | Tranché par Léo le 28/10/2026 |
+| Adresse de contact | `contact@dibodev.fr` pour `ADMIN_EMAIL`, `VAPID_SUBJECT` et le User-Agent des sources HTML, toujours lue depuis le `.env` | Même adresse que DevLeadHunter |
 | Portées à naître | Incluses | C'est l'avantage décisif de la Centrale Canine |
 
 ## Questions encore ouvertes
 
-- Couleurs autres que gold et noir et feu : acceptable ou ignorée ?
-- Sexe : mâle, femelle ou indifférent ?
-- Plafond de prix ?
-- Liste exacte des départements et leur ordre (la maquette montre 35, 56, 22, 29, 44, 53, 49, 72, 85 depuis Rennes).
-- Notification sur Windows : le navigateur suffit, ou une notification système native depuis la fenêtre Tauri (plugin de notification Tauri) ?
+- Le nom de domaine et le sous-domaine sur le VPS (le build web attend `NUXT_PUBLIC_API_BASE`).
+- La Centrale Canine répond-elle depuis l'IP du VPS ? Elle refuse l'IP d'un conteneur cloud (voir `02-sources.md`).
