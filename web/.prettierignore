@@ -1,0 +1,9 @@
+node_modules
+.nuxt
+.nuxt-typecheck
+.output
+dist
+src-tauri/target
+src-tauri/gen
+package-lock.json
+app/types/api.generated.ts

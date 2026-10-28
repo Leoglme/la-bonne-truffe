@@ -1,0 +1,90 @@
+import type { ComputedRef, Ref } from 'vue'
+import type { LoginCredentials, TokenResponse, User } from '~/types/api'
+import { defineStore } from 'pinia'
+import { computed, ref } from 'vue'
+import { AuthService, TokenRejectedError } from '~/services/authService'
+
+const TOKEN_STORAGE_KEY: string = 'lbt-token'
+const USER_STORAGE_KEY: string = 'lbt-user'
+
+// The token is checked against the API at most once a minute, not on every tab change.
+const SESSION_VALIDATION_INTERVAL_MS: number = 60_000
+
+/** Pinia store of the session: bearer token and signed-in user, kept in localStorage. */
+// Pinia ne fournit pas de type nommé pour un store : TypeScript l'élide, il est inécrivable.
+// eslint-disable-next-line @typescript-eslint/typedef
+export const useUserStore = defineStore('user', () => {
+  const user: Ref<User | null> = ref(null)
+  const token: Ref<string | null> = ref(null)
+  let lastValidatedAt: number = 0
+
+  const isAuthenticated: ComputedRef<boolean> = computed((): boolean => user.value !== null && token.value !== null)
+  const firstName: ComputedRef<string> = computed((): string => user.value?.name ?? '')
+
+  /**
+   * Restore the session saved on this device. Client only.
+   */
+  function restoreSession(): void {
+    if (!import.meta.client) {
+      return
+    }
+    token.value = localStorage.getItem(TOKEN_STORAGE_KEY)
+    const savedUser: string | null = localStorage.getItem(USER_STORAGE_KEY)
+    user.value = savedUser ? (JSON.parse(savedUser) as User) : null
+  }
+
+  /**
+   * Sign in and save the session on this device.
+   *
+   * @param credentials - Email and password.
+   * @throws Error with the API message when the credentials are refused.
+   */
+  async function login(credentials: LoginCredentials): Promise<void> {
+    const tokenResponse: TokenResponse = await AuthService.login(credentials)
+    const signedInUser: User = await AuthService.getCurrentUser(tokenResponse.access_token)
+    token.value = tokenResponse.access_token
+    user.value = signedInUser
+    localStorage.setItem(TOKEN_STORAGE_KEY, tokenResponse.access_token)
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(signedInUser))
+    lastValidatedAt = Date.now()
+  }
+
+  /**
+   * Check the saved token against the API.
+   *
+   * @returns False only when the API refused the token; an unreachable API keeps the saved session.
+   */
+  async function validateSession(): Promise<boolean> {
+    if (!token.value) {
+      return false
+    }
+    if (user.value !== null && Date.now() - lastValidatedAt < SESSION_VALIDATION_INTERVAL_MS) {
+      return true
+    }
+    try {
+      user.value = await AuthService.getCurrentUser(token.value)
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user.value))
+      lastValidatedAt = Date.now()
+      return true
+    } catch (error: unknown) {
+      if (error instanceof TokenRejectedError) {
+        logout()
+        return false
+      }
+      return user.value !== null
+    }
+  }
+
+  /**
+   * Forget the session on this device.
+   */
+  function logout(): void {
+    user.value = null
+    token.value = null
+    lastValidatedAt = 0
+    localStorage.removeItem(TOKEN_STORAGE_KEY)
+    localStorage.removeItem(USER_STORAGE_KEY)
+  }
+
+  return { user, token, isAuthenticated, firstName, restoreSession, login, validateSession, logout }
+})
