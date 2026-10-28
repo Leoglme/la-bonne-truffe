@@ -47,8 +47,14 @@ class CommandLine:
             metavar="DOSSIER",
             help="Enregistrer chaque page JSON reçue dans ce dossier (fixtures de test)",
         )
-        commands.add_parser(
+        scc_sync = commands.add_parser(
             "scc-sync", help="Lire les identifiants de département et de variété sur la page Centrale Canine"
+        )
+        scc_sync.add_argument(
+            "--save-html",
+            type=Path,
+            metavar="DOSSIER",
+            help="Enregistrer la page HTML de chaque race dans ce dossier (fixtures de test)",
         )
         return parser
 
@@ -124,9 +130,12 @@ class CommandLine:
         finally:
             db.close()
 
-    def sync_scc_references(self) -> int:
+    def sync_scc_references(self, breed_pages_directory: Path | None) -> int:
         """
         Read the breed page of every breed and fill the missing department and variety identifiers.
+
+        Args:
+            breed_pages_directory: Folder where each breed page HTML is written, if given.
 
         Returns:
             Exit code: 1 when a page could not be read.
@@ -141,6 +150,11 @@ class CommandLine:
                 except CentraleCanineError as error:
                     print(f"{breed.name_fr} : {error}")
                     return 1
+                if breed_pages_directory is not None:
+                    breed_pages_directory.mkdir(parents=True, exist_ok=True)
+                    breed_page_path = breed_pages_directory / f"{breed.scc_slug}.html"
+                    breed_page_path.write_text(html, encoding="utf-8")
+                    print(f"Page de race enregistrée dans {breed_page_path}")
                 result = scc_reference_sync.sync(db, breed, html)
                 print(f"{breed.name_fr} : {len(result.department_term_ids_set)} département(s) renseigné(s)")
                 for variety_label, variety_id in result.variety_ids_set.items():
@@ -242,11 +256,12 @@ class CommandLine:
         parsed = self.build_parser().parse_args(arguments)
         if parsed.command == "collect":
             return self.collect_centrale_canine(parsed.save_raw)
+        if parsed.command == "scc-sync":
+            return self.sync_scc_references(parsed.save_html)
         handlers = {
             "init-db": self.init_database,
             "vapid-keys": self.print_vapid_keys,
             "push-test": self.send_test_push,
-            "scc-sync": self.sync_scc_references,
         }
         return handlers[parsed.command]()
 

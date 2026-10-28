@@ -1,0 +1,59 @@
+# One-off check: can the Centrale Canine be read from a GitHub runner?
+# Runs scc-sync then one collection, at the collector's usual pace (1 request per second),
+# and keeps the breed page, the JSON pages and the logs as an artifact.
+# Never a recurring collection: the hourly run belongs to the worker on the VPS.
+name: centrale canine probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/scaffold-nuxt-tauri-fastapi
+    paths:
+      - .github/workflows/centrale-canine-probe.yml
+
+concurrency:
+  group: centrale-canine-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+        working-directory: api
+    env:
+      DATABASE_URL: sqlite:///./data/probe.db
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: api/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create the database
+        run: |
+          mkdir -p data probe
+          python cli.py init-db
+
+      - name: Read the department and variety identifiers
+        run: python cli.py scc-sync --save-html probe/breed-pages 2>&1 | tee probe/scc-sync.log
+
+      - name: Collect once
+        if: always()
+        run: python cli.py collect --save-raw probe/raw-pages 2>&1 | tee probe/collect.log
+
+      - name: Keep the results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: centrale-canine-probe
+          path: api/probe
+          retention-days: 7
