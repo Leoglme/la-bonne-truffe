@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+api/.env
+api/data/
+# Node
+node_modules/
+.nuxt/
+.output/
+dist/
+web/.env
+# Tauri
+web/src-tauri/target/
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

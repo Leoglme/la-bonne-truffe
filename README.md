@@ -1,0 +1,31 @@
+# La Bonne Truffe
+
+Outil personnel de Léo Guillaume pour trouver un chiot cocker spaniel anglais : il surveille toutes les heures les sources d'annonces de portées en France, applique les critères de Léo (race, couleur, LOF, départements, sexe), et le prévient par notification dès qu'une portée correspond, y compris les portées **à naître** déclarées à la Centrale Canine.
+
+Ce dépôt contient le **cadrage complet** pour l'IA ou le développeur qui construira l'application. Rien n'est encore codé.
+
+## À lire dans l'ordre
+
+| Fichier | Contenu |
+|---|---|
+| [docs/00-brief-pour-l-ia-qui-code.md](docs/00-brief-pour-l-ia-qui-code.md) | Le brief de départ : rôle, jalons, règles, définition de « fini » |
+| [docs/01-cadrage.md](docs/01-cadrage.md) | Le besoin, le périmètre V1, les décisions prises, les questions ouvertes |
+| [docs/02-sources.md](docs/02-sources.md) | Les sources de données, avec l'API JSON de la Centrale Canine vérifiée (URL, paramètres, champs) |
+| [docs/03-modele-de-donnees.md](docs/03-modele-de-donnees.md) | Les tables, le vocabulaire des couleurs, le dédoublonnage |
+| [docs/04-correspondance-et-notifications.md](docs/04-correspondance-et-notifications.md) | La règle de score, les paliers, les événements qui notifient |
+| [docs/05-architecture.md](docs/05-architecture.md) | FastAPI + worker, Nuxt 4 + Tauri 2, Web Push, déploiement, standards de code |
+| [docs/06-maquette-et-design.md](docs/06-maquette-et-design.md) | La maquette validée, la direction artistique, les composants, l'icône |
+| [docs/07-historique-des-echanges.md](docs/07-historique-des-echanges.md) | Le résumé chronologique des discussions de cadrage |
+| [docs/08-idees-et-questions-ouvertes.md](docs/08-idees-et-questions-ouvertes.md) | Ce qui est gardé pour plus tard |
+
+## La maquette
+
+Maquette interactive (iPad portrait, iPhone, desktop, icône) : https://claude.ai/artifact/4uDTwYLUxdssydGN9bhb53
+
+Les sources HTML de chaque écran sont dans [design/mockup/](design/mockup/), l'icône dans [design/icone-app.svg](design/icone-app.svg), l'illustration de cocker dans [design/illustration-cocker.svg](design/illustration-cocker.svg), les photos et leurs crédits dans [design/photos/](design/photos/).
+
+⚠️ Les éleveurs, numéros de portée, dates et cotations de la maquette sont **inventés**. Les vraies données viendront des sources décrites dans `docs/02-sources.md`.
+
+## Stack imposée
+
+Même gabarit que les autres projets de Léo (DevLeadHunter) : `api/` en **FastAPI** (Python) avec un worker de collecte, `web/` en **Nuxt 4 + TypeScript strict** servi en PWA et empaqueté en **Tauri 2** pour Windows. Notifications iPhone par **Web Push VAPID** (gratuit, sans compte Apple), reçues par l'app web ajoutée à l'écran d'accueil. Détail dans `docs/05-architecture.md`.

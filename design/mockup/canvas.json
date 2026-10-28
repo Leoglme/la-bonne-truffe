@@ -1,0 +1,24 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-28T09:30:00Z" },
+  "title": "La Bonne Truffe",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 820, "h": 1180, "title": "iPad · Accueil", "is_interactive": true, "radius": 36 },
+    "Portee.dc.html": { "x": 900, "y": 0, "w": 820, "h": 1180, "title": "iPad · Détail d'une portée", "radius": 36 },
+    "Criteres.dc.html": { "x": 1800, "y": 0, "w": 820, "h": 1180, "title": "iPad · Critères", "is_interactive": true, "radius": 36 },
+    "Suivi.dc.html": { "x": 2700, "y": 0, "w": 820, "h": 1180, "title": "iPad · Suivi", "radius": 36 },
+    "Icone.dc.html": { "x": 0, "y": 1420, "w": 1180, "h": 900, "title": "Icône et écran d'accueil iPhone", "radius": 24 },
+    "iPhoneAccueil.dc.html": { "x": 1260, "y": 1420, "w": 390, "h": 844, "title": "iPhone · Accueil", "is_interactive": true, "radius": 44 },
+    "iPhonePortee.dc.html": { "x": 1730, "y": 1420, "w": 390, "h": 844, "title": "iPhone · Détail d'une portée", "radius": 44 },
+    "Desktop.dc.html": { "x": 0, "y": 2560, "w": 1440, "h": 900, "title": "Desktop · Accueil (Tauri / web)", "radius": 12 }
+  },
+  "order": ["Main.dc.html", "Portee.dc.html", "Criteres.dc.html", "Suivi.dc.html", "Icone.dc.html", "iPhoneAccueil.dc.html", "iPhonePortee.dc.html", "Desktop.dc.html"],
+  "notes": {
+    "titre": { "x": 0, "y": -300, "text": "La Bonne Truffe · iPad 11″ en portrait (820 × 1180)", "kind": "title1", "maxW": 3520 },
+    "icone": { "x": 0, "y": 1120, "text": "Icône, écran d'accueil iPhone, et déclinaison iPhone (390 × 844)", "kind": "title1", "maxW": 2200 },
+    "desktop": { "x": 0, "y": 2260, "text": "Desktop · app Tauri sur Windows et web (1440 × 900)", "kind": "title1", "maxW": 1440 }
+  },
+  "designSystems": []
+}
