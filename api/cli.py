@@ -48,13 +48,13 @@ class CommandLine:
             help="Enregistrer chaque page JSON reçue dans ce dossier (fixtures de test)",
         )
         scc_sync = commands.add_parser(
-            "scc-sync", help="Lire les identifiants de département et de variété sur la page Centrale Canine"
+            "scc-sync", help="Lire les identifiants de département et de variété listés par la Centrale Canine"
         )
         scc_sync.add_argument(
-            "--save-html",
+            "--save-raw",
             type=Path,
             metavar="DOSSIER",
-            help="Enregistrer la page HTML de chaque race dans ce dossier (fixtures de test)",
+            help="Enregistrer la page JSON lue pour chaque race dans ce dossier (fixtures de test)",
         )
         return parser
 
@@ -130,12 +130,12 @@ class CommandLine:
         finally:
             db.close()
 
-    def sync_scc_references(self, breed_pages_directory: Path | None) -> int:
+    def sync_scc_references(self, raw_pages_directory: Path | None) -> int:
         """
-        Read the breed page of every breed and fill the missing department and variety identifiers.
+        Read the filters of every breed at the Centrale Canine and store the department identifiers.
 
         Args:
-            breed_pages_directory: Folder where each breed page HTML is written, if given.
+            raw_pages_directory: Folder where the JSON page read for each breed is written, if given.
 
         Returns:
             Exit code: 1 when a page could not be read.
@@ -146,21 +146,21 @@ class CommandLine:
             breeds = db.query(Breed).filter(Breed.is_active.is_(True), Breed.scc_slug.is_not(None)).all()
             for breed in breeds:
                 try:
-                    html = collector.fetch_breed_page_html(breed.scc_slug or "")
+                    payload = collector.fetch_first_page_of_all_departments(breed.scc_slug or "")
                 except CentraleCanineError as error:
                     print(f"{breed.name_fr} : {error}")
                     return 1
-                if breed_pages_directory is not None:
-                    breed_pages_directory.mkdir(parents=True, exist_ok=True)
-                    breed_page_path = breed_pages_directory / f"{breed.scc_slug}.html"
-                    breed_page_path.write_text(html, encoding="utf-8")
-                    print(f"Page de race enregistrée dans {breed_page_path}")
-                result = scc_reference_sync.sync(db, breed, html)
+                if raw_pages_directory is not None:
+                    raw_pages_directory.mkdir(parents=True, exist_ok=True)
+                    raw_page_path = raw_pages_directory / f"{breed.scc_slug}_all_page_0.json"
+                    raw_page_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+                    print(f"Page JSON enregistrée dans {raw_page_path}")
+                result = scc_reference_sync.sync(db, breed, collector.page_filters(payload))
                 print(f"{breed.name_fr} : {len(result.department_term_ids_set)} département(s) renseigné(s)")
-                for variety_label, variety_id in result.variety_ids_set.items():
-                    print(f"  variété « {variety_label} » = {variety_id}")
+                for unknown_variety in result.unknown_varieties:
+                    print(f"  variété inconnue des seeders : « {unknown_variety.label} » = {unknown_variety.value}")
                 for status_option in result.birth_statuses:
-                    print(f"  filtre Portées : « {status_option.label} » = {status_option.value or '(vide)'}")
+                    print(f"  filtre Portées : « {status_option.label} » = {status_option.value}")
             return 0
         finally:
             db.close()
@@ -220,8 +220,13 @@ class CommandLine:
             status = f"née le {listing.birth_date or '?'}, {listing.male_count} ♂ {listing.female_count} ♀"
         else:
             status = f"à naître, saillie du {listing.mating_date or '?'}"
+        breeder_name: str | None = None
+        if listing.breeder is not None:
+            breeder_name = listing.breeder.affix or listing.breeder.display_name
+
         return (
-            f"[{listing.department_code}] {listing.color_text or 'couleur ?'} · {status} · "
+            f"[{listing.department_code}] {listing.city or '?'} · {breeder_name or 'éleveur ?'} · "
+            f"{listing.color_text or 'couleur ?'} · {status} · "
             f"père {listing.sire_name or '?'} ({listing.sire_rating or '?'}/6), "
             f"mère {listing.dam_name or '?'} ({listing.dam_rating or '?'}/6) · {listing.external_url or ''}"
         )
@@ -257,7 +262,7 @@ class CommandLine:
         if parsed.command == "collect":
             return self.collect_centrale_canine(parsed.save_raw)
         if parsed.command == "scc-sync":
-            return self.sync_scc_references(parsed.save_html)
+            return self.sync_scc_references(parsed.save_raw)
         handlers = {
             "init-db": self.init_database,
             "vapid-keys": self.print_vapid_keys,

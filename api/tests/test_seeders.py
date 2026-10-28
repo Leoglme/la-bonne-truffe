@@ -22,21 +22,43 @@ def test_seeders_fill_the_reference_tables_once(db: Session) -> None:
     assert set(second_run.values()) == {0}
 
 
-def test_only_verified_scc_identifiers_are_seeded(db: Session) -> None:
+def test_scc_identifiers_read_on_the_litters_page_are_seeded(db: Session) -> None:
     SeederRunner.run(db)
 
     known = {department.code: department.scc_term_id for department in db.query(Department) if department.scc_term_id}
-    assert known == {"35": "t_41"}
+    assert len(known) == 74
+    assert (known["35"], known["29"], known["974"]) == ("t_41", "t_35", "t_106")
+    assert "05" not in known
 
 
 def test_cocker_varieties_map_to_canonical_colors(db: Session) -> None:
     SeederRunner.run(db)
 
     varieties = {variety.source_variety_id: variety for variety in db.query(BreedVariety)}
-    assert varieties["317"].covered_colors == ["gold"]
-    assert varieties["317"].is_ambiguous is False
+    assert set(varieties) == {"158", "159", "317"}
+    assert varieties["158"].covered_colors == ["gold"]
+    assert varieties["158"].is_ambiguous is False
     assert varieties["159"].is_ambiguous is True
-    assert varieties[None].label == "autres couleurs"
+    assert varieties["317"].label == "autres couleurs"
+    assert varieties["317"].is_ambiguous is True
+
+
+def test_seeders_correct_the_variety_identifiers_of_an_older_database(db: Session) -> None:
+    SeederRunner.run(db)
+    db.query(BreedVariety).filter(BreedVariety.label == "rouge et doré").update({BreedVariety.source_variety_id: "317"})
+    db.query(BreedVariety).filter(BreedVariety.label == "autres couleurs").update(
+        {BreedVariety.source_variety_id: None}
+    )
+    db.commit()
+
+    SeederRunner.run(db)
+
+    identifiers_by_label = {variety.label: variety.source_variety_id for variety in db.query(BreedVariety)}
+    assert identifiers_by_label == {
+        "rouge et doré": "158",
+        "noir, noir et feu, marron, marron et feu": "159",
+        "autres couleurs": "317",
+    }
 
 
 def test_starting_profile_matches_leo_answers(db: Session) -> None:
@@ -60,6 +82,7 @@ def test_migrations_create_every_table_and_record_themselves(tmp_path: Path) -> 
         "create_initial_tables",
         "add_litter_group_confirmed_colors",
         "add_digest_entries_table",
+        "add_breeder_coordinates_and_listing_publication",
     ]
     assert runner.run() == []
     tables = set(inspect(database_engine).get_table_names())

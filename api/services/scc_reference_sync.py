@@ -1,16 +1,15 @@
 """
-Reads the filter identifiers of the Centrale Canine breed page: department ``t_ID`` and variety ids.
+Reads the filter identifiers of the Centrale Canine: department ``t_ID`` and variety identifiers.
 
-The page lists them in its « Département » and « Variété » ``<select>`` elements, for instance
-``<option value="t_41">35 - Ile-et-Vilaine</option>`` (docs/02-sources.md). Nothing is guessed: a
-department or a variety that the page does not list keeps a null identifier.
+Every litters page lists them in ``litters.filters``, for instance ``"t_41": "35 - Ile-et-Vilaine"``
+and ``"158": "rouge et dore"`` (docs/02-sources.md). The department list only holds the departments
+that have litters of the breed at that moment. Nothing is guessed: a department the list does not
+hold keeps its identifier (or none), and a variety the seeders do not know is only reported.
 """
 
 import re
-import unicodedata
 from dataclasses import dataclass, field
 
-from selectolax.lexbor import LexborHTMLParser
 from sqlalchemy.orm import Session
 
 from enums.listing_source import ListingSource
@@ -18,12 +17,12 @@ from models.breed import Breed
 from models.breed_variety import BreedVariety
 from models.department import Department
 
-DEPARTMENT_OPTION_PATTERN = re.compile(r"^\s*(\d{2,3}|2[AB])\s*-")
+DEPARTMENT_LABEL_PATTERN = re.compile(r"^\s*(\d{2,3}|2[AB])\s*-")
 
 
 @dataclass(frozen=True)
-class SccSelectOption:
-    """One ``<option>`` of a filter."""
+class SccFilterOption:
+    """One accepted value of a filter, with its label."""
 
     value: str
     label: str
@@ -31,102 +30,96 @@ class SccSelectOption:
 
 @dataclass
 class SccReferenceOptions:
-    """The options of the filters of the breed page."""
+    """The accepted values of the department, variety and « Portées » filters."""
 
-    departments: list[SccSelectOption] = field(default_factory=list)
-    varieties: list[SccSelectOption] = field(default_factory=list)
-    birth_statuses: list[SccSelectOption] = field(default_factory=list)
+    departments: list[SccFilterOption] = field(default_factory=list)
+    varieties: list[SccFilterOption] = field(default_factory=list)
+    birth_statuses: list[SccFilterOption] = field(default_factory=list)
 
 
 @dataclass
 class SccReferenceSyncResult:
-    """What the synchronisation filled in."""
+    """What the synchronisation filled in, and the varieties the seeders do not know."""
 
     department_term_ids_set: dict[str, str] = field(default_factory=dict)
-    variety_ids_set: dict[str, str] = field(default_factory=dict)
-    birth_statuses: list[SccSelectOption] = field(default_factory=list)
+    unknown_varieties: list[SccFilterOption] = field(default_factory=list)
+    birth_statuses: list[SccFilterOption] = field(default_factory=list)
 
 
 class SccReferenceSync:
-    """Parses the breed page and stores the identifiers it lists."""
+    """Stores the department identifiers a litters page lists, and checks its varieties."""
 
-    @staticmethod
-    def parse_options(html: str) -> SccReferenceOptions:
+    @classmethod
+    def parse_options(cls, filters: dict[str, dict[str, str]]) -> SccReferenceOptions:
         """
-        Read every ``<select>`` of the page and sort them by what their options look like.
+        Read the ``litters.filters`` object of a page.
 
         Args:
-            html: HTML of the breed page.
+            filters: Filter name → value → label, as ``CentraleCanineCollector.page_filters`` returns it.
 
         Returns:
-            The options of the department, variety and « Portées » filters found.
+            The options of the three filters; ``all`` is left out.
         """
-        options = SccReferenceOptions()
-        for select in LexborHTMLParser(html).css("select"):
-            select_options = [
-                SccSelectOption(value=(option.attributes.get("value") or "").strip(), label=option.text(strip=True))
-                for option in select.css("option")
-            ]
-            meaningful = [option for option in select_options if option.value and option.value != "all"]
-            if not meaningful:
-                continue
-            if all(DEPARTMENT_OPTION_PATTERN.match(option.label) for option in meaningful):
-                options.departments = meaningful
-            elif any(SccReferenceSync._normalize(option.label).startswith("a naitre") for option in select_options):
-                options.birth_statuses = select_options
-            elif any("dore" in SccReferenceSync._normalize(option.label) for option in meaningful):
-                options.varieties = meaningful
-        return options
+        return SccReferenceOptions(
+            departments=cls._options_of(filters, "department"),
+            varieties=cls._options_of(filters, "variety"),
+            birth_statuses=cls._options_of(filters, "is_borned"),
+        )
 
-    def sync(self, db: Session, breed: Breed, html: str) -> SccReferenceSyncResult:
+    def sync(self, db: Session, breed: Breed, filters: dict[str, dict[str, str]]) -> SccReferenceSyncResult:
         """
-        Fill the missing department ``t_ID`` and variety identifiers of a breed from its page.
+        Store the department ``t_ID`` a page lists, and report the varieties no seeded variety carries.
+
+        The page is the authority: an identifier that changed on the site is updated. A variety is never
+        mapped to colours on a guess: an unknown one is only reported.
 
         Args:
             db: Database session; committed at the end.
             breed: Breed whose page was read.
-            html: HTML of the breed page.
+            filters: Filter name → value → label, from the page.
 
         Returns:
-            The identifiers set by this run (already known ones are left untouched).
+            What was set, and the unknown varieties.
         """
-        options = self.parse_options(html)
+        options = self.parse_options(filters)
         result = SccReferenceSyncResult(birth_statuses=options.birth_statuses)
 
         departments_by_code = {department.code: department for department in db.query(Department)}
         for option in options.departments:
-            match = DEPARTMENT_OPTION_PATTERN.match(option.label)
+            match = DEPARTMENT_LABEL_PATTERN.match(option.label)
             department = departments_by_code.get(match.group(1)) if match else None
-            if department is not None and department.scc_term_id is None:
+            if department is not None and department.scc_term_id != option.value:
                 department.scc_term_id = option.value
                 result.department_term_ids_set[department.code] = option.value
 
-        varieties = db.query(BreedVariety).filter(
-            BreedVariety.breed_id == breed.id, BreedVariety.source == ListingSource.CENTRALE_CANINE
-        )
-        varieties_by_label = {self._normalize(variety.label): variety for variety in varieties}
-        for option in options.varieties:
-            variety = varieties_by_label.get(self._normalize(option.label))
-            if variety is not None and variety.source_variety_id is None:
-                variety.source_variety_id = option.value
-                result.variety_ids_set[variety.label] = option.value
+        known_variety_ids = {
+            variety.source_variety_id
+            for variety in db.query(BreedVariety).filter(
+                BreedVariety.breed_id == breed.id, BreedVariety.source == ListingSource.CENTRALE_CANINE
+            )
+        }
+        result.unknown_varieties = [option for option in options.varieties if option.value not in known_variety_ids]
 
         db.commit()
         return result
 
     @staticmethod
-    def _normalize(label: str) -> str:
+    def _options_of(filters: dict[str, dict[str, str]], filter_name: str) -> list[SccFilterOption]:
         """
-        Lowercase a label and strip its accents, to compare labels written slightly differently.
+        The options of one filter, ``all`` excluded.
 
         Args:
-            label: Label to normalize.
+            filters: Filter name → value → label.
+            filter_name: ``department``, ``variety`` or ``is_borned``.
 
         Returns:
-            The normalized label.
+            The options, in the page's order.
         """
-        decomposed = unicodedata.normalize("NFKD", label)
-        return "".join(character for character in decomposed if not unicodedata.combining(character)).lower().strip()
+        return [
+            SccFilterOption(value=value, label=label)
+            for value, label in filters.get(filter_name, {}).items()
+            if value != "all"
+        ]
 
 
 scc_reference_sync = SccReferenceSync()

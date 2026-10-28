@@ -1,10 +1,5 @@
-"""Litter, follow-up and source routes, on litters collected from the synthetic fixture."""
+"""Litter, follow-up and source routes, on the litters of the recorded pages."""
 
-import json
-from pathlib import Path
-from typing import Any
-
-import httpx
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -14,29 +9,31 @@ from models.user import User
 from seeders.run_seeders import SeederRunner
 from services.auth_service import AuthService
 from services.collection_runner import collection_runner
-from services.collectors.centrale_canine import CentraleCanineCollector
 from services.push_service import PushResult, PushService
+from tests.centrale_canine_pages import collector_serving, load_recorded_pages, turn_gold
 
-FIXTURE = Path(__file__).parent / "fixtures" / "centrale_canine" / "litters_35_page_0.json"
+GOLD_LITTER_ID = "4333817"
+EXPECTED_LITTER_ID = "4337070"
+COLOR_BUNDLE_LITTER_ID = "4320577"
 
 
 @pytest.fixture
 def collected(db: Session, monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
-    """Seed, collect the fixture once (pushes stubbed), and return the bearer header of the user."""
+    """
+    Seed, collect the recorded pages once (pushes stubbed), and return the bearer header of the user.
+    The expected litter 4337070 is turned gold, so that « À naître » lists one.
+    """
     monkeypatch.setattr(PushService, "send", lambda *_args, **_kwargs: PushResult(delivered=1))
     SeederRunner.run(db)
-    page: dict[str, Any] = json.loads(FIXTURE.read_text(encoding="utf-8"))
-    collector = CentraleCanineCollector(
-        http_client=httpx.Client(transport=httpx.MockTransport(lambda _request: httpx.Response(200, json=page))),
-        sleep=lambda _seconds: None,
-    )
-    collection_runner.run_centrale_canine(db, collector)
+    pages = load_recorded_pages()
+    turn_gold(pages, EXPECTED_LITTER_ID)
+    collection_runner.run_centrale_canine(db, collector_serving(pages))
     user = db.query(User).one()
     return {"Authorization": f"Bearer {AuthService.create_access_token(user.email)}"}
 
 
 def group_id_of(db: Session, external_id: str) -> int:
-    """The litter group of a fixture listing."""
+    """The litter group of a recorded listing."""
     group_id = db.query(Listing).filter(Listing.external_id == external_id).one().litter_group_id
     assert group_id is not None
     return group_id
@@ -47,28 +44,28 @@ def test_home_list_is_sorted_by_score_and_filtered(client: TestClient, collected
     preferred = client.get("/api/v1/litters", params={"tier": "preferred"}, headers=collected).json()
     expected = client.get("/api/v1/litters", params={"kind": "litter_expected"}, headers=collected).json()
 
-    assert len(cards) == 4
-    assert cards[0]["id"] == group_id_of(db, "9000001")
+    assert len(cards) == 9
     assert [card["score"] for card in cards] == sorted((card["score"] for card in cards), reverse=True)
-    assert len(preferred) == 2
-    assert [card["id"] for card in expected] == [group_id_of(db, "9000002")]
-    assert cards[0]["name"] == "Portée de TEST Mère A"
-    assert cards[0]["place"] == "Ille-et-Vilaine"
+    assert len(preferred) == 7
+    assert [card["id"] for card in expected] == [group_id_of(db, EXPECTED_LITTER_ID)]
+    gold_card = next(card for card in cards if card["id"] == group_id_of(db, GOLD_LITTER_ID))
+    assert (gold_card["name"], gold_card["place"]) == ("Du Clos de l'Élevage D", "Saint-Aubin-du-Cormier")
 
 
 def test_detail_explains_the_score(client: TestClient, collected: dict[str, str], db: Session) -> None:
-    detail = client.get(f"/api/v1/litters/{group_id_of(db, '9000001')}", headers=collected).json()
+    detail = client.get(f"/api/v1/litters/{group_id_of(db, GOLD_LITTER_ID)}", headers=collected).json()
 
     assert detail["tier"] == "preferred"
     assert detail["reasons"][0] == {"text": "Gold, ta couleur préférée", "points": 40}
-    assert detail["sire"] == {"name": "TEST Père A", "rating": 4}
-    assert detail["breeder"]["is_selected_breeding"] is True
-    assert detail["listings"][0]["external_url"] == "https://www.centrale-canine.fr/portee/9000001"
+    assert detail["sire"] == {"name": "Père de test 23", "rating": 1}
+    assert detail["breeder"]["phone_e164"] == "+33600000004"
+    assert detail["breeder"]["is_selected_breeding"] is False
+    assert detail["listings"][0]["external_url"] == "https://www.centrale-canine.fr/portee/2834593"
     assert detail["follow_up"] is None
 
 
 def test_follow_and_note_a_litter(client: TestClient, collected: dict[str, str], db: Session) -> None:
-    litter_id = group_id_of(db, "9000002")
+    litter_id = group_id_of(db, EXPECTED_LITTER_ID)
 
     followed = client.put(f"/api/v1/litters/{litter_id}/follow-up", json={"status": "to_contact"}, headers=collected)
     note = client.post(
@@ -85,7 +82,7 @@ def test_follow_and_note_a_litter(client: TestClient, collected: dict[str, str],
 def test_confirming_a_colour_turns_the_bundle_into_a_certain_colour(
     client: TestClient, collected: dict[str, str], db: Session
 ) -> None:
-    litter_id = group_id_of(db, "9000003")
+    litter_id = group_id_of(db, COLOR_BUNDLE_LITTER_ID)
 
     detail = client.patch(
         f"/api/v1/litters/{litter_id}/colors", json={"colors": ["noir_et_feu"]}, headers=collected
@@ -100,7 +97,7 @@ def test_sources_report_their_last_run(client: TestClient, collected: dict[str, 
     statuses = {status["source"]: status for status in client.get("/api/v1/sources", headers=collected).json()}
 
     assert statuses["centrale_canine"]["last_status"] == "ok"
-    assert statuses["centrale_canine"]["listings_seen"] == 4
+    assert statuses["centrale_canine"]["listings_seen"] == 19
     assert statuses["chiens_de_france"]["is_collected"] is False
     assert client.post("/api/v1/sources/chiens_de_france/run", headers=collected).status_code == 501
 

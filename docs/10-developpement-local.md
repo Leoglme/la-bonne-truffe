@@ -35,11 +35,12 @@ Dans `.env`, changer au moins `SECRET_KEY` et `ADMIN_PASSWORD`. L'adresse `conta
 | `python cli.py init-db` | Appliquer les migrations puis les seeders |
 | `python cli.py vapid-keys` | Générer la paire de clés Web Push |
 | `python cli.py push-test` | Envoyer une notification de test aux appareils abonnés |
-| `python cli.py scc-sync` | Lire sur la page Centrale Canine les `t_ID` des départements et l'identifiant de la variété « autres couleurs » encore inconnus |
+| `python cli.py scc-sync` | Lire dans le JSON Centrale Canine (`litters.filters`) les `t_ID` des départements qui ont des portées, et signaler une variété inconnue des seeders |
+| `python cli.py scc-sync --save-raw DOSSIER` | Idem, en enregistrant la page JSON lue pour chaque race |
 | `python cli.py collect` | Relever la Centrale Canine maintenant et afficher les portées trouvées |
-| `python cli.py collect --save-raw DOSSIER` | Idem, en enregistrant chaque page JSON reçue (pour remplacer les fixtures synthétiques des tests) |
+| `python cli.py collect --save-raw DOSSIER` | Idem, en enregistrant chaque page JSON reçue (nouvelles fixtures, à anonymiser comme le dit `tests/fixtures/centrale_canine/README.md`) |
 
-**Premier lancement réel** : faire `scc-sync` puis `collect` depuis une IP que la Centrale Canine accepte (le PC de Léo ; le VPS reste à vérifier, voir `02-sources.md`). Sans `scc-sync`, seul le 35 (`t_41`) est relevé.
+**Premier lancement réel** : `init-db` puis `collect`. Les `t_ID` des 74 départements qui avaient des portées le 28/10/2026 sont seedés, et le relevé lit tout seul ceux qui manquent. Le 28/10/2026, depuis le PC de Léo, Cloudflare a refusé le client Python (`02-sources.md`) : aucun relevé réel ne passe tant que la façon de relever n'est pas choisie (`08-idees-et-questions-ouvertes.md`).
 
 ### Qualité
 

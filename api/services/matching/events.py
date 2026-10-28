@@ -1,7 +1,13 @@
 """Which events a new verdict raises (docs/04, « Les événements qui notifient »)."""
 
+from datetime import date
+
 from enums.match_event_kind import MatchEventKind
 from enums.match_tier import MatchTier
+
+NEWS_WINDOW_DAYS = 3
+
+ALWAYS_NEWS_EVENTS: frozenset[MatchEventKind] = frozenset({MatchEventKind.BORN, MatchEventKind.UPGRADED})
 
 
 class EventService:
@@ -52,3 +58,24 @@ class EventService:
         ):
             events.append(MatchEventKind.NEW_ACCEPTABLE)
         return events
+
+    @staticmethod
+    def is_news(event: MatchEventKind, appeared_on: date, today: date) -> bool:
+        """
+        Whether an event is worth a push or a line in the digest.
+
+        A birth or a move up to « préférée » always is. A new litter is only when it went online in the
+        last few days: one online for weeks is recorded silently, so the first collection does not push
+        every litter already published.
+
+        Args:
+            event: The event.
+            appeared_on: Day the litter went online.
+            today: Day of the evaluation, in French time.
+
+        Returns:
+            True when the event is sent.
+        """
+        if event in ALWAYS_NEWS_EVENTS:
+            return True
+        return (today - appeared_on).days <= NEWS_WINDOW_DAYS

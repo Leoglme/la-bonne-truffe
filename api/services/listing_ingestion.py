@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from enum import StrEnum
+from typing import TypeVar
 
 from sqlalchemy.orm import Session
 
@@ -13,7 +14,8 @@ from models.breeder import Breeder
 from models.department import Department
 from models.listing import Listing
 from models.listing_change import ListingChange
-from services.collectors.raw_listing import RawListing
+from services.collectors.breeder_contact_parser import BreederContactParser
+from services.collectors.raw_listing import RawBreeder, RawListing
 
 # Fields whose change is history worth keeping (« les sexes sont apparus », « la portée est née »).
 TRACKED_FIELDS: tuple[str, ...] = (
@@ -49,6 +51,8 @@ MISSED_RUNS_BEFORE_INACTIVE = 2
 BORN_LITTER_ACTIVE_DAYS = 183
 
 ColumnValue = str | int | float | bool | date | datetime | StrEnum | list[str] | list[dict[str, str]] | None
+
+StoredValue = TypeVar("StoredValue", str, int, float)
 
 
 @dataclass
@@ -96,7 +100,7 @@ class ListingIngestionService:
                 .filter(Listing.source == source, Listing.external_id == raw_listing.external_id)
                 .one_or_none()
             )
-            breeder_id = self._upsert_breeder(db, raw_listing, known_department_codes)
+            breeder_id = self._upsert_breeder(db, source, raw_listing, known_department_codes)
             if listing is None:
                 listing = Listing(
                     source=source,
@@ -173,6 +177,7 @@ class ListingIngestionService:
         listing.litter_rating = raw_listing.litter_rating
         listing.photos = list(raw_listing.photos)
         listing.description = raw_listing.description
+        listing.published_at = raw_listing.published_at
         listing.raw_json = raw_listing.raw_json
         listing.content_hash = cls.content_hash(cls._tracked_values(listing))
 
@@ -238,35 +243,144 @@ class ListingIngestionService:
                 has_changed = True
         return has_changed
 
-    @staticmethod
-    def _upsert_breeder(db: Session, raw_listing: RawListing, known_department_codes: set[str]) -> int | None:
+    @classmethod
+    def _upsert_breeder(
+        cls, db: Session, source: ListingSource, raw_listing: RawListing, known_department_codes: set[str]
+    ) -> int | None:
         """
-        Find or create the breeder by its source identifier. The Centrale Canine JSON carries no name,
-        phone or SIREN: those come later from the litter page (docs/02-sources.md).
+        Find the breeder of a listing, or create it, then copy what the source knows about it.
+
+        A value the source leaves empty never erases a known one, and a SIREN or a Centrale Canine
+        identifier already carried by another breeder is never moved onto this one.
 
         Args:
             db: Database session.
+            source: Source of the listing.
             raw_listing: Listing read by the collector.
             known_department_codes: Seeded department codes.
 
         Returns:
-            The breeder id, or None when the source gives no breeder identifier.
+            The breeder id, or None when the source names no breeder.
         """
-        if raw_listing.breeder_source_id is None:
+        raw_breeder = raw_listing.breeder
+        if raw_breeder is None:
             return None
-        breeder = db.query(Breeder).filter(Breeder.scc_breeder_id == raw_listing.breeder_source_id).one_or_none()
+        department_code = raw_listing.department_code if raw_listing.department_code in known_department_codes else None
+        affix_key = BreederContactParser.affix_key(raw_breeder.affix)
+
+        breeder = cls._find_breeder(db, source, raw_breeder, affix_key, department_code)
         if breeder is None:
-            breeder = Breeder(
-                scc_breeder_id=raw_listing.breeder_source_id,
-                department_code=(
-                    raw_listing.department_code if raw_listing.department_code in known_department_codes else None
-                ),
-            )
+            breeder = Breeder()
             db.add(breeder)
-        if raw_listing.breeder_selection_group is not None:
-            breeder.scc_selection_group = raw_listing.breeder_selection_group
+            db.flush()
+
+        if source == ListingSource.CENTRALE_CANINE and not cls._is_scc_breeder_id_taken(
+            db, raw_breeder.source_id, breeder.id
+        ):
+            breeder.scc_breeder_id = raw_breeder.source_id
+        if raw_breeder.siren is not None and not cls._is_siren_taken(db, raw_breeder.siren, breeder.id):
+            breeder.siren = raw_breeder.siren
+        breeder.display_name = cls._known_or_current(raw_breeder.display_name, breeder.display_name)
+        breeder.affix = cls._known_or_current(raw_breeder.affix, breeder.affix)
+        breeder.affix_normalized = cls._known_or_current(affix_key, breeder.affix_normalized)
+        breeder.phone_e164 = cls._known_or_current(raw_breeder.phone_e164, breeder.phone_e164)
+        breeder.zip_code = cls._known_or_current(raw_breeder.zip_code, breeder.zip_code)
+        breeder.city = cls._known_or_current(raw_breeder.city, breeder.city)
+        breeder.department_code = cls._known_or_current(department_code, breeder.department_code)
+        breeder.latitude = cls._known_or_current(raw_breeder.latitude, breeder.latitude)
+        breeder.longitude = cls._known_or_current(raw_breeder.longitude, breeder.longitude)
+        breeder.scc_selection_group = cls._known_or_current(raw_breeder.selection_group, breeder.scc_selection_group)
         db.flush()
         return breeder.id
+
+    @staticmethod
+    def _find_breeder(
+        db: Session,
+        source: ListingSource,
+        raw_breeder: RawBreeder,
+        affix_key: str | None,
+        department_code: str | None,
+    ) -> Breeder | None:
+        """
+        Match a breeder in the order of docs/03: SIREN, then the Centrale Canine identifier, then the
+        phone, then the affix in the same department.
+
+        Args:
+            db: Database session.
+            source: Source of the listing.
+            raw_breeder: Breeder as the source describes it.
+            affix_key: Normalized affix, for the last rule.
+            department_code: Department of the listing, for the last rule.
+
+        Returns:
+            The existing breeder, or None for a breeder never seen.
+        """
+        if raw_breeder.siren is not None:
+            breeder = db.query(Breeder).filter(Breeder.siren == raw_breeder.siren).first()
+            if breeder is not None:
+                return breeder
+        if source == ListingSource.CENTRALE_CANINE:
+            breeder = db.query(Breeder).filter(Breeder.scc_breeder_id == raw_breeder.source_id).first()
+            if breeder is not None:
+                return breeder
+        if raw_breeder.phone_e164 is not None:
+            breeder = db.query(Breeder).filter(Breeder.phone_e164 == raw_breeder.phone_e164).first()
+            if breeder is not None:
+                return breeder
+        if affix_key is not None and department_code is not None:
+            return (
+                db.query(Breeder)
+                .filter(Breeder.affix_normalized == affix_key, Breeder.department_code == department_code)
+                .first()
+            )
+        return None
+
+    @staticmethod
+    def _is_siren_taken(db: Session, siren: str, breeder_id: int) -> bool:
+        """
+        Whether another breeder already carries this SIREN (the column is unique).
+
+        Args:
+            db: Database session.
+            siren: SIREN to store.
+            breeder_id: Breeder being updated.
+
+        Returns:
+            True when another breeder has it.
+        """
+        return db.query(Breeder).filter(Breeder.siren == siren, Breeder.id != breeder_id).first() is not None
+
+    @staticmethod
+    def _is_scc_breeder_id_taken(db: Session, scc_breeder_id: str, breeder_id: int) -> bool:
+        """
+        Whether another breeder already carries this Centrale Canine identifier (the column is unique).
+
+        Args:
+            db: Database session.
+            scc_breeder_id: Identifier to store.
+            breeder_id: Breeder being updated.
+
+        Returns:
+            True when another breeder has it.
+        """
+        return (
+            db.query(Breeder).filter(Breeder.scc_breeder_id == scc_breeder_id, Breeder.id != breeder_id).first()
+            is not None
+        )
+
+    @staticmethod
+    def _known_or_current(new_value: StoredValue | None, current_value: StoredValue | None) -> StoredValue | None:
+        """
+        The value the source gives now, or the stored one when the source gives none.
+
+        Args:
+            new_value: Value read by the collector.
+            current_value: Value stored.
+
+        Returns:
+            The value to keep.
+        """
+        return new_value if new_value is not None else current_value
 
     @staticmethod
     def _deactivate_missing(

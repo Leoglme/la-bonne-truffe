@@ -55,6 +55,8 @@ Les notifications suivent des **événements**, pas des lignes. Chaque couple (g
 
 Une disparition (`is_active` → faux) ne notifie pas, elle grise la carte. Le récap du soir n'est envoyé que s'il contient quelque chose.
 
+**Ce qui est une nouveauté** (décidé le 28/10/2026, `EventService.is_news`) : `new_preferred` et `new_acceptable` ne partent que pour une portée mise en ligne depuis **3 jours au plus**. Une portée en ligne depuis plus longtemps est notée comme traitée, sans push ni ligne dans le récap : le premier relevé, ou l'ajout d'un département aux critères, ne déverse pas les portées publiées depuis des semaines. `born` et `upgraded` partent quel que soit l'âge de la portée.
+
 ## Texte des notifications
 
 Titre : « La Bonne Truffe ». Corps : couleur, lieu, sexes, en une phrase. Exemples :
@@ -89,8 +91,8 @@ Les couleurs absentes de `color_preferences` prennent la valeur `ignored` : Léo
 
 Code : `api/services/matching/` (`tiers.py`, `scoring.py`, `matching_service.py` pur et testé, `events.py`, `match_refresh.py`), `api/services/litter_grouping.py`, `api/services/notifier.py`. Précisions prises en codant, à valider :
 
-- **Fraîcheur** : l'âge compte depuis la première apparition du groupe (`first_seen_at`, en heure française). Une portée à naître apparaît avec sa déclaration de saillie, ce qui suit la règle.
-- **Raisons** : une raison par critère (« Gold, ta couleur préférée », « Portée LOF », « 2 mâles et 3 femelles », « Apparue il y a 4 jours », « Ille-et-Vilaine, ton département le plus proche », bonus). L'exemple de la maquette donne bien **96** (test `test_mockup_example_scores_96_and_is_preferred`).
+- **Fraîcheur** : l'âge compte depuis la mise en ligne de la portée, en heure française : la plus ancienne date de publication de ses annonces (`published_at`), ou sa première apparition dans l'app si celle-ci est plus ancienne. Une portée à naître apparaît avec sa déclaration de saillie ; sa naissance garde cet âge.
+- **Raisons** : une raison par critère (« Gold, ta couleur préférée », « Portée LOF », « 2 mâles et 3 femelles », « Apparue il y a 4 jours », « Ille-et-Vilaine, ton département le plus proche », bonus). L'exemple de la maquette donne bien **96** (test `test_gold_litter_born_in_the_closest_department_scores_96_and_is_preferred`).
 - **Département inconnu** : il ne filtre pas (une information inconnue ne filtre jamais) ; drapeau `department_unknown`.
 - **Naissance** : quand une portée naît et passe « préférée » dans le même relevé, seul `born` part (il porte la nouvelle) ; `new_preferred` est noté comme traité.
 - **Réglages coupés** : un événement que le profil ne veut pas recevoir est quand même noté comme traité, pour qu'un réglage rallumé ne déverse pas d'anciennes portées.

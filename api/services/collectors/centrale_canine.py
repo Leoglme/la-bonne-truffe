@@ -1,8 +1,9 @@
 """
 Centrale Canine collector: the public JSON of the LOF litters, born and to be born.
 
-Endpoint, parameters and fields are documented in docs/02-sources.md. Politeness: one request per
-second at most, a browser User-Agent (the site refuses any other), never any protection bypass.
+Endpoint, parameters and fields are documented in docs/02-sources.md. One page carries the litters,
+the breeders they belong to and the accepted filter values. Politeness: one request per second at
+most, a browser User-Agent (the site refuses any other), never any protection bypass.
 """
 
 import logging
@@ -19,12 +20,15 @@ from enums.color_confidence import ColorConfidence
 from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
 from enums.lof_status import LofStatus
-from services.collectors.raw_listing import ColorReading, RawListing
+from services.collectors.breeder_contact_parser import BreederContactParser
+from services.collectors.raw_listing import ColorReading, RawBreeder, RawListing
 from services.collectors.scc_value_parser import SccValueParser
+from services.collectors.system_curl_transport import SystemCurlTransport
 
 logger = logging.getLogger(__name__)
 
 SCC_BASE_URL = "https://www.centrale-canine.fr"
+ALL_DEPARTMENTS_FILTER = "all"
 
 # A plain browser User-Agent: the Centrale Canine answers 403 to any other (docs/02-sources.md).
 SCC_BROWSER_USER_AGENT = (
@@ -105,12 +109,15 @@ class CentraleCanineCollector:
         Prepare the collector.
 
         Args:
-            http_client: HTTP client, injected by the tests; a real one is created otherwise.
+            http_client: HTTP client, injected by the tests; otherwise one that sends through the system
+                ``curl``, which Cloudflare accepts where it refuses Python (docs/02-sources.md).
             seconds_between_requests: Minimum delay between two requests (politeness).
             sleep: Pause function, injected by the tests.
             monotonic_clock: Clock measuring the delay, injected by the tests.
         """
-        self.http_client = http_client or httpx.Client(timeout=30.0, follow_redirects=True)
+        self.http_client = http_client or httpx.Client(
+            timeout=30.0, follow_redirects=True, transport=SystemCurlTransport()
+        )
         self.seconds_between_requests = seconds_between_requests
         self.sleep = sleep
         self.monotonic_clock = monotonic_clock
@@ -129,19 +136,6 @@ class CentraleCanineCollector:
             The URL, query string excluded.
         """
         return f"{SCC_BASE_URL}/api/breed/le-chien-de-race--{scc_slug}/chiots-de-la-race/{page_number}"
-
-    @staticmethod
-    def breed_page_url(scc_slug: str) -> str:
-        """
-        URL of the public « chiots de la race » page, whose ``<select>`` lists the filter identifiers.
-
-        Args:
-            scc_slug: Breed slug at the Centrale Canine.
-
-        Returns:
-            The URL.
-        """
-        return f"{SCC_BASE_URL}/le-chien-de-race/{scc_slug}/chiots-de-la-race"
 
     def collect(self, plan: CentraleCanineCollectionPlan) -> CentraleCanineCollection:
         """
@@ -164,21 +158,21 @@ class CentraleCanineCollector:
                     collection.listings.extend(self.parse_litters_payload(raw_page.payload, breed, department.code))
         return collection
 
-    def fetch_breed_page_html(self, scc_slug: str) -> str:
+    def fetch_first_page_of_all_departments(self, scc_slug: str) -> dict[str, Any]:
         """
-        Read the public breed page, for its filter ``<select>`` elements.
+        Read the first page of a breed over every department, whose ``litters.filters`` lists the
+        accepted department and variety identifiers (the HTML page builds its filters from it).
 
         Args:
             scc_slug: Breed slug at the Centrale Canine.
 
         Returns:
-            The HTML.
+            The decoded page.
 
         Raises:
             CentraleCanineError: When the page cannot be read.
         """
-        response = self._get(self.breed_page_url(scc_slug), params={}, accept="text/html")
-        return response.text
+        return self._fetch_litters_page(scc_slug, ALL_DEPARTMENTS_FILTER, 0)
 
     def _iterate_pages(self, scc_slug: str, department: SccDepartmentTarget) -> Iterator[SccRawPage]:
         """
@@ -207,7 +201,7 @@ class CentraleCanineCollector:
 
         Args:
             scc_slug: Breed slug at the Centrale Canine.
-            department_term_id: ``t_ID`` of the department.
+            department_term_id: ``t_ID`` of the department, or ``all``.
             page_number: Page, starting at 0.
 
         Returns:
@@ -280,16 +274,38 @@ class CentraleCanineCollector:
             payload: Decoded page.
 
         Returns:
-            The ``{"count", "node"}`` object.
+            The ``{"count", "node", "breeders", "filters", "sort"}`` object.
         """
         litters = payload.get("litters")
         return litters if isinstance(litters, dict) else {}
+
+    @classmethod
+    def page_filters(cls, payload: dict[str, Any]) -> dict[str, dict[str, str]]:
+        """
+        The accepted filter values of a page: ``department`` (``t_41`` → « 35 - Ile-et-Vilaine »),
+        ``variety`` (``158`` → « rouge et dore ») and ``is_borned``.
+
+        Args:
+            payload: Decoded page.
+
+        Returns:
+            Filter name → value → label; an empty mapping when the page lists none.
+        """
+        filters = cls._litters_block(payload).get("filters")
+        if not isinstance(filters, dict):
+            return {}
+        return {
+            name: {str(value): str(label) for value, label in values.items()}
+            for name, values in filters.items()
+            if isinstance(values, dict)
+        }
 
     def parse_litters_payload(
         self, payload: dict[str, Any], breed: SccBreedTarget, department_code: str
     ) -> list[RawListing]:
         """
-        Turn one page into listings. Litters are grouped by breeding quality (``1``, ``2``, ``3``).
+        Turn one page into listings. Litters are grouped by breeding quality (``1``, ``2``, ``3``) and
+        their breeders are listed apart, by Centrale Canine user identifier.
 
         Args:
             payload: Decoded page.
@@ -299,10 +315,15 @@ class CentraleCanineCollector:
         Returns:
             The listings of the page; a litter without identifier is skipped and logged.
         """
-        nodes_by_group = self._litters_block(payload).get("node")
+        litters_block = self._litters_block(payload)
+        nodes_by_group = litters_block.get("node")
         # PHP encodes an empty associative array as a JSON list.
         if not isinstance(nodes_by_group, dict):
             return []
+        breeders = litters_block.get("breeders")
+        breeders_by_user_id = breeders if isinstance(breeders, dict) else {}
+        variety_labels = self.page_filters(payload).get("variety", {})
+
         listings: list[RawListing] = []
         for litters_of_group in nodes_by_group.values():
             if not isinstance(litters_of_group, dict):
@@ -310,7 +331,15 @@ class CentraleCanineCollector:
             for litter in litters_of_group.values():
                 if not isinstance(litter, dict):
                     continue
-                listing = self.parse_litter(litter, breed, department_code)
+                breeder_user_id = SccValueParser.to_text(litter.get("n_breeder")) or ""
+                breeder_details = breeders_by_user_id.get(breeder_user_id)
+                listing = self.parse_litter(
+                    litter,
+                    breed,
+                    department_code,
+                    breeder_details if isinstance(breeder_details, dict) else None,
+                    variety_labels,
+                )
                 if listing is None:
                     logger.warning("Centrale Canine litter without n_id skipped: %s", sorted(litter)[:10])
                     continue
@@ -318,7 +347,13 @@ class CentraleCanineCollector:
         return listings
 
     @staticmethod
-    def parse_litter(litter: dict[str, Any], breed: SccBreedTarget, department_code: str) -> RawListing | None:
+    def parse_litter(
+        litter: dict[str, Any],
+        breed: SccBreedTarget,
+        department_code: str,
+        breeder_details: dict[str, Any] | None,
+        variety_labels: dict[str, str],
+    ) -> RawListing | None:
         """
         Turn one litter object into a listing, in the canonical vocabulary.
 
@@ -329,6 +364,8 @@ class CentraleCanineCollector:
             litter: One ``n<id>`` object of the JSON.
             breed: Breed read, with its varieties.
             department_code: Department of the ``department`` filter.
+            breeder_details: The ``breeders`` entry of the litter's breeder, when the page has it.
+            variety_labels: Variety identifier → label, from the page filters.
 
         Returns:
             The listing, or None when the litter has no ``n_id``.
@@ -342,7 +379,7 @@ class CentraleCanineCollector:
         if is_born is None:
             is_born = birth_date is not None
 
-        variety_source_id = SccValueParser.to_text(litter.get("n_variety_id"))
+        variety_source_id = SccValueParser.to_text(litter.get("n_variety"))
         variety = breed.varieties_by_source_id.get(variety_source_id or "")
         colors: tuple[ColorReading, ...] = ()
         if variety is not None:
@@ -351,6 +388,7 @@ class CentraleCanineCollector:
 
         relative_url = SccValueParser.to_text(litter.get("url"))
         image_uri = SccValueParser.to_text(litter.get("n_image_uri"))
+        breeder = CentraleCanineCollector.parse_breeder(litter, breeder_details)
 
         return RawListing(
             source=ListingSource.CENTRALE_CANINE,
@@ -367,18 +405,56 @@ class CentraleCanineCollector:
             female_count=SccValueParser.to_int(litter.get("n_female_number")) if is_born else None,
             variety_source_id=variety_source_id,
             colors=colors,
-            color_text=SccValueParser.to_text(litter.get("n_variety")),
+            color_text=variety_labels.get(variety_source_id or ""),
             department_code=department_code,
+            zip_code=breeder.zip_code if breeder is not None else None,
+            city=breeder.city if breeder is not None else None,
             sire_name=SccValueParser.to_text(litter.get("n_father_name")),
             sire_rating=SccValueParser.to_int(litter.get("n_father_notation")),
             dam_name=SccValueParser.to_text(litter.get("n_mother_name")),
             dam_rating=SccValueParser.to_int(litter.get("n_mother_notation")),
             litter_rating=SccValueParser.to_float(litter.get("n_average_notation")),
             photos=tuple(url for url in (CentraleCanineCollector._absolute_url(image_uri),) if url),
-            breeder_source_id=SccValueParser.to_text(litter.get("n_breeder_id")),
-            breeder_selection_group=SccValueParser.to_int(litter.get("n_selection")),
-            source_changed_at=SccValueParser.to_datetime(litter.get("n_changed")),
+            breeder=breeder,
+            published_at=SccValueParser.to_datetime(litter.get("n_created")),
             raw_json=litter,
+        )
+
+    @staticmethod
+    def parse_breeder(litter: dict[str, Any], breeder_details: dict[str, Any] | None) -> RawBreeder | None:
+        """
+        Describe the breeder of a litter from its ``breeders`` entry (name, affix, SIREN, phone, town).
+
+        Args:
+            litter: One ``n<id>`` object of the JSON.
+            breeder_details: The ``breeders`` entry of the litter's breeder, when the page has it.
+
+        Returns:
+            The breeder, or None when the litter names none.
+        """
+        source_id = SccValueParser.to_text(litter.get("n_breeder_id"))
+        if source_id is None:
+            return None
+        selection_group = SccValueParser.to_int(litter.get("n_selection"))
+        if breeder_details is None:
+            return RawBreeder(source_id=source_id, selection_group=selection_group)
+
+        coordinates = SccValueParser.to_coordinates(breeder_details.get("u_location"))
+        return RawBreeder(
+            source_id=source_id,
+            display_name=BreederContactParser.readable_name(
+                SccValueParser.to_text(breeder_details.get("u_farming_name"))
+            ),
+            affix=BreederContactParser.readable_name(SccValueParser.to_text(breeder_details.get("u_farming_affix"))),
+            siren=BreederContactParser.siren(SccValueParser.to_text(breeder_details.get("u_breeder_siren"))),
+            phone_e164=BreederContactParser.phone_e164(SccValueParser.to_text(breeder_details.get("u_breeder_phone"))),
+            zip_code=BreederContactParser.postal_code(
+                SccValueParser.to_text(breeder_details.get("u_breeder_zip_code"))
+            ),
+            city=BreederContactParser.readable_name(SccValueParser.to_text(breeder_details.get("u_breeder_town"))),
+            latitude=coordinates[0] if coordinates is not None else None,
+            longitude=coordinates[1] if coordinates is not None else None,
+            selection_group=selection_group,
         )
 
     @staticmethod

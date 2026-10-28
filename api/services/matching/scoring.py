@@ -144,10 +144,10 @@ class ScoreCalculator:
     @staticmethod
     def _freshness_reason(snapshot: LitterSnapshot, today: date) -> ScoreReason | None:
         """
-        15 on the day the litter appeared, decreasing linearly to 0 at 14 days. A litter to be born
-        takes the age of its mating declaration, which is when it appeared at the Centrale Canine.
+        15 on the day the litter went online, decreasing linearly to 0 at 14 days. At the Centrale
+        Canine a litter goes online with its mating declaration, so a birth keeps that age.
         """
-        age_in_days = max(0, (today - snapshot.first_seen_on).days)
+        age_in_days = max(0, (today - snapshot.appeared_on).days)
         points = round(15 * max(0.0, 1 - age_in_days / FRESHNESS_WINDOW_DAYS))
         if points <= 0:
             return None

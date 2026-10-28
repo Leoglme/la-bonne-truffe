@@ -40,9 +40,9 @@ class MatchRefreshService:
         """
         Evaluate every active group against every active profile.
 
-        After a collection the events are sent. After a change of criteria (``should_notify``
-        False) they are only recorded as handled: Léo is looking at the app, and a new setting must
-        not push every litter it reclassifies.
+        After a collection the events that are news are sent (``EventService.is_news``). After a change
+        of criteria (``should_notify`` False) they are only recorded as handled: Léo is looking at the
+        app, and a new setting must not push every litter it reclassifies.
 
         Args:
             db: Database session; committed at the end.
@@ -85,8 +85,9 @@ class MatchRefreshService:
                 )
                 if not events:
                     continue
-                if should_notify:
-                    notifier_service.dispatch(db, profile, snapshot, events, is_followed, now)
+                events_to_send = [event for event in events if EventService.is_news(event, snapshot.appeared_on, today)]
+                if should_notify and events_to_send:
+                    notifier_service.dispatch(db, profile, snapshot, events_to_send, is_followed, now)
                 handled = dict(match.notified_events)
                 for event in events:
                     handled[event.value] = now.isoformat()

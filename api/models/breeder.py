@@ -1,6 +1,6 @@
 """Breeder model: the anchor of the deduplication between sources."""
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database import Base
@@ -22,6 +22,8 @@ class Breeder(TimestampMixin, Base):
         zip_code: Postal code.
         city: Town.
         department_code: Department code.
+        latitude: Latitude of the breeding, when a source gives it.
+        longitude: Longitude of the breeding, when a source gives it.
         website: Breeder's website.
         scc_breeder_id: Breeder identifier at the Centrale Canine (``n_breeder_id``).
         scc_selection_group: Centrale Canine group: 1 selected, 2 with affix, 3 without affix.
@@ -40,6 +42,8 @@ class Breeder(TimestampMixin, Base):
     zip_code: Mapped[str | None] = mapped_column(String(10))
     city: Mapped[str | None] = mapped_column(String(120))
     department_code: Mapped[str | None] = mapped_column(ForeignKey("departments.code"), index=True)
+    latitude: Mapped[float | None] = mapped_column(Float)
+    longitude: Mapped[float | None] = mapped_column(Float)
     website: Mapped[str | None] = mapped_column(String(500))
     scc_breeder_id: Mapped[str | None] = mapped_column(String(40), unique=True)
     scc_selection_group: Mapped[int | None]

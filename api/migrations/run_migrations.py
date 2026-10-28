@@ -31,6 +31,10 @@ MIGRATION_MODULES: list[tuple[str, str]] = [
     ("create_initial_tables", "migrations.create_initial_tables"),
     ("add_litter_group_confirmed_colors", "migrations.add_litter_group_confirmed_colors"),
     ("add_digest_entries_table", "migrations.add_digest_entries_table"),
+    (
+        "add_breeder_coordinates_and_listing_publication",
+        "migrations.add_breeder_coordinates_and_listing_publication",
+    ),
 ]
 
 _NON_MIGRATION_MODULES: set[str] = {"__init__", "run_migrations"}

@@ -45,7 +45,7 @@ GOLD_BORN_IN_35 = LitterSnapshot(
     male_count=2,
     female_count=3,
     price_cents=None,
-    first_seen_on=date(2026, 10, 24),
+    appeared_on=date(2026, 10, 24),
     birth_date=date(2026, 10, 27),
     expected_birth_date=None,
     available_from=date(2026, 12, 22),
@@ -60,7 +60,7 @@ BLACK_AND_TAN_BUNDLE = (
 )
 
 
-def test_mockup_example_scores_96_and_is_preferred() -> None:
+def test_gold_litter_born_in_the_closest_department_scores_96_and_is_preferred() -> None:
     verdict = MatchingService.evaluate(GOLD_BORN_IN_35, LEO, TODAY)
 
     assert verdict.tier == MatchTier.PREFERRED
@@ -71,7 +71,7 @@ def test_mockup_example_scores_96_and_is_preferred() -> None:
 
 
 def test_score_is_capped_at_100_with_bonuses() -> None:
-    selected = replace(GOLD_BORN_IN_35, first_seen_on=TODAY, breeder_selection_group=1, sire_rating=4, dam_rating=5)
+    selected = replace(GOLD_BORN_IN_35, appeared_on=TODAY, breeder_selection_group=1, sire_rating=4, dam_rating=5)
 
     verdict = MatchingService.evaluate(selected, LEO, TODAY)
 
@@ -167,6 +167,6 @@ def test_proximity_decreases_with_the_rank_and_never_drops_below_2() -> None:
 
 
 def test_freshness_fades_to_nothing_after_14_days() -> None:
-    old = MatchingService.evaluate(replace(GOLD_BORN_IN_35, first_seen_on=date(2026, 10, 1)), LEO, TODAY)
+    old = MatchingService.evaluate(replace(GOLD_BORN_IN_35, appeared_on=date(2026, 10, 1)), LEO, TODAY)
 
     assert all("Apparue" not in reason.text for reason in old.reasons)

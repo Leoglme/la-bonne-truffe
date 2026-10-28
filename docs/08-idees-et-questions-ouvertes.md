@@ -7,7 +7,10 @@ Tranchées le 28/10/2026 (détail dans `01-cadrage.md`) : autres couleurs ignor�
 Restent ouvertes :
 
 1. Le nom de domaine et le sous-domaine sur le VPS.
-2. La collecte Centrale Canine depuis le VPS : à vérifier avant le déploiement (Cloudflare refuse l'IP d'un conteneur cloud, voir `02-sources.md`). Si le VPS est refusé aussi, faire tourner le relevé sur le PC de Léo (un sidecar dans l'app Tauri, comme le scraper de DevLeadHunter) ou passer par Playwright.
+2. **La façon de relever la Centrale Canine.** Constat du 28/10/2026 (`02-sources.md`) : Cloudflare refuse le client Python (son empreinte TLS), même depuis la connexion de Léo, alors qu'un navigateur et `curl` de Windows passent. Pistes :
+   - **le navigateur du PC de Léo** : l'app Tauri lit les pages JSON comme un navigateur et les envoie à l'API du VPS, comme le relais de bureau de DevLeadHunter. Un vrai navigateur lit une page publique, au rythme d'une personne ; le PC doit être allumé ;
+   - **un client Python qui imite l'empreinte TLS de Chrome** (`curl_cffi`) : peu de code à changer, mais c'est contourner volontairement la protection du site, et Cloudflare peut le refuser du jour au lendemain ;
+   - **le VPS** : son adresse n'a jamais été testée avec un client accepté ; un `curl` lancé depuis le VPS le dira. Même acceptée, le client Python y restera refusé.
 
 ## Idées V1.5 (après que ça tourne)
 

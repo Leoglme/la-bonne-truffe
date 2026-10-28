@@ -49,6 +49,7 @@ class Listing(TimestampMixin, Base):
         litter_rating: Litter's overall rating.
         photos: Photo URLs.
         description: Free text of the ad.
+        published_at: When the source put the listing online, when it says so (Centrale Canine ``n_created``).
         first_seen_at: First collection that saw the listing.
         last_seen_at: Last collection that saw the listing.
         last_changed_at: Last collection that saw a field change.
@@ -92,6 +93,7 @@ class Listing(TimestampMixin, Base):
     litter_rating: Mapped[float | None]
     photos: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
+    published_at: Mapped[datetime | None]
     first_seen_at: Mapped[datetime] = mapped_column(default=naive_utc_now, nullable=False)
     last_seen_at: Mapped[datetime] = mapped_column(default=naive_utc_now, nullable=False)
     last_changed_at: Mapped[datetime | None]

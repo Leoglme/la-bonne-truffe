@@ -33,7 +33,7 @@ la-bonne-truffe/
 
 - **FastAPI**, Pydantic v2, SQLAlchemy, SQLite (fichier dans un volume). Migrations manuelles comme DevLeadHunter (`migrations/run_migrations.py`).
 - **Worker** : processus séparé (`python worker.py`) avec **APScheduler**. Un job par source, toutes les heures, décalés de quelques minutes. Un job « récap du soir » à `digest_hour`. Un job « nettoyage » quotidien (`is_active`, purge des `raw_json` de plus de 90 jours).
-- **Collecteurs** : une classe par source avec la même interface `collect(profile) -> list[RawListing]`. `httpx` pour les appels, `selectolax` (ou BeautifulSoup) pour le HTML. Centrale Canine en JSON avec User-Agent navigateur (voir `02-sources.md`). Chaque collecteur écrit une ligne `source_runs`.
+- **Collecteurs** : une classe par source avec la même interface `collect(profile) -> list[RawListing]`. `httpx` pour les appels, `selectolax` (ou BeautifulSoup) pour le HTML. Centrale Canine en JSON avec User-Agent navigateur ; Cloudflare y refuse le client Python (voir `02-sources.md` et `08`). Chaque collecteur écrit une ligne `source_runs`.
 - **Normalisation** : `RawListing` → `Listing` (vocabulaire canonique des couleurs, dates, LOF). `rapidfuzz` pour rapprocher les affixes.
 - **Matching** : `MatchingService.evaluate(group, profile) -> Match` (palier, score, raisons, drapeaux). Pur, sans effet de bord, testé unitairement.
 - **Événements** : `EventService.detect(previous_match, new_match, changes) -> list[Event]`, puis `NotifierService` qui envoie les push et écrit `notifications`.

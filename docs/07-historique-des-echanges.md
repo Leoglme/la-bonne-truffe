@@ -51,3 +51,11 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 - **Jalon 2** : regroupement en portées, matching de `04`, événements, push immédiats, récap du soir, alerte « source en panne », API des critères.
 - **Jalon 3** : routes du dashboard (portées, détail, couleurs confirmées, suivi et notes, sources) et écrans Accueil, Détail, Critères, Suivi, Réglages, Sources, historique, comparés écran par écran à la maquette rendue (méthode et écarts dans `06`).
 
+## 28 octobre (soir) : relecture et vraie réponse de la Centrale Canine
+
+- Léo demande de relire le code des jalons 0 à 3, de corriger et d'améliorer les conventions, en plusieurs sessions si besoin.
+- **Vraie réponse SCC** relevée depuis la connexion de Léo : la forme écrite le 27/10 était fausse sur plusieurs points. `317` est « autres couleurs » et le gold est `158` ; `is_borned` prend `yes`, `no`, `all` ; les filtres et les coordonnées des éleveurs sont dans le JSON ; les valeurs sont des listes Drupal. Collecteur, seeders, synchronisation des identifiants et tests réécrits sur deux vraies pages anonymisées (détail dans `02-sources.md`).
+- **Nouveautés** : une portée en ligne depuis plus de 3 jours n'est plus poussée, pour que le premier relevé ou l'ajout d'un département ne déverse pas des semaines de portées. La fraîcheur part de la date de publication.
+- **Premier relevé réel refusé** : depuis le PC de Léo, Cloudflare refuse le client Python sur son empreinte TLS, alors que le navigateur et `curl` passent. Choix laissé à Léo (`08`).
+- **Front** : cinq défauts corrigés. Re-cliquer « Suivie » effaçait le suivi ; le volet desktop ne s'ouvrait jamais ; une couleur connue s'affichait « à confirmer » ; recocher une région déplaçait ses départements en fin de liste ; le détail d'une portée en erreur n'avait plus de bouton retour. Fins de ligne LF imposées (`.gitattributes`), sans quoi le lint échouait sous Windows.
+

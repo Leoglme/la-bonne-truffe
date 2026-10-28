@@ -1,8 +1,7 @@
-"""CentraleCanineCollector: parsing of the documented JSON shape, polite paging, refusals."""
+"""CentraleCanineCollector: parsing of real (anonymized) pages, polite paging, refusals."""
 
-import copy
 import json
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +18,7 @@ from services.collectors.centrale_canine import (
     SccDepartmentTarget,
     SccVarietyTarget,
 )
-from services.collectors.raw_listing import RawListing
+from services.collectors.raw_listing import RawBreeder, RawListing
 
 FIXTURES = Path(__file__).parent / "fixtures" / "centrale_canine"
 
@@ -27,7 +26,7 @@ COCKER = SccBreedTarget(
     breed_id=1,
     scc_slug="cocker-spaniel-anglais",
     varieties_by_source_id={
-        "317": SccVarietyTarget(covered_colors=(CoatColor.GOLD,), is_ambiguous=False),
+        "158": SccVarietyTarget(covered_colors=(CoatColor.GOLD,), is_ambiguous=False),
         "159": SccVarietyTarget(
             covered_colors=(CoatColor.NOIR, CoatColor.NOIR_ET_FEU, CoatColor.MARRON, CoatColor.MARRON_ET_FEU),
             is_ambiguous=True,
@@ -37,9 +36,9 @@ COCKER = SccBreedTarget(
 ILLE_ET_VILAINE = SccDepartmentTarget(code="35", scc_term_id="t_41")
 
 
-def load_page() -> dict[str, Any]:
-    """The synthetic page of the fixtures (documented shape, test values)."""
-    page: dict[str, Any] = json.loads((FIXTURES / "litters_35_page_0.json").read_text(encoding="utf-8"))
+def load_page(page_number: int) -> dict[str, Any]:
+    """A recorded page of the cocker litters in Ille-et-Vilaine."""
+    page: dict[str, Any] = json.loads((FIXTURES / f"litters_35_page_{page_number}.json").read_text(encoding="utf-8"))
     return page
 
 
@@ -48,46 +47,90 @@ def listings_by_id(listings: list[RawListing]) -> dict[str, RawListing]:
     return {listing.external_id: listing for listing in listings}
 
 
-def test_born_litter_reads_sexes_dates_and_certain_gold() -> None:
-    listing = listings_by_id(CentraleCanineCollector().parse_litters_payload(load_page(), COCKER, "35"))["9000001"]
+def parse_first_page() -> dict[str, RawListing]:
+    """The listings of the first recorded page."""
+    return listings_by_id(CentraleCanineCollector().parse_litters_payload(load_page(0), COCKER, "35"))
+
+
+def test_born_litter_reads_the_drupal_lists_and_the_gold_variety() -> None:
+    listing = parse_first_page()["4236807"]
 
     assert listing.kind == "litter_born"
     assert listing.lof_status == "lof"
-    assert listing.birth_date == date(2026, 10, 27)
-    assert listing.mating_date == date(2026, 8, 24)
-    assert (listing.male_count, listing.female_count) == (2, 3)
+    assert listing.birth_date == date(2026, 7, 5)
+    assert listing.mating_date == date(2026, 5, 2)
+    assert (listing.male_count, listing.female_count) == (2, 1)
+    assert listing.variety_source_id == "158"
+    assert listing.color_text == "rouge et dore"
     assert [color.as_json() for color in listing.colors] == [{"color": "gold", "confidence": "certain"}]
-    assert listing.litter_number == "LOF-TEST-0001"
-    assert (listing.sire_rating, listing.dam_rating) == (4, 2)
-    assert (listing.breeder_source_id, listing.breeder_selection_group) == ("7000001", 1)
-    assert listing.external_url == "https://www.centrale-canine.fr/portee/9000001"
+    assert listing.litter_number == "LOF-2026016223-2026-11"
+    assert (listing.sire_rating, listing.dam_rating, listing.litter_rating) == (1, 1, 2.0)
+    assert listing.external_url == "https://www.centrale-canine.fr/portee/2817650"
+    assert listing.published_at == datetime(2026, 6, 22, 8, 19, 52)
     assert listing.department_code == "35"
-    assert listing.photos == ()
+
+
+def test_breeder_comes_from_the_breeders_block_of_the_page() -> None:
+    listing = parse_first_page()["4236807"]
+
+    assert listing.breeder == RawBreeder(
+        source_id="379540",
+        display_name="Éleveur B",
+        affix="Du Clos de l'Élevage B",
+        siren=None,
+        phone_e164="+33600000002",
+        zip_code="35140",
+        city="Saint-Aubin-du-Cormier",
+        latitude=48.26,
+        longitude=-1.40,
+        selection_group=2,
+    )
+    assert (listing.zip_code, listing.city) == ("35140", "Saint-Aubin-du-Cormier")
+
+    breeder_with_siren = parse_first_page()["4337070"].breeder
+    assert breeder_with_siren is not None and breeder_with_siren.siren == "000000001"
 
 
 def test_expected_litter_keeps_sexes_unknown_instead_of_zero() -> None:
-    listing = listings_by_id(CentraleCanineCollector().parse_litters_payload(load_page(), COCKER, "35"))["9000002"]
+    listing = parse_first_page()["4337070"]
 
     assert listing.kind == "litter_expected"
     assert listing.birth_date is None
-    assert listing.mating_date == date(2026, 10, 10)
+    assert listing.mating_date == date(2026, 8, 31)
     assert (listing.male_count, listing.female_count) == (None, None)
     assert listing.litter_number is None
-    assert (listing.sire_rating, listing.dam_rating) == (5, None)
 
 
-def test_bundle_variety_is_ambiguous_and_unknown_variety_stays_uncoloured() -> None:
-    listings = listings_by_id(CentraleCanineCollector().parse_litters_payload(load_page(), COCKER, "35"))
+def test_a_born_litter_with_no_male_keeps_its_zero() -> None:
+    listing = parse_first_page()["4337069"]
 
-    bundle = listings["9000003"]
+    assert (listing.male_count, listing.female_count) == (0, 2)
+
+
+def test_bundle_variety_is_ambiguous_and_an_unmapped_variety_stays_uncoloured() -> None:
+    listings = parse_first_page()
+
+    bundle = listings["4320577"]
     assert {color.confidence for color in bundle.colors} == {"ambiguous"}
     assert len(bundle.colors) == 4
-    assert bundle.litter_rating == 3.5
-    assert bundle.photos == ("https://www.centrale-canine.fr/sites/default/files/test/portee-9000003.jpg",)
+    assert bundle.color_text == "noir - noir et feu marron - marron et feu"
 
-    unknown_variety = listings["9000004"]
-    assert unknown_variety.colors == ()
-    assert unknown_variety.color_text == "variété de test inconnue"
+    other_colours = listings["4198846"]
+    assert other_colours.variety_source_id == "317"
+    assert other_colours.colors == ()
+    assert other_colours.color_text == "autres couleurs"
+
+
+def test_page_filters_list_departments_varieties_and_birth_statuses() -> None:
+    filters = CentraleCanineCollector.page_filters(load_page(0))
+
+    assert filters["department"]["t_41"] == "35 - Ile-et-Vilaine"
+    assert filters["variety"] == {
+        "158": "rouge et dore",
+        "159": "noir - noir et feu marron - marron et feu",
+        "317": "autres couleurs",
+    }
+    assert filters["is_borned"] == {"yes": "Disponibles", "no": "A naître", "all": "Toutes"}
 
 
 def test_empty_node_list_from_php_gives_no_listing() -> None:
@@ -97,19 +140,13 @@ def test_empty_node_list_from_php_gives_no_listing() -> None:
 
 
 def test_collect_pages_politely_with_a_browser_user_agent() -> None:
-    first_page = load_page()
-    first_page["litters"]["count"] = 12
-    second_page = copy.deepcopy(load_page())
-    second_page["litters"]["node"] = {
-        "1": {"n9000099": {**first_page["litters"]["node"]["1"]["n9000001"], "n_id": 9000099}}
-    }
     requests: list[httpx.Request] = []
 
     def answer(request: httpx.Request) -> httpx.Response:
-        """Serve page 0 then page 1, like the real endpoint."""
+        """Serve the two recorded pages, like the real endpoint."""
         requests.append(request)
-        page = first_page if request.url.path.endswith("/0") else second_page
-        return httpx.Response(200, json=page)
+        page_number = int(request.url.path.rsplit("/", 1)[1])
+        return httpx.Response(200, json=load_page(page_number))
 
     pauses: list[float] = []
     collector = CentraleCanineCollector(
@@ -131,7 +168,7 @@ def test_collect_pages_politely_with_a_browser_user_agent() -> None:
     assert requests[0].headers["User-Agent"] == SCC_BROWSER_USER_AGENT
     assert requests[0].headers["Accept"] == "application/json"
     assert pauses == [1.0]
-    assert len(collection.listings) == 5
+    assert len(collection.listings) == 19
     assert [page.page_number for page in collection.raw_pages] == [0, 1]
 
 

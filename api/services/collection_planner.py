@@ -24,8 +24,8 @@ class CollectionPlanner:
         """
         Plan a Centrale Canine run: every breed of the active profiles, in each of their departments.
 
-        A department whose ``t_ID`` is still unknown cannot be filtered on and is listed apart, so the
-        run log tells to run ``python cli.py scc-sync``.
+        A department whose ``t_ID`` is still unknown cannot be filtered on and is listed apart: the run
+        then reads the identifiers the Centrale Canine lists (``CollectionRunner``).
 
         Args:
             db: Database session.

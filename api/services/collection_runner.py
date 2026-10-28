@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from core.clock import naive_utc_now
 from enums.listing_source import ListingSource
 from enums.source_run_status import SourceRunStatus
+from models.breed import Breed
 from models.source_run import SourceRun
 from services.collection_planner import CollectionPlanner
 from services.collectors.centrale_canine import (
@@ -20,6 +21,7 @@ from services.listing_ingestion import IngestionSummary, listing_ingestion_servi
 from services.litter_grouping import GroupingResult, litter_grouping_service
 from services.matching.match_refresh import RefreshSummary, match_refresh_service
 from services.notifier import notifier_service
+from services.scc_reference_sync import scc_reference_sync
 
 logger = logging.getLogger(__name__)
 
@@ -61,10 +63,13 @@ class CollectionRunner:
         db.commit()
 
         plan = CollectionPlanner.build_centrale_canine_plan(db)
+        if plan.departments_without_term_id:
+            self._sync_department_identifiers(db, collector, plan)
+            plan = CollectionPlanner.build_centrale_canine_plan(db)
         report = CentraleCanineRunReport(source_run=source_run, plan=plan)
         if plan.departments_without_term_id:
-            logger.warning(
-                "Centrale Canine: departments without t_ID, not read (run `python cli.py scc-sync`): %s",
+            logger.info(
+                "Centrale Canine: no litter of the breed in %s at the moment, departments not read",
                 ", ".join(plan.departments_without_term_id),
             )
 
@@ -103,6 +108,30 @@ class CollectionRunner:
         else:
             notifier_service.alert_if_source_down(db, ListingSource.CENTRALE_CANINE, naive_utc_now())
         return report
+
+    @staticmethod
+    def _sync_department_identifiers(
+        db: Session, collector: CentraleCanineCollector, plan: CentraleCanineCollectionPlan
+    ) -> None:
+        """
+        Read the department ``t_ID`` the Centrale Canine lists for each breed of the plan, when a profile
+        department has none yet. One request per breed; a failure leaves the plan as it is.
+
+        Args:
+            db: Database session.
+            collector: Collector to read with.
+            plan: The plan whose departments lack an identifier.
+        """
+        for breed_target in plan.breeds:
+            breed = db.get(Breed, breed_target.breed_id)
+            if breed is None:
+                continue
+            try:
+                payload = collector.fetch_first_page_of_all_departments(breed_target.scc_slug)
+            except CentraleCanineError as error:
+                logger.warning("Centrale Canine: department identifiers not read: %s", error)
+                return
+            scc_reference_sync.sync(db, breed, collector.page_filters(payload))
 
 
 collection_runner = CollectionRunner()

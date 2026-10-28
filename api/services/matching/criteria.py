@@ -71,6 +71,9 @@ class LitterSnapshot:
 
     ``colors`` holds the confirmed colours when Léo confirmed one, otherwise the certain ones when a
     source is sure, otherwise the ambiguous bundle; empty means the colour is unknown.
+
+    ``appeared_on`` is the day the litter went online on a source (the earliest one), or the day a
+    collection first saw it when no source gives that date.
     """
 
     group_id: int
@@ -83,7 +86,7 @@ class LitterSnapshot:
     male_count: int | None
     female_count: int | None
     price_cents: int | None
-    first_seen_on: date
+    appeared_on: date
     birth_date: date | None
     expected_birth_date: date | None
     available_from: date | None

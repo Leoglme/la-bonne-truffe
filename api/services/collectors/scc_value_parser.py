@@ -1,4 +1,4 @@
-"""Lenient readers for the Centrale Canine JSON values."""
+"""Readers for the Centrale Canine JSON values."""
 
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
@@ -11,13 +11,28 @@ class SccValueParser:
     """
     Turns the raw JSON values into typed ones.
 
-    The real response could not be recorded yet (docs/02-sources.md): a field may come as a number,
-    a numeric string, a boolean or an empty string, so every reader accepts all of them and returns
-    None for an empty or unreadable value.
+    The site runs on Drupal: most fields come as a one-element list (``"n_birth_date": [1783252800]``),
+    a few as plain strings (``"n_variety": "158"``) or booleans (``"n_is_borned": true``). An empty
+    list or an empty string means the value is unknown: every reader then returns None.
     """
 
     @staticmethod
-    def to_text(value: object) -> str | None:
+    def first_value(value: object) -> object:
+        """
+        The value itself, or the first element of a Drupal one-element list.
+
+        Args:
+            value: Raw JSON value.
+
+        Returns:
+            The scalar value, or None for an empty list.
+        """
+        if isinstance(value, list):
+            return value[0] if value else None
+        return value
+
+    @classmethod
+    def to_text(cls, value: object) -> str | None:
         """
         Read a text value.
 
@@ -27,9 +42,10 @@ class SccValueParser:
         Returns:
             The stripped text, or None when empty.
         """
-        if value is None or isinstance(value, bool):
+        scalar = cls.first_value(value)
+        if scalar is None or isinstance(scalar, bool):
             return None
-        text = str(value).strip()
+        text = str(scalar).strip()
         return text or None
 
     @classmethod
@@ -38,7 +54,7 @@ class SccValueParser:
         Read an integer value.
 
         Args:
-            value: Raw JSON value (``3``, ``"3"``, ``3.0``).
+            value: Raw JSON value (``3``, ``[3]``, ``"3"``, ``3.0``).
 
         Returns:
             The integer, or None when empty or not a number.
@@ -52,16 +68,17 @@ class SccValueParser:
         Read a decimal value; a French decimal comma is accepted.
 
         Args:
-            value: Raw JSON value (``4.5``, ``"4,5"``).
+            value: Raw JSON value (``4.5``, ``[4.5]``, ``"4,5"``).
 
         Returns:
             The number, or None when empty or not a number.
         """
-        if isinstance(value, bool):
+        scalar = cls.first_value(value)
+        if isinstance(scalar, bool):
             return None
-        if isinstance(value, int | float):
-            return float(value)
-        text = cls.to_text(value)
+        if isinstance(scalar, int | float):
+            return float(scalar)
+        text = cls.to_text(scalar)
         if text is None:
             return None
         try:
@@ -75,14 +92,15 @@ class SccValueParser:
         Read a boolean value.
 
         Args:
-            value: Raw JSON value (``true``, ``1``, ``"1"``, ``"true"``).
+            value: Raw JSON value (``true``, ``[1]``, ``"1"``, ``"true"``).
 
         Returns:
             The boolean, or None when empty or unreadable.
         """
-        if isinstance(value, bool):
-            return value
-        text = cls.to_text(value)
+        scalar = cls.first_value(value)
+        if isinstance(scalar, bool):
+            return scalar
+        text = cls.to_text(scalar)
         if text is None:
             return None
         lowered = text.lower()
@@ -98,7 +116,7 @@ class SccValueParser:
         Read a Unix timestamp as naive UTC, the storage convention.
 
         Args:
-            value: Seconds since the epoch, as a number or a numeric string.
+            value: Seconds since the epoch (``[1791212409]`` or ``1791212409``).
 
         Returns:
             The naive UTC datetime, or None when empty or not positive.
@@ -114,7 +132,7 @@ class SccValueParser:
         Read a Unix timestamp as a calendar day in French time.
 
         Args:
-            value: Seconds since the epoch, as a number or a numeric string.
+            value: Seconds since the epoch (``[1783252800]`` or ``1783252800``).
 
         Returns:
             The day, or None when empty or not positive.
@@ -123,3 +141,24 @@ class SccValueParser:
         if seconds is None or seconds <= 0:
             return None
         return datetime.fromtimestamp(seconds, tz=FRENCH_TIMEZONE).date()
+
+    @classmethod
+    def to_coordinates(cls, value: object) -> tuple[float, float] | None:
+        """
+        Read a ``"latitude,longitude"`` location.
+
+        Args:
+            value: Raw JSON value (``["48.44418,-1.162504"]``).
+
+        Returns:
+            The latitude and the longitude, or None when empty or unreadable.
+        """
+        text = cls.to_text(value)
+        if text is None or "," not in text:
+            return None
+        latitude_text, longitude_text = text.split(",", 1)
+        latitude = cls.to_float(latitude_text)
+        longitude = cls.to_float(longitude_text)
+        if latitude is None or longitude is None:
+            return None
+        return latitude, longitude

@@ -21,17 +21,15 @@ class VarietySeed:
     covered_colors: tuple[CoatColor, ...]
 
 
-# The « autres couleurs » identifier is not documented: it stays null until ``python cli.py scc-sync``
-# reads it from the « Variété » <select> of the breed page.
 COCKER_SCC_VARIETIES: tuple[VarietySeed, ...] = (
-    VarietySeed("317", "rouge et doré", (CoatColor.GOLD,)),
+    VarietySeed("158", "rouge et doré", (CoatColor.GOLD,)),
     VarietySeed(
         "159",
         "noir, noir et feu, marron, marron et feu",
         (CoatColor.NOIR, CoatColor.NOIR_ET_FEU, CoatColor.MARRON, CoatColor.MARRON_ET_FEU),
     ),
     VarietySeed(
-        None,
+        "317",
         "autres couleurs",
         (
             CoatColor.BLEU_ROUAN,
@@ -45,11 +43,13 @@ COCKER_SCC_VARIETIES: tuple[VarietySeed, ...] = (
 
 
 class BreedSeeder:
-    """Creates the cocker spaniel anglais and its Centrale Canine varieties when missing."""
+    """Creates the cocker spaniel anglais and keeps its Centrale Canine varieties as seeded."""
 
     def run(self, db: Session) -> int:
         """
-        Seed the breed and its varieties; existing rows are left untouched.
+        Seed the breed and its varieties. A variety already there, found by its label, gets the
+        identifier and the colours of its seed: a database seeded before 28/10/2026 holds « 317 » for
+        gold, the identifier then assumed.
 
         Args:
             db: Database session.
@@ -71,25 +71,20 @@ class BreedSeeder:
             db.flush()
             created_count += 1
 
-        existing_labels = {
-            variety.label
+        existing_by_label = {
+            variety.label: variety
             for variety in db.query(BreedVariety).filter(
                 BreedVariety.breed_id == cocker.id, BreedVariety.source == ListingSource.CENTRALE_CANINE
             )
         }
         for seed in COCKER_SCC_VARIETIES:
-            if seed.label in existing_labels:
-                continue
-            db.add(
-                BreedVariety(
-                    breed_id=cocker.id,
-                    source=ListingSource.CENTRALE_CANINE,
-                    source_variety_id=seed.source_variety_id,
-                    label=seed.label,
-                    covered_colors=[color.value for color in seed.covered_colors],
-                    is_ambiguous=len(seed.covered_colors) > 1,
-                )
-            )
-            created_count += 1
+            variety = existing_by_label.get(seed.label)
+            if variety is None:
+                variety = BreedVariety(breed_id=cocker.id, source=ListingSource.CENTRALE_CANINE, label=seed.label)
+                db.add(variety)
+                created_count += 1
+            variety.source_variety_id = seed.source_variety_id
+            variety.covered_colors = [color.value for color in seed.covered_colors]
+            variety.is_ambiguous = len(seed.covered_colors) > 1
         db.commit()
         return created_count

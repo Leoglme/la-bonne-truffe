@@ -24,6 +24,27 @@ class ColorReading:
 
 
 @dataclass(frozen=True)
+class RawBreeder:
+    """
+    A breeder as one source describes it, already cleaned. Unknown facts stay None.
+
+    ``source_id`` is the breeder's identifier on that source; the matching across sources uses the
+    SIREN first, then the phone, then the affix and the department (docs/03-modele-de-donnees.md).
+    """
+
+    source_id: str
+    display_name: str | None = None
+    affix: str | None = None
+    siren: str | None = None
+    phone_e164: str | None = None
+    zip_code: str | None = None
+    city: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    selection_group: int | None = None
+
+
+@dataclass(frozen=True)
 class RawListing:
     """
     A listing as one source describes it, already in the canonical vocabulary.
@@ -57,7 +78,6 @@ class RawListing:
     litter_rating: float | None = None
     photos: tuple[str, ...] = ()
     description: str | None = None
-    breeder_source_id: str | None = None
-    breeder_selection_group: int | None = None
-    source_changed_at: datetime | None = None
+    breeder: RawBreeder | None = None
+    published_at: datetime | None = None
     raw_json: dict[str, Any] = field(default_factory=dict)

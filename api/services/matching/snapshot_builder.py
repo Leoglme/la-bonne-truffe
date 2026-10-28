@@ -1,5 +1,7 @@
 """Builds the ``LitterSnapshot`` of a group from its active listings."""
 
+from datetime import date
+
 from sqlalchemy.orm import Session
 
 from core.clock import french_date_of
@@ -58,7 +60,7 @@ class LitterSnapshotBuilder:
             price_cents=min(
                 (listing.price_cents for listing in active_listings if listing.price_cents is not None), default=None
             ),
-            first_seen_on=french_date_of(group.first_seen_at),
+            appeared_on=cls._appeared_on(group, listings),
             birth_date=group.birth_date,
             expected_birth_date=group.expected_birth_date,
             available_from=group.available_from,
@@ -66,6 +68,23 @@ class LitterSnapshotBuilder:
             sire_rating=cls._first_known([listing.sire_rating for listing in active_listings]),
             dam_rating=cls._first_known([listing.dam_rating for listing in active_listings]),
         )
+
+    @staticmethod
+    def _appeared_on(group: LitterGroup, listings: list[Listing]) -> date:
+        """
+        The day the litter went online: the earliest publication date a source gives, else the day a
+        collection first saw it. A litter discovered today but online for weeks is not news.
+
+        Args:
+            group: The group.
+            listings: Every listing of the group.
+
+        Returns:
+            The day, in French time.
+        """
+        known_days = [french_date_of(listing.published_at) for listing in listings if listing.published_at is not None]
+        known_days.append(french_date_of(group.first_seen_at))
+        return min(known_days)
 
     @staticmethod
     def _merged_kind(listings: list[Listing]) -> ListingKind:
