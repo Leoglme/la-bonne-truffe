@@ -1,6 +1,7 @@
 """A run end to end on the recorded pages: matching, news window, pushes, birth, digest, source alert, profile save."""
 
 from datetime import datetime
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -26,11 +27,30 @@ from tests.centrale_canine_pages import (
     load_recorded_pages,
     mark_published_an_hour_ago,
     refusing_collector,
+    remove_litter,
     turn_gold,
 )
 
 EXPECTED_LITTER_ID = "4337070"
 BIRTH_ON_27_OCTOBER_2026 = 1793102400
+RECENT_GOLD_LITTER_ID = "4333817"
+RECENT_BUNDLE_LITTER_ID = "4320577"
+
+
+def pages_before_the_recent_litters() -> list[dict[str, Any]]:
+    """The recorded pages without the two litters that a later run finds just published."""
+    pages = load_recorded_pages()
+    remove_litter(pages, RECENT_GOLD_LITTER_ID)
+    remove_litter(pages, RECENT_BUNDLE_LITTER_ID)
+    return pages
+
+
+def pages_with_the_recent_litters() -> list[dict[str, Any]]:
+    """The recorded pages, a gold litter and a colour bundle published an hour ago."""
+    pages = load_recorded_pages()
+    mark_published_an_hour_ago(pages, RECENT_GOLD_LITTER_ID)
+    mark_published_an_hour_ago(pages, RECENT_BUNDLE_LITTER_ID)
+    return pages
 
 
 @pytest.fixture
@@ -70,15 +90,25 @@ def test_first_run_records_the_litters_published_long_ago_without_a_push(db: Ses
     assert db.query(Notification).count() == 0
 
 
+def test_first_run_of_a_source_sends_nothing_even_for_a_litter_published_an_hour_ago(
+    db: Session, pushed_bodies: list[str]
+) -> None:
+    SeederRunner.run(db)
+
+    collection_runner.run_centrale_canine(db, collector_serving(pages_with_the_recent_litters()))
+
+    assert pushed_bodies == []
+    assert db.query(DigestEntry).count() == 0
+    assert "new_preferred" in match_of(db, RECENT_GOLD_LITTER_ID).notified_events
+
+
 def test_a_litter_published_in_the_last_days_is_pushed_or_kept_for_the_evening(
     db: Session, pushed_bodies: list[str]
 ) -> None:
     SeederRunner.run(db)
-    pages = load_recorded_pages()
-    mark_published_an_hour_ago(pages, "4333817")
-    mark_published_an_hour_ago(pages, "4320577")
+    collection_runner.run_centrale_canine(db, collector_serving(pages_before_the_recent_litters()))
 
-    collection_runner.run_centrale_canine(db, collector_serving(pages))
+    collection_runner.run_centrale_canine(db, collector_serving(pages_with_the_recent_litters()))
 
     assert len(pushed_bodies) == 1
     assert pushed_bodies[0].startswith(
@@ -90,12 +120,10 @@ def test_a_litter_published_in_the_last_days_is_pushed_or_kept_for_the_evening(
 
 def test_a_second_identical_run_notifies_nothing(db: Session, pushed_bodies: list[str]) -> None:
     SeederRunner.run(db)
-    pages = load_recorded_pages()
-    mark_published_an_hour_ago(pages, "4333817")
-    mark_published_an_hour_ago(pages, "4320577")
-    collection_runner.run_centrale_canine(db, collector_serving(pages))
+    collection_runner.run_centrale_canine(db, collector_serving(pages_before_the_recent_litters()))
+    collection_runner.run_centrale_canine(db, collector_serving(pages_with_the_recent_litters()))
 
-    collection_runner.run_centrale_canine(db, collector_serving(pages))
+    collection_runner.run_centrale_canine(db, collector_serving(pages_with_the_recent_litters()))
 
     assert len(pushed_bodies) == 1
     assert db.query(DigestEntry).count() == 1
@@ -131,9 +159,11 @@ def test_birth_of_a_preferred_litter_is_pushed_even_when_published_long_ago(
 
 def test_evening_digest_is_sent_once_at_the_digest_hour(db: Session, pushed_bodies: list[str]) -> None:
     SeederRunner.run(db)
-    pages = load_recorded_pages()
-    mark_published_an_hour_ago(pages, "4320577")
-    collection_runner.run_centrale_canine(db, collector_serving(pages))
+    collection_runner.run_centrale_canine(db, collector_serving(pages_before_the_recent_litters()))
+    bundle_only_pages = load_recorded_pages()
+    remove_litter(bundle_only_pages, RECENT_GOLD_LITTER_ID)
+    mark_published_an_hour_ago(bundle_only_pages, RECENT_BUNDLE_LITTER_ID)
+    collection_runner.run_centrale_canine(db, collector_serving(bundle_only_pages))
 
     assert notifier_service.send_due_evening_digests(db, datetime(2026, 10, 28, 17, 0)) == 0
     assert notifier_service.send_due_evening_digests(db, datetime(2026, 10, 28, 18, 0)) == 1

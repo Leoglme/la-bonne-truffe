@@ -14,6 +14,7 @@ from services.collectors.centrale_canine import (
     SccDepartmentTarget,
     SccVarietyTarget,
 )
+from services.collectors.html_source import HtmlBreedTarget, HtmlCollectionPlan, HtmlDepartmentTarget
 
 
 class CollectionPlanner:
@@ -33,13 +34,7 @@ class CollectionPlanner:
         Returns:
             The plan, empty when no profile is active.
         """
-        profiles = db.query(SearchProfile).filter(SearchProfile.is_active.is_(True)).order_by(SearchProfile.id).all()
-        breed_slugs: list[str] = []
-        department_codes: list[str] = []
-        for profile in profiles:
-            breed_slugs.extend(slug for slug in profile.breed_ids if slug not in breed_slugs)
-            department_codes.extend(code for code in profile.department_codes if code not in department_codes)
-
+        breed_slugs, department_codes = CollectionPlanner._profile_breeds_and_departments(db)
         breeds = (
             db.query(Breed)
             .filter(Breed.slug.in_(breed_slugs), Breed.is_active.is_(True), Breed.scc_slug.is_not(None))
@@ -65,6 +60,76 @@ class CollectionPlanner:
             departments=tuple(department_targets),
             departments_without_term_id=tuple(departments_without_term_id),
         )
+
+    @staticmethod
+    def build_html_plan(db: Session, source: ListingSource) -> HtmlCollectionPlan:
+        """
+        Plan a run of an HTML source: every breed of the active profiles that has a slug on that source,
+        in each of their departments, with the region the source groups it under.
+
+        Args:
+            db: Database session.
+            source: The HTML source.
+
+        Returns:
+            The plan, empty when no profile is active or no breed is known to the source.
+        """
+        breed_slugs, department_codes = CollectionPlanner._profile_breeds_and_departments(db)
+        breeds = db.query(Breed).filter(Breed.slug.in_(breed_slugs), Breed.is_active.is_(True)).order_by(Breed.id).all()
+        breed_targets: list[HtmlBreedTarget] = []
+        for breed in breeds:
+            source_slug = CollectionPlanner._source_slug(breed, source)
+            if source_slug:
+                breed_targets.append(HtmlBreedTarget(breed_id=breed.id, source_slug=source_slug))
+        departments_by_code = {
+            department.code: department
+            for department in db.query(Department).filter(Department.code.in_(department_codes))
+        }
+        return HtmlCollectionPlan(
+            breeds=tuple(breed_targets),
+            departments=tuple(
+                HtmlDepartmentTarget(code=code, region_name=departments_by_code[code].region)
+                for code in department_codes
+                if code in departments_by_code
+            ),
+        )
+
+    @staticmethod
+    def _profile_breeds_and_departments(db: Session) -> tuple[list[str], list[str]]:
+        """
+        The breeds and departments of the active profiles, each once, departments in profile order.
+
+        Args:
+            db: Database session.
+
+        Returns:
+            Breed slugs and department codes.
+        """
+        profiles = db.query(SearchProfile).filter(SearchProfile.is_active.is_(True)).order_by(SearchProfile.id).all()
+        breed_slugs: list[str] = []
+        department_codes: list[str] = []
+        for profile in profiles:
+            breed_slugs.extend(slug for slug in profile.breed_ids if slug not in breed_slugs)
+            department_codes.extend(code for code in profile.department_codes if code not in department_codes)
+        return breed_slugs, department_codes
+
+    @staticmethod
+    def _source_slug(breed: Breed, source: ListingSource) -> str | None:
+        """
+        The slug of a breed in the addresses of an HTML source.
+
+        Args:
+            breed: The breed.
+            source: The source.
+
+        Returns:
+            The slug, or None while unknown for that source.
+        """
+        if source == ListingSource.CHIENS_DE_FRANCE:
+            return breed.chiens_de_france_id
+        if source == ListingSource.CHIOTS_DE_FRANCE:
+            return breed.chiots_de_france_id
+        return None
 
     @staticmethod
     def _breed_target(db: Session, breed: Breed) -> SccBreedTarget:

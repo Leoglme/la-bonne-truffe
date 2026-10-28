@@ -16,6 +16,7 @@ from services.collectors.breeder_contact_parser import BreederContactParser
         ("DUBLIN'S ROSE", "Dublin's Rose"),
         ("DES JOYAUX DES KI'MILLACS", "Des Joyaux des Ki'millacs"),
         ("  LA   ROCHE-SUR-YON ", "La Roche-sur-Yon"),
+        ("sarthe", "Sarthe"),
         ("Élevage de la Vallée", "Élevage de la Vallée"),
         ("   ", None),
         (None, None),

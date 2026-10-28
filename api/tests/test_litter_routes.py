@@ -98,8 +98,9 @@ def test_sources_report_their_last_run(client: TestClient, collected: dict[str, 
 
     assert statuses["centrale_canine"]["last_status"] == "ok"
     assert statuses["centrale_canine"]["listings_seen"] == 19
-    assert statuses["chiens_de_france"]["is_collected"] is False
-    assert client.post("/api/v1/sources/chiens_de_france/run", headers=collected).status_code == 501
+    assert statuses["chiens_de_france"]["is_collected"] is True
+    assert statuses["chiots_de_france"]["is_collected"] is False
+    assert client.post("/api/v1/sources/chiots_de_france/run", headers=collected).status_code == 501
 
 
 def test_unknown_litter_is_a_404(client: TestClient, collected: dict[str, str]) -> None:

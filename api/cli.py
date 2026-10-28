@@ -8,20 +8,24 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 from core.config import settings
 from core.database import SessionLocal, engine
 from enums.listing_kind import ListingKind
+from enums.listing_source import ListingSource
 from enums.source_run_status import SourceRunStatus
 from migrations.run_migrations import MigrationRunner
 from models.breed import Breed
 from seeders.run_seeders import SeederRunner
 from services.auth_service import AuthService
-from services.collection_runner import CentraleCanineRunReport, collection_runner
+from services.collection_runner import CentraleCanineRunReport, HtmlRunReport, collection_runner
 from services.collectors.centrale_canine import CentraleCanineCollector, CentraleCanineError
 from services.collectors.raw_listing import RawListing
+from services.notification_texts import SOURCE_NAMES
 from services.push_service import push_service
 from services.scc_reference_sync import scc_reference_sync
+from services.source_status_service import COLLECTED_SOURCES
 from services.vapid_key_generator import VapidKeyGenerator
 
 
@@ -40,12 +44,17 @@ class CommandLine:
         commands.add_parser("init-db", help="Appliquer les migrations puis les seeders")
         commands.add_parser("vapid-keys", help="Générer une paire de clés VAPID à coller dans .env")
         commands.add_parser("push-test", help="Envoyer une notification de test à l'utilisateur du .env")
-        collect = commands.add_parser("collect", help="Relever la Centrale Canine maintenant et afficher les portées")
+        collect = commands.add_parser("collect", help="Relever les sources maintenant et afficher les portées")
+        collect.add_argument(
+            "--source",
+            choices=[source.value for source in ListingSource if source in COLLECTED_SOURCES],
+            help="Ne relever que cette source (par défaut : toutes)",
+        )
         collect.add_argument(
             "--save-raw",
             type=Path,
             metavar="DOSSIER",
-            help="Enregistrer chaque page JSON reçue dans ce dossier (fixtures de test)",
+            help="Enregistrer chaque page reçue dans ce dossier (fixtures de test)",
         )
         scc_sync = commands.add_parser(
             "scc-sync", help="Lire les identifiants de département et de variété listés par la Centrale Canine"
@@ -110,23 +119,34 @@ class CommandLine:
             print(f"  {detail}")
         return 0 if result.delivered > 0 else 1
 
-    def collect_centrale_canine(self, raw_pages_directory: Path | None) -> int:
+    def collect_sources(self, source_value: str | None, raw_pages_directory: Path | None) -> int:
         """
-        Run a Centrale Canine collection now and print the litters found.
+        Run a collection now, of one source or of every collected source, and print the litters found.
 
         Args:
-            raw_pages_directory: Folder where each received JSON page is written, if given.
+            source_value: The source to read, or None for all of them.
+            raw_pages_directory: Folder where each received page is written, if given.
 
         Returns:
-            Exit code: 1 when the run failed.
+            Exit code: 1 when a run failed.
         """
+        sources = (
+            [ListingSource(source_value)]
+            if source_value
+            else [source for source in ListingSource if source in COLLECTED_SOURCES]
+        )
+        exit_code = 0
         db = SessionLocal()
         try:
-            report = collection_runner.run_centrale_canine(db, CentraleCanineCollector())
-            self._print_run_report(report)
-            if raw_pages_directory is not None:
-                self._save_raw_pages(report, raw_pages_directory)
-            return 0 if report.source_run.status == SourceRunStatus.OK else 1
+            for source in sources:
+                print(f"== {SOURCE_NAMES[source]}")
+                report = collection_runner.run_source(db, source)
+                self._print_run_report(report)
+                if raw_pages_directory is not None:
+                    self._save_raw_pages(report, raw_pages_directory)
+                if report.source_run.status != SourceRunStatus.OK:
+                    exit_code = 1
+            return exit_code
         finally:
             db.close()
 
@@ -166,7 +186,7 @@ class CommandLine:
             db.close()
 
     @staticmethod
-    def _print_run_report(report: CentraleCanineRunReport) -> None:
+    def _print_run_report(report: CentraleCanineRunReport | HtmlRunReport) -> None:
         """
         Print the outcome of a run and one line per litter found.
 
@@ -174,7 +194,7 @@ class CommandLine:
             report: The run report.
         """
         source_run = report.source_run
-        if report.plan.departments_without_term_id:
+        if isinstance(report, CentraleCanineRunReport) and report.plan.departments_without_term_id:
             print(
                 "Départements sans identifiant Centrale Canine, non relevés : "
                 + ", ".join(report.plan.departments_without_term_id)
@@ -218,6 +238,11 @@ class CommandLine:
         """
         if listing.kind == ListingKind.LITTER_BORN:
             status = f"née le {listing.birth_date or '?'}, {listing.male_count} ♂ {listing.female_count} ♀"
+        elif listing.kind == ListingKind.PUPPY_AD:
+            price = f"{listing.price_cents // 100} €" if listing.price_cents is not None else "prix ?"
+            status = (
+                f"chiot né le {listing.birth_date or '?'}, {listing.male_count} ♂ {listing.female_count} ♀, {price}"
+            )
         else:
             status = f"à naître, saillie du {listing.mating_date or '?'}"
         breeder_name: str | None = None
@@ -232,21 +257,28 @@ class CommandLine:
         )
 
     @staticmethod
-    def _save_raw_pages(report: CentraleCanineRunReport, directory: Path) -> None:
+    def _save_raw_pages(report: CentraleCanineRunReport | HtmlRunReport, directory: Path) -> None:
         """
-        Write each received JSON page as is, to record real fixtures.
+        Write each received page as is, to record real fixtures: JSON for the Centrale Canine, HTML for
+        the other sources, named after their address.
 
         Args:
             report: The run report.
             directory: Destination folder, created if needed.
         """
         directory.mkdir(parents=True, exist_ok=True)
-        for raw_page in report.collection.raw_pages:
-            file_name = f"{raw_page.scc_slug}_{raw_page.department_code}_page_{raw_page.page_number}.json"
-            (directory / file_name).write_text(
-                json.dumps(raw_page.payload, ensure_ascii=False, indent=2), encoding="utf-8"
-            )
-        print(f"{len(report.collection.raw_pages)} page(s) JSON enregistrée(s) dans {directory}")
+        if isinstance(report, CentraleCanineRunReport):
+            for raw_page in report.collection.raw_pages:
+                file_name = f"{raw_page.scc_slug}_{raw_page.department_code}_page_{raw_page.page_number}.json"
+                (directory / file_name).write_text(
+                    json.dumps(raw_page.payload, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
+        else:
+            source_value = report.source_run.source.value
+            for html_page in report.collection.raw_pages:
+                page_path = urlparse(html_page.url).path.strip("/").replace("/", "_")
+                (directory / f"{source_value}_{page_path}.html").write_text(html_page.html, encoding="utf-8")
+        print(f"{len(report.collection.raw_pages)} page(s) enregistrée(s) dans {directory}")
 
     def run(self, arguments: list[str]) -> int:
         """
@@ -260,7 +292,7 @@ class CommandLine:
         """
         parsed = self.build_parser().parse_args(arguments)
         if parsed.command == "collect":
-            return self.collect_centrale_canine(parsed.save_raw)
+            return self.collect_sources(parsed.source, parsed.save_raw)
         if parsed.command == "scc-sync":
             return self.sync_scc_references(parsed.save_raw)
         handlers = {

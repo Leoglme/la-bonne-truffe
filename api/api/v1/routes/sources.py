@@ -9,7 +9,6 @@ from models.user import User
 from schemas.source_status import SourceStatus
 from services.auth_service import get_current_user
 from services.collection_runner import collection_runner
-from services.collectors.centrale_canine import CentraleCanineCollector
 from services.source_status_service import COLLECTED_SOURCES, SourceStatusService
 
 router = APIRouter(prefix="/sources", tags=["sources"])
@@ -55,5 +54,5 @@ def run_source(
     """
     if source not in COLLECTED_SOURCES:
         raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Cette source n'est pas encore relevée")
-    collection_runner.run_centrale_canine(db, CentraleCanineCollector())
+    collection_runner.run_source(db, source)
     return SourceStatusService.list_statuses(db)

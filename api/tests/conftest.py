@@ -37,7 +37,7 @@ def engine() -> Engine:
 @pytest.fixture
 def db(engine: Engine) -> Iterator[Session]:
     """A session on the test's database, closed afterwards."""
-    session = sessionmaker(bind=engine)()
+    session = sessionmaker(bind=engine, autoflush=False)()
     try:
         yield session
     finally:
@@ -47,7 +47,7 @@ def db(engine: Engine) -> Iterator[Session]:
 @pytest.fixture
 def client(engine: Engine) -> Iterator[TestClient]:
     """The FastAPI app, every request served by the test's database."""
-    session_factory = sessionmaker(bind=engine)
+    session_factory = sessionmaker(bind=engine, autoflush=False)
 
     def override_get_db() -> Iterator[Session]:
         """Yield a session on the test database."""

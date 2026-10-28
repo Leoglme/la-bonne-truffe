@@ -21,9 +21,9 @@ from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
 from enums.lof_status import LofStatus
 from services.collectors.breeder_contact_parser import BreederContactParser
+from services.collectors.polite_http_client import PoliteHttpClient, SourceReadError
 from services.collectors.raw_listing import ColorReading, RawBreeder, RawListing
 from services.collectors.scc_value_parser import SccValueParser
-from services.collectors.system_curl_transport import SystemCurlTransport
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ SCC_BROWSER_USER_AGENT = (
 )
 
 
-class CentraleCanineError(RuntimeError):
+class CentraleCanineError(SourceReadError):
     """The Centrale Canine could not be read; the message says why, in French, for the run log."""
 
 
@@ -115,13 +115,9 @@ class CentraleCanineCollector:
             sleep: Pause function, injected by the tests.
             monotonic_clock: Clock measuring the delay, injected by the tests.
         """
-        self.http_client = http_client or httpx.Client(
-            timeout=30.0, follow_redirects=True, transport=SystemCurlTransport()
+        self.polite_client = PoliteHttpClient(
+            "Centrale Canine", SCC_BROWSER_USER_AGENT, http_client, seconds_between_requests, sleep, monotonic_clock
         )
-        self.seconds_between_requests = seconds_between_requests
-        self.sleep = sleep
-        self.monotonic_clock = monotonic_clock
-        self._last_request_at: float | None = None
 
     @staticmethod
     def litters_url(scc_slug: str, page_number: int) -> str:
@@ -231,7 +227,7 @@ class CentraleCanineCollector:
 
     def _get(self, url: str, params: dict[str, str], accept: str) -> httpx.Response:
         """
-        Send a GET request, at most one per ``seconds_between_requests``.
+        Send a GET request through the polite client.
 
         Args:
             url: Address to read.
@@ -244,26 +240,10 @@ class CentraleCanineCollector:
         Raises:
             CentraleCanineError: On a network error or a non-2xx status.
         """
-        if self._last_request_at is not None:
-            elapsed = self.monotonic_clock() - self._last_request_at
-            if elapsed < self.seconds_between_requests:
-                self.sleep(self.seconds_between_requests - elapsed)
-        headers = {"User-Agent": SCC_BROWSER_USER_AGENT, "Accept": accept, "Accept-Language": "fr-FR,fr;q=0.9"}
         try:
-            response = self.http_client.get(url, params=params, headers=headers)
-        except httpx.HTTPError as error:
-            raise CentraleCanineError(f"Centrale Canine injoignable : {error}") from error
-        finally:
-            self._last_request_at = self.monotonic_clock()
-
-        if response.status_code == 403:
-            raise CentraleCanineError(
-                "Centrale Canine : 403, Cloudflare refuse ce client ou cette adresse "
-                f"(cf-mitigated={response.headers.get('cf-mitigated', 'absent')})"
-            )
-        if response.status_code >= 400:
-            raise CentraleCanineError(f"Centrale Canine : HTTP {response.status_code} pour {response.url}")
-        return response
+            return self.polite_client.get(url, accept, params)
+        except SourceReadError as error:
+            raise CentraleCanineError(str(error)) from error
 
     @staticmethod
     def _litters_block(payload: dict[str, Any]) -> dict[str, Any]:

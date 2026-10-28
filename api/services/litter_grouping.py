@@ -1,13 +1,16 @@
 """
 Groups the listings into real litters (``litter_groups``) and keeps the group dates up to date.
 
-Rules of docs/03-modele-de-donnees.md, in order, for a listing without group: same breeder and same
-litter number; else same breeder, same breed and birth dates three days apart at most; else, for an
-ad without birth date, the single litter of the same breeder and breed seen in the last sixty days
-(flagged ``is_grouping_probable``). Two listings of the same source are never grouped on a guess: a
-source lists a litter once, so two of its listings are two litters unless they share a litter number.
+Rules of docs/03-modele-de-donnees.md, in order, for a listing without group, always within the same
+breeder and breed: the same litter number; for a puppy ad, a puppy ad of the same source born the same
+day of the same mother (such a source lists each puppy apart); a listing of another source born, or
+mated, three days apart at most, thirty when both name the same mother; for an ad without birth date,
+the single litter seen in the last sixty days (flagged ``is_grouping_probable``). Two named mothers that differ never group, and two litter
+listings of the same source are never grouped on a guess: a source lists a litter once.
 """
 
+import re
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 
@@ -19,7 +22,9 @@ from models.litter_group import LitterGroup
 
 GESTATION_DAYS = 63
 LEGAL_HANDOVER_DAYS = 56
-BIRTH_DATE_TOLERANCE_DAYS = 3
+DATE_TOLERANCE_DAYS = 3
+SAME_DAM_TOLERANCE_DAYS = 30
+NON_LETTER_OR_DIGIT_PATTERN = re.compile(r"[^a-z0-9]+")
 PROBABLE_GROUPING_WINDOW_DAYS = 60
 
 
@@ -60,7 +65,7 @@ class LitterGroupingService:
                 db.flush()
                 result.new_group_ids.append(group.id)
             listing.litter_group_id = group.id
-        db.flush()
+            db.flush()
 
         for group in db.query(LitterGroup).all():
             was_born = group.birth_date is not None
@@ -101,16 +106,22 @@ class LitterGroupingService:
                 if other.litter_number == listing.litter_number:
                     return db.get(LitterGroup, other.litter_group_id)
 
-        other_sources = [other for other in grouped_listings_of_breeder if other.source != listing.source]
-        if listing.birth_date is not None:
-            for other in other_sources:
-                if other.birth_date is not None and abs((other.birth_date - listing.birth_date).days) <= (
-                    BIRTH_DATE_TOLERANCE_DAYS
+        if listing.kind == ListingKind.PUPPY_AD and listing.birth_date is not None:
+            for other in grouped_listings_of_breeder:
+                if (
+                    other.source == listing.source
+                    and other.kind == ListingKind.PUPPY_AD
+                    and other.birth_date == listing.birth_date
+                    and LitterGroupingService._has_same_dam(other, listing)
                 ):
                     return db.get(LitterGroup, other.litter_group_id)
-            return None
 
-        if listing.kind != ListingKind.PUPPY_AD:
+        other_sources = [other for other in grouped_listings_of_breeder if other.source != listing.source]
+        for other in other_sources:
+            if LitterGroupingService._have_close_dates(other, listing):
+                return db.get(LitterGroup, other.litter_group_id)
+
+        if listing.kind != ListingKind.PUPPY_AD or listing.birth_date is not None:
             return None
         recent_group_ids = {
             other.litter_group_id
@@ -123,6 +134,64 @@ class LitterGroupingService:
         if group is not None:
             group.is_grouping_probable = True
         return group
+
+    @staticmethod
+    def _have_close_dates(first: Listing, second: Listing) -> bool:
+        """
+        Whether two listings of the same breeder are one litter by their dates: births compared when both
+        are known, else matings. Three days apart at most; thirty when both name the same mother, who
+        cannot have two litters a month apart (two sources often date the mating a few days apart).
+
+        Args:
+            first: A listing.
+            second: A listing of another source.
+
+        Returns:
+            True when the dates match.
+        """
+        if not LitterGroupingService._has_same_dam(first, second):
+            return False
+        tolerance_days = SAME_DAM_TOLERANCE_DAYS if first.dam_name and second.dam_name else DATE_TOLERANCE_DAYS
+        if first.birth_date is not None and second.birth_date is not None:
+            return abs((first.birth_date - second.birth_date).days) <= tolerance_days
+        if first.mating_date is not None and second.mating_date is not None:
+            return abs((first.mating_date - second.mating_date).days) <= tolerance_days
+        return False
+
+    @staticmethod
+    def _has_same_dam(first: Listing, second: Listing) -> bool:
+        """
+        Whether two listings may be the same litter as far as the mother goes: an unknown mother never
+        tells two litters apart; two named mothers must have the same name, one source sometimes adding
+        her titles before it or the breeder's affix after it (« CH. Victoire… », « Vutha Du Galain »).
+
+        Args:
+            first: A listing.
+            second: Another listing.
+
+        Returns:
+            False only when both mothers are named and neither name holds the other.
+        """
+        if not first.dam_name or not second.dam_name:
+            return True
+        first_words = f" {LitterGroupingService._name_key(first.dam_name)} "
+        second_words = f" {LitterGroupingService._name_key(second.dam_name)} "
+        return first_words in second_words or second_words in first_words
+
+    @staticmethod
+    def _name_key(name: str) -> str:
+        """
+        A dog name for comparison: lowercase, without accents or punctuation.
+
+        Args:
+            name: Name as a source writes it (« Violette Of Loving Star »).
+
+        Returns:
+            « violette of loving star ».
+        """
+        decomposed = unicodedata.normalize("NFKD", name)
+        without_accents = "".join(character for character in decomposed if not unicodedata.combining(character))
+        return " ".join(NON_LETTER_OR_DIGIT_PATTERN.sub(" ", without_accents.lower()).split())
 
     @staticmethod
     def _refresh_group(db: Session, group: LitterGroup) -> None:

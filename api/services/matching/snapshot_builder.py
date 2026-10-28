@@ -44,8 +44,7 @@ class LitterSnapshotBuilder:
             (listing.department_code for listing in active_listings if listing.department_code), None
         )
         department = db.get(Department, department_code) if department_code is not None else None
-        # Sexes are known once a litter is born, or on an ad; a declared mating reports none.
-        listings_with_sexes = [listing for listing in active_listings if listing.kind != ListingKind.LITTER_EXPECTED]
+        male_count, female_count = cls._sex_counts(active_listings)
 
         return LitterSnapshot(
             group_id=group.id,
@@ -55,8 +54,8 @@ class LitterSnapshotBuilder:
             department_name=department.name if department is not None else None,
             colors=cls._merged_colors(group, active_listings),
             lof_status=cls._merged_lof_status(active_listings),
-            male_count=cls._first_known([listing.male_count for listing in listings_with_sexes]),
-            female_count=cls._first_known([listing.female_count for listing in listings_with_sexes]),
+            male_count=male_count,
+            female_count=female_count,
             price_cents=min(
                 (listing.price_cents for listing in active_listings if listing.price_cents is not None), default=None
             ),
@@ -147,6 +146,38 @@ class LitterSnapshotBuilder:
         if LofStatus.NON_LOF in statuses:
             return LofStatus.NON_LOF
         return LofStatus.UNKNOWN
+
+    @classmethod
+    def _sex_counts(cls, listings: list[Listing]) -> tuple[int | None, int | None]:
+        """
+        Males and females of a litter: as a born litter declares them, else the puppies its ads offer,
+        one puppy per ad. A declared mating reports none.
+
+        Args:
+            listings: Active listings of the group.
+
+        Returns:
+            The male and female counts, each None while unknown.
+        """
+        born_litters = [listing for listing in listings if listing.kind == ListingKind.LITTER_BORN]
+        if born_litters:
+            return (
+                cls._first_known([listing.male_count for listing in born_litters]),
+                cls._first_known([listing.female_count for listing in born_litters]),
+            )
+        puppy_ads = [
+            listing
+            for listing in listings
+            if listing.kind == ListingKind.PUPPY_AD
+            and listing.male_count is not None
+            and listing.female_count is not None
+        ]
+        if not puppy_ads:
+            return None, None
+        return (
+            sum(listing.male_count or 0 for listing in puppy_ads),
+            sum(listing.female_count or 0 for listing in puppy_ads),
+        )
 
     @staticmethod
     def _first_known(values: list[int | None]) -> int | None:

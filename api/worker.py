@@ -11,14 +11,19 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 from core.clock import naive_utc_now
 from core.database import SessionLocal, engine
+from enums.listing_source import ListingSource
 from migrations.run_migrations import MigrationRunner
 from services.collection_runner import collection_runner
-from services.collectors.centrale_canine import CentraleCanineCollector
 from services.notifier import notifier_service
 
 logger = logging.getLogger("worker")
 
 SCHEDULER_TIMEZONE = "Europe/Paris"
+
+COLLECTION_MINUTES: dict[ListingSource, int] = {
+    ListingSource.CENTRALE_CANINE: 5,
+    ListingSource.CHIENS_DE_FRANCE: 20,
+}
 
 
 class CollectionWorker:
@@ -28,26 +33,33 @@ class CollectionWorker:
         """
         Create the scheduler and register the jobs.
 
-        One job per source runs every hour, a few minutes apart (the Centrale Canine at minute 5).
-        The evening digest job wakes at minute 0 of every hour and sends the digests whose
-        ``digest_hour`` has come.
+        One job per collected source runs every hour, a few minutes apart (``COLLECTION_MINUTES``). The
+        evening digest job wakes at minute 0 of every hour and sends the digests whose ``digest_hour``
+        has come.
 
         Returns:
             The configured scheduler, not started.
         """
         scheduler = BlockingScheduler(timezone=SCHEDULER_TIMEZONE)
         scheduler.configure(job_defaults={"coalesce": True, "max_instances": 1, "misfire_grace_time": 600})
-        scheduler.add_job(self.collect_centrale_canine, "cron", minute=5, id="collect_centrale_canine")
+        for source, minute in COLLECTION_MINUTES.items():
+            scheduler.add_job(self.collect_source, "cron", minute=minute, args=[source], id=f"collect_{source.value}")
         scheduler.add_job(self.send_evening_digests, "cron", minute=0, id="send_evening_digests")
         return scheduler
 
-    def collect_centrale_canine(self) -> None:
-        """Hourly Centrale Canine run, with its own session; a failure is recorded on its run line."""
+    def collect_source(self, source: ListingSource) -> None:
+        """
+        Hourly run of one source, with its own session; a failure is recorded on its run line.
+
+        Args:
+            source: The source to read.
+        """
         db = SessionLocal()
         try:
-            report = collection_runner.run_centrale_canine(db, CentraleCanineCollector())
+            report = collection_runner.run_source(db, source)
             logger.info(
-                "Centrale Canine run %s: %d seen, %d new, %d changed",
+                "%s run %s: %d seen, %d new, %d changed",
+                source.value,
                 report.source_run.status,
                 report.source_run.listings_seen,
                 report.source_run.listings_new,

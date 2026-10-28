@@ -24,7 +24,8 @@ class BreederContactParser:
     @classmethod
     def readable_name(cls, text: str | None) -> str | None:
         """
-        Write an upper-case name the way a French reader expects it; a name already in mixed case is kept.
+        Write a name typed all in capitals or all in lowercase the way a French reader expects it; a name
+        already in mixed case is kept.
 
         Args:
             text: Name as published (« DU CLOS DE L'ÉCOTAY », « SAINT-AUBIN-DU-CORMIER »).
@@ -35,7 +36,7 @@ class BreederContactParser:
         cleaned = " ".join((text or "").split())
         if not cleaned:
             return None
-        if cleaned != cleaned.upper():
+        if cleaned not in (cleaned.upper(), cleaned.lower()):
             return cleaned
         words = cleaned.lower().split(" ")
         return " ".join(cls._capitalize_word(word, is_first_word=index == 0) for index, word in enumerate(words))

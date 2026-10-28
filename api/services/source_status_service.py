@@ -8,8 +8,7 @@ from models.source_run import SourceRun
 from schemas.source_status import SourceStatus
 from services.notification_texts import SOURCE_NAMES
 
-# Sources with a collector today; the two HTML sources arrive with milestone 4.
-COLLECTED_SOURCES: frozenset[ListingSource] = frozenset({ListingSource.CENTRALE_CANINE})
+COLLECTED_SOURCES: frozenset[ListingSource] = frozenset({ListingSource.CENTRALE_CANINE, ListingSource.CHIENS_DE_FRANCE})
 
 
 class SourceStatusService:
