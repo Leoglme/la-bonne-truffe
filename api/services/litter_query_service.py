@@ -9,7 +9,6 @@ from enums.listing_kind import ListingKind
 from enums.match_flag import MatchFlag
 from enums.match_tier import MatchTier
 from models.breeder import Breeder
-from models.department import Department
 from models.follow_up import FollowUp, FollowUpNote
 from models.listing import Listing
 from models.listing_match import ListingMatch
@@ -109,7 +108,6 @@ class LitterQueryService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portée introuvable")
         listings = db.query(Listing).filter(Listing.litter_group_id == group.id).order_by(Listing.id).all()
         main_listing = next((listing for listing in listings if listing.is_active), listings[0])
-        department = db.get(Department, card.department_code) if card.department_code else None
         breeder = db.get(Breeder, group.breeder_id) if group.breeder_id is not None else None
         follow_up = cls._follow_up(db, user_id, group.id)
         photos = list(dict.fromkeys(photo for listing in listings for photo in listing.photos))
@@ -120,7 +118,6 @@ class LitterQueryService:
             if match is not None
             else [],
             flags=[MatchFlag(flag) for flag in match.flags] if match is not None else [],
-            department_name=department.name if department is not None else None,
             litter_number=next((listing.litter_number for listing in listings if listing.litter_number), None),
             mating_date=group.mating_date,
             sire=LitterParent(name=main_listing.sire_name, rating=main_listing.sire_rating)
@@ -259,7 +256,9 @@ class LitterQueryService:
             id=group.id,
             name=cls._litter_name(breeder, listings),
             place=city or snapshot.department_name,
+            town=city,
             department_code=snapshot.department_code,
+            department_name=snapshot.department_name,
             kind=snapshot.kind,
             tier=match.tier if match is not None else None,
             score=match.score if match is not None else None,

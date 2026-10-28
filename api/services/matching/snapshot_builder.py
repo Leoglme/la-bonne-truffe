@@ -42,7 +42,8 @@ class LitterSnapshotBuilder:
             (listing.department_code for listing in active_listings if listing.department_code), None
         )
         department = db.get(Department, department_code) if department_code is not None else None
-        born_listings = [listing for listing in active_listings if listing.kind == ListingKind.LITTER_BORN]
+        # Sexes are known once a litter is born, or on an ad; a declared mating reports none.
+        listings_with_sexes = [listing for listing in active_listings if listing.kind != ListingKind.LITTER_EXPECTED]
 
         return LitterSnapshot(
             group_id=group.id,
@@ -52,8 +53,8 @@ class LitterSnapshotBuilder:
             department_name=department.name if department is not None else None,
             colors=cls._merged_colors(group, active_listings),
             lof_status=cls._merged_lof_status(active_listings),
-            male_count=cls._first_known([listing.male_count for listing in born_listings]),
-            female_count=cls._first_known([listing.female_count for listing in born_listings]),
+            male_count=cls._first_known([listing.male_count for listing in listings_with_sexes]),
+            female_count=cls._first_known([listing.female_count for listing in listings_with_sexes]),
             price_cents=min(
                 (listing.price_cents for listing in active_listings if listing.price_cents is not None), default=None
             ),

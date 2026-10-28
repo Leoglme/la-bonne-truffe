@@ -26,8 +26,10 @@ class LitterCard(BaseModel):
 
     id: int
     name: str
-    place: str | None
+    place: str | None = Field(description="Town when known, else department name")
+    town: str | None
     department_code: str | None
+    department_name: str | None
     kind: ListingKind
     tier: MatchTier | None
     score: int | None
@@ -105,7 +107,6 @@ class LitterDetail(LitterCard):
 
     reasons: list[LitterReason]
     flags: list[MatchFlag]
-    department_name: str | None
     litter_number: str | None
     mating_date: date | None
     sire: LitterParent | None
