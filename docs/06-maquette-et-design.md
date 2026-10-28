@@ -15,6 +15,13 @@ Sources HTML de chaque écran dans `design/mockup/` (format `.dc.html` : le HTML
 | `Icone.dc.html` | 1180 × 900 | L'icône à plusieurs tailles, le logo dans l'app, l'aperçu sur l'écran d'accueil iPhone avec la bannière de notification |
 | `iPhoneAccueil.dc.html`, `iPhonePortee.dc.html` | iPhone 390 × 844 | Même structure, une colonne, tuile photo à gauche des cartes |
 | `Desktop.dc.html` | 1440 × 900 | Barre latérale à gauche, grille trois colonnes, volet de détail à droite |
+| `Connexion.dc.html` | iPad portrait | Connexion : photo du chiot sur le plaid, bannière de notification qui chevauche son bord bas, « Bon retour », e-mail, mot de passe (« Mot de passe oublié ? » à droite du libellé, bouton œil), « Se connecter » puis « Créer un compte » |
+| `Inscription.dc.html` | iPad portrait | Créer un compte : photo, trois pastilles qui chevauchent son bord bas (Tes critères, Relevé chaque heure, Prévenu le premier), prénom, e-mail, mot de passe affiché avec jauge de solidité, « Créer mon compte » puis « J'ai déjà un compte » |
+| `MotDePasseOublie.dc.html` | iPad portrait | Tuile gold avec l'illustration et une pastille clé, e-mail, « Envoyer le lien » puis « Retour à la connexion » |
+| `LienEnvoye.dc.html` | iPad portrait | Photo et pastille enveloppe, adresse rappelée, validité de 30 minutes, conseil « indésirables », « Retour à la connexion », « Renvoyer le lien » désactivé avec compte à rebours, lien « Modifier l'e-mail » |
+| `NouveauMotDePasse.dc.html` | iPad portrait | Tuile lilas avec l'illustration noir et feu et une pastille cadenas, mot de passe avec jauge, « Enregistrer et me connecter » puis « Retour à la connexion » |
+| `iPhoneConnexion.dc.html`, `iPhoneInscription.dc.html` | iPhone 390 × 844 | Mêmes écrans en une colonne ; la connexion montre l'état refusé (bandeau corail pastel « E-mail ou mot de passe incorrect », bordure corail sur le mot de passe) |
+| `DesktopConnexion.dc.html` | 1440 × 900 | Formulaire dans une colonne de 600 px sur le crème, photo et bannière dans une tuile à droite |
 
 ## Direction artistique
 
@@ -73,6 +80,16 @@ Les PNG sont générés dans `web/public/icons/` (1024, 512, 192, 120, 60), plus
 
 **Règle des visuels** : une portée affiche sa **photo** (première photo de l'annonce) quand elle existe ; sinon l'**illustration** colorée selon la robe, sur une tuile pastel. Les portées à naître ont une tuile à bord pointillé corail. Dans Critères, ce sont toujours les illustrations (une par couleur).
 
+### Les écrans d'authentification
+
+Validés par Léo le 28/10/2026, après une première version qu'il a rejetée (formulaire dans une carte blanche, contenu centré, « Pas encore de compte ? » en lien à côté d'un bouton, photo au fond gris froid). Ce qui en reste comme règles :
+
+- **Le gabarit des autres écrans** : logo en tête, un grand visuel arrondi (photo ou tuile pastel avec l'illustration), titre Fredoka 40 px à gauche, sous-titre, puis le formulaire. Rien n'est centré dans le vide.
+- **Pas de carte autour du formulaire** : les champs sont des blocs blancs posés sur le crème, avec l'ombre des cartes, une bordure blanche de 2 px qui passe en corail au focus avec un halo `#FFE3D3`, et passe en corail aussi quand le champ est refusé.
+- **Deux boutons pleine largeur empilés** : l'action principale en corail, l'action secondaire juste dessous en contour sombre de 2 px (« Créer un compte », « J'ai déjà un compte », « Retour à la connexion »). Jamais un lien texte à côté d'un bouton.
+- **Photos chaudes** : le chiot sur le plaid pour la connexion, le cocker sur le dos pour l'inscription, le cocker à la balle pour le lien envoyé. La photo aux fleurs reste réservée à l'Accueil.
+- **Desktop** : le formulaire passe dans une colonne de 600 px à gauche et le visuel remplit une tuile à droite.
+
 ## Comportements à reproduire
 
 - **Accueil** : les filtres sont des boutons `aria-pressed` ; la carte « née cette nuit » ouvre le détail ; les cartes montrent score en %, badge « Nouveau » corail pour ce qui est apparu depuis la dernière visite, nom, ville + temps de route, chip couleur, sexes.
@@ -81,6 +98,7 @@ Les PNG sont générés dans `web/public/icons/` (1024, 512, 192, 120, 60), plus
 - **Suivi** : statuts `to_contact`, `contacted`, `waiting`, `reserved`, `dismissed` ; rappel du jour en haut ; notes datées.
 - **Cloche** : historique des notifications, pastille corail quand il y a du nouveau.
 - **Réglages** : activer les notifications (avec l'encart « ajoute l'app à l'écran d'accueil » sur iPhone), état des sources, déconnexion.
+- **Connexion et inscription** : un refus affiche le bandeau d'erreur au-dessus des champs ; l'inscription mène aux Critères ; le mot de passe oublié montre « Regarde tes e-mails » sans dire si l'adresse existe, avec un renvoi possible après 45 secondes ; le lien reçu ouvre « Nouveau mot de passe », qui connecte directement.
 
 ## Accessibilité
 
@@ -96,4 +114,4 @@ Les maquettes `.dc.html` n'embarquent pas leur moteur de rendu. Pour comparer, c
 - **Hauteur de ligne** : le texte hérite de 1,45 sur iPhone et 1,5 à partir de l'iPad, comme la maquette (les tailles Tailwind n'imposent plus leur propre hauteur de ligne).
 - **« Pourquoi ce score »** : trois lignes sur iPhone et dans le volet desktop, jusqu'à cinq sur iPad (les raisons les plus fortes d'abord).
 - **Desktop** : barre latérale + grille de trois colonnes + volet de détail à partir de 1280 px ; entre 1024 et 1280 px, deux colonnes et l'écran de détail s'ouvre en plein. La barre latérale ajoute Réglages sous Sources (absent de la maquette, nécessaire pour la déconnexion).
-- Écrans sans maquette (Réglages, Sources, historique des notifications, connexion, Critères et Suivi sur iPhone et desktop) : mêmes composants, mêmes cotes que les écrans iPad.
+- Écrans sans maquette (Réglages, Sources, historique des notifications, Critères et Suivi sur iPhone et desktop, inscription et mot de passe oublié sur desktop) : mêmes composants, mêmes cotes que les écrans iPad.
