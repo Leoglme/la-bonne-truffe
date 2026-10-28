@@ -5,6 +5,8 @@ Configuration settings for the La Bonne Truffe API, read from the environment (`
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from enums.listing_source import ListingSource
+
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
@@ -82,6 +84,11 @@ class Settings(BaseSettings):
         alias="COLLECT_USER_AGENT_CONTACT",
         description="Email written in the honest User-Agent sent to the HTML sources",
     )
+    collect_skipped_sources_str: str | None = Field(
+        default=None,
+        alias="COLLECT_SKIPPED_SOURCES",
+        description="Comma-separated sources this machine does not collect",
+    )
 
     @property
     def allowed_cors_origins(self) -> list[str]:
@@ -94,6 +101,22 @@ class Settings(BaseSettings):
     def honest_user_agent(self) -> str:
         """The User-Agent sent to the sources that accept a bot naming itself."""
         return f"LaBonneTruffe/1.0 (+mailto:{self.collect_user_agent_contact})"
+
+    @property
+    def collect_skipped_sources(self) -> frozenset[ListingSource]:
+        """
+        The sources this machine does not collect, blanks dropped.
+
+        Raises:
+            ValueError: For a name that is not a source.
+        """
+        if not self.collect_skipped_sources_str:
+            return frozenset()
+        return frozenset(
+            ListingSource(source_name.strip())
+            for source_name in self.collect_skipped_sources_str.split(",")
+            if source_name.strip()
+        )
 
 
 settings = Settings()

@@ -15,6 +15,7 @@ from enums.listing_source import ListingSource
 from migrations.run_migrations import MigrationRunner
 from services.collection_runner import collection_runner
 from services.notifier import notifier_service
+from services.source_status_service import COLLECTED_SOURCES
 
 logger = logging.getLogger("worker")
 
@@ -30,6 +31,16 @@ COLLECTION_MINUTES: dict[ListingSource, int] = {
 class CollectionWorker:
     """Builds the scheduler with every collection job and runs it until stopped."""
 
+    def __init__(self, collected_sources: frozenset[ListingSource] = COLLECTED_SOURCES) -> None:
+        """
+        Prepare the worker.
+
+        Args:
+            collected_sources: Sources to read, injected by the tests; otherwise every source the ``.env`` does
+                not skip (``COLLECT_SKIPPED_SOURCES``).
+        """
+        self.collected_sources = collected_sources
+
     def build_scheduler(self) -> BlockingScheduler:
         """
         Create the scheduler and register the jobs.
@@ -44,6 +55,8 @@ class CollectionWorker:
         scheduler = BlockingScheduler(timezone=SCHEDULER_TIMEZONE)
         scheduler.configure(job_defaults={"coalesce": True, "max_instances": 1, "misfire_grace_time": 600})
         for source, minute in COLLECTION_MINUTES.items():
+            if source not in self.collected_sources:
+                continue
             scheduler.add_job(self.collect_source, "cron", minute=minute, args=[source], id=f"collect_{source.value}")
         scheduler.add_job(self.send_evening_digests, "cron", minute=0, id="send_evening_digests")
         return scheduler

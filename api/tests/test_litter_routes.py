@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from enums.listing_source import ListingSource
 from models.listing import Listing
 from models.user import User
 from seeders.run_seeders import SeederRunner
@@ -100,6 +101,21 @@ def test_sources_report_their_last_run(client: TestClient, collected: dict[str, 
     assert statuses["centrale_canine"]["listings_seen"] == 19
     assert all(status["is_collected"] for status in statuses.values())
     assert statuses["chiots_de_france"]["last_status"] is None
+
+
+def test_a_skipped_source_is_not_collected_and_cannot_be_run(
+    client: TestClient, auth_headers: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    collected_sources = frozenset({ListingSource.CHIENS_DE_FRANCE, ListingSource.CHIOTS_DE_FRANCE})
+    monkeypatch.setattr("services.source_status_service.COLLECTED_SOURCES", collected_sources)
+    monkeypatch.setattr("api.v1.routes.sources.COLLECTED_SOURCES", collected_sources)
+
+    statuses = {status["source"]: status for status in client.get("/api/v1/sources", headers=auth_headers).json()}
+    run_response = client.post("/api/v1/sources/centrale_canine/run", headers=auth_headers)
+
+    assert statuses["centrale_canine"]["is_collected"] is False
+    assert statuses["chiens_de_france"]["is_collected"] is True
+    assert run_response.status_code == 501
 
 
 def test_unknown_litter_is_a_404(client: TestClient, collected: dict[str, str]) -> None:

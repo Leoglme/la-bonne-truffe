@@ -50,7 +50,7 @@ def run_source(
         The statuses after the run.
 
     Raises:
-        HTTPException: 501 for a source without collector yet.
+        HTTPException: 501 for a source this machine does not collect.
     """
     if source not in COLLECTED_SOURCES:
         raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Cette source n'est pas encore relevée")

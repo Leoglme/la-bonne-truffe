@@ -2,13 +2,14 @@
 
 from sqlalchemy.orm import Session
 
+from core.config import settings
 from enums.listing_source import ListingSource
 from enums.source_run_status import SourceRunStatus
 from models.source_run import SourceRun
 from schemas.source_status import SourceStatus
 from services.notification_texts import SOURCE_NAMES
 
-COLLECTED_SOURCES: frozenset[ListingSource] = frozenset(ListingSource)
+COLLECTED_SOURCES: frozenset[ListingSource] = frozenset(ListingSource) - settings.collect_skipped_sources
 
 
 class SourceStatusService:
