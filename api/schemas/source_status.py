@@ -14,6 +14,7 @@ class SourceStatus(BaseModel):
     source: ListingSource
     label: str
     is_collected: bool
+    is_collected_by_desktop_app: bool
     last_run_at: datetime | None
     last_status: SourceRunStatus | None
     last_success_at: datetime | None

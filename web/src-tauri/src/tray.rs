@@ -1,11 +1,14 @@
 //! Keeps the app in the notification area (tray), as in DevLeadHunter.
 //!
 //! Closing the window only hides it; the tray icon brings it back or quits the app for good.
-//! Unlike DevLeadHunter, the app does not start with Windows: nothing runs in the background here.
+//! The app starts with Windows, hidden: in the background, it reads the Centrale Canine for the API.
 
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{App, AppHandle, Manager, Window, WindowEvent};
+
+/// Argument of the Windows startup entry: the app then starts hidden in the tray.
+pub const LAUNCHED_AT_LOGIN_ARG: &str = "--minimized";
 
 /// Label of the only window, declared in `tauri.conf.json`.
 const MAIN_WINDOW_LABEL: &str = "main";
@@ -16,6 +19,37 @@ pub fn show_main_window(app: &AppHandle) {
         let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
+    }
+}
+
+/// Show the window at launch, unless Windows started the app at login.
+pub fn show_main_window_unless_launched_at_login(app: &AppHandle) {
+    if !std::env::args().any(|arg| arg == LAUNCHED_AT_LOGIN_ARG) {
+        show_main_window(app);
+    }
+}
+
+/// Turn the launch at Windows startup on once, at the first launch.
+///
+/// Enabling it at every launch would override a user who switched it off in the Task Manager;
+/// a marker file in the app data folder remembers it was done.
+#[cfg(not(debug_assertions))]
+pub fn enable_autostart_on_first_launch(app: &App) {
+    use tauri_plugin_autostart::ManagerExt;
+
+    let Ok(data_dir) = app.path().app_data_dir() else {
+        return;
+    };
+    let marker = data_dir.join("autostart-enabled-once");
+    if marker.exists() {
+        return;
+    }
+    match app.autolaunch().enable() {
+        Ok(()) => {
+            let _ = std::fs::create_dir_all(&data_dir);
+            let _ = std::fs::write(&marker, b"");
+        }
+        Err(error) => log::error!("launch at Windows startup not enabled: {error}"),
     }
 }
 

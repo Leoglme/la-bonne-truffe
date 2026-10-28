@@ -1,4 +1,4 @@
-import type { ListingSource, SourceStatus } from '~/types/api'
+import type { CentraleCanineRelayAnswer, CentraleCanineRelayRequest, ListingSource, SourceStatus } from '~/types/api'
 import { ApiClient } from './api'
 
 /** HTTP client for the /sources API resource. */
@@ -20,5 +20,15 @@ export class SourcesService {
    */
   static async run(source: ListingSource): Promise<SourceStatus[]> {
     return ApiClient.post<SourceStatus[]>(`/api/v1/sources/${source}/run`, {})
+  }
+
+  /**
+   * Relay the Centrale Canine from the desktop app: send the pages read, get what to do next.
+   *
+   * @param relayRequest - The relay token and every page read since the relay started.
+   * @returns What the desktop app does next.
+   */
+  static async relayCentraleCanine(relayRequest: CentraleCanineRelayRequest): Promise<CentraleCanineRelayAnswer> {
+    return ApiClient.post<CentraleCanineRelayAnswer>('/api/v1/sources/centrale_canine/relay', relayRequest)
   }
 }

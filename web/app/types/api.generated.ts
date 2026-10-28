@@ -735,9 +735,41 @@ export interface paths {
          *         The statuses after the run.
          *
          *     Raises:
-         *         HTTPException: 501 for a source this machine does not collect.
+         *         HTTPException: 409 for a source the desktop app reads; 501 for a source this machine does not collect.
          */
         post: operations["run_source_api_v1_sources__source__run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sources/centrale_canine/relay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Relay Centrale Canine
+         * @description Relay the Centrale Canine through the desktop app: start the run of the hour, ask for the pages still
+         *     to read, then run the collection on them.
+         *
+         *     Args:
+         *         relay_request: The call of the desktop app, with every page it read since the relay started.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         What the desktop app does next.
+         *
+         *     Raises:
+         *         HTTPException: 409 when this server reads the Centrale Canine itself, or when the relay token expired.
+         */
+        post: operations["relay_centrale_canine_api_v1_sources_centrale_canine_relay_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -762,6 +794,44 @@ export interface components {
             /** Is Active */
             is_active: boolean;
         };
+        /**
+         * CentraleCanineRelayAnswer
+         * @description What the desktop app does next.
+         */
+        CentraleCanineRelayAnswer: {
+            state: components["schemas"]["CentraleCanineRelayState"];
+            /** Relay Token */
+            relay_token: string | null;
+            /** Page Requests */
+            page_requests: components["schemas"]["RelayPageRequest"][];
+            /** Source Statuses */
+            source_statuses: components["schemas"]["SourceStatus"][];
+        };
+        /**
+         * CentraleCanineRelayRequest
+         * @description A call of the desktop app, with every page it read since the relay started.
+         */
+        CentraleCanineRelayRequest: {
+            /**
+             * Relay Token
+             * @description Token of the relay this app holds; none to start one
+             */
+            relay_token?: string | null;
+            /** Responses */
+            responses?: components["schemas"]["RelayedPageResponse"][];
+            /**
+             * Is Requested By User
+             * @description « Relever maintenant »: run even when the last run is recent
+             * @default false
+             */
+            is_requested_by_user: boolean;
+        };
+        /**
+         * CentraleCanineRelayState
+         * @description What the desktop app does next: nothing, read pages, or show the run that just ended.
+         * @enum {string}
+         */
+        CentraleCanineRelayState: "not_due" | "busy" | "pages_needed" | "run_finished";
         /**
          * CoatColor
          * @description Canonical coat colours shared by every source (see docs/03-modele-de-donnees.md).
@@ -1229,6 +1299,46 @@ export interface components {
             endpoint: string;
         };
         /**
+         * RelayPageRequest
+         * @description A page the desktop app reads with curl, with the headers to send.
+         */
+        RelayPageRequest: {
+            /** Url */
+            url: string;
+            /** Headers */
+            headers: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * RelayedPageResponse
+         * @description One Centrale Canine page as the curl of the desktop app received it.
+         */
+        RelayedPageResponse: {
+            /** Url */
+            url: string;
+            /**
+             * Status Code
+             * @description HTTP status; none when curl could not reach the site
+             */
+            status_code?: number | null;
+            /**
+             * Body
+             * @default
+             */
+            body: string;
+            /**
+             * Cloudflare Mitigation
+             * @description Value of the cf-mitigated header: « challenge » when Cloudflare refuses the client
+             */
+            cloudflare_mitigation?: string | null;
+            /**
+             * Curl Error
+             * @description Why curl failed, when it did
+             */
+            curl_error?: string | null;
+        };
+        /**
          * SearchProfileResponse
          * @description A stored profile.
          */
@@ -1351,6 +1461,8 @@ export interface components {
             label: string;
             /** Is Collected */
             is_collected: boolean;
+            /** Is Collected By Desktop App */
+            is_collected_by_desktop_app: boolean;
             /** Last Run At */
             last_run_at: string | null;
             last_status: components["schemas"]["SourceRunStatus"] | null;
@@ -2228,6 +2340,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourceStatus"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    relay_centrale_canine_api_v1_sources_centrale_canine_relay_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CentraleCanineRelayRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CentraleCanineRelayAnswer"];
                 };
             };
             /** @description Validation Error */

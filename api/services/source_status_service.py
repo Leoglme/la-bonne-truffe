@@ -10,6 +10,9 @@ from schemas.source_status import SourceStatus
 from services.notification_texts import SOURCE_NAMES
 
 COLLECTED_SOURCES: frozenset[ListingSource] = frozenset(ListingSource) - settings.collect_skipped_sources
+DESKTOP_RELAYED_SOURCES: frozenset[ListingSource] = (
+    frozenset({ListingSource.CENTRALE_CANINE}) & settings.collect_skipped_sources
+)
 
 
 class SourceStatusService:
@@ -44,7 +47,8 @@ class SourceStatusService:
                 SourceStatus(
                     source=source,
                     label=SOURCE_NAMES[source].removeprefix("La "),
-                    is_collected=source in COLLECTED_SOURCES,
+                    is_collected=source in COLLECTED_SOURCES or source in DESKTOP_RELAYED_SOURCES,
+                    is_collected_by_desktop_app=source in DESKTOP_RELAYED_SOURCES,
                     last_run_at=(last_run.finished_at or last_run.started_at) if last_run is not None else None,
                     last_status=last_run.status if last_run is not None else None,
                     last_success_at=last_success.finished_at if last_success is not None else None,

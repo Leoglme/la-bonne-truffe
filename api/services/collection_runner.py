@@ -87,6 +87,23 @@ class CollectionRunner:
             return self.run_html_source(db, source, ChiotsDeFranceCollector())
         raise ValueError(f"Aucun collecteur pour {source}")
 
+    def plan_centrale_canine(self, db: Session, collector: CentraleCanineCollector) -> CentraleCanineCollectionPlan:
+        """
+        Plan a Centrale Canine run, after reading the identifiers a profile department lacks.
+
+        Args:
+            db: Database session.
+            collector: Collector that reads the « all departments » page when an identifier is missing.
+
+        Returns:
+            The plan.
+        """
+        plan = CollectionPlanner.build_centrale_canine_plan(db)
+        if plan.departments_without_term_id:
+            self._sync_department_identifiers(db, collector, plan)
+            plan = CollectionPlanner.build_centrale_canine_plan(db)
+        return plan
+
     def run_centrale_canine(self, db: Session, collector: CentraleCanineCollector) -> CentraleCanineRunReport:
         """
         Read the Centrale Canine for the active profiles, store what was found, then regroup, score
@@ -100,10 +117,7 @@ class CollectionRunner:
             The run report; ``source_run.status`` tells whether it succeeded.
         """
         source_run = self._open_run(db, ListingSource.CENTRALE_CANINE)
-        plan = CollectionPlanner.build_centrale_canine_plan(db)
-        if plan.departments_without_term_id:
-            self._sync_department_identifiers(db, collector, plan)
-            plan = CollectionPlanner.build_centrale_canine_plan(db)
+        plan = self.plan_centrale_canine(db, collector)
         report = CentraleCanineRunReport(source_run=source_run, plan=plan)
         if plan.departments_without_term_id:
             logger.info(

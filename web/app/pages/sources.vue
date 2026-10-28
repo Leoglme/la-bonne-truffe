@@ -16,19 +16,28 @@
             <h2 class="m-0 font-display text-[22px] font-semibold">{{ status.label }}</h2>
           </span>
           <UButton
-            v-if="status.is_collected"
+            v-if="canRunNow(status)"
             color="neutral"
             variant="outline"
             class="shrink-0"
             :disabled="runningSource !== null"
-            @click="runNow(status.source)"
+            @click="runNow(status)"
           >
             {{ runningSource === status.source ? 'Relevé en cours…' : 'Relever maintenant' }}
           </UButton>
         </div>
         <p class="m-0 text-[15px] text-ink-muted">{{ buildSourceStatusLine(status) }}</p>
+        <p v-if="status.is_collected_by_desktop_app" class="m-0 text-sm text-ink-muted">
+          Relevée par l’app Windows, quand un PC où elle tourne est allumé.
+        </p>
         <p v-if="status.last_status === 'error' && status.error_message" class="m-0 text-sm text-coral-text">
           {{ status.error_message }}
+        </p>
+        <p
+          v-if="status.is_collected_by_desktop_app && centraleCanineRelayStore.lastRelayErrorMessage"
+          class="m-0 text-sm text-coral-text"
+        >
+          Relais depuis ce PC en échec : {{ centraleCanineRelayStore.lastRelayErrorMessage }}
         </p>
       </UiSectionCard>
     </div>
@@ -37,7 +46,7 @@
 
 <script lang="ts" setup>
 import type { Ref } from 'vue'
-import type { ListingSource, SourceRunStatus, SourceStatus } from '~/types/api'
+import type { CentraleCanineRelayAnswer, ListingSource, SourceRunStatus, SourceStatus } from '~/types/api'
 import { onMounted, ref } from 'vue'
 import { SourcesService } from '~/services/sourcesService'
 import { FrenchDate } from '~/utils/frenchDate'
@@ -46,6 +55,8 @@ import { FrenchText } from '~/utils/frenchText'
 useHead({ title: 'Sources · La Bonne Truffe' })
 
 const sourcesStore: ReturnType<typeof useSourcesStore> = useSourcesStore()
+const centraleCanineRelayStore: ReturnType<typeof useCentraleCanineRelayStore> = useCentraleCanineRelayStore()
+const { isDesktopApp }: ReturnType<typeof useDesktopRuntime> = useDesktopRuntime()
 
 const SOURCE_RUN_STATUS_DOT_CLASSES: Record<SourceRunStatus, string> = {
   ok: 'bg-online',
@@ -79,19 +90,46 @@ function buildSourceStatusLine(status: SourceStatus): string {
 }
 
 /**
+ * Whether « Relever maintenant » has something to run from here: the server, or this computer for a source the desktop app reads.
+ *
+ * @param status - The source status.
+ * @returns True when the button can run the source.
+ */
+function canRunNow(status: SourceStatus): boolean {
+  if (status.is_collected_by_desktop_app) {
+    return isDesktopApp.value
+  }
+  return status.is_collected
+}
+
+/**
  * Run a collection now and refresh the statuses.
  *
- * @param source - The source.
+ * @param status - The source status.
  */
-async function runNow(source: ListingSource): Promise<void> {
-  runningSource.value = source
+async function runNow(status: SourceStatus): Promise<void> {
+  runningSource.value = status.source
   runError.value = null
   try {
-    sourcesStore.statuses = await SourcesService.run(source)
+    if (status.is_collected_by_desktop_app) {
+      await relayCentraleCanineNow()
+    } else {
+      sourcesStore.statuses = await SourcesService.run(status.source)
+    }
   } catch (error: unknown) {
     runError.value = error instanceof Error ? error.message : 'Relevé impossible'
   } finally {
     runningSource.value = null
+  }
+}
+
+/**
+ * Relay the Centrale Canine from this computer now; the relay store refreshes the statuses after the run.
+ */
+async function relayCentraleCanineNow(): Promise<void> {
+  const answer: CentraleCanineRelayAnswer | null = await centraleCanineRelayStore.relay(true)
+  if (answer === null || answer.state === 'busy') {
+    runError.value = 'La Centrale Canine est déjà en cours de relevé.'
   }
 }
 
