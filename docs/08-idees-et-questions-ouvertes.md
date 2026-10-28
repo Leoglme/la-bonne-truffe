@@ -2,15 +2,12 @@
 
 ## Questions à trancher par Léo avant ou pendant la V1
 
-Tranchées le 28/10/2026 (détail dans `01-cadrage.md`) : autres couleurs ignorées, sexe indifférent, pas de plafond de prix, départements 35, 56, 22, 29, 44, 53, 49, 72, 85, pas de notification native Windows, Tailwind v4 + Nuxt UI, adresse `contact@dibodev.fr`.
+Tranchées le 28/10/2026 (détail dans `01-cadrage.md`) : autres couleurs ignorées, sexe indifférent, pas de plafond de prix, départements 35, 56, 22, 29, 44, 53, 49, 72, 85, pas de notification native Windows, Tailwind v4 + Nuxt UI, adresse `contact@dibodev.fr`. **Relevé de la Centrale Canine** : sur le PC de Léo, par le `curl` du système, puisque Cloudflare refuse le client Python même depuis sa connexion (`02-sources.md`). Léo : « tu peux exécuter des commandes sur mon PC ».
 
 Restent ouvertes :
 
 1. Le nom de domaine et le sous-domaine sur le VPS.
-2. **La façon de relever la Centrale Canine.** Constat du 28/10/2026 (`02-sources.md`) : Cloudflare refuse le client Python (son empreinte TLS), même depuis la connexion de Léo, alors qu'un navigateur et `curl` de Windows passent. Pistes :
-   - **le navigateur du PC de Léo** : l'app Tauri lit les pages JSON comme un navigateur et les envoie à l'API du VPS, comme le relais de bureau de DevLeadHunter. Un vrai navigateur lit une page publique, au rythme d'une personne ; le PC doit être allumé ;
-   - **un client Python qui imite l'empreinte TLS de Chrome** (`curl_cffi`) : peu de code à changer, mais c'est contourner volontairement la protection du site, et Cloudflare peut le refuser du jour au lendemain ;
-   - **le VPS** : son adresse n'a jamais été testée avec un client accepté ; un `curl` lancé depuis le VPS le dira. Même acceptée, le client Python y restera refusé.
+2. **Le relevé une fois l'API sur le VPS** (jalon 5). L'app Windows de Léo, lancée au démarrage dans la zone de notification comme celle de DevLeadHunter, relèvera chaque heure avec le même `curl` et enverra les pages à l'API, qui fera le reste : regroupement, correspondance, notifications. Le worker du VPS ne doit pas relever la Centrale Canine : son image Docker n'a pas `curl`, il échouerait et déclencherait l'alerte « source en panne ». Les portées n'arrivent que quand le PC est allumé.
 
 ## Idées V1.5 (après que ça tourne)
 

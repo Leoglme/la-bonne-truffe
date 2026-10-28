@@ -40,7 +40,7 @@ Dans `.env`, changer au moins `SECRET_KEY` et `ADMIN_PASSWORD`. L'adresse `conta
 | `python cli.py collect` | Relever la Centrale Canine maintenant et afficher les portées trouvées |
 | `python cli.py collect --save-raw DOSSIER` | Idem, en enregistrant chaque page JSON reçue (nouvelles fixtures, à anonymiser comme le dit `tests/fixtures/centrale_canine/README.md`) |
 
-**Premier lancement réel** : `init-db` puis `collect`. Les `t_ID` des 74 départements qui avaient des portées le 28/10/2026 sont seedés, et le relevé lit tout seul ceux qui manquent. Le 28/10/2026, depuis le PC de Léo, Cloudflare a refusé le client Python (`02-sources.md`) : aucun relevé réel ne passe tant que la façon de relever n'est pas choisie (`08-idees-et-questions-ouvertes.md`).
+**Premier lancement réel** : `init-db` puis `collect`. Les `t_ID` des 74 départements qui avaient des portées le 28/10/2026 sont seedés, et le relevé lit tout seul ceux qui manquent. Le relevé passe par le `curl` du système, celui de Windows 10 et plus ou de Git for Windows, parce que Cloudflare refuse le client Python (`02-sources.md`). Il marche depuis le PC de Léo : 85 portées au premier relevé du 28/10/2026.
 
 ### Qualité
 

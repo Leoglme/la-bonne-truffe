@@ -30,9 +30,9 @@ GET https://www.centrale-canine.fr/api/breed/le-chien-de-race--cocker-spaniel-an
 
 **Condition d'accès (vérifiée le 28/10/2026)** : le serveur est derrière Cloudflare, qui juge l'adresse, les en-têtes **et l'empreinte TLS du client**.
 - Depuis la connexion de Léo, un vrai navigateur reçoit `200` sans défi. `curl` de Windows (TLS du système, Schannel) reçoit `200` avec un User-Agent de navigateur et `Accept: application/json` ; avec son User-Agent par défaut, il reçoit `403` (« Just a moment », observé le 27/10).
-- Depuis la même connexion, **Python est refusé** : `httpx` et `urllib` (OpenSSL) reçoivent `403` avec `cf-mitigated: challenge`, avec exactement les en-têtes qui passent avec `curl`. Le collecteur actuel, en `httpx`, ne peut donc pas relever la Centrale Canine, même depuis le PC de Léo. Rien n'a été contourné.
+- Depuis la même connexion, **Python est refusé** : `httpx` et `urllib` (OpenSSL) reçoivent `403` avec `cf-mitigated: challenge`, avec exactement les en-têtes qui passent avec `curl`. Rien n'a été contourné.
 - Depuis un conteneur cloud et un runner GitHub Actions (IP Azure) : `403`, `cf-mitigated: challenge`. Le runner relevait en Python (`scc-sync`, `collect`) et le client du conteneur n'a pas été noté : ces refus ne prouvent donc pas que l'adresse seule est refusée.
-- La façon de relever reste à choisir : voir `08-idees-et-questions-ouvertes.md`.
+- **Décision du 28/10/2026** : le relevé tourne sur le PC de Léo et passe par le `curl` du système (`SystemCurlTransport`). Premier relevé réel le soir même : 85 portées dans les 9 départements du profil, 12 pages ; le deuxième relevé n'a rien trouvé de nouveau ni de modifié.
 
 **Forme de la réponse** : `{"cache_tags": [...], "breed": {"breed_title": "Cocker spaniel anglais", "groups_titles": {"1": "Élevages avec Affixe et sélectionnés", "2": "Élevages avec Affixe", "3": "Élevages sans Affixe"}}, "litters": {"count": 19, "empty_text": "", "node": {"<groupe>": {"n<id>": {...portée...}}}, "breeders": {"<n_breeder>": {...éleveur...}}, "filters": {...}, "sort": {...}}}`. Les portées sont groupées par qualité d'élevage (clé `1`, `2`, `3`).
 
@@ -54,18 +54,18 @@ GET https://www.centrale-canine.fr/api/breed/le-chien-de-race--cocker-spaniel-an
 | `n_average_notation` | Cotation globale de la portée |
 | `n_breeder`, `n_breeder_id` | Clé de l'éleveur dans `litters.breeders`, et son identifiant d'éleveur SCC |
 | `n_selection` | Groupe d'élevage, libellé dans `breed.groups_titles` (1 avec affixe et sélectionné, 2 avec affixe, 3 sans affixe) |
-| `n_litter_status` | `1` sur les portées à naître observées, `2` ou `3` sur les nées (sens non confirmé) |
+| `n_litter_status` | `1` sur les 21 portées à naître du relevé du 28/10, `2` ou `3` sur les nées (sens non confirmé) |
 | `n_created`, `n_changed` | Mise en ligne et modification côté SCC. Plusieurs portées partagent le même `n_created` : la SCC publie par lots |
 | `n_image_uri` | Photo éventuelle (chemin relatif au site) |
 
-**Coordonnées de l'éleveur** : dans le même JSON, bloc `litters.breeders` indexé par `n_breeder`. On y lit `u_farming_affix` et `u_farming_name` (en capitales), `u_breeder_siren` (parfois vide), `u_breeder_phone` (`06…`), `u_breeder_zip_code`, `u_breeder_town` (en capitales), `u_location` (`["48.26,-1.40"]`), `u_breeder_department` (identifiant de terme, `"41"`), `u_breeder_id` (`[n_breeder_id]`) et `u_breeder_site` (son site sur la SCC). Le collecteur écrit noms et villes en casse française (« Saint-Aubin-du-Cormier ») et le téléphone en E.164.
+**Coordonnées de l'éleveur** : dans le même JSON, bloc `litters.breeders` indexé par `n_breeder`. On y lit `u_farming_affix` et `u_farming_name` (en capitales), `u_breeder_siren` (parfois vide), `u_breeder_phone` (`06…`), `u_breeder_zip_code`, `u_breeder_town` (en capitales), `u_location` (`["48.26,-1.40"]`), `u_breeder_department` (identifiant de terme, `"41"`), `u_breeder_id` (`[n_breeder_id]`) et `u_breeder_site` (son site sur la SCC). Au relevé du 28/10, 3 éleveurs sur 35 n'avaient pas de téléphone et 9 pas de position (`""` et `[]`). Le collecteur écrit noms et villes en casse française (« Saint-Aubin-du-Cormier », « Dublin's Rose ») et le téléphone en E.164.
 
 **Limites** : la liste ne dit pas s'il reste des chiots disponibles ; une portée peut être entièrement réservée. La couleur du paquet `159` est ambiguë. Rien ne prouve que cent pour cent des portées LOF y figurent, mais la liste est très complète.
 
 **Comment le collecteur lit cette source** (`api/services/collectors/centrale_canine.py`) :
 - un appel par race du profil et **par département du profil** (`department=<t_ID>`, `variety=all`, `is_borned=all`, `sort=0`), puis page par page jusqu'à `litters.count` ; c'est le filtre qui fixe le département de chaque portée ;
 - quand un département du profil n'a pas encore de `t_ID`, le relevé lit d'abord la page « tous départements » de la race (une requête) et enregistre les identifiants de `filters.department` ; un département absent de cette liste n'a pas de portée en ce moment et n'est pas relevé (le journal le dit) ;
-- une requête par seconde au plus, User-Agent de navigateur, `Accept: application/json` ; un `403` arrête le relevé et s'inscrit dans `source_runs`, sans relance ;
+- une requête par seconde au plus, envoyée par le `curl` du système avec un User-Agent de navigateur et `Accept: application/json` ; un `403` arrête le relevé et s'inscrit dans `source_runs`, sans relance ;
 - `n_is_borned` faux → `litter_expected`, et les compteurs mâles et femelles (0 avant la naissance) sont stockés **inconnus** (null), pas zéro ; la variété donne les couleurs (`158` certaine, `159` et `317` ambiguës) ;
 - l'éleveur vient du bloc `breeders` : il est retrouvé par SIREN, puis identifiant SCC, puis téléphone, puis affixe et département ; une valeur connue n'est jamais effacée ;
 - `n_created` devient `published_at` : la fraîcheur et les nouveautés partent de cette date (voir `04-correspondance-et-notifications.md`) ;
