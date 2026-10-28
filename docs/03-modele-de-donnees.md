@@ -69,7 +69,7 @@ Texte libre (Chiens de France, Chiots de France) : dictionnaire de mots-clés, p
 
 ## Le dédoublonnage
 
-**Éleveur** (dans cet ordre, on s'arrête au premier qui matche) : même `siren` ; sinon même identifiant Centrale Canine ; sinon même `phone_e164` ; sinon même `affix_normalized` **et** même `department_code`. Sinon on crée l'éleveur.
+**Éleveur** (dans cet ordre, on s'arrête au premier qui matche) : même `siren` ; sinon même identifiant Centrale Canine ; sinon même `phone_e164` ; sinon même `affix_normalized` **et** même `department_code`. Sinon l'annonce garde l'éleveur qu'elle avait au relevé précédent (un particulier sans SIREN, téléphone ni affixe), et une annonce nouvelle crée le sien.
 
 **Portée**, toujours chez le même éleveur et pour la même race, dans cet ordre (`api/services/litter_grouping.py`, règles complétées le 28/10/2026 avec Chiens de France) :
 1. même `litter_number`, quelle que soit la source ;
@@ -79,7 +79,7 @@ Texte libre (Chiens de France, Chiots de France) : dictionnaire de mots-clés, p
 
 Deux mères nommées différemment ne sont jamais regroupées. Les noms se comparent en minuscules, sans accents ni ponctuation, et l'un peut contenir l'autre : une source ajoute parfois les titres de la mère devant (« CH. ») ou l'affixe de l'élevage derrière. Sinon on crée un groupe.
 
-**Mâles et femelles d'un groupe** : ceux d'une portée née déclarée (Centrale Canine) ; sinon le nombre de chiots de chaque sexe que proposent ses annonces, un chiot par annonce. Le prix est le plus bas des annonces actives.
+**Mâles et femelles d'un groupe** : ceux de la portée née déclarée à la Centrale Canine, même quand l'annonce d'une autre source a été vue avant ; sinon ceux qu'une annonce de portée dit encore disponibles (Chiots de France) ; sinon le nombre de chiots de chaque sexe que proposent ses annonces de chiot, un chiot par annonce (Chiens de France). Le prix est le plus bas des annonces actives.
 
 Normalisation de l'affixe : minuscules, sans accents, sans « de », « du », « des », « la », « le », « l' », espaces réduits.
 

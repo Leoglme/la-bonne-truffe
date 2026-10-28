@@ -8,6 +8,7 @@ Restent ouvertes :
 
 1. Le nom de domaine et le sous-domaine sur le VPS.
 2. **Le relevé une fois l'API sur le VPS** (jalon 5). L'app Windows de Léo, lancée au démarrage dans la zone de notification comme celle de DevLeadHunter, relèvera chaque heure avec le même `curl` et enverra les pages à l'API, qui fera le reste : regroupement, correspondance, notifications. Le worker du VPS ne doit pas relever la Centrale Canine : son image Docker n'a pas `curl`, il échouerait et déclencherait l'alerte « source en panne ». Les portées n'arrivent que quand le PC est allumé.
+3. **Les annonces « Type Cocker Spaniel Anglais » de Chiots de France.** La loi réserve le nom d'une race aux chiens LOF : le site range sous ce titre tous les autres, cockers sans papiers et croisements mêlés, sans moyen sûr de les distinguer. Le collecteur les écarte pour l'instant. Le cadrage dit pourtant qu'une annonce non LOF reste visible en « acceptable » : faut-il les montrer quand même, en sachant qu'un croisement y passera pour un cocker ?
 
 ## Idées V1.5 (après que ça tourne)
 

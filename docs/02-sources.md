@@ -112,11 +112,35 @@ Il n'y a ni couleur ni téléphone sur la page (le contact passe par un formulai
 
 ## 3. Chiots de France
 
-Constats du 28/10/2026, à compléter quand le collecteur existera :
-- Site : `https://www.chiots-de-france.com/`. Annonces d'éleveurs et de particuliers, LOF ou non, une par portée née, avec les mâles et femelles **disponibles**. Pas d'alerte ni de flux RSS.
-- Pour le cocker, il reprend surtout les portées de Chiens de France : 21 de ses 22 annonces en France ce jour-là, la seule propre étant un croisement non LOF. Dans les 9 départements du profil, 2 annonces, d'un éleveur que Chiens de France liste déjà.
-- La liste `/chiots/cocker-spaniel-anglais/france` couvre toute la France sur une seule page ; chaque carte donne son département. Des filtres existent en paramètres : `departement`, `male`, `femelle`, `pro`, `part`, `lof`.
-- Une annonce disparue répond par une redirection 302 vers l'accueil, pas par une 404.
+**Ce que c'est.** `https://www.chiots-de-france.com/` publie des annonces d'éleveurs et de particuliers, une par portée née, avec les mâles et femelles encore **disponibles**. Aucune alerte, aucun flux RSS. Pour le cocker, il reprend surtout les portées de Chiens de France : 21 de ses 22 annonces en France le 28/10/2026, la seule propre étant un croisement non LOF.
+
+**Accès** : `curl` passe avec le User-Agent honnête. Le `robots.txt` n'interdit que les documents (`.pdf`, `.doc`…) et les pages `/annonce/contact/`, `/annonce/envoyer-a-un-ami/` et `/annonce/signaler-un-abus/` : la liste et les annonces sont permises.
+
+**Liste d'une race** : `GET /chiots/<race>/france`, par exemple `/chiots/cocker-spaniel-anglais/france`. Toute la France tient sur une seule page (22 cartes pour le cocker le 28/10/2026). Des filtres existent en paramètres (`departement`, `male`, `femelle`, `pro`, `part`, `lof`) ; le collecteur ne s'en sert pas.
+- Chaque carte est un `a.box` de `div.list-box.result`, vers `/detail-annonce-<race>_<id>_<n>.html`.
+- Le département est dans le titre du lieu : `.lieu .txt`, `title="LE MANS dans le departement 72 - Sarthe"`.
+- Le badge `.vign` « LOF » de la carte marque une portée LOF. Celui de la page de l'annonce ne vaut rien : il s'affiche aussi sur une annonce non LOF.
+- La loi réserve le nom d'une race aux chiens inscrits à un livre généalogique : le site range les autres sous « Type Cocker Spaniel Anglais » (`.race`), cockers sans papiers et croisements mêlés. Le seul du 28/10/2026 était un « Aussiecocker ». Le collecteur écarte ces cartes (question ouverte dans `08`).
+
+**Page d'une annonce** :
+
+| Donnée | Où | Exemple |
+|---|---|---|
+| Naissance | `ul.fiche-info-tab`, « Date de naissance » | `14 mai 2026` |
+| Lieu | même liste, « Lieu » | `72000 LE MANS, Pays de la Loire` |
+| Disponibles | `.nbr-male-femelle` | `1 mâle disponible`, `4 mâles et 5 femelles disponibles` ; un sexe absent de la phrase n'en a plus |
+| Prix | `.fiche-prix` | `1400 €`, ou « À vendre » sans montant |
+| Éleveur | titre `h2.sh1` « Elevage <affixe> » et lien `a.bouton-site-eleveur` vers `<nom>.chiens-de-france.com` | un particulier n'a pas de titre |
+| SIRET | `ul.fiche-info-supp`, « SIRET » | 14 chiffres, puis `(Professionnel)` |
+| Publication | même liste, « Mise en ligne de l'annonce » | `17 mai 2026` |
+| Parents | `.fiche-parents`, `a.fiche-pere .nom` et `a.fiche-mere .nom` | |
+| Photos | la liste `const DB_PHOTOS = [...]` du script de la galerie | |
+
+Une annonce disparue répond par une redirection 302 vers l'accueil, pas par une 404.
+
+**Relevé réel du 28/10/2026** : 3 requêtes, la liste puis les 2 annonces des départements du profil, d'un éleveur de la Sarthe. Toutes deux ont rejoint les chiots de Chiens de France nés le même jour de la même mère, chez l'éleveur que la Centrale Canine connaissait déjà.
+
+**Comment le collecteur lit cette source** (`api/services/collectors/chiots_de_france.py`) : la liste France de chaque race du profil, puis la page de chaque annonce des départements du profil ; une annonce retirée entre les deux (redirection vers l'accueil) est sautée. Une requête par seconde, par le `curl` du système. Une annonce devient une portée née (`litter_born`) : ses mâles et femelles sont ceux encore disponibles, son statut LOF celui de sa carte. L'éleveur est nommé comme sur Chiens de France, par le sous-domaine de son site, et retrouvé par son SIREN.
 
 ## 4. Leboncoin : pas collecté
 

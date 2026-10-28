@@ -37,7 +37,7 @@ Dans `.env`, changer au moins `SECRET_KEY` et `ADMIN_PASSWORD`. L'adresse `conta
 | `python cli.py push-test` | Envoyer une notification de test aux appareils abonnés |
 | `python cli.py scc-sync` | Lire dans le JSON Centrale Canine (`litters.filters`) les `t_ID` des départements qui ont des portées, et signaler une variété inconnue des seeders |
 | `python cli.py scc-sync --save-raw DOSSIER` | Idem, en enregistrant la page JSON lue pour chaque race |
-| `python cli.py collect` | Relever maintenant toutes les sources relevées (Centrale Canine, Chiens de France) et afficher les portées trouvées |
+| `python cli.py collect` | Relever maintenant les trois sources (Centrale Canine, Chiens de France, Chiots de France) et afficher les portées trouvées |
 | `python cli.py collect --source chiens_de_france` | Idem, pour une seule source |
 | `python cli.py collect --save-raw DOSSIER` | Idem, en enregistrant chaque page reçue, JSON ou HTML (nouvelles fixtures, à anonymiser comme le disent les `README.md` de `tests/fixtures/`) |
 
