@@ -30,6 +30,28 @@ export class ApiClient {
   }
 
   /**
+   * Send a PUT request.
+   *
+   * @param endpoint - Path starting with `/api/`.
+   * @param data - Request body, JSON-encoded.
+   * @returns The parsed response body.
+   */
+  static put<T>(endpoint: string, data: unknown): Promise<T> {
+    return this.request<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) })
+  }
+
+  /**
+   * Send a PATCH request.
+   *
+   * @param endpoint - Path starting with `/api/`.
+   * @param data - Request body, JSON-encoded.
+   * @returns The parsed response body.
+   */
+  static patch<T>(endpoint: string, data: unknown): Promise<T> {
+    return this.request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(data) })
+  }
+
+  /**
    * Send a DELETE request, with a JSON body when the route expects one.
    *
    * @param endpoint - Path starting with `/api/`.

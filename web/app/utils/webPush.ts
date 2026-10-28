@@ -78,12 +78,14 @@ export class WebPush {
       })
     }
     const subscriptionJson: PushSubscriptionJSON = subscription.toJSON()
-    if (!subscriptionJson.endpoint || !subscriptionJson.keys?.p256dh || !subscriptionJson.keys?.auth) {
+    const clientPublicKey: string | undefined = subscriptionJson.keys?.['p256dh']
+    const clientAuthSecret: string | undefined = subscriptionJson.keys?.['auth']
+    if (!subscriptionJson.endpoint || !clientPublicKey || !clientAuthSecret) {
       return false
     }
     await NotificationsService.subscribe({
       endpoint: subscriptionJson.endpoint,
-      keys: { p256dh: subscriptionJson.keys.p256dh, auth: subscriptionJson.keys.auth },
+      keys: { p256dh: clientPublicKey, auth: clientAuthSecret },
       user_agent: navigator.userAgent.slice(0, 400),
     })
     this.rememberDisabled(false)

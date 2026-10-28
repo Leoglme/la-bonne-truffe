@@ -288,6 +288,294 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Profiles
+         * @description Return the profiles of the user.
+         *
+         *     Args:
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The profiles.
+         */
+        get: operations["list_profiles_api_v1_profiles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profiles/{profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Profile
+         * @description Save the criteria and re-evaluate the litters.
+         *
+         *     Args:
+         *         profile_id: Profile to save.
+         *         payload: New criteria.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The saved profile.
+         */
+        put: operations["update_profile_api_v1_profiles__profile_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/litters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Litters
+         * @description Return the litters of the home screen.
+         *
+         *     Args:
+         *         tier: Only this tier (« Préférées »).
+         *         kind: Only this kind (« À naître »).
+         *         active: Active litters, or the ones gone from their sources.
+         *         sort: By score or by freshness.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The cards.
+         */
+        get: operations["list_litters_api_v1_litters_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/litters/{litter_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Litter
+         * @description Return the detail of a litter.
+         *
+         *     Args:
+         *         litter_id: The litter.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The detail.
+         */
+        get: operations["read_litter_api_v1_litters__litter_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/litters/{litter_id}/colors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Confirm Litter Colors
+         * @description Confirm the colours of a litter after a call.
+         *
+         *     Args:
+         *         litter_id: The litter.
+         *         payload: Confirmed colours.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The updated detail.
+         */
+        patch: operations["confirm_litter_colors_api_v1_litters__litter_id__colors_patch"];
+        trace?: never;
+    };
+    "/api/v1/litters/{litter_id}/follow-up": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Litter Follow Up
+         * @description Follow a litter, or change where the exchange stands.
+         *
+         *     Args:
+         *         litter_id: The litter.
+         *         payload: Status and reminder.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The updated detail.
+         */
+        put: operations["set_litter_follow_up_api_v1_litters__litter_id__follow_up_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/litters/{litter_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Litter Note
+         * @description Add a dated note to the follow-up of a litter.
+         *
+         *     Args:
+         *         litter_id: The litter.
+         *         payload: The note.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The note.
+         */
+        post: operations["add_litter_note_api_v1_litters__litter_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/follow-ups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Follow Ups
+         * @description Return the followed litters, the next reminder first.
+         *
+         *     Args:
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *         limit: Maximum number of follow-ups.
+         *
+         *     Returns:
+         *         The follow-up cards.
+         */
+        get: operations["list_follow_ups_api_v1_follow_ups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Sources
+         * @description Return the last run of every source.
+         *
+         *     Args:
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The statuses.
+         */
+        get: operations["list_sources_api_v1_sources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sources/{source}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Source
+         * @description Run a collection now (blocking: about one second per page read).
+         *
+         *     Args:
+         *         source: The source.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The statuses after the run.
+         *
+         *     Raises:
+         *         HTTPException: 501 for a source without collector yet.
+         */
+        post: operations["run_source_api_v1_sources__source__run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -307,6 +595,32 @@ export interface components {
             is_active: boolean;
         };
         /**
+         * CoatColor
+         * @description Canonical coat colours shared by every source (see docs/03-modele-de-donnees.md).
+         * @enum {string}
+         */
+        CoatColor: "gold" | "noir" | "noir_et_feu" | "marron" | "marron_et_feu" | "bleu_rouan" | "orange_rouan" | "marron_rouan" | "tricolore" | "particolore" | "zibeline" | "inconnue";
+        /**
+         * ColorConfidence
+         * @description How sure a listing's colour is: certain, ambiguous source bundle, or confirmed by hand.
+         * @enum {string}
+         */
+        ColorConfidence: "certain" | "ambiguous" | "confirmed";
+        /**
+         * ColorConfirmation
+         * @description Colours confirmed by hand after a call; an empty list removes the confirmation.
+         */
+        ColorConfirmation: {
+            /** Colors */
+            colors: components["schemas"]["CoatColor"][];
+        };
+        /**
+         * ColorPreferenceLevel
+         * @description Level a search profile gives to a coat colour.
+         * @enum {string}
+         */
+        ColorPreferenceLevel: "preferred" | "acceptable" | "ignored";
+        /**
          * DepartmentResponse
          * @description A French department, grouped by region in the criteria screen.
          */
@@ -317,6 +631,59 @@ export interface components {
             name: string;
             /** Region */
             region: string;
+        };
+        /**
+         * FollowUpCard
+         * @description A followed litter as the follow-up screen lists it.
+         */
+        FollowUpCard: {
+            litter: components["schemas"]["LitterCard"];
+            status: components["schemas"]["FollowUpStatus"];
+            /** Next Reminder At */
+            next_reminder_at: string | null;
+            /** Last Contact At */
+            last_contact_at: string | null;
+            last_note: components["schemas"]["FollowUpNoteResponse"] | null;
+        };
+        /**
+         * FollowUpNoteCreate
+         * @description A note to add to a follow-up.
+         */
+        FollowUpNoteCreate: {
+            /** Text */
+            text: string;
+        };
+        /**
+         * FollowUpNoteResponse
+         * @description A dated note of a follow-up.
+         */
+        FollowUpNoteResponse: {
+            /** Id */
+            id: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Text */
+            text: string;
+        };
+        /**
+         * FollowUpStatus
+         * @description Where the exchange with a breeder stands.
+         * @enum {string}
+         */
+        FollowUpStatus: "new" | "to_contact" | "contacted" | "waiting" | "reserved" | "dismissed";
+        /**
+         * FollowUpUpdate
+         * @description Status and reminder of a follow-up.
+         */
+        FollowUpUpdate: {
+            status: components["schemas"]["FollowUpStatus"];
+            /** Next Reminder At */
+            next_reminder_at?: string | null;
+            /** Last Contact At */
+            last_contact_at?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -339,6 +706,246 @@ export interface components {
                 [key: string]: string;
             };
         };
+        /**
+         * ListingKind
+         * @description What a listing describes: a born litter, a declared mating, or a puppy ad.
+         * @enum {string}
+         */
+        ListingKind: "litter_born" | "litter_expected" | "puppy_ad";
+        /**
+         * ListingSource
+         * @description Source an announcement or a declaration was read from.
+         * @enum {string}
+         */
+        ListingSource: "centrale_canine" | "chiens_de_france" | "chiots_de_france";
+        /**
+         * LitterBreeder
+         * @description What is known of the breeder; every field may be unknown.
+         */
+        LitterBreeder: {
+            /** Display Name */
+            display_name: string | null;
+            /** Affix */
+            affix: string | null;
+            /** City */
+            city: string | null;
+            /** Phone E164 */
+            phone_e164: string | null;
+            /** Siren */
+            siren: string | null;
+            /** Website */
+            website: string | null;
+            /** Is Selected Breeding */
+            is_selected_breeding: boolean;
+            /** Has Affix */
+            has_affix: boolean | null;
+        };
+        /**
+         * LitterCard
+         * @description A litter as the home screen lists it.
+         */
+        LitterCard: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /**
+             * Place
+             * @description Town when known, else department name
+             */
+            place: string | null;
+            /** Town */
+            town: string | null;
+            /** Department Code */
+            department_code: string | null;
+            /** Department Name */
+            department_name: string | null;
+            kind: components["schemas"]["ListingKind"];
+            tier: components["schemas"]["MatchTier"] | null;
+            /** Score */
+            score: number | null;
+            /** Colors */
+            colors: components["schemas"]["LitterColor"][];
+            lof_status: components["schemas"]["LofStatus"];
+            /** Male Count */
+            male_count: number | null;
+            /** Female Count */
+            female_count: number | null;
+            /** Birth Date */
+            birth_date: string | null;
+            /** Expected Birth Date */
+            expected_birth_date: string | null;
+            /** Available From */
+            available_from: string | null;
+            /** Photo Url */
+            photo_url: string | null;
+            /**
+             * First Seen At
+             * Format: date-time
+             */
+            first_seen_at: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Sources */
+            sources: components["schemas"]["ListingSource"][];
+            follow_up_status: components["schemas"]["FollowUpStatus"] | null;
+        };
+        /**
+         * LitterColor
+         * @description One colour of a litter and how sure it is.
+         */
+        LitterColor: {
+            color: components["schemas"]["CoatColor"];
+            confidence: components["schemas"]["ColorConfidence"];
+        };
+        /**
+         * LitterDetail
+         * @description A litter as the detail screen shows it.
+         */
+        LitterDetail: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /**
+             * Place
+             * @description Town when known, else department name
+             */
+            place: string | null;
+            /** Town */
+            town: string | null;
+            /** Department Code */
+            department_code: string | null;
+            /** Department Name */
+            department_name: string | null;
+            kind: components["schemas"]["ListingKind"];
+            tier: components["schemas"]["MatchTier"] | null;
+            /** Score */
+            score: number | null;
+            /** Colors */
+            colors: components["schemas"]["LitterColor"][];
+            lof_status: components["schemas"]["LofStatus"];
+            /** Male Count */
+            male_count: number | null;
+            /** Female Count */
+            female_count: number | null;
+            /** Birth Date */
+            birth_date: string | null;
+            /** Expected Birth Date */
+            expected_birth_date: string | null;
+            /** Available From */
+            available_from: string | null;
+            /** Photo Url */
+            photo_url: string | null;
+            /**
+             * First Seen At
+             * Format: date-time
+             */
+            first_seen_at: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Sources */
+            sources: components["schemas"]["ListingSource"][];
+            follow_up_status: components["schemas"]["FollowUpStatus"] | null;
+            /** Reasons */
+            reasons: components["schemas"]["LitterReason"][];
+            /** Flags */
+            flags: components["schemas"]["MatchFlag"][];
+            /** Litter Number */
+            litter_number: string | null;
+            /** Mating Date */
+            mating_date: string | null;
+            sire: components["schemas"]["LitterParent"] | null;
+            dam: components["schemas"]["LitterParent"] | null;
+            breeder: components["schemas"]["LitterBreeder"] | null;
+            /** Photos */
+            photos: string[];
+            /** Listings */
+            listings: components["schemas"]["LitterSourceListing"][];
+            follow_up: components["schemas"]["LitterFollowUp"] | null;
+        };
+        /**
+         * LitterFollowUp
+         * @description Where the user stands with the breeder.
+         */
+        LitterFollowUp: {
+            status: components["schemas"]["FollowUpStatus"];
+            /** Next Reminder At */
+            next_reminder_at: string | null;
+            /** Last Contact At */
+            last_contact_at: string | null;
+            /** Notes */
+            notes: components["schemas"]["FollowUpNoteResponse"][];
+        };
+        /**
+         * LitterParent
+         * @description Father or mother of a litter.
+         */
+        LitterParent: {
+            /** Name */
+            name: string;
+            /** Rating */
+            rating: number | null;
+        };
+        /**
+         * LitterReason
+         * @description One line of « Pourquoi ce score ».
+         */
+        LitterReason: {
+            /** Text */
+            text: string;
+            /** Points */
+            points: number;
+        };
+        /**
+         * LitterSort
+         * @description Order of the home screen list.
+         * @enum {string}
+         */
+        LitterSort: "score" | "freshness";
+        /**
+         * LitterSourceListing
+         * @description The litter as one source shows it (« Vu sur »).
+         */
+        LitterSourceListing: {
+            source: components["schemas"]["ListingSource"];
+            kind: components["schemas"]["ListingKind"];
+            /** External Url */
+            external_url: string | null;
+            /** Litter Number */
+            litter_number: string | null;
+            /**
+             * Last Seen At
+             * Format: date-time
+             */
+            last_seen_at: string;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /**
+         * LofPreference
+         * @description How much a search profile cares about the LOF.
+         * @enum {string}
+         */
+        LofPreference: "required" | "preferred" | "any";
+        /**
+         * LofStatus
+         * @description Whether a listing is registered in the LOF (French pedigree book).
+         * @enum {string}
+         */
+        LofStatus: "lof" | "non_lof" | "unknown";
+        /**
+         * MatchFlag
+         * @description An unknown fact: it never excludes a litter, it keeps it below « préférée » and is shown to confirm.
+         * @enum {string}
+         */
+        MatchFlag: "color_to_confirm" | "sex_unknown" | "lof_unknown" | "price_unknown" | "department_unknown";
+        /**
+         * MatchTier
+         * @description Verdict of a litter group against a search profile; it decides the notification.
+         * @enum {string}
+         */
+        MatchTier: "preferred" | "acceptable" | "ignored" | "excluded";
         /**
          * NotificationListResponse
          * @description A page of the notification history plus the unread count that lights the bell.
@@ -405,6 +1012,110 @@ export interface components {
         PushSubscriptionDelete: {
             /** Endpoint */
             endpoint: string;
+        };
+        /**
+         * SearchProfileResponse
+         * @description A stored profile.
+         */
+        SearchProfileResponse: {
+            /** Name */
+            name: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Breed Ids */
+            breed_ids: string[];
+            /**
+             * Department Codes
+             * @description Ordered from the closest to the farthest
+             */
+            department_codes: string[];
+            /** Include Expected Litters */
+            include_expected_litters: boolean;
+            sex_preference: components["schemas"]["SexPreference"];
+            lof_preference: components["schemas"]["LofPreference"];
+            /** Color Preferences */
+            color_preferences: {
+                [key: string]: components["schemas"]["ColorPreferenceLevel"];
+            };
+            /** Price Max Cents */
+            price_max_cents?: number | null;
+            /** Notify Preferred Immediately */
+            notify_preferred_immediately: boolean;
+            /** Notify Acceptable In Digest */
+            notify_acceptable_in_digest: boolean;
+            /** Digest Hour */
+            digest_hour: number;
+            /** Notify Birth Of Followed */
+            notify_birth_of_followed: boolean;
+            /** Id */
+            id: number;
+        };
+        /**
+         * SearchProfileUpdate
+         * @description Criteria saved from the criteria screen.
+         */
+        SearchProfileUpdate: {
+            /** Name */
+            name: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Breed Ids */
+            breed_ids: string[];
+            /**
+             * Department Codes
+             * @description Ordered from the closest to the farthest
+             */
+            department_codes: string[];
+            /** Include Expected Litters */
+            include_expected_litters: boolean;
+            sex_preference: components["schemas"]["SexPreference"];
+            lof_preference: components["schemas"]["LofPreference"];
+            /** Color Preferences */
+            color_preferences: {
+                [key: string]: components["schemas"]["ColorPreferenceLevel"];
+            };
+            /** Price Max Cents */
+            price_max_cents?: number | null;
+            /** Notify Preferred Immediately */
+            notify_preferred_immediately: boolean;
+            /** Notify Acceptable In Digest */
+            notify_acceptable_in_digest: boolean;
+            /** Digest Hour */
+            digest_hour: number;
+            /** Notify Birth Of Followed */
+            notify_birth_of_followed: boolean;
+        };
+        /**
+         * SexPreference
+         * @description Puppy sex wanted by a search profile.
+         * @enum {string}
+         */
+        SexPreference: "male" | "female" | "any";
+        /**
+         * SourceRunStatus
+         * @description Outcome of one collection run on a source; ``running`` until it ends.
+         * @enum {string}
+         */
+        SourceRunStatus: "running" | "ok" | "error";
+        /**
+         * SourceStatus
+         * @description Last run of a source.
+         */
+        SourceStatus: {
+            source: components["schemas"]["ListingSource"];
+            /** Label */
+            label: string;
+            /** Is Collected */
+            is_collected: boolean;
+            /** Last Run At */
+            last_run_at: string | null;
+            last_status: components["schemas"]["SourceRunStatus"] | null;
+            /** Last Success At */
+            last_success_at: string | null;
+            /** Listings Seen */
+            listings_seen: number | null;
+            /** Error Message */
+            error_message: string | null;
         };
         /**
          * TestNotificationResult
@@ -775,6 +1486,313 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DepartmentResponse"][];
+                };
+            };
+        };
+    };
+    list_profiles_api_v1_profiles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchProfileResponse"][];
+                };
+            };
+        };
+    };
+    update_profile_api_v1_profiles__profile_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchProfileResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_litters_api_v1_litters_get: {
+        parameters: {
+            query?: {
+                tier?: components["schemas"]["MatchTier"] | null;
+                kind?: components["schemas"]["ListingKind"] | null;
+                active?: boolean;
+                sort?: components["schemas"]["LitterSort"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LitterCard"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_litter_api_v1_litters__litter_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                litter_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LitterDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_litter_colors_api_v1_litters__litter_id__colors_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                litter_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ColorConfirmation"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LitterDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_litter_follow_up_api_v1_litters__litter_id__follow_up_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                litter_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FollowUpUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LitterDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_litter_note_api_v1_litters__litter_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                litter_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FollowUpNoteCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowUpNoteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_follow_ups_api_v1_follow_ups_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowUpCard"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sources_api_v1_sources_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceStatus"][];
+                };
+            };
+        };
+    };
+    run_source_api_v1_sources__source__run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source: components["schemas"]["ListingSource"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceStatus"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

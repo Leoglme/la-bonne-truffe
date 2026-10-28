@@ -1,10 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { defineNuxtConfig } from 'nuxt/config'
 
-const isDesktopBuild: boolean = process.env.NUXT_DESKTOP_BUILD === '1'
+const isDesktopBuild: boolean = process.env['NUXT_DESKTOP_BUILD'] === '1'
 
 // Dedicated build dir for `scripts/typecheck.mjs`: the running dev server owns `.nuxt`.
-const typecheckBuildDirectory: string | undefined = process.env.NUXT_TYPECHECK_BUILD_DIR
+const typecheckBuildDirectory: string | undefined = process.env['NUXT_TYPECHECK_BUILD_DIR']
 
 export default defineNuxtConfig({
   ...(typecheckBuildDirectory ? { buildDir: typecheckBuildDirectory } : {}),
@@ -69,7 +69,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       // The production domain is not chosen yet (docs/08): set NUXT_PUBLIC_API_BASE when building for the VPS.
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000',
+      apiBase: process.env['NUXT_PUBLIC_API_BASE'] || 'http://localhost:8000',
       // True for the Tauri build: no Web Push there, the iPhone and iPad receive the notifications.
       isDesktop: isDesktopBuild,
     },
@@ -82,6 +82,16 @@ export default defineNuxtConfig({
   typescript: {
     strict: true,
     typeCheck: false,
+    tsConfig: {
+      compilerOptions: {
+        // Stricter than `strict`: an index access may be undefined, every path returns, no fallthrough.
+        noUncheckedIndexedAccess: true,
+        noImplicitReturns: true,
+        noImplicitOverride: true,
+        noFallthroughCasesInSwitch: true,
+        noPropertyAccessFromIndexSignature: true,
+      },
+    },
   },
 
   eslint: {

@@ -53,4 +53,11 @@ export class NotificationsService {
   static async getHistory(before?: number): Promise<NotificationHistory> {
     return ApiClient.get<NotificationHistory>('/api/v1/notifications', { params: { before } })
   }
+
+  /**
+   * Mark every notification as read (the bell was opened).
+   */
+  static async markAllRead(): Promise<void> {
+    await ApiClient.post('/api/v1/notifications/read-all', {})
+  }
 }

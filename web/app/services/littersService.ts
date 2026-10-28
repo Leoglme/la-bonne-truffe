@@ -1,0 +1,82 @@
+import type {
+  ColorConfirmation,
+  FollowUpCard,
+  FollowUpNote,
+  FollowUpUpdate,
+  LitterCard,
+  LitterDetail,
+  ListingKind,
+  MatchTier,
+} from '~/types/api'
+import { ApiClient } from './api'
+
+/** Filters of the home screen list. */
+export type LitterListFilters = {
+  tier?: MatchTier
+  kind?: ListingKind
+}
+
+/** HTTP client for the /litters and /follow-ups API resources. */
+export class LittersService {
+  /**
+   * Fetch the litters of the home screen, best score first.
+   *
+   * @param filters - Tier or kind filter.
+   * @returns The cards.
+   */
+  static async list(filters: LitterListFilters = {}): Promise<LitterCard[]> {
+    return ApiClient.get<LitterCard[]>('/api/v1/litters', { params: { tier: filters.tier, kind: filters.kind } })
+  }
+
+  /**
+   * Fetch the detail of a litter.
+   *
+   * @param litterId - The litter.
+   * @returns The detail.
+   */
+  static async get(litterId: number): Promise<LitterDetail> {
+    return ApiClient.get<LitterDetail>(`/api/v1/litters/${litterId}`)
+  }
+
+  /**
+   * Confirm the colours of a litter after a call.
+   *
+   * @param litterId - The litter.
+   * @param confirmation - Confirmed colours.
+   * @returns The updated detail.
+   */
+  static async confirmColors(litterId: number, confirmation: ColorConfirmation): Promise<LitterDetail> {
+    return ApiClient.patch<LitterDetail>(`/api/v1/litters/${litterId}/colors`, confirmation)
+  }
+
+  /**
+   * Follow a litter, or change where the exchange stands.
+   *
+   * @param litterId - The litter.
+   * @param update - Status and reminder.
+   * @returns The updated detail.
+   */
+  static async setFollowUp(litterId: number, update: FollowUpUpdate): Promise<LitterDetail> {
+    return ApiClient.put<LitterDetail>(`/api/v1/litters/${litterId}/follow-up`, update)
+  }
+
+  /**
+   * Add a dated note to the follow-up of a litter.
+   *
+   * @param litterId - The litter.
+   * @param text - The note.
+   * @returns The stored note.
+   */
+  static async addNote(litterId: number, text: string): Promise<FollowUpNote> {
+    return ApiClient.post<FollowUpNote>(`/api/v1/litters/${litterId}/notes`, { text })
+  }
+
+  /**
+   * Fetch the followed litters, next reminder first.
+   *
+   * @returns The follow-up cards.
+   */
+  static async listFollowUps(): Promise<FollowUpCard[]> {
+    return ApiClient.get<FollowUpCard[]>('/api/v1/follow-ups')
+  }
+}

@@ -59,6 +59,16 @@
   --color-truffe-900: #6a2a19;
   --color-truffe-950: #3a130a;
 
+  /* Text inherits the line height of the page, as in the mockup (1.45 on iPhone, 1.5 from the iPad). */
+  --text-xs--line-height: inherit;
+  --text-sm--line-height: inherit;
+  --text-base--line-height: inherit;
+  --text-lg--line-height: inherit;
+  --text-xl--line-height: inherit;
+  --text-2xl--line-height: inherit;
+  --text-3xl--line-height: inherit;
+  --text-4xl--line-height: inherit;
+
   --radius-card: 28px;
   --radius-card-compact: 24px;
   --radius-tile: 22px;
@@ -76,6 +86,16 @@
 }
 
 @layer base {
+  html {
+    line-height: 1.45;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      line-height: 1.5;
+    }
+  }
+
   html,
   body {
     background-color: var(--color-cream);

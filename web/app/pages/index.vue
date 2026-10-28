@@ -1,81 +1,131 @@
 <template>
-  <div class="flex flex-col gap-5 px-5 pt-[58px] pb-6 md:gap-7 md:px-8 md:pt-9 md:pb-8 lg:px-10">
-    <div class="flex items-center justify-between gap-3">
-      <div class="lg:invisible">
+  <div class="flex min-h-0 flex-1">
+    <section class="flex min-h-0 min-w-0 flex-1 flex-col" aria-label="Portées">
+      <header class="flex shrink-0 items-center justify-between px-5 pt-[58px] md:px-8 md:pt-9 lg:hidden">
         <UiAppLogo />
-      </div>
-      <div class="flex items-center gap-3">
-        <NotificationBellButton />
-        <span
-          :aria-label="userStore.firstName"
-          class="hidden size-[52px] items-center justify-center rounded-full bg-avatar font-display text-xl font-semibold md:inline-flex"
-        >
-          {{ userInitial }}
-        </span>
-      </div>
-    </div>
-
-    <UiPageHeader
-      :title="greeting"
-      subtitle="Aucune portée pour l’instant : elles arriveront ici dès le premier relevé des sources."
-    />
-
-    <section class="flex flex-col gap-4" aria-labelledby="litters-heading">
-      <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-3">
-        <h2 id="litters-heading" class="m-0 font-display text-xl font-semibold whitespace-nowrap md:text-2xl">
-          Les portées
-        </h2>
-        <div role="group" aria-label="Filtrer" class="flex gap-1.5 md:gap-2">
-          <button
-            v-for="filter in LITTER_FILTERS"
-            :key="filter.key"
-            type="button"
-            :aria-pressed="selectedFilterKey === filter.key"
-            class="min-h-11 rounded-full px-3 text-[13px] font-extrabold whitespace-nowrap shadow-floating md:px-[18px] md:text-[15px]"
-            :class="selectedFilterKey === filter.key ? 'bg-ink text-cream' : 'bg-card text-ink-secondary'"
-            @click="selectedFilterKey = filter.key"
+        <div class="flex items-center gap-3">
+          <NotificationBellButton />
+          <span
+            aria-hidden="true"
+            class="hidden size-[52px] items-center justify-center rounded-full bg-avatar font-display text-xl font-semibold md:inline-flex"
           >
-            {{ filter.label }}
-          </button>
+            <ClientOnly>{{ userInitial }}</ClientOnly>
+          </span>
+        </div>
+      </header>
+
+      <div
+        class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 pt-5 pb-6 md:gap-7 md:px-8 md:pt-7 md:pb-8 lg:gap-[26px] lg:pt-9 lg:pr-9 lg:pb-9 lg:pl-10"
+      >
+        <div class="flex shrink-0 items-end justify-between gap-4">
+          <div class="flex flex-col gap-0.5 md:gap-1 lg:gap-0.5">
+            <h1 class="m-0 font-display text-[30px] leading-[1.1] font-semibold md:text-[40px] lg:text-4xl">
+              <ClientOnly fallback="Bonjour">{{ greeting }}</ClientOnly>
+            </h1>
+            <p class="m-0 text-[15px] text-ink-muted md:text-lg lg:text-[17px]">{{ greetingSubtitle }}</p>
+          </div>
+          <LitterFilterChips class="hidden shrink-0 lg:flex" />
+        </div>
+
+        <HomeBornLastNightCard v-if="bornLastNightLitter" :litter="bornLastNightLitter" />
+
+        <div class="flex shrink-0 flex-col gap-5 md:gap-4">
+          <div class="flex items-center justify-between gap-2 md:gap-3 lg:hidden">
+            <h2 class="m-0 font-display text-xl font-semibold whitespace-nowrap md:text-2xl">Les portées</h2>
+            <LitterFilterChips />
+          </div>
+
+          <p v-if="littersStore.loadError" role="alert" class="m-0 text-[15px] font-bold text-coral-text">
+            {{ littersStore.loadError }}
+          </p>
+          <UiEmptyStateCard
+            v-else-if="!littersStore.isLoading && littersStore.visibleCards.length === 0"
+            title="La truffe n’a encore rien flairé"
+            description="Les portées qui te correspondent s’afficheront ici, les préférées en premier."
+          >
+            <template #illustration>
+              <span
+                class="inline-flex size-[118px] shrink-0 items-center justify-center rounded-tile-compact bg-gold-pastel"
+              >
+                <CockerIllustration coat="gold" :size-in-pixels="84" />
+              </span>
+            </template>
+          </UiEmptyStateCard>
+
+          <div class="flex flex-col gap-3.5 md:hidden">
+            <LitterRowCard
+              v-for="litter in littersStore.visibleCards"
+              :key="litter.id"
+              :litter="litter"
+              :is-new="LitterPresentation.isNew(litter, littersStore.previousVisitAt)"
+            />
+          </div>
+          <div class="hidden grid-cols-2 gap-5 md:grid xl:grid-cols-3">
+            <LitterGridCard
+              v-for="litter in littersStore.visibleCards"
+              :key="litter.id"
+              :litter="litter"
+              :is-new="LitterPresentation.isNew(litter, littersStore.previousVisitAt)"
+              :is-selected="littersStore.selectedLitter?.id === litter.id"
+              @activate="(clickEvent: MouseEvent): void => openInSidePanel(clickEvent, litter.id)"
+            />
+          </div>
         </div>
       </div>
-
-      <UiEmptyStateCard
-        title="La truffe n’a encore rien flairé"
-        description="Les portées qui te correspondent s’afficheront ici, les préférées en premier."
-      >
-        <template #illustration>
-          <span
-            class="inline-flex size-[118px] shrink-0 items-center justify-center rounded-tile-compact bg-gold-pastel"
-          >
-            <CockerIllustration coat="gold" :size-in-pixels="84" />
-          </span>
-        </template>
-      </UiEmptyStateCard>
     </section>
+
+    <LitterDetailPanel
+      v-if="littersStore.selectedLitter"
+      :litter="littersStore.selectedLitter"
+      class="hidden xl:flex"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
-import type { ComputedRef, Ref } from 'vue'
-import { computed, ref } from 'vue'
+import type { ComputedRef } from 'vue'
+import type { LitterCard } from '~/types/api'
+import { computed, onMounted } from 'vue'
+import { LitterPresentation } from '~/utils/litterPresentation'
 
-type LitterFilterKey = 'all' | 'preferred' | 'expected'
-
-const LITTER_FILTERS: readonly { key: LitterFilterKey; label: string }[] = [
-  { key: 'all', label: 'Toutes' },
-  { key: 'preferred', label: 'Préférées' },
-  { key: 'expected', label: 'À naître' },
-]
+/** Width from which the desktop shows the side panel instead of opening the detail screen. */
+const SIDE_PANEL_MEDIA_QUERY: string = '(min-width: 1280px)'
 
 useHead({ title: 'Portées · La Bonne Truffe' })
 
 const userStore: ReturnType<typeof useUserStore> = useUserStore()
-
-const selectedFilterKey: Ref<LitterFilterKey> = ref('all')
+const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
 
 const greeting: ComputedRef<string> = computed((): string =>
   userStore.firstName ? `Bonjour ${userStore.firstName}` : 'Bonjour',
 )
 const userInitial: ComputedRef<string> = computed((): string => userStore.firstName.charAt(0).toUpperCase())
+const greetingSubtitle: ComputedRef<string> = computed((): string =>
+  LitterPresentation.greetingSubtitle(littersStore.preferredCards.length, littersStore.bornLastNightCards.length),
+)
+const bornLastNightLitter: ComputedRef<LitterCard | null> = computed(
+  (): LitterCard | null => littersStore.bornLastNightCards[0] ?? null,
+)
+
+/**
+ * On a wide desktop, show the litter in the side panel instead of leaving the list.
+ *
+ * @param clickEvent - The click on the card.
+ * @param litterId - The litter.
+ */
+function openInSidePanel(clickEvent: MouseEvent, litterId: number): void {
+  if (!window.matchMedia(SIDE_PANEL_MEDIA_QUERY).matches) {
+    return
+  }
+  clickEvent.preventDefault()
+  void littersStore.select(litterId)
+}
+
+onMounted(async (): Promise<void> => {
+  await littersStore.load()
+  const firstLitter: LitterCard | undefined = littersStore.visibleCards[0]
+  if (littersStore.selectedLitter === null && firstLitter !== undefined) {
+    await littersStore.select(firstLitter.id)
+  }
+})
 </script>
