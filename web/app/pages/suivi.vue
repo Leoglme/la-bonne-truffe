@@ -1,7 +1,7 @@
 <template>
   <UiTabScreen title="Suivi" subtitle="Tes échanges avec les éleveurs, et qui rappeler.">
     <div class="flex flex-col gap-[26px]">
-      <FollowUpTodayCard v-if="todayFollowUp" :follow-up="todayFollowUp" @open="followUpsStore.open" />
+      <FollowUpTodayCard v-if="todayFollowUp" :follow-up="todayFollowUp" />
 
       <p v-if="followUpsStore.loadError" role="alert" class="m-0 text-[15px] font-bold text-coral-text">
         {{ followUpsStore.loadError }}
@@ -24,7 +24,6 @@
             :key="followUp.litter.id"
             :follow-up="followUp"
             :is-note-shown="section.title === 'En discussion'"
-            @open="followUpsStore.open"
           />
           <div
             v-if="listSectionFollowUps(section).length === 0 && section.emptyMessage"
@@ -36,7 +35,6 @@
         </section>
       </template>
     </div>
-    <FollowUpDrawer />
   </UiTabScreen>
 </template>
 

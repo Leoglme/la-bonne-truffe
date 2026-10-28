@@ -49,7 +49,7 @@
             :key="row.color"
             class="flex flex-wrap items-center justify-between gap-3 border-t border-line py-3"
           >
-            <span class="inline-flex items-center gap-3 text-[17px] font-bold">
+            <span class="inline-flex items-center gap-3 text-[17px] font-bold md:min-w-40">
               <CockerIllustration :coat="row.coat" :size-in-pixels="40" />
               {{ COAT_COLOR_LABELS[row.color] }}
             </span>
@@ -96,7 +96,7 @@
 
       <UiSectionCard title="Le chiot" class="gap-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <span class="text-[17px] font-bold">Pedigree LOF</span>
+          <span class="text-[17px] font-bold md:min-w-40">Pedigree LOF</span>
           <UiChoiceButtons
             :model-value="draft.lof_preference"
             :options="LOF_OPTIONS"
@@ -105,7 +105,7 @@
           />
         </div>
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <span class="text-[17px] font-bold">Sexe</span>
+          <span class="text-[17px] font-bold md:min-w-40">Sexe</span>
           <UiChoiceButtons
             :model-value="draft.sex_preference"
             :options="SEX_OPTIONS"

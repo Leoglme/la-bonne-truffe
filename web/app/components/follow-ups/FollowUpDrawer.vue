@@ -9,13 +9,12 @@
       <div v-if="litter && litter.follow_up" class="flex flex-col gap-5 pb-6">
         <div class="flex flex-col gap-2">
           <span class="text-[13px] font-extrabold tracking-[0.04em] text-ink-label uppercase">Statut</span>
-          <div class="flex flex-wrap gap-2">
+          <div class="flex">
             <UiChoiceButtons
               :model-value="litter.follow_up.status"
               :options="FOLLOW_UP_STATUS_OPTIONS"
               :is-disabled="followUpsStore.isSaving"
               label="Statut de l’échange"
-              class="flex-wrap"
               @update:model-value="changeStatus"
             />
           </div>
@@ -55,8 +54,6 @@
             {{ note.text }}
           </li>
         </ul>
-
-        <NuxtLink :to="`/portees/${litter.id}`" class="self-start text-[15px] font-extrabold">Voir la portée</NuxtLink>
       </div>
     </template>
   </UDrawer>
@@ -64,12 +61,14 @@
 
 <script lang="ts" setup>
 import type { ComputedRef, Ref } from 'vue'
+import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import type { LitterDetail } from '~/types/api'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { FOLLOW_UP_STATUS_OPTIONS } from '~/constants/followUpOptions'
 import { ChoiceValues } from '~/utils/choiceValues'
 import { FrenchDate } from '~/utils/frenchDate'
 
+const route: RouteLocationNormalizedLoaded = useRoute()
 const followUpsStore: ReturnType<typeof useFollowUpsStore> = useFollowUpsStore()
 
 const REMINDER_HOUR: number = 9
@@ -157,4 +156,9 @@ async function addNote(): Promise<void> {
 function formatNoteDay(createdAt: string): string {
   return FrenchDate.formatDayAndLongMonth(FrenchDate.parseApiDate(createdAt))
 }
+
+watch(
+  (): string => route.fullPath,
+  (): void => followUpsStore.close(),
+)
 </script>

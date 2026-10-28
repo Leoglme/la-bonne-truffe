@@ -85,6 +85,20 @@ export const useLittersStore = defineStore('litters', () => {
     return detail
   }
 
+  /**
+   * Follow a litter (« Suivre »), or open the drawer of its follow-up once it is followed (« Suivie »).
+   *
+   * @param litter - The litter.
+   * @returns The detail, updated when the litter was just followed.
+   */
+  async function followOrOpenFollowUp(litter: LitterDetail): Promise<LitterDetail> {
+    if (litter.follow_up === null) {
+      return follow(litter)
+    }
+    await useFollowUpsStore().open(litter.id)
+    return litter
+  }
+
   return {
     cards,
     selectedFilterKey,
@@ -98,5 +112,6 @@ export const useLittersStore = defineStore('litters', () => {
     load,
     select,
     follow,
+    followOrOpenFollowUp,
   }
 })

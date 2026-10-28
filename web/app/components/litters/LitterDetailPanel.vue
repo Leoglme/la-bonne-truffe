@@ -38,8 +38,8 @@
         variant="outline"
         size="lg"
         loading-auto
-        :aria-pressed="props.litter.follow_up !== null"
-        @click="littersStore.follow(props.litter)"
+        :aria-haspopup="props.litter.follow_up ? 'dialog' : undefined"
+        @click="littersStore.followOrOpenFollowUp(props.litter)"
       >
         {{ props.litter.follow_up ? 'Suivie' : 'Suivre' }}
       </UButton>

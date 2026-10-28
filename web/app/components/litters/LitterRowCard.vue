@@ -26,7 +26,7 @@
         <span class="rounded-full bg-chip px-[9px] py-[3px]">
           {{ LitterPresentation.buildColorLabel(props.litter.colors, true) }}
         </span>
-        <span>{{ LitterPresentation.buildSexLine(props.litter) }}</span>
+        <LitterSexCounts :litter="props.litter" />
       </span>
     </span>
   </NuxtLink>

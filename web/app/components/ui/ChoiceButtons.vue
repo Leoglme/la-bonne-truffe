@@ -1,12 +1,16 @@
 <template>
-  <div role="group" :aria-label="props.label" class="inline-flex shrink-0 rounded-full bg-chip p-1">
+  <div
+    role="group"
+    :aria-label="props.label"
+    class="flex max-w-full min-w-0 grow overflow-x-auto rounded-full bg-chip p-1 lg:max-w-none lg:grow-0"
+  >
     <button
       v-for="option in props.options"
       :key="option.value"
       type="button"
       :aria-pressed="props.modelValue === option.value"
       :disabled="props.isDisabled"
-      class="min-h-10 rounded-full border-0 px-3 text-[13px] font-extrabold whitespace-nowrap disabled:opacity-60 md:px-3.5 md:text-sm"
+      class="min-h-10 flex-1 shrink-0 rounded-full border-0 px-3 text-[13px] font-extrabold whitespace-nowrap disabled:opacity-60 md:px-3.5 md:text-sm lg:flex-none"
       :class="props.modelValue === option.value ? 'bg-ink text-cream' : 'bg-transparent text-ink-secondary'"
       @click="emit('update:modelValue', option.value)"
     >

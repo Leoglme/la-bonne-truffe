@@ -29,7 +29,7 @@
           <span class="lg:hidden">{{ LitterPresentation.buildColorLabel(props.litter.colors, false) }}</span>
           <span class="hidden lg:inline">{{ LitterPresentation.buildColorLabel(props.litter.colors, true) }}</span>
         </span>
-        <span>{{ LitterPresentation.buildSexLine(props.litter) }}</span>
+        <LitterSexCounts :litter="props.litter" />
       </span>
     </a>
   </NuxtLink>

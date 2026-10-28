@@ -76,32 +76,6 @@ export class LitterPresentation {
   }
 
   /**
-   * Build the sexes line of a card.
-   *
-   * @param card - The litter.
-   * @returns « 2 ♂ · 3 ♀ », « 2 ♀ », « À naître » or « Sexes à confirmer ».
-   */
-  static buildSexLine(card: LitterCard): string {
-    if (card.kind === 'litter_expected') {
-      return 'À naître'
-    }
-    if (card.male_count === null || card.female_count === null) {
-      return 'Sexes à confirmer'
-    }
-    const parts: string[] = []
-    if (card.male_count > 0) {
-      parts.push(`${card.male_count} ♂`)
-    }
-    if (card.female_count > 0) {
-      parts.push(`${card.female_count} ♀`)
-    }
-    if (parts.length === 0) {
-      return 'Plus de chiot'
-    }
-    return parts.join(' · ')
-  }
-
-  /**
    * List the puppies of each sex in words, for sentences.
    *
    * @param card - The litter.

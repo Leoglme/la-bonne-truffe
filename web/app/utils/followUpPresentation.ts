@@ -1,7 +1,6 @@
 import type { FollowUpCard, LitterCard } from '~/types/api'
 import type { FollowUpReminderChip } from '~/types/FollowUp'
 import { FrenchDate } from '~/utils/frenchDate'
-import { LitterPresentation } from '~/utils/litterPresentation'
 
 const WEEKDAY_REMINDER_DAY_LIMIT: number = 6
 
@@ -50,26 +49,12 @@ export class FollowUpPresentation {
   }
 
   /**
-   * Build the line under the name: place, sexes or expected birth, colour.
-   *
-   * @param card - The follow-up.
-   * @returns « Redon · 2 ♂ · 3 ♀ · gold ».
-   */
-  static buildSummaryLine(card: FollowUpCard): string {
-    const color: string = LitterPresentation.buildColorLabel(card.litter.colors, true).toLowerCase()
-    return [LitterPresentation.buildPlace(card.litter), this.buildBirthOrSexes(card.litter), color].join(' · ')
-  }
-
-  /**
-   * Build the middle of the summary line: the expected birth of a litter to come, the sexes otherwise.
+   * Build the expected birth of a followed litter to come, for the line under its name.
    *
    * @param litter - The followed litter.
-   * @returns « à naître vers le 7 nov. », « à naître » or « 2 ♂ · 3 ♀ ».
+   * @returns « à naître vers le 7 nov. » or « à naître ».
    */
-  private static buildBirthOrSexes(litter: LitterCard): string {
-    if (litter.kind !== 'litter_expected') {
-      return LitterPresentation.buildSexLine(litter)
-    }
+  static buildExpectedBirthPhrase(litter: LitterCard): string {
     if (litter.expected_birth_date === null) {
       return 'à naître'
     }

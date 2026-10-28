@@ -1,5 +1,5 @@
 import type { LitterCard, LitterDetail, LitterSourceListing } from '~/types/api'
-import type { LitterKeyFact, LitterPrimaryAction } from '~/types/Litter'
+import type { LitterDayFact, LitterDayFactKey, LitterKeyFact, LitterPrimaryAction } from '~/types/Litter'
 import { LISTING_KIND_LABELS, LISTING_SOURCE_LABELS, LISTING_SOURCE_LINK_LABELS } from '~/constants/litterLabels'
 import { FrenchDate } from '~/utils/frenchDate'
 import { LitterPresentation } from '~/utils/litterPresentation'
@@ -48,11 +48,10 @@ export class LitterDetailPresentation {
    * @returns Birth (or expected birth), puppies, departure.
    */
   static buildKeyFacts(litter: LitterCard): LitterKeyFact[] {
-    const puppies: string = LitterPresentation.buildSexLine(litter)
     return [
       this.buildBirthFact(litter),
-      { label: 'Chiots', value: puppies, compactValue: puppies },
-      this.buildApproximateDayFact('Départ', litter.available_from),
+      { key: 'puppies', label: 'Chiots' },
+      this.buildApproximateDayFact('departure', 'Départ', litter.available_from),
     ]
   }
 
@@ -96,15 +95,16 @@ export class LitterDetailPresentation {
    * @param litter - The litter.
    * @returns « Naissance vers le 7 nov. » or « Née le 27 octobre ».
    */
-  private static buildBirthFact(litter: LitterCard): LitterKeyFact {
+  private static buildBirthFact(litter: LitterCard): LitterDayFact {
     if (litter.kind === 'litter_expected') {
-      return this.buildApproximateDayFact('Naissance', litter.expected_birth_date)
+      return this.buildApproximateDayFact('birth', 'Naissance', litter.expected_birth_date)
     }
     if (litter.birth_date === null) {
-      return { label: 'Née le', value: UNKNOWN_FACT_LABEL, compactValue: UNKNOWN_FACT_LABEL }
+      return { key: 'birth', label: 'Née le', value: UNKNOWN_FACT_LABEL, compactValue: UNKNOWN_FACT_LABEL }
     }
     const birthDay: Date = FrenchDate.parseDay(litter.birth_date)
     return {
+      key: 'birth',
       label: 'Née le',
       value: FrenchDate.formatDayAndLongMonth(birthDay),
       compactValue: FrenchDate.formatDayAndShortMonth(birthDay),
@@ -114,15 +114,16 @@ export class LitterDetailPresentation {
   /**
    * Build a fact that holds an approximate day.
    *
+   * @param key - Which fact it is.
    * @param label - « Naissance » or « Départ ».
    * @param isoDay - The day from the API, null while unknown.
    * @returns « vers le 22 déc. » on the iPad, « 22 déc. » on the phone and the panel.
    */
-  private static buildApproximateDayFact(label: string, isoDay: string | null): LitterKeyFact {
+  private static buildApproximateDayFact(key: LitterDayFactKey, label: string, isoDay: string | null): LitterDayFact {
     if (isoDay === null) {
-      return { label, value: UNKNOWN_FACT_LABEL, compactValue: UNKNOWN_FACT_LABEL }
+      return { key, label, value: UNKNOWN_FACT_LABEL, compactValue: UNKNOWN_FACT_LABEL }
     }
     const shortDay: string = FrenchDate.formatDayAndShortMonth(FrenchDate.parseDay(isoDay))
-    return { label, value: `vers le ${shortDay}`, compactValue: shortDay }
+    return { key, label, value: `vers le ${shortDay}`, compactValue: shortDay }
   }
 }

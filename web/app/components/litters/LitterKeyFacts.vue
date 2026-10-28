@@ -2,7 +2,7 @@
   <div class="grid grid-cols-3" :class="props.isInSidePanel ? 'gap-2' : 'gap-2 md:gap-3'">
     <div
       v-for="fact in keyFacts"
-      :key="fact.label"
+      :key="fact.key"
       class="flex flex-col"
       :class="
         props.isInSidePanel
@@ -20,7 +20,8 @@
         class="font-display font-semibold"
         :class="props.isInSidePanel ? 'text-[17px]' : 'text-base md:text-[22px]'"
       >
-        <template v-if="props.isInSidePanel">{{ fact.compactValue }}</template>
+        <LitterSexCounts v-if="fact.key === 'puppies'" :litter="props.litter" />
+        <template v-else-if="props.isInSidePanel">{{ fact.compactValue }}</template>
         <template v-else>
           <span class="md:hidden">{{ fact.compactValue }}</span>
           <span class="hidden md:inline">{{ fact.value }}</span>

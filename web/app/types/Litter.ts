@@ -12,11 +12,21 @@ export type LitterListFilters = {
   kind?: ListingKind
 }
 
-export type LitterKeyFact = {
+export type LitterDayFactKey = 'birth' | 'departure'
+
+export type LitterDayFact = {
+  key: LitterDayFactKey
   label: string
   value: string
   compactValue: string
 }
+
+export type LitterPuppiesFact = {
+  key: 'puppies'
+  label: string
+}
+
+export type LitterKeyFact = LitterDayFact | LitterPuppiesFact
 
 export type LitterPrimaryAction = {
   href: string

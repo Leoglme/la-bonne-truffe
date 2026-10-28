@@ -1,8 +1,7 @@
 <template>
-  <button
-    type="button"
-    class="flex w-full items-center gap-3.5 rounded-card-compact border-0 bg-coral-pastel p-[18px] text-left text-ink md:gap-[18px] md:rounded-[26px] md:px-6 md:py-[22px]"
-    @click="emit('open', props.followUp.litter.id)"
+  <NuxtLink
+    :to="`/portees/${props.followUp.litter.id}`"
+    class="flex w-full items-center gap-3.5 rounded-card-compact bg-coral-pastel p-[18px] text-left text-ink no-underline hover:text-ink md:gap-[18px] md:rounded-[26px] md:px-6 md:py-[22px]"
   >
     <span class="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-card text-coral md:size-14">
       <UiCustomIcon name="phone" :size-in-pixels="26" :stroke-width="2.2" class="size-[22px] md:size-[26px]" />
@@ -12,28 +11,21 @@
       <span class="font-display text-lg leading-[1.2] font-semibold md:text-[22px]"
         >Appeler {{ props.followUp.litter.name }}</span
       >
-      <span class="text-sm text-ink-secondary md:text-[15px]">{{ description }}</span>
+      <span v-if="props.followUp.last_note" class="text-sm text-ink-secondary md:text-[15px]">
+        {{ props.followUp.last_note.text }}
+      </span>
+      <FollowUpSummaryLine v-else :litter="props.followUp.litter" class="text-sm text-ink-secondary md:text-[15px]" />
     </span>
     <UIcon name="i-lucide-chevron-right" class="size-[22px] shrink-0 text-coral-text" />
-  </button>
+  </NuxtLink>
 </template>
 
 <script lang="ts" setup>
-import type { ComputedRef, PropType } from 'vue'
+import type { PropType } from 'vue'
 import type { FollowUpCard } from '~/types/api'
-import type { FollowUpTodayCardEmits, FollowUpTodayCardProps } from '~/types/FollowUpTodayCard'
-import { computed } from 'vue'
-import { FollowUpPresentation } from '~/utils/followUpPresentation'
+import type { FollowUpTodayCardProps } from '~/types/FollowUpTodayCard'
 
 const props: FollowUpTodayCardProps = defineProps({
   followUp: { type: Object as PropType<FollowUpCard>, required: true },
 })
-
-const emit: FollowUpTodayCardEmits = defineEmits<{
-  (event: 'open', litterId: number): void
-}>()
-
-const description: ComputedRef<string> = computed(
-  (): string => props.followUp.last_note?.text ?? FollowUpPresentation.buildSummaryLine(props.followUp),
-)
 </script>

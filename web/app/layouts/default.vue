@@ -7,6 +7,7 @@
       </main>
       <MainTabBar v-if="!isPushedScreen" />
     </div>
+    <FollowUpDrawer />
   </div>
 </template>
 

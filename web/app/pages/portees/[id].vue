@@ -18,14 +18,18 @@
       <button
         v-if="litter"
         type="button"
-        :aria-label="litter.follow_up ? 'Portée suivie' : 'Ajouter au suivi'"
-        :aria-pressed="litter.follow_up !== null"
-        :aria-busy="isFollowing"
-        :disabled="isFollowing"
+        :aria-label="litter.follow_up ? 'Suivie, gérer le suivi' : 'Ajouter au suivi'"
+        :aria-haspopup="litter.follow_up ? 'dialog' : undefined"
+        :aria-busy="isFollowUpActionRunning"
+        :disabled="isFollowUpActionRunning"
         class="absolute top-14 right-5 inline-flex size-11 items-center justify-center rounded-full bg-card text-coral shadow-floating-over-photo md:top-9 md:right-8 md:size-[52px] md:shadow-floating"
-        @click="follow"
+        @click="followOrOpenFollowUp"
       >
-        <UIcon v-if="isFollowing" name="i-lucide-loader-circle" class="size-5 animate-spin md:size-[22px]" />
+        <UIcon
+          v-if="isFollowUpActionRunning"
+          name="i-lucide-loader-circle"
+          class="size-5 animate-spin md:size-[22px]"
+        />
         <UiCustomIcon
           v-else
           :name="litter.follow_up ? 'heart-filled' : 'heart'"
@@ -126,14 +130,14 @@
           color="neutral"
           variant="outline"
           size="lg"
-          :loading="isFollowing"
-          :aria-pressed="litter.follow_up !== null"
-          :aria-label="litter.follow_up ? 'Portée suivie' : 'Suivre cette portée'"
+          :loading="isFollowUpActionRunning"
+          :aria-label="litter.follow_up ? 'Suivie, gérer le suivi' : 'Suivre cette portée'"
+          :aria-haspopup="litter.follow_up ? 'dialog' : undefined"
           class="size-[58px] shrink-0 justify-center px-0 md:size-auto md:min-h-16 md:px-[30px] md:text-[19px]"
-          @click="follow"
+          @click="followOrOpenFollowUp"
         >
           <UiCustomIcon
-            v-if="!isFollowing"
+            v-if="!isFollowUpActionRunning"
             :name="litter.follow_up ? 'heart-filled' : 'heart'"
             :size-in-pixels="22"
             :stroke-width="2.2"
@@ -165,7 +169,7 @@ const GALLERY_VISIBLE_PHOTO_COUNT: number = 3
 
 const litter: Ref<LitterDetail | null> = ref(null)
 const loadError: Ref<string | null> = ref(null)
-const isFollowing: Ref<boolean> = ref(false)
+const isFollowUpActionRunning: Ref<boolean> = ref(false)
 
 const tileClass: ComputedRef<string> = computed((): string =>
   LitterPresentation.resolveTileClass(litter.value?.colors ?? []),
@@ -186,17 +190,17 @@ const hiddenPhotoCount: ComputedRef<number> = computed((): number =>
 const pageTitle: ComputedRef<string> = computed((): string => `${litter.value?.name ?? 'Portée'} · La Bonne Truffe`)
 
 /**
- * Follow the litter (« Suivre »), which starts its follow-up at « à appeler ».
+ * Follow the litter (« Suivre »), or open its follow-up drawer once it is followed (« Suivie »).
  */
-async function follow(): Promise<void> {
+async function followOrOpenFollowUp(): Promise<void> {
   if (litter.value === null) {
     return
   }
-  isFollowing.value = true
+  isFollowUpActionRunning.value = true
   try {
-    litter.value = await littersStore.follow(litter.value)
+    litter.value = await littersStore.followOrOpenFollowUp(litter.value)
   } finally {
-    isFollowing.value = false
+    isFollowUpActionRunning.value = false
   }
 }
 

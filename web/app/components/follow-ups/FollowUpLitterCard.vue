@@ -1,9 +1,8 @@
 <template>
-  <button
-    type="button"
-    class="flex w-full flex-col gap-3 rounded-card-compact border-0 bg-card p-3 text-left text-ink shadow-card md:py-3.5 md:pr-[18px] md:pl-3.5"
+  <NuxtLink
+    :to="`/portees/${props.followUp.litter.id}`"
+    class="flex w-full flex-col gap-3 rounded-card-compact bg-card p-3 text-left text-ink no-underline shadow-card hover:text-ink md:py-3.5 md:pr-[18px] md:pl-3.5"
     :class="props.isNoteShown && props.followUp.last_note ? 'pb-4' : ''"
-    @click="emit('open', props.followUp.litter.id)"
   >
     <span class="flex w-full items-center gap-3.5 md:gap-4">
       <LitterTileFrame
@@ -16,9 +15,7 @@
         <span class="font-display text-lg leading-[1.2] font-semibold md:text-[21px] md:leading-normal">
           {{ props.followUp.litter.name }}
         </span>
-        <span class="text-[13px] text-ink-muted md:text-[15px]">{{
-          FollowUpPresentation.buildSummaryLine(props.followUp)
-        }}</span>
+        <FollowUpSummaryLine :litter="props.followUp.litter" class="text-[13px] text-ink-muted md:text-[15px]" />
         <span
           v-if="reminderChip"
           class="mt-1 self-start rounded-full px-2.5 py-1 text-xs font-extrabold whitespace-nowrap md:hidden"
@@ -41,14 +38,14 @@
     >
       {{ props.followUp.last_note.text }}
     </span>
-  </button>
+  </NuxtLink>
 </template>
 
 <script lang="ts" setup>
 import type { ComputedRef, PropType } from 'vue'
 import type { FollowUpCard } from '~/types/api'
 import type { FollowUpReminderChip } from '~/types/FollowUp'
-import type { FollowUpLitterCardEmits, FollowUpLitterCardProps } from '~/types/FollowUpLitterCard'
+import type { FollowUpLitterCardProps } from '~/types/FollowUpLitterCard'
 import { computed } from 'vue'
 import { FollowUpPresentation } from '~/utils/followUpPresentation'
 
@@ -56,10 +53,6 @@ const props: FollowUpLitterCardProps = defineProps({
   followUp: { type: Object as PropType<FollowUpCard>, required: true },
   isNoteShown: { type: Boolean, default: false },
 })
-
-const emit: FollowUpLitterCardEmits = defineEmits<{
-  (event: 'open', litterId: number): void
-}>()
 
 const reminderChip: ComputedRef<FollowUpReminderChip | null> = computed((): FollowUpReminderChip | null =>
   FollowUpPresentation.buildReminderChip(props.followUp, new Date()),

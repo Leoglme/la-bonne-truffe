@@ -30,7 +30,7 @@
         <HomeBornLastNightCard v-if="bornLastNightLitter" :litter="bornLastNightLitter" />
 
         <div class="flex shrink-0 flex-col gap-5 md:gap-4">
-          <div class="flex items-center justify-between gap-2 md:gap-3 lg:hidden">
+          <div class="flex flex-wrap items-center justify-between gap-2 md:gap-3 lg:hidden">
             <h2 class="m-0 font-display text-xl font-semibold whitespace-nowrap md:text-2xl">Les portées</h2>
             <LitterFilterChips />
           </div>
