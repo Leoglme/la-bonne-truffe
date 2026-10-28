@@ -43,8 +43,8 @@ class SearchProfileSeeder:
                 breed_ids=[COCKER_SLUG],
                 department_codes=list(STARTING_DEPARTMENT_CODES),
                 include_expected_litters=True,
-                sex_preference=SexPreference.ANY.value,
-                lof_preference=LofPreference.PREFERRED.value,
+                sex_preference=SexPreference.ANY,
+                lof_preference=LofPreference.PREFERRED,
                 color_preferences={
                     CoatColor.GOLD.value: ColorPreferenceLevel.PREFERRED.value,
                     CoatColor.NOIR_ET_FEU.value: ColorPreferenceLevel.ACCEPTABLE.value,

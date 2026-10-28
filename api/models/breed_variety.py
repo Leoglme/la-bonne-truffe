@@ -4,6 +4,8 @@ from sqlalchemy import JSON, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database import Base
+from enums.listing_source import ListingSource
+from models.enum_column import str_enum_column
 from models.timestamps import TimestampMixin
 
 
@@ -29,7 +31,7 @@ class BreedVariety(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     breed_id: Mapped[int] = mapped_column(ForeignKey("breeds.id", ondelete="CASCADE"), nullable=False, index=True)
-    source: Mapped[str] = mapped_column(String(40), nullable=False)
+    source: Mapped[ListingSource] = mapped_column(str_enum_column(ListingSource), nullable=False)
     source_variety_id: Mapped[str | None] = mapped_column(String(40))
     label: Mapped[str] = mapped_column(String(255), nullable=False)
     covered_colors: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)

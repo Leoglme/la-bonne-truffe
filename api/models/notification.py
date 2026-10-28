@@ -7,6 +7,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from core.clock import naive_utc_now
 from core.database import Base
+from enums.notification_kind import NotificationKind
+from models.enum_column import str_enum_column
 
 
 class Notification(Base):
@@ -31,7 +33,7 @@ class Notification(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    kind: Mapped[str] = mapped_column(String(30), nullable=False)
+    kind: Mapped[NotificationKind] = mapped_column(str_enum_column(NotificationKind), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     url: Mapped[str] = mapped_column(String(500), nullable=False)

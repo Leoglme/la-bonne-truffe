@@ -2,12 +2,13 @@
 
 from datetime import datetime
 
-from sqlalchemy import JSON, ForeignKey, String, UniqueConstraint
+from sqlalchemy import JSON, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.clock import naive_utc_now
 from core.database import Base
 from enums.match_tier import MatchTier
+from models.enum_column import str_enum_column
 
 
 class ListingMatch(Base):
@@ -36,7 +37,9 @@ class ListingMatch(Base):
     profile_id: Mapped[int] = mapped_column(
         ForeignKey("search_profiles.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    tier: Mapped[str] = mapped_column(String(20), default=MatchTier.ACCEPTABLE.value, nullable=False, index=True)
+    tier: Mapped[MatchTier] = mapped_column(
+        str_enum_column(MatchTier), default=MatchTier.ACCEPTABLE, nullable=False, index=True
+    )
     score: Mapped[int] = mapped_column(default=0, nullable=False)
     reasons: Mapped[list[dict[str, str | int]]] = mapped_column(JSON, default=list, nullable=False)
     flags: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)

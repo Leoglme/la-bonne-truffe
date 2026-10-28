@@ -120,7 +120,7 @@ class CommandLine:
             self._print_run_report(report)
             if raw_pages_directory is not None:
                 self._save_raw_pages(report, raw_pages_directory)
-            return 0 if report.source_run.status == SourceRunStatus.OK.value else 1
+            return 0 if report.source_run.status == SourceRunStatus.OK else 1
         finally:
             db.close()
 
@@ -166,7 +166,7 @@ class CommandLine:
                 + ", ".join(report.plan.departments_without_term_id)
                 + " (lancer « python cli.py scc-sync »)"
             )
-        if source_run.status != SourceRunStatus.OK.value:
+        if source_run.status != SourceRunStatus.OK:
             print(f"Relevé en échec : {source_run.error_message}")
             return
         print(
@@ -202,7 +202,7 @@ class CommandLine:
         Returns:
             The line.
         """
-        if listing.kind == ListingKind.LITTER_BORN.value:
+        if listing.kind == ListingKind.LITTER_BORN:
             status = f"née le {listing.birth_date or '?'}, {listing.male_count} ♂ {listing.female_count} ♀"
         else:
             status = f"à naître, saillie du {listing.mating_date or '?'}"

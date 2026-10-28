@@ -70,11 +70,7 @@ def test_history_counts_unread_until_read_all(
     client: TestClient, auth_headers: dict[str, str], user: User, db: Session
 ) -> None:
     for index in range(3):
-        db.add(
-            Notification(
-                user_id=user.id, kind=NotificationKind.NEW_PREFERRED.value, title="t", body=f"b{index}", url="/"
-            )
-        )
+        db.add(Notification(user_id=user.id, kind=NotificationKind.NEW_PREFERRED, title="t", body=f"b{index}", url="/"))
     db.commit()
 
     history = client.get("/api/v1/notifications", headers=auth_headers).json()

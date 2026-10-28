@@ -2,6 +2,7 @@
 
 from sqlalchemy.orm import Session
 
+from enums.coat_color import CoatColor
 from enums.listing_source import ListingSource
 from models.breed import Breed
 from models.breed_variety import BreedVariety
@@ -79,7 +80,7 @@ class CollectionPlanner:
         """
         varieties = db.query(BreedVariety).filter(
             BreedVariety.breed_id == breed.id,
-            BreedVariety.source == ListingSource.CENTRALE_CANINE.value,
+            BreedVariety.source == ListingSource.CENTRALE_CANINE,
             BreedVariety.source_variety_id.is_not(None),
         )
         return SccBreedTarget(
@@ -87,7 +88,8 @@ class CollectionPlanner:
             scc_slug=breed.scc_slug or "",
             varieties_by_source_id={
                 variety.source_variety_id or "": SccVarietyTarget(
-                    covered_colors=tuple(variety.covered_colors), is_ambiguous=variety.is_ambiguous
+                    covered_colors=tuple(CoatColor(color) for color in variety.covered_colors),
+                    is_ambiguous=variety.is_ambiguous,
                 )
                 for variety in varieties
             },

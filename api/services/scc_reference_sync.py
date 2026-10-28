@@ -102,7 +102,7 @@ class SccReferenceSync:
                 result.department_term_ids_set[department.code] = option.value
 
         varieties = db.query(BreedVariety).filter(
-            BreedVariety.breed_id == breed.id, BreedVariety.source == ListingSource.CENTRALE_CANINE.value
+            BreedVariety.breed_id == breed.id, BreedVariety.source == ListingSource.CENTRALE_CANINE
         )
         varieties_by_label = {self._normalize(variety.label): variety for variety in varieties}
         for option in options.varieties:

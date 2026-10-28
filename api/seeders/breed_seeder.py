@@ -74,7 +74,7 @@ class BreedSeeder:
         existing_labels = {
             variety.label
             for variety in db.query(BreedVariety).filter(
-                BreedVariety.breed_id == cocker.id, BreedVariety.source == ListingSource.CENTRALE_CANINE.value
+                BreedVariety.breed_id == cocker.id, BreedVariety.source == ListingSource.CENTRALE_CANINE
             )
         }
         for seed in COCKER_SCC_VARIETIES:
@@ -83,7 +83,7 @@ class BreedSeeder:
             db.add(
                 BreedVariety(
                     breed_id=cocker.id,
-                    source=ListingSource.CENTRALE_CANINE.value,
+                    source=ListingSource.CENTRALE_CANINE,
                     source_variety_id=seed.source_variety_id,
                     label=seed.label,
                     covered_colors=[color.value for color in seed.covered_colors],

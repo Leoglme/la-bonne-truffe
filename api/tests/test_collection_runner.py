@@ -23,7 +23,8 @@ FIXTURE = Path(__file__).parent / "fixtures" / "centrale_canine" / "litters_35_p
 
 def load_page() -> dict[str, Any]:
     """The synthetic page of the fixtures."""
-    return json.loads(FIXTURE.read_text(encoding="utf-8"))
+    page: dict[str, Any] = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    return page
 
 
 def collector_serving(page_for_request: Callable[[], dict[str, Any]]) -> CentraleCanineCollector:

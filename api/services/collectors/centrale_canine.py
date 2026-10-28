@@ -14,6 +14,7 @@ from typing import Any
 
 import httpx
 
+from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
 from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
@@ -39,7 +40,7 @@ class CentraleCanineError(RuntimeError):
 class SccVarietyTarget:
     """Canonical colours of one Centrale Canine variety identifier."""
 
-    covered_colors: tuple[str, ...]
+    covered_colors: tuple[CoatColor, ...]
     is_ambiguous: bool
 
 
@@ -346,18 +347,18 @@ class CentraleCanineCollector:
         colors: tuple[ColorReading, ...] = ()
         if variety is not None:
             confidence = ColorConfidence.AMBIGUOUS if variety.is_ambiguous else ColorConfidence.CERTAIN
-            colors = tuple(ColorReading(color, confidence.value) for color in variety.covered_colors)
+            colors = tuple(ColorReading(color, confidence) for color in variety.covered_colors)
 
         relative_url = SccValueParser.to_text(litter.get("url"))
         image_uri = SccValueParser.to_text(litter.get("n_image_uri"))
 
         return RawListing(
-            source=ListingSource.CENTRALE_CANINE.value,
+            source=ListingSource.CENTRALE_CANINE,
             external_id=external_id,
             breed_id=breed.breed_id,
-            kind=(ListingKind.LITTER_BORN if is_born else ListingKind.LITTER_EXPECTED).value,
+            kind=ListingKind.LITTER_BORN if is_born else ListingKind.LITTER_EXPECTED,
             # Every litter declared to the Centrale Canine goes to the LOF.
-            lof_status=LofStatus.LOF.value,
+            lof_status=LofStatus.LOF,
             external_url=CentraleCanineCollector._absolute_url(relative_url),
             litter_number=SccValueParser.to_text(litter.get("n_litter_number")),
             mating_date=SccValueParser.to_french_date(litter.get("n_servicing_date")),

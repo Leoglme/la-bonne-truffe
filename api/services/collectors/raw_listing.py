@@ -4,17 +4,23 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
 
+from enums.coat_color import CoatColor
+from enums.color_confidence import ColorConfidence
+from enums.listing_kind import ListingKind
+from enums.listing_source import ListingSource
+from enums.lof_status import LofStatus
+
 
 @dataclass(frozen=True)
 class ColorReading:
     """One canonical colour of a listing and how sure the source is about it."""
 
-    color: str
-    confidence: str
+    color: CoatColor
+    confidence: ColorConfidence
 
     def as_json(self) -> dict[str, str]:
         """The ``{"color", "confidence"}`` form stored in ``Listing.colors``."""
-        return {"color": self.color, "confidence": self.confidence}
+        return {"color": self.color.value, "confidence": self.confidence.value}
 
 
 @dataclass(frozen=True)
@@ -25,11 +31,11 @@ class RawListing:
     Unknown facts stay None: a collector never fills a gap with a guess.
     """
 
-    source: str
+    source: ListingSource
     external_id: str
     breed_id: int
-    kind: str
-    lof_status: str
+    kind: ListingKind
+    lof_status: LofStatus
     external_url: str | None = None
     litter_number: str | None = None
     mating_date: date | None = None

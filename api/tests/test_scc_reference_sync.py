@@ -31,8 +31,10 @@ def test_sync_fills_only_missing_identifiers(db: Session) -> None:
 
     assert result.department_term_ids_set == {"22": "t_TEST_22", "29": "t_TEST_29", "56": "t_TEST_56"}
     assert result.variety_ids_set == {"autres couleurs": "TEST_AUTRES"}
-    assert db.get(Department, "35").scc_term_id == "t_41"
-    assert db.get(Department, "44").scc_term_id is None
+    ille_et_vilaine = db.get(Department, "35")
+    loire_atlantique = db.get(Department, "44")
+    assert ille_et_vilaine is not None and ille_et_vilaine.scc_term_id == "t_41"
+    assert loire_atlantique is not None and loire_atlantique.scc_term_id is None
     assert (
         db.query(BreedVariety).filter(BreedVariety.label == "autres couleurs").one().source_variety_id == "TEST_AUTRES"
     )

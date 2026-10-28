@@ -9,6 +9,7 @@ from typing import Any
 import httpx
 import pytest
 
+from enums.coat_color import CoatColor
 from services.collectors.centrale_canine import (
     SCC_BROWSER_USER_AGENT,
     CentraleCanineCollectionPlan,
@@ -26,8 +27,11 @@ COCKER = SccBreedTarget(
     breed_id=1,
     scc_slug="cocker-spaniel-anglais",
     varieties_by_source_id={
-        "317": SccVarietyTarget(covered_colors=("gold",), is_ambiguous=False),
-        "159": SccVarietyTarget(covered_colors=("noir", "noir_et_feu", "marron", "marron_et_feu"), is_ambiguous=True),
+        "317": SccVarietyTarget(covered_colors=(CoatColor.GOLD,), is_ambiguous=False),
+        "159": SccVarietyTarget(
+            covered_colors=(CoatColor.NOIR, CoatColor.NOIR_ET_FEU, CoatColor.MARRON, CoatColor.MARRON_ET_FEU),
+            is_ambiguous=True,
+        ),
     },
 )
 ILLE_ET_VILAINE = SccDepartmentTarget(code="35", scc_term_id="t_41")
@@ -35,7 +39,8 @@ ILLE_ET_VILAINE = SccDepartmentTarget(code="35", scc_term_id="t_41")
 
 def load_page() -> dict[str, Any]:
     """The synthetic page of the fixtures (documented shape, test values)."""
-    return json.loads((FIXTURES / "litters_35_page_0.json").read_text(encoding="utf-8"))
+    page: dict[str, Any] = json.loads((FIXTURES / "litters_35_page_0.json").read_text(encoding="utf-8"))
+    return page
 
 
 def listings_by_id(listings: list[RawListing]) -> dict[str, RawListing]:

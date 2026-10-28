@@ -36,3 +36,20 @@ quote-style = "double"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
+warn_unreachable = true
+exclude = ["^\\.venv/"]
+
+[[tool.mypy.overrides]]
+# These libraries ship no type information.
+module = ["pywebpush", "py_vapid", "apscheduler.*"]
+ignore_missing_imports = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true

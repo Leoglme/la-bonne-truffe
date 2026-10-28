@@ -16,3 +16,21 @@ from models.push_subscription import PushSubscription
 from models.search_profile import SearchProfile
 from models.source_run import SourceRun
 from models.user import User
+
+__all__ = [
+    "Breed",
+    "BreedVariety",
+    "Breeder",
+    "Department",
+    "FollowUp",
+    "FollowUpNote",
+    "Listing",
+    "ListingChange",
+    "ListingMatch",
+    "LitterGroup",
+    "Notification",
+    "PushSubscription",
+    "SearchProfile",
+    "SourceRun",
+    "User",
+]

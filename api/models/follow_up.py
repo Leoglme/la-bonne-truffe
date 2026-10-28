@@ -2,12 +2,13 @@
 
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import ForeignKey, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.clock import naive_utc_now
 from core.database import Base
 from enums.follow_up_status import FollowUpStatus
+from models.enum_column import str_enum_column
 from models.timestamps import TimestampMixin
 
 
@@ -32,7 +33,9 @@ class FollowUp(TimestampMixin, Base):
     litter_group_id: Mapped[int] = mapped_column(
         ForeignKey("litter_groups.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    status: Mapped[str] = mapped_column(String(20), default=FollowUpStatus.NEW.value, nullable=False)
+    status: Mapped[FollowUpStatus] = mapped_column(
+        str_enum_column(FollowUpStatus), default=FollowUpStatus.NEW, nullable=False
+    )
     next_reminder_at: Mapped[datetime | None]
     last_contact_at: Mapped[datetime | None]
 

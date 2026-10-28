@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.database import Base
 from enums.lof_preference import LofPreference
 from enums.sex_preference import SexPreference
+from models.enum_column import str_enum_column
 from models.timestamps import TimestampMixin
 
 
@@ -40,8 +41,12 @@ class SearchProfile(TimestampMixin, Base):
     breed_ids: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     department_codes: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     include_expected_litters: Mapped[bool] = mapped_column(default=True, nullable=False)
-    sex_preference: Mapped[str] = mapped_column(String(10), default=SexPreference.ANY.value, nullable=False)
-    lof_preference: Mapped[str] = mapped_column(String(10), default=LofPreference.PREFERRED.value, nullable=False)
+    sex_preference: Mapped[SexPreference] = mapped_column(
+        str_enum_column(SexPreference), default=SexPreference.ANY, nullable=False
+    )
+    lof_preference: Mapped[LofPreference] = mapped_column(
+        str_enum_column(LofPreference), default=LofPreference.PREFERRED, nullable=False
+    )
     color_preferences: Mapped[dict[str, str]] = mapped_column(JSON, default=dict, nullable=False)
     price_max_cents: Mapped[int | None]
     notify_preferred_immediately: Mapped[bool] = mapped_column(default=True, nullable=False)

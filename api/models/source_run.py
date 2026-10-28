@@ -2,12 +2,14 @@
 
 from datetime import datetime
 
-from sqlalchemy import String, Text
+from sqlalchemy import Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.clock import naive_utc_now
 from core.database import Base
+from enums.listing_source import ListingSource
 from enums.source_run_status import SourceRunStatus
+from models.enum_column import str_enum_column
 
 
 class SourceRun(Base):
@@ -29,10 +31,12 @@ class SourceRun(Base):
     __tablename__ = "source_runs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    source: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    source: Mapped[ListingSource] = mapped_column(str_enum_column(ListingSource), nullable=False, index=True)
     started_at: Mapped[datetime] = mapped_column(default=naive_utc_now, nullable=False, index=True)
     finished_at: Mapped[datetime | None]
-    status: Mapped[str] = mapped_column(String(10), default=SourceRunStatus.RUNNING.value, nullable=False)
+    status: Mapped[SourceRunStatus] = mapped_column(
+        str_enum_column(SourceRunStatus), default=SourceRunStatus.RUNNING, nullable=False
+    )
     listings_seen: Mapped[int] = mapped_column(default=0, nullable=False)
     listings_new: Mapped[int] = mapped_column(default=0, nullable=False)
     listings_changed: Mapped[int] = mapped_column(default=0, nullable=False)

@@ -9,7 +9,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.clock import naive_utc_now
 from core.database import Base
 from enums.listing_kind import ListingKind
+from enums.listing_source import ListingSource
 from enums.lof_status import LofStatus
+from models.enum_column import str_enum_column
 from models.timestamps import TimestampMixin
 
 
@@ -60,14 +62,16 @@ class Listing(TimestampMixin, Base):
     __table_args__ = (UniqueConstraint("source", "external_id", name="uq_listing_source_external_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    source: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    source: Mapped[ListingSource] = mapped_column(str_enum_column(ListingSource), nullable=False, index=True)
     external_id: Mapped[str] = mapped_column(String(80), nullable=False)
     external_url: Mapped[str | None] = mapped_column(String(500))
     breed_id: Mapped[int] = mapped_column(ForeignKey("breeds.id"), nullable=False, index=True)
     breeder_id: Mapped[int | None] = mapped_column(ForeignKey("breeders.id", ondelete="SET NULL"), index=True)
     litter_group_id: Mapped[int | None] = mapped_column(ForeignKey("litter_groups.id", ondelete="SET NULL"), index=True)
-    kind: Mapped[str] = mapped_column(String(30), default=ListingKind.LITTER_BORN.value, nullable=False)
-    lof_status: Mapped[str] = mapped_column(String(20), default=LofStatus.UNKNOWN.value, nullable=False)
+    kind: Mapped[ListingKind] = mapped_column(
+        str_enum_column(ListingKind), default=ListingKind.LITTER_BORN, nullable=False
+    )
+    lof_status: Mapped[LofStatus] = mapped_column(str_enum_column(LofStatus), default=LofStatus.UNKNOWN, nullable=False)
     litter_number: Mapped[str | None] = mapped_column(String(60))
     mating_date: Mapped[date | None]
     birth_date: Mapped[date | None]

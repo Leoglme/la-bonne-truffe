@@ -45,7 +45,7 @@ class CollectionRunner:
         Returns:
             The run report; ``source_run.status`` tells whether it succeeded.
         """
-        source_run = SourceRun(source=ListingSource.CENTRALE_CANINE.value, started_at=naive_utc_now())
+        source_run = SourceRun(source=ListingSource.CENTRALE_CANINE, started_at=naive_utc_now())
         db.add(source_run)
         db.commit()
 
@@ -63,19 +63,19 @@ class CollectionRunner:
             report.collection = collector.collect(plan)
             report.summary = listing_ingestion_service.ingest(
                 db,
-                ListingSource.CENTRALE_CANINE.value,
+                ListingSource.CENTRALE_CANINE,
                 report.collection.listings,
                 {department.code for department in plan.departments},
                 naive_utc_now(),
             )
-            source_run.status = SourceRunStatus.OK.value
+            source_run.status = SourceRunStatus.OK
             source_run.listings_seen = report.summary.seen_count
             source_run.listings_new = len(report.summary.new_listing_ids)
             source_run.listings_changed = len(report.summary.changed_listing_ids)
         except Exception as error:
             # A failing source must never stop the others: the error goes to the run line.
             db.rollback()
-            source_run.status = SourceRunStatus.ERROR.value
+            source_run.status = SourceRunStatus.ERROR
             source_run.error_message = str(error)[:2000]
             if isinstance(error, CentraleCanineError):
                 logger.error("Centrale Canine run failed: %s", error)

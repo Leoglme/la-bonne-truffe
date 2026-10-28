@@ -4,9 +4,11 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
+from enum import StrEnum
 
 from sqlalchemy.orm import Session
 
+from enums.listing_source import ListingSource
 from models.breeder import Breeder
 from models.department import Department
 from models.listing import Listing
@@ -46,6 +48,8 @@ MISSED_RUNS_BEFORE_INACTIVE = 2
 # A born litter older than this is no longer followed.
 BORN_LITTER_ACTIVE_DAYS = 183
 
+ColumnValue = str | int | float | bool | date | datetime | StrEnum | list[str] | list[dict[str, str]] | None
+
 
 @dataclass
 class IngestionSummary:
@@ -63,7 +67,7 @@ class ListingIngestionService:
     def ingest(
         self,
         db: Session,
-        source: str,
+        source: ListingSource,
         raw_listings: list[RawListing],
         collected_department_codes: set[str],
         now: datetime,
@@ -73,7 +77,7 @@ class ListingIngestionService:
 
         Args:
             db: Database session; committed at the end.
-            source: ``ListingSource`` value of the run.
+            source: Source of the run.
             raw_listings: Listings read by the collector.
             collected_department_codes: Departments the run read; only their listings can disappear.
             now: Run time, naive UTC.
@@ -93,7 +97,6 @@ class ListingIngestionService:
                 .one_or_none()
             )
             breeder_id = self._upsert_breeder(db, raw_listing, known_department_codes)
-            values = self._listing_values(raw_listing, known_department_codes)
             if listing is None:
                 listing = Listing(
                     source=source,
@@ -102,20 +105,26 @@ class ListingIngestionService:
                     breeder_id=breeder_id,
                     first_seen_at=now,
                     last_seen_at=now,
-                    **values,
                 )
+                self._apply_content(listing, raw_listing, known_department_codes)
                 db.add(listing)
                 db.flush()
                 summary.new_listing_ids.append(listing.id)
                 continue
 
-            has_changed = self._record_changes(db, listing, values, now)
-            if not listing.is_active:
-                db.add(ListingChange(listing_id=listing.id, field="is_active", old_value="false", new_value="true"))
+            values_before = self._tracked_values(listing)
+            was_active = listing.is_active
+            self._apply_content(listing, raw_listing, known_department_codes)
+            has_changed = self._record_changes(db, listing.id, values_before, self._tracked_values(listing), now)
+            if not was_active:
+                db.add(
+                    ListingChange(
+                        listing_id=listing.id, field="is_active", old_value="false", new_value="true", changed_at=now
+                    )
+                )
                 has_changed = True
-            for column, value in values.items():
-                setattr(listing, column, value)
-            listing.breeder_id = breeder_id or listing.breeder_id
+            if breeder_id is not None:
+                listing.breeder_id = breeder_id
             listing.last_seen_at = now
             listing.missed_run_count = 0
             listing.is_active = True
@@ -129,86 +138,101 @@ class ListingIngestionService:
         db.commit()
         return summary
 
+    @classmethod
+    def _apply_content(cls, listing: Listing, raw_listing: RawListing, known_department_codes: set[str]) -> None:
+        """
+        Copy what the source says onto the stored listing, and refresh its content hash.
+
+        Args:
+            listing: Listing to update.
+            raw_listing: Listing read by the collector.
+            known_department_codes: Seeded department codes (foreign key targets).
+        """
+        listing.external_url = raw_listing.external_url
+        listing.kind = raw_listing.kind
+        listing.lof_status = raw_listing.lof_status
+        listing.litter_number = raw_listing.litter_number
+        listing.mating_date = raw_listing.mating_date
+        listing.birth_date = raw_listing.birth_date
+        listing.male_count = raw_listing.male_count
+        listing.female_count = raw_listing.female_count
+        listing.puppies_available = raw_listing.puppies_available
+        listing.variety_source_id = raw_listing.variety_source_id
+        listing.colors = [color.as_json() for color in raw_listing.colors]
+        listing.color_text = raw_listing.color_text
+        listing.price_cents = raw_listing.price_cents
+        listing.department_code = (
+            raw_listing.department_code if raw_listing.department_code in known_department_codes else None
+        )
+        listing.zip_code = raw_listing.zip_code
+        listing.city = raw_listing.city
+        listing.sire_name = raw_listing.sire_name
+        listing.sire_rating = raw_listing.sire_rating
+        listing.dam_name = raw_listing.dam_name
+        listing.dam_rating = raw_listing.dam_rating
+        listing.litter_rating = raw_listing.litter_rating
+        listing.photos = list(raw_listing.photos)
+        listing.description = raw_listing.description
+        listing.raw_json = raw_listing.raw_json
+        listing.content_hash = cls.content_hash(cls._tracked_values(listing))
+
     @staticmethod
-    def content_hash(values: dict[str, object]) -> str:
+    def content_hash(tracked_values: dict[str, str | None]) -> str:
         """
         Hash the tracked content of a listing, to tell at a glance whether it moved.
 
         Args:
-            values: Column values of the listing.
+            tracked_values: Serialized tracked fields.
 
         Returns:
             Hex SHA-256 of the tracked fields.
         """
-        tracked = {name: ListingIngestionService._serialize(values.get(name)) for name in TRACKED_FIELDS}
-        return hashlib.sha256(json.dumps(tracked, sort_keys=True).encode("utf-8")).hexdigest()
+        return hashlib.sha256(json.dumps(tracked_values, sort_keys=True).encode("utf-8")).hexdigest()
 
     @classmethod
-    def _listing_values(cls, raw_listing: RawListing, known_department_codes: set[str]) -> dict[str, object]:
+    def _tracked_values(cls, listing: Listing) -> dict[str, str | None]:
         """
-        Column values of a listing from its raw form.
+        Serialize the tracked fields of a listing.
 
         Args:
-            raw_listing: Listing read by the collector.
-            known_department_codes: Seeded department codes (foreign key targets).
+            listing: Listing to read.
 
         Returns:
-            The values, ``content_hash`` and ``raw_json`` included.
+            Field name → text value.
         """
-        department_code = raw_listing.department_code if raw_listing.department_code in known_department_codes else None
-        values: dict[str, object] = {
-            "external_url": raw_listing.external_url,
-            "kind": raw_listing.kind,
-            "lof_status": raw_listing.lof_status,
-            "litter_number": raw_listing.litter_number,
-            "mating_date": raw_listing.mating_date,
-            "birth_date": raw_listing.birth_date,
-            "male_count": raw_listing.male_count,
-            "female_count": raw_listing.female_count,
-            "puppies_available": raw_listing.puppies_available,
-            "variety_source_id": raw_listing.variety_source_id,
-            "colors": [color.as_json() for color in raw_listing.colors],
-            "color_text": raw_listing.color_text,
-            "price_cents": raw_listing.price_cents,
-            "department_code": department_code,
-            "zip_code": raw_listing.zip_code,
-            "city": raw_listing.city,
-            "sire_name": raw_listing.sire_name,
-            "sire_rating": raw_listing.sire_rating,
-            "dam_name": raw_listing.dam_name,
-            "dam_rating": raw_listing.dam_rating,
-            "litter_rating": raw_listing.litter_rating,
-            "photos": list(raw_listing.photos),
-            "description": raw_listing.description,
-            "raw_json": raw_listing.raw_json,
-        }
-        values["content_hash"] = cls.content_hash(values)
-        return values
+        return {name: cls._serialize(getattr(listing, name)) for name in TRACKED_FIELDS}
 
-    @classmethod
-    def _record_changes(cls, db: Session, listing: Listing, values: dict[str, object], now: datetime) -> bool:
+    @staticmethod
+    def _record_changes(
+        db: Session,
+        listing_id: int,
+        values_before: dict[str, str | None],
+        values_after: dict[str, str | None],
+        now: datetime,
+    ) -> bool:
         """
         Write one ``ListingChange`` per tracked field whose value moved.
 
         Args:
             db: Database session.
-            listing: Stored listing, before the update.
-            values: New values.
+            listing_id: Listing that may have changed.
+            values_before: Serialized tracked fields before the update.
+            values_after: Serialized tracked fields after the update.
             now: Run time.
 
         Returns:
             Whether at least one field changed.
         """
-        if listing.content_hash == values["content_hash"]:
-            return False
         has_changed = False
         for name in TRACKED_FIELDS:
-            old_value = cls._serialize(getattr(listing, name))
-            new_value = cls._serialize(values.get(name))
-            if old_value != new_value:
+            if values_before[name] != values_after[name]:
                 db.add(
                     ListingChange(
-                        listing_id=listing.id, field=name, old_value=old_value, new_value=new_value, changed_at=now
+                        listing_id=listing_id,
+                        field=name,
+                        old_value=values_before[name],
+                        new_value=values_after[name],
+                        changed_at=now,
                     )
                 )
                 has_changed = True
@@ -246,7 +270,11 @@ class ListingIngestionService:
 
     @staticmethod
     def _deactivate_missing(
-        db: Session, source: str, seen_external_ids: set[str], collected_department_codes: set[str], now: datetime
+        db: Session,
+        source: ListingSource,
+        seen_external_ids: set[str],
+        collected_department_codes: set[str],
+        now: datetime,
     ) -> list[int]:
         """
         Count a missed run for every active listing of the departments read that the run did not see,
@@ -254,7 +282,7 @@ class ListingIngestionService:
 
         Args:
             db: Database session.
-            source: ``ListingSource`` value of the run.
+            source: Source of the run.
             seen_external_ids: Identifiers the run saw.
             collected_department_codes: Departments the run read.
             now: Run time.
@@ -263,11 +291,15 @@ class ListingIngestionService:
             Ids of the listings deactivated by this run.
         """
         deactivated_ids: list[int] = []
-        oldest_active_birth: date = (now - timedelta(days=BORN_LITTER_ACTIVE_DAYS)).date()
-        active_listings = db.query(Listing).filter(
-            Listing.source == source,
-            Listing.is_active.is_(True),
-            Listing.department_code.in_(collected_department_codes),
+        oldest_active_birth = (now - timedelta(days=BORN_LITTER_ACTIVE_DAYS)).date()
+        active_listings = (
+            db.query(Listing)
+            .filter(
+                Listing.source == source,
+                Listing.is_active.is_(True),
+                Listing.department_code.in_(collected_department_codes),
+            )
+            .all()
         )
         for listing in active_listings:
             if listing.external_id not in seen_external_ids:
@@ -285,7 +317,7 @@ class ListingIngestionService:
         return deactivated_ids
 
     @staticmethod
-    def _serialize(value: object) -> str | None:
+    def _serialize(value: ColumnValue) -> str | None:
         """
         Text form of a value, for the change history and the content hash.
 
@@ -297,9 +329,11 @@ class ListingIngestionService:
         """
         if value is None:
             return None
+        if isinstance(value, StrEnum):
+            return value.value
         if isinstance(value, date):
             return value.isoformat()
-        if isinstance(value, list | dict):
+        if isinstance(value, list):
             return json.dumps(value, sort_keys=True, ensure_ascii=False)
         return str(value)
 
