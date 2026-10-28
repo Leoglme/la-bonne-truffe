@@ -57,6 +57,8 @@ Une disparition (`is_active` → faux) ne notifie pas, elle grise la carte. Le r
 
 **Ce qui est une nouveauté** (décidé le 28/10/2026, `EventService.is_news`) : `new_preferred` et `new_acceptable` ne partent que pour une portée mise en ligne depuis **3 jours au plus**. Une portée en ligne depuis plus longtemps est notée comme traitée, sans push ni ligne dans le récap : le premier relevé, ou l'ajout d'un département aux critères, ne déverse pas les portées publiées depuis des semaines. `born` et `upgraded` partent quel que soit l'âge de la portée.
 
+**Le premier relevé réussi d'une source** n'envoie rien du tout : il note comme traité tout ce qui était déjà en ligne avant que La Bonne Truffe la surveille, y compris les annonces sans date de publication (les portées à venir de Chiens de France). Les relevés suivants envoient les nouveautés comme ci-dessus.
+
 ## Texte des notifications
 
 Titre : « La Bonne Truffe ». Corps : couleur, lieu, sexes, en une phrase. Exemples :

@@ -59,3 +59,12 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 - **Premier relevé réel refusé** : depuis le PC de Léo, Cloudflare refuse le client Python sur son empreinte TLS, alors que le navigateur et `curl` passent. Léo laisse le choix : « tu peux exécuter des commandes sur mon PC ». Le collecteur passe donc par le `curl` du système : 85 portées au premier relevé réel, aucun changement au deuxième, aucune notification (rien de publié depuis moins de 3 jours).
 - **Front** : cinq défauts corrigés. Re-cliquer « Suivie » effaçait le suivi ; le volet desktop ne s'ouvrait jamais ; une couleur connue s'affichait « à confirmer » ; recocher une région déplaçait ses départements en fin de liste ; le détail d'une portée en erreur n'avait plus de bouton retour. Fins de ligne LF imposées (`.gitattributes`), sans quoi le lint échouait sous Windows.
 
+
+## 28 octobre (nuit) : jalon 4, Chiens de France
+
+- Léo : « Vas-y, hésite pas à tout commit sur `main` et à passer à la suite. » La PR n° 1 est mergée dans `main`.
+- **Chiens de France** : une liste par race et par région, puis la page de chaque chiot et de chaque portée à venir, dans les chemins que le `robots.txt` autorise. Premier relevé réel : 12 annonces dans les deux régions du profil, dont 7 ont rejoint une portée de la Centrale Canine, par le numéro de portée ou par la date de saillie et la mère.
+- **Regroupement** complété : les annonces de chiots d'une même portée, les dates de saillie, la même mère nommée à trente jours près, les titres et l'affixe autour du nom de la mère (`03-modele-de-donnees.md`).
+- **Premier relevé d'une source** : il n'envoie plus rien, car les portées à venir de Chiens de France n'ont pas de date de publication et seraient passées pour neuves.
+- **Défaut trouvé par les vraies données** : le regroupement ne voyait pas les annonces regroupées un instant plus tôt dans le même passage, l'app ouvrant ses sessions sans écriture automatique et les tests avec. Corrigé, et les tests ouvrent désormais leurs sessions comme l'app.
+- **Chiots de France** exploré : pour le cocker, il reprend surtout les portées de Chiens de France (`02-sources.md`). Son collecteur vient ensuite.

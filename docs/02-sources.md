@@ -76,19 +76,47 @@ GET https://www.centrale-canine.fr/api/breed/le-chien-de-race--cocker-spaniel-an
 
 ## 2. Chiens de France
 
-- Site : `https://www.chiens-de-france.com/`. Héberge les sites d'éleveurs de chiens de race et publie leurs annonces de chiots (LOF surtout), avec photos, prix, dates, disponibilité.
-- Filtres de la page d'accueil : race et région. Pas de filtre département, sexe, couleur ou prix en page de liste ; ces informations sont dans chaque annonce.
-- **Aucune alerte, aucun flux RSS.**
-- Chaque annonce indique l'affixe ou « Sans Affixe », le code postal et la ville, souvent le texte libre de la couleur (« rouge / golden », « noir et feu »), le nombre de chiots et de disponibles, le prix, les parents.
-- Collecte : page de liste race + région en HTML, puis page de chaque annonce nouvelle ou modifiée. Comparer un hash du contenu normalisé pour détecter les changements.
-- La structure HTML exacte n'a pas été relevée : la lire au premier développement et la consigner ici.
+**Ce que c'est.** Le site héberge les sites d'éleveurs de chiens de race et publie leurs chiots : il annonce que « tous les chiots inscrits sur Chiens de France sont inscrits au livre des origines (LOF) ». Aucune alerte, aucun flux RSS. Vérifié le 28/10/2026.
+
+**Accès** : Cloudflare est devant, mais Python et `curl` passent avec le User-Agent honnête `LaBonneTruffe/1.0 (+mailto:…)`. Le `robots.txt` interdit entre autres `/tous-les-chiots/`, `/liste-saillie/`, `/acheter-chiot/`, `/site_eleveur/`, `/eleveurs-liste/`, les pages `contact`, `pedigree` et `signaler`, et toute adresse contenant `FK_RACE`, `ID_CHIEN` ou `ID_ELEVEUR`. Le collecteur ne lit que les trois chemins autorisés ci-dessous.
+
+**Liste d'une race dans une région** : `GET /chiots/<race>/france/<région>`, par exemple `/chiots/cocker-spaniel-anglais/france/bretagne`. Le slug du cocker est `cocker-spaniel-anglais` (identifiant 5 ; le cocker américain est le 167). Les slugs des régions sont ceux du formulaire de recherche (`APP_CHOICE_REGION` dans la page) : `bretagne`, `pays-de-la-loire`, `normandie`, `provence-alpes-cote-dazur`, `reunion`… Une seule page par région, sans pagination observée.
+- La page range les annonces sous des titres « Département 35 - Ille et Vilaine : 2 chiots » ou « Département 56 - Morbihan : 3 portées à venir », tous dans un même bloc `div.mb-resp`. Le collecteur lit donc dans l'ordre du document : chaque lien d'annonce prend le département du dernier titre lu.
+- Un chiot est une carte `a.box-1` (classe `male` ou `femelle`) vers `/chiot/<id>` ; une portée à venir, une carte `a.box-saillie-mini` vers `/saillie/<id>`.
+- Les sections suivantes (« Les autres annonces… en France », « … dans les autres pays ») ne listent que des liens vers d'autres régions ou pays : elles sont ignorées.
+
+**Page d'un chiot** (`/chiot/<id>`, une annonce par chiot) :
+
+| Donnée | Où | Exemple |
+|---|---|---|
+| Sexe | bloc `div.fiche-info-rgp` « Sexe » | `Mâle`, `Femelle` |
+| Naissance | même bloc « Âge », note `(Né le 28.08.2026)` | |
+| LOF | bloc « Inscrite au livre des origines (LOF) » | `Oui` |
+| Disponibilité | bloc « Disponibilité » | `30.10.2026` (gardée dans `raw_json`) |
+| Prix | `div.fiche-prix div.prix` | `A vendre 1400 €`, ou `A vendre` sans montant |
+| Lieu | `div.fiche-recap`, « Lieu » | ville, puis `35133 - France` |
+| Éleveur | `div.fiche-recap`, « Eleveur » : l'affixe et le lien vers son site | `https://<nom>.chiens-de-france.com/…` |
+| Parents | `div.pedifich`, type « Père » ou « Mère », puis `div.nom` | |
+| SIRET | « Informations supplémentaires », « Siret » | 14 chiffres |
+| Publication | « Informations complémentaires » | `Annonce créée le 03.10.2026` |
+| Numéro de portée | « Portée », « Code portée » | `LOF- 2026024873-2026-13`, soit le numéro de portée de la Centrale Canine avec une espace |
+| Photos | `img` dont l'adresse contient `/portees/`, sans le préfixe `TN200_` des vignettes | |
+
+Il n'y a ni couleur ni téléphone sur la page (le contact passe par un formulaire). La couleur reste donc inconnue tant qu'une autre source ne la donne pas.
+
+**Page d'une portée à venir** (`/saillie/<id>`) : le père et la mère (un libellé « Père » ou « Mère », puis `div.nom`), puis une liste de `li` : « Site de l'éleveur » (lien `a.fichesite` « Elevage <affixe> »), « Date de saillie » (`29/08/2026`), « Lieu » (`p.lieu-ville` « 35140 Saint-Aubin-du-Cormier », `p.lieu-dep` « 35 - Ille et Vilaine - France ») et « Pro / Siret ». Pas de date de publication.
+
+**Relevé réel du 28/10/2026** : 12 annonces dans les deux régions du profil (7 chiots, 5 portées à venir), 14 requêtes. 7 annonces ont rejoint une portée de la Centrale Canine : par le numéro de portée, ou par la date de saillie et le nom de la mère.
+
+**Comment le collecteur lit cette source** (`api/services/collectors/chiens_de_france.py`) : une liste par race et par région des départements du profil, puis la page de chaque annonce des départements du profil ; une annonce retirée entre la liste et sa page (404) est sautée. Une requête par seconde, par le `curl` du système comme les autres sources. L'éleveur est nommé par le sous-domaine de son site (`<nom>.chiens-de-france.com`), retrouvé par son SIREN quand le SIRET est donné.
 
 ## 3. Chiots de France
 
-- Site : `https://www.chiots-de-france.com/`. Annonces de particuliers **et** d'éleveurs, LOF ou non.
-- Filtres : race (obligatoire) et localisation (« Toute la France » par défaut). Pas de filtre sexe ; chaque annonce donne le nombre de mâles et de femelles.
-- **Aucune alerte, aucun flux RSS.**
-- Collecte : même logique que Chiens de France. C'est la source des annonces **non LOF**.
+Constats du 28/10/2026, à compléter quand le collecteur existera :
+- Site : `https://www.chiots-de-france.com/`. Annonces d'éleveurs et de particuliers, LOF ou non, une par portée née, avec les mâles et femelles **disponibles**. Pas d'alerte ni de flux RSS.
+- Pour le cocker, il reprend surtout les portées de Chiens de France : 21 de ses 22 annonces en France ce jour-là, la seule propre étant un croisement non LOF. Dans les 9 départements du profil, 2 annonces, d'un éleveur que Chiens de France liste déjà.
+- La liste `/chiots/cocker-spaniel-anglais/france` couvre toute la France sur une seule page ; chaque carte donne son département. Des filtres existent en paramètres : `departement`, `male`, `femelle`, `pro`, `part`, `lof`.
+- Une annonce disparue répond par une redirection 302 vers l'accueil, pas par une 404.
 
 ## 4. Leboncoin : pas collecté
 

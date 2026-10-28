@@ -69,9 +69,17 @@ Texte libre (Chiens de France, Chiots de France) : dictionnaire de mots-clés, p
 
 ## Le dédoublonnage
 
-**Éleveur** (dans cet ordre, on s'arrête au premier qui matche) : même `siren` ; sinon même `phone_e164` ; sinon même `affix_normalized` **et** même `department_code`. Sinon on crée l'éleveur.
+**Éleveur** (dans cet ordre, on s'arrête au premier qui matche) : même `siren` ; sinon même identifiant Centrale Canine ; sinon même `phone_e164` ; sinon même `affix_normalized` **et** même `department_code`. Sinon on crée l'éleveur.
 
-**Portée** : même éleveur et même `litter_number` ; sinon même éleveur et dates de naissance à trois jours près ; sinon, pour une annonce sans date de naissance, même éleveur, même race, et une seule portée candidate vue dans les soixante derniers jours, avec le drapeau `grouping_probable`. Sinon on crée un groupe.
+**Portée**, toujours chez le même éleveur et pour la même race, dans cet ordre (`api/services/litter_grouping.py`, règles complétées le 28/10/2026 avec Chiens de France) :
+1. même `litter_number`, quelle que soit la source ;
+2. pour une annonce de chiot (`puppy_ad`, un chiot par annonce), une autre annonce de chiot de la même source née le même jour de la même mère : Chiens de France publie chaque chiot à part ;
+3. une annonce d'une autre source née, ou saillie, à trois jours près ; à trente jours près quand les deux nomment la même mère, qui ne peut pas avoir deux portées à un mois d'écart (deux sources datent souvent la saillie à quelques jours d'écart) ;
+4. pour une annonce sans date de naissance, une seule portée candidate vue dans les soixante derniers jours, avec le drapeau `grouping_probable`.
+
+Deux mères nommées différemment ne sont jamais regroupées. Les noms se comparent en minuscules, sans accents ni ponctuation, et l'un peut contenir l'autre : une source ajoute parfois les titres de la mère devant (« CH. ») ou l'affixe de l'élevage derrière. Sinon on crée un groupe.
+
+**Mâles et femelles d'un groupe** : ceux d'une portée née déclarée (Centrale Canine) ; sinon le nombre de chiots de chaque sexe que proposent ses annonces, un chiot par annonce. Le prix est le plus bas des annonces actives.
 
 Normalisation de l'affixe : minuscules, sans accents, sans « de », « du », « des », « la », « le », « l' », espaces réduits.
 

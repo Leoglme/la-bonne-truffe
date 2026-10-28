@@ -37,8 +37,9 @@ Dans `.env`, changer au moins `SECRET_KEY` et `ADMIN_PASSWORD`. L'adresse `conta
 | `python cli.py push-test` | Envoyer une notification de test aux appareils abonnés |
 | `python cli.py scc-sync` | Lire dans le JSON Centrale Canine (`litters.filters`) les `t_ID` des départements qui ont des portées, et signaler une variété inconnue des seeders |
 | `python cli.py scc-sync --save-raw DOSSIER` | Idem, en enregistrant la page JSON lue pour chaque race |
-| `python cli.py collect` | Relever la Centrale Canine maintenant et afficher les portées trouvées |
-| `python cli.py collect --save-raw DOSSIER` | Idem, en enregistrant chaque page JSON reçue (nouvelles fixtures, à anonymiser comme le dit `tests/fixtures/centrale_canine/README.md`) |
+| `python cli.py collect` | Relever maintenant toutes les sources relevées (Centrale Canine, Chiens de France) et afficher les portées trouvées |
+| `python cli.py collect --source chiens_de_france` | Idem, pour une seule source |
+| `python cli.py collect --save-raw DOSSIER` | Idem, en enregistrant chaque page reçue, JSON ou HTML (nouvelles fixtures, à anonymiser comme le disent les `README.md` de `tests/fixtures/`) |
 
 **Premier lancement réel** : `init-db` puis `collect`. Les `t_ID` des 74 départements qui avaient des portées le 28/10/2026 sont seedés, et le relevé lit tout seul ceux qui manquent. Le relevé passe par le `curl` du système, celui de Windows 10 et plus ou de Git for Windows, parce que Cloudflare refuse le client Python (`02-sources.md`). Il marche depuis le PC de Léo : 85 portées au premier relevé du 28/10/2026.
 
