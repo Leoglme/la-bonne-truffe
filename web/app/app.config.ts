@@ -48,5 +48,17 @@ export default defineAppConfig({
         },
       },
     },
+    modal: {
+      slots: {
+        content: 'divide-line bg-card',
+        title: 'font-display text-xl text-ink',
+        description: 'text-[15px] text-ink-muted',
+      },
+      variants: {
+        fullscreen: {
+          false: { content: 'rounded-card-compact shadow-card ring-0' },
+        },
+      },
+    },
   },
 })
