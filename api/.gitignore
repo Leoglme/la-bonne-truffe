@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual Environment
+.venv/
+venv/
+
+# Environment
+.env
+.env.local
+
+# SQLite (le fichier vit dans data/, monté en volume dans Docker)
+data/
+*.db
+*.db-journal
+
+# Testing / tooling
+.pytest_cache/
+.ruff_cache/
+.coverage
+
+# OS
+.DS_Store
+Thumbs.db
