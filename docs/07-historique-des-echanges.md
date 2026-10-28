@@ -35,3 +35,12 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 ## 28 octobre : passation
 
 - Léo demande un dossier de markdowns (cadrage, sources, idées, échanges) pour une autre session d'IA, moins coûteuse, qui codera l'application à partir de la maquette. C'est ce dossier.
+
+## 28 octobre : première session de code (jalon 0)
+
+- Léo répond aux questions ouvertes : autres couleurs ignorées, sexe indifférent, pas de plafond de prix, départements 35, 56, 22, 29, 44, 53, 49, 72, 85, pas de notification native sur Windows, adresse `contact@dibodev.fr` (comme DevLeadHunter, lue depuis le `.env`).
+- **Styles** : Léo choisit Tailwind v4 + Nuxt UI 4 + icônes Lucide, exactement comme DevLeadHunter, après avoir vérifié son code. Les docs 05 et 06 disaient « pas de Tailwind » : mis à jour. Les couleurs, typographies et rayons de la maquette deviennent des tokens de thème.
+- **Logo** : l'icône corail arrondie partout, comme le dit le doc 06 ; la maquette iPad `Main.dc.html` (truffe brune seule) est en retard.
+- **Écart avec les docs** : depuis le conteneur cloud de la session, la Centrale Canine répond `403` (challenge Cloudflare sur l'IP, `cf-mitigated: challenge`), même avec le User-Agent de navigateur. Rien n'a été contourné. Les `t_ID` des départements (sauf `t_41`) et l'identifiant « autres couleurs » restent à lire avec `python cli.py scc-sync` depuis une IP acceptée ; la fixture de test du collecteur suit la forme documentée et sera remplacée par un vrai relevé. Détail dans `02-sources.md`.
+- **Choix techniques** : TypeScript 5.9 (TypeScript 7 n'expose plus l'API JavaScript dont `vue-tsc` a besoin, et `openapi-typescript` exige TypeScript 5) ; PyJWT au lieu de python-jose ; polices auto-hébergées via `@fontsource`.
+

@@ -2,12 +2,12 @@
 
 ## Questions à trancher par Léo avant ou pendant la V1
 
-1. Les couleurs autres que gold et noir et feu : « acceptable » ou « ignorée » par défaut ?
-2. Un sexe préféré ou indifférent ?
-3. Un plafond de prix ?
-4. La liste des départements et leur ordre (temps de route depuis chez lui).
-5. Notification native sur Windows depuis la fenêtre Tauri, ou le navigateur suffit ?
-6. Le nom de domaine, le sous-domaine sur le VPS, l'adresse mail du User-Agent.
+Tranchées le 28/10/2026 (détail dans `01-cadrage.md`) : autres couleurs ignorées, sexe indifférent, pas de plafond de prix, départements 35, 56, 22, 29, 44, 53, 49, 72, 85, pas de notification native Windows, Tailwind v4 + Nuxt UI, adresse `contact@dibodev.fr`.
+
+Restent ouvertes :
+
+1. Le nom de domaine et le sous-domaine sur le VPS.
+2. La collecte Centrale Canine depuis le VPS : à vérifier avant le déploiement (Cloudflare refuse l'IP d'un conteneur cloud, voir `02-sources.md`). Si le VPS est refusé aussi, faire tourner le relevé sur le PC de Léo (un sidecar dans l'app Tauri, comme le scraper de DevLeadHunter) ou passer par Playwright.
 
 ## Idées V1.5 (après que ça tourne)
 

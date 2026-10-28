@@ -29,6 +29,11 @@ GET https://www.centrale-canine.fr/api/breed/le-chien-de-race--cocker-spaniel-an
 
 **Condition d'accès** : le serveur est derrière Cloudflare. Sans User-Agent de navigateur, réponse `403` avec la page « Just a moment ». Avec un User-Agent du type `Mozilla/5.0 (Windows NT 10.0; Win64; x64) ... Chrome/130.0 Safari/537.36` et `Accept: application/json`, réponse `200` avec le JSON. Pas besoin de navigateur headless. Prévoir que Cloudflare puisse durcir un jour : garder Playwright en secours, pas en V1.
 
+**Écart observé le 28/10/2026 depuis un conteneur cloud** (session de développement) : la page et le JSON répondent `403` avec l'en-tête `cf-mitigated: challenge`, même avec le User-Agent de navigateur, `Accept: application/json` et `Accept-Language: fr-FR`. Cloudflare juge l'IP (centre de données), pas les en-têtes. Rien n'a été contourné. Conséquences :
+- les identifiants `t_ID` des départements autres que `t_41` et l'identifiant de la variété « autres couleurs » n'ont pas pu être relevés ; ils restent vides en base et se lisent avec `python cli.py scc-sync` lancé depuis une IP acceptée ;
+- aucune réponse JSON réelle n'a pu être enregistrée pour les tests : la fixture `api/tests/fixtures/centrale_canine/` reprend **la forme documentée ci-dessous** avec des valeurs de test explicites, à remplacer par un vrai relevé (`python cli.py collect --save-raw`) ;
+- à vérifier depuis le VPS OVH avant le déploiement : si son IP est refusée aussi, le relevé devra partir de l'IP résidentielle de Léo (voir `08-idees-et-questions-ouvertes.md`).
+
 **Forme de la réponse** : `{"cache_tags": [...], "breed": {"breed_title": "Cocker spaniel anglais", "groups_titles": {"1": "Élevages avec Affixe et sélectionnés", "2": "Élevages avec Affixe", "3": "Élevages sans Affixe"}}, "litters": {"count": 650, "node": {"<groupe>": {"n<id>": {...portée...}}}}}`. Les portées sont groupées par qualité d'élevage (clé `1`, `2`, `3`).
 
 **Champs utiles d'une portée** (préfixe `n_`) :

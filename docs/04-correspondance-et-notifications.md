@@ -83,4 +83,4 @@ L'URL de la notification ouvre le détail du groupe dans le dashboard.
 }
 ```
 
-Les couleurs absentes de `color_preferences` prennent la valeur par défaut `ignored` **tant que Léo n'a pas tranché** (question ouverte dans `01-cadrage.md`).
+Les couleurs absentes de `color_preferences` prennent la valeur `ignored` : Léo l'a confirmé le 28/10/2026, comme le sexe indifférent et l'absence de plafond de prix. Ce profil est créé par `api/seeders/search_profile_seeder.py`.

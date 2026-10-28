@@ -39,11 +39,13 @@ Ce qu'il a **rejeté** : fond papier et encre, serif éditoriale, rail latéral 
 
 Pas de dégradé, pas de verre dépoli, pas d'emoji en guise d'icône (les ♂ et ♀ sont du texte, pas des icônes).
 
+Dans le code, ces valeurs sont des tokens Tailwind v4 déclarés dans le bloc `@theme static` de `web/app/assets/css/main.css` : `cream`, `card`, `ink`, `ink-secondary`, `ink-muted`, `ink-label`, `line`, `coral`, `coral-text`, `coral-pastel`, `gold-pastel`, `gold-ink`, `lilac-pastel`, `neutral-pastel`, `chip`, `lof-pastel`, `lof-ink`, `online`. Le corail est aussi décliné en palette `truffe` (50 à 950, 500 = `#E2552F`), couleur `primary` de Nuxt UI. Les rayons (`rounded-card`, `rounded-tile`…) et les ombres (`shadow-card`, `shadow-floating`) y sont aussi.
+
 ### Typographie
 
 - **Fredoka** 500 à 700 pour les titres, les noms de portées, les chiffres clés (40 px salutation iPad, 30 à 34 px titres d'écran, 21 à 24 px noms, 20 à 22 px sections).
 - **Nunito** 500 à 800 pour tout le reste (16 px corps iPad, 15 px iPhone, 13 à 14 px secondaire, 11 px minimum pour les libellés, jamais en dessous).
-- Google Fonts : `https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap`. Les auto-héberger dans le projet (comme DevLeadHunter).
+- Auto-hébergées via `@fontsource/fredoka` et `@fontsource/nunito` (graisses importées en tête de `main.css`), servies par le build sans appel à Google Fonts. Le module de polices de Nuxt UI est coupé (`ui.fonts: false`), comme dans DevLeadHunter.
 
 ### Formes et espacements
 
@@ -55,13 +57,15 @@ Pas de dégradé, pas de verre dépoli, pas d'emoji en guise d'icône (les ♂ e
 
 ### Icônes
 
-Icônes trait (style Lucide), épaisseur 2, 22 à 26 px, dessinées en SVG inline. Pas d'icône seule sans libellé accessible (`aria-label`). Décoratives : `aria-hidden="true"`.
+Icônes **Lucide** via Nuxt UI (`<UIcon name="i-lucide-paw-print">`, collection `@iconify-json/lucide` embarquée dans le bundle client pour la fenêtre Tauri hors ligne), 22 à 26 px. Barre d'onglets : `paw-print`, `heart`, `sliders-horizontal`, `settings`. Pas d'icône seule sans libellé accessible (`aria-label`). Décoratives : `aria-hidden="true"`. Seuls le logo et l'illustration de cocker restent en SVG inline.
 
 ### L'icône de l'app et le logo
 
 `design/icone-app.svg` : carré arrondi corail `#E2552F` (rayon 22,5 % du côté, comme iOS), truffe crème `#FFF3E6` avec deux narines corail et un reflet blanc. Déclinaisons PNG à générer : 1024, 512, 192, 180, 120, 60. Variante claire (fond crème, truffe brune `#2B2420`) pour les contextes sombres.
 
-Dans l'app, le logo = la même icône arrondie à 32 à 38 px suivie du nom « La Bonne Truffe » en Fredoka 600. Dans la bannière de notification iOS, c'est l'icône de l'app qui apparaît.
+Dans l'app, le logo = la même icône arrondie à 32 à 38 px suivie du nom « La Bonne Truffe » en Fredoka 600, **sur tous les écrans** (composant `UiAppLogo`). La maquette iPad `Main.dc.html` est en retard sur ce point : elle montre encore une truffe brune seule ; c'est ce document qui fait foi (validé par Léo le 28/10/2026). Dans la bannière de notification iOS, c'est l'icône de l'app qui apparaît.
+
+Les PNG sont générés dans `web/public/icons/` (1024, 512, 192, 120, 60), plus `web/public/apple-touch-icon.png` (180, **carré plein** : iOS arrondit lui-même et noircirait des coins transparents), `icons/icon-maskable-512.png` (carré plein, la truffe tient dans la zone sûre) et `favicon-32x32.png`. Les icônes Windows de Tauri sont dans `web/src-tauri/icons/` (`npx tauri icon`).
 
 ### L'illustration de cocker
 
