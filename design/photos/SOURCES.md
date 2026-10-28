@@ -12,4 +12,4 @@ Photos Unsplash (licence Unsplash : utilisation libre, attribution appréciée).
 
 Dans l'application réelle, les photos viendront des annonces (Chiens de France, Chiots de France). Sans photo, on affiche l'illustration de cocker colorée selon la robe.
 
-Les écrans de connexion de l'app servent trois de ces photos, copiées dans `web/public/images/auth/` : chiot-gold-plaid (connexion), cocker-gold-dos (inscription, recompressée à 324 Ko), cocker-gold-balle (lien envoyé).
+Les écrans de connexion de l'app servent les cinq photos, copiées dans `web/public/images/auth/` : chiot-gold-plaid (connexion), cocker-gold-dos (inscription, recompressée à 324 Ko), cocker-gold-balle (lien envoyé, et en décor de la connexion et de l'inscription sur grand écran), chiot-gold-fleurs (décor de la connexion) et cocker-gold-herbe (décor de l'inscription, réduite à 800 px de large, 209 Ko).

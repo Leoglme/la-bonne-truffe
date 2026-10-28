@@ -9,7 +9,7 @@
     </template>
 
     <div class="flex flex-col gap-2.5 md:gap-3">
-      <UButton to="/mot-de-passe-oublie" block size="xl" class="md:min-h-[58px] lg:min-h-14">
+      <UButton to="/mot-de-passe-oublie" block size="xl" class="md:min-h-[58px] xl:min-h-14">
         Recevoir un nouveau lien
       </UButton>
       <UButton
@@ -18,7 +18,7 @@
         variant="outline"
         block
         size="xl"
-        class="bg-transparent md:min-h-[58px] lg:min-h-14"
+        class="bg-transparent md:min-h-[58px] xl:min-h-14"
       >
         Retour à la connexion
       </UButton>
@@ -41,7 +41,7 @@
       />
     </template>
 
-    <form class="flex flex-col gap-3 md:gap-5 lg:gap-[18px]" @submit.prevent="savePassword">
+    <form class="flex flex-col gap-3 md:gap-5 xl:gap-[18px]" @submit.prevent="savePassword">
       <UiErrorAlert v-if="errorMessage" :message="errorMessage" />
       <input :value="accountEmail" type="text" autocomplete="username" readonly hidden />
       <UFormField label="Nouveau mot de passe" name="password" :error="hasRefusedPassword">
@@ -59,7 +59,7 @@
           size="xl"
           :loading="isSaving"
           :disabled="linkState !== 'valid'"
-          class="md:min-h-[58px] lg:min-h-14"
+          class="md:min-h-[58px] xl:min-h-14"
         >
           Enregistrer et me connecter
         </UButton>
@@ -69,7 +69,7 @@
           variant="outline"
           block
           size="xl"
-          class="bg-transparent md:min-h-[58px] lg:min-h-14"
+          class="bg-transparent md:min-h-[58px] xl:min-h-14"
         >
           Retour à la connexion
         </UButton>

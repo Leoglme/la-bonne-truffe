@@ -5,4 +5,6 @@ export type AuthPhotoVisualProps = {
   photoPositionClass: string
   badgeIconName: string
   overlayOverlapClass: string
+  leftPhotoPath: string
+  rightPhotoPath: string
 }

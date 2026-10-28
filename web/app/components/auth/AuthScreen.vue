@@ -1,27 +1,27 @@
 <template>
   <div
-    class="mx-auto flex min-h-dvh w-full max-w-[820px] flex-col px-5 pt-14 pb-[34px] md:px-8 md:pt-9 md:pb-10 lg:grid lg:max-w-none lg:grid-cols-[600px_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)] lg:p-0"
+    class="mx-auto flex min-h-dvh w-full max-w-[820px] flex-col px-5 pt-14 pb-[34px] md:px-8 md:pt-9 md:pb-10 xl:grid xl:max-w-none xl:grid-cols-[minmax(0,1fr)_600px] xl:grid-rows-[auto_minmax(0,1fr)] xl:p-0"
   >
-    <header class="flex lg:col-start-1 lg:row-start-1 lg:px-20 lg:pt-8">
+    <header class="flex xl:col-start-2 xl:row-start-1 xl:px-20 xl:pt-8">
       <UiAppLogo />
     </header>
 
     <div
-      class="mt-4 md:mt-7 lg:sticky lg:top-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0 lg:h-dvh lg:self-start lg:py-6 lg:pe-6"
+      class="mt-4 md:mt-7 xl:sticky xl:top-0 xl:col-start-1 xl:row-span-2 xl:row-start-1 xl:mt-0 xl:h-dvh xl:self-start xl:py-6 xl:ps-6"
     >
       <slot name="visual" />
     </div>
 
-    <div class="flex flex-col lg:col-start-1 lg:row-start-2 lg:justify-center lg:px-20 lg:pt-10 lg:pb-[88px]">
-      <div class="mt-[22px] flex flex-col gap-0.5 md:mt-9 md:gap-1 lg:mt-0 lg:gap-1.5">
-        <h1 class="m-0 font-display text-[30px] leading-[1.1] font-semibold md:text-[40px] lg:text-4xl">
+    <div class="flex flex-col xl:col-start-2 xl:row-start-2 xl:justify-center xl:px-20 xl:pt-10 xl:pb-[88px]">
+      <div class="mt-[22px] flex flex-col gap-0.5 md:mt-9 md:gap-1 xl:mt-0 xl:gap-1.5">
+        <h1 class="m-0 font-display text-[30px] leading-[1.1] font-semibold md:text-[40px] xl:text-4xl">
           {{ props.title }}
         </h1>
-        <p class="m-0 text-[15px] text-ink-muted md:text-lg lg:text-[17px]">
+        <p class="m-0 text-[15px] text-ink-muted md:text-lg xl:text-[17px]">
           <slot name="subtitle">{{ props.subtitle }}</slot>
         </p>
       </div>
-      <div class="mt-4 md:mt-7 lg:mt-8">
+      <div class="mt-4 md:mt-7 xl:mt-8">
         <slot />
       </div>
     </div>

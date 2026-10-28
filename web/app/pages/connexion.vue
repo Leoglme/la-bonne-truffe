@@ -9,19 +9,21 @@
         photo-path="/images/auth/chiot-gold-plaid.jpg"
         photo-description="Chiot cocker gold couché sur un plaid"
         height-class="h-[200px] md:h-[420px]"
-        photo-position-class="object-[center_34%] md:object-[center_36%] lg:object-[center_30%]"
+        photo-position-class="object-[center_34%] md:object-[center_36%]"
+        left-photo-path="/images/auth/chiot-gold-fleurs.jpg"
+        right-photo-path="/images/auth/cocker-gold-balle.jpg"
       >
         <template #overlay>
           <PushNotificationPreview
             title="Née cette nuit à Redon"
             body="Une portée gold, 2 mâles et 3 femelles."
-            class="w-[318px] max-w-full md:w-[640px] lg:w-[460px]"
+            class="w-[318px] max-w-full md:w-[640px] xl:w-[460px]"
           />
         </template>
       </AuthPhotoVisual>
     </template>
 
-    <form class="flex flex-col gap-3 md:gap-5 lg:gap-[18px]" @submit.prevent="submit">
+    <form class="flex flex-col gap-3 md:gap-5 xl:gap-[18px]" @submit.prevent="submit">
       <UiErrorAlert v-if="errorMessage" :message="errorMessage" />
       <UFormField label="E-mail" name="email">
         <UInput
@@ -47,7 +49,7 @@
         <UiPasswordInput v-model="password" autocomplete="current-password" required />
       </UFormField>
       <div class="mt-1.5 flex flex-col gap-2.5 md:mt-2 md:gap-3">
-        <UButton type="submit" block size="xl" :loading="isSubmitting" class="md:min-h-[58px] lg:min-h-14">
+        <UButton type="submit" block size="xl" :loading="isSubmitting" class="md:min-h-[58px] xl:min-h-14">
           Se connecter
         </UButton>
         <UButton
@@ -56,7 +58,7 @@
           variant="outline"
           block
           size="xl"
-          class="bg-transparent md:min-h-[58px] lg:min-h-14"
+          class="bg-transparent md:min-h-[58px] xl:min-h-14"
         >
           Créer un compte
         </UButton>

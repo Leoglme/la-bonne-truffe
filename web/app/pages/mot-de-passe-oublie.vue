@@ -8,7 +8,7 @@
       <AuthIllustrationVisual coat="gold" badge-icon-name="i-lucide-key-round" height-class="h-[200px] md:h-[420px]" />
     </template>
 
-    <form class="flex flex-col gap-3 md:gap-5 lg:gap-[18px]" @submit.prevent="sendLink">
+    <form class="flex flex-col gap-3 md:gap-5 xl:gap-[18px]" @submit.prevent="sendLink">
       <UiErrorAlert v-if="errorMessage" :message="errorMessage" />
       <UFormField label="E-mail" name="email">
         <UInput
@@ -23,7 +23,7 @@
         />
       </UFormField>
       <div class="mt-1.5 flex flex-col gap-2.5 md:mt-2 md:gap-3">
-        <UButton type="submit" block size="xl" :loading="isSending" class="md:min-h-[58px] lg:min-h-14">
+        <UButton type="submit" block size="xl" :loading="isSending" class="md:min-h-[58px] xl:min-h-14">
           Envoyer le lien
         </UButton>
         <UButton
@@ -32,7 +32,7 @@
           variant="outline"
           block
           size="xl"
-          class="bg-transparent md:min-h-[58px] lg:min-h-14"
+          class="bg-transparent md:min-h-[58px] xl:min-h-14"
         >
           Retour à la connexion
         </UButton>
@@ -67,7 +67,7 @@
         Rien reçu d’ici deux minutes ? Jette un œil aux indésirables.
       </p>
       <div class="mt-1 flex flex-col gap-2.5 md:mt-2 md:gap-3">
-        <UButton to="/connexion" block size="xl" class="md:min-h-[58px] lg:min-h-14">Retour à la connexion</UButton>
+        <UButton to="/connexion" block size="xl" class="md:min-h-[58px] xl:min-h-14">Retour à la connexion</UButton>
         <UButton
           color="neutral"
           variant="outline"
@@ -75,7 +75,7 @@
           size="xl"
           :disabled="resendCountdownSeconds > 0"
           :loading="isSending"
-          class="bg-transparent disabled:bg-transparent disabled:text-ink-muted disabled:opacity-100 disabled:ring-avatar md:min-h-[58px] lg:min-h-14"
+          class="bg-transparent disabled:bg-transparent disabled:text-ink-muted disabled:opacity-100 disabled:ring-avatar md:min-h-[58px] xl:min-h-14"
           @click="sendLink"
         >
           {{ resendLabel }}

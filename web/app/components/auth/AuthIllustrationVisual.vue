@@ -1,10 +1,10 @@
 <template>
   <div
     aria-hidden="true"
-    class="relative flex w-full items-center justify-center rounded-card-compact md:rounded-card lg:h-full lg:rounded-[32px]"
+    class="relative flex w-full items-center justify-center rounded-card-compact md:rounded-card xl:h-full xl:rounded-4xl"
     :class="[palette.tileClass, props.heightClass]"
   >
-    <CockerIllustration :coat="props.coat" class="size-[170px] md:size-[300px] lg:size-[340px]" />
+    <CockerIllustration :coat="props.coat" class="size-[170px] md:size-[300px] xl:size-[340px]" />
     <AuthVisualBadge :icon-name="props.badgeIconName" />
   </div>
 </template>
