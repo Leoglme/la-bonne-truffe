@@ -1,0 +1,136 @@
+{
+  "cache_tags": [
+    "node_list"
+  ],
+  "breed": {
+    "breed_title": "Cocker spaniel anglais",
+    "groups_titles": {
+      "1": "Élevages avec Affixe et sélectionnés",
+      "2": "Élevages avec Affixe",
+      "3": "Élevages sans Affixe"
+    }
+  },
+  "litters": {
+    "count": 4,
+    "node": {
+      "1": {
+        "n9000001": {
+          "n_id": 9000001,
+          "n_litter_id": 8000001,
+          "url": "/portee/9000001",
+          "n_litter_number": "LOF-TEST-0001",
+          "n_servicing_number": "TEST-S-0001",
+          "n_servicing_date": 1787565600,
+          "n_birth_date": 1793059200,
+          "n_is_borned": true,
+          "n_male_number": 2,
+          "n_female_number": 3,
+          "n_variety": "rouge et doré",
+          "n_variety_id": 317,
+          "n_father_name": "TEST Père A",
+          "n_father_lof": "LOF-TEST-P-A",
+          "n_father_notation": 4,
+          "n_mother_name": "TEST Mère A",
+          "n_mother_lof": "LOF-TEST-M-A",
+          "n_mother_notation": 2,
+          "n_average_notation": 3,
+          "n_breeder": "TEST-ELEVEUR-1",
+          "n_breeder_id": 7000001,
+          "n_selection": 1,
+          "n_litter_status": 3,
+          "n_created": 1793088000,
+          "n_changed": 1793088000,
+          "n_image_uri": ""
+        }
+      },
+      "2": {
+        "n9000002": {
+          "n_id": "9000002",
+          "n_litter_id": "",
+          "url": "/portee/9000002",
+          "n_litter_number": "",
+          "n_servicing_number": "TEST-S-0002",
+          "n_servicing_date": "1791626400",
+          "n_birth_date": "",
+          "n_is_borned": false,
+          "n_male_number": 0,
+          "n_female_number": 0,
+          "n_variety": "rouge et doré",
+          "n_variety_id": "317",
+          "n_father_name": "TEST Père B",
+          "n_father_lof": "",
+          "n_father_notation": "5",
+          "n_mother_name": "TEST Mère B",
+          "n_mother_lof": "",
+          "n_mother_notation": "",
+          "n_average_notation": "",
+          "n_breeder": "TEST-ELEVEUR-2",
+          "n_breeder_id": "7000002",
+          "n_selection": "2",
+          "n_litter_status": "2",
+          "n_created": "1792490400",
+          "n_changed": "1792490400",
+          "n_image_uri": ""
+        },
+        "n9000003": {
+          "n_id": 9000003,
+          "n_litter_id": 8000003,
+          "url": "/portee/9000003",
+          "n_litter_number": "LOF-TEST-0003",
+          "n_servicing_number": "TEST-S-0003",
+          "n_servicing_date": 1782900000,
+          "n_birth_date": 1788343200,
+          "n_is_borned": "1",
+          "n_male_number": "3",
+          "n_female_number": "1",
+          "n_variety": "noir, noir et feu, marron, marron et feu",
+          "n_variety_id": 159,
+          "n_father_name": "TEST Père C",
+          "n_father_lof": "LOF-TEST-P-C",
+          "n_father_notation": 3,
+          "n_mother_name": "TEST Mère C",
+          "n_mother_lof": "LOF-TEST-M-C",
+          "n_mother_notation": 4,
+          "n_average_notation": "3,5",
+          "n_breeder": "TEST-ELEVEUR-2",
+          "n_breeder_id": 7000002,
+          "n_selection": 2,
+          "n_litter_status": 3,
+          "n_created": 1788602400,
+          "n_changed": 1788688800,
+          "n_image_uri": "/sites/default/files/test/portee-9000003.jpg"
+        }
+      },
+      "3": {
+        "n9000004": {
+          "n_id": 9000004,
+          "n_litter_id": 8000004,
+          "url": "/portee/9000004",
+          "n_litter_number": "LOF-TEST-0004",
+          "n_servicing_number": "TEST-S-0004",
+          "n_servicing_date": 1781517600,
+          "n_birth_date": 1786960800,
+          "n_is_borned": true,
+          "n_male_number": 0,
+          "n_female_number": 4,
+          "n_variety": "variété de test inconnue",
+          "n_variety_id": 999,
+          "n_father_name": "TEST Père D",
+          "n_father_lof": "",
+          "n_father_notation": null,
+          "n_mother_name": "TEST Mère D",
+          "n_mother_lof": "",
+          "n_mother_notation": null,
+          "n_average_notation": null,
+          "n_breeder": "TEST-ELEVEUR-3",
+          "n_breeder_id": 7000003,
+          "n_selection": 3,
+          "n_litter_status": 3,
+          "n_created": 1787220000,
+          "n_changed": 1787220000,
+          "n_image_uri": null
+        }
+      }
+    }
+  }
+}
