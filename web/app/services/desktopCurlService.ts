@@ -12,7 +12,7 @@ export class DesktopCurlService {
     const { invoke }: typeof import('@tauri-apps/api/core') = await import('@tauri-apps/api/core')
     return invoke<RelayedPageResponse>('read_centrale_canine_page', {
       url: pageRequest.url,
-      headers: pageRequest.headers,
+      headers: Object.entries(pageRequest.headers),
     })
   }
 }

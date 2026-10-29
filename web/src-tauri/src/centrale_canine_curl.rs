@@ -1,7 +1,6 @@
 //! Reads one Centrale Canine page with the curl of Windows, the only client Cloudflare accepts from the
 //! computer's connection (docs/02-sources.md), without opening any window.
 
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -43,11 +42,11 @@ impl RelayedPageResponse {
     }
 }
 
-/// Read one Centrale Canine page with the headers the API asked for, on a background thread.
+/// Read one Centrale Canine page on a background thread, with the headers in the order the API gave them.
 #[tauri::command]
 pub async fn read_centrale_canine_page(
     url: String,
-    headers: HashMap<String, String>,
+    headers: Vec<(String, String)>,
 ) -> Result<RelayedPageResponse, String> {
     if !url.starts_with(CENTRALE_CANINE_PAGES_PREFIX) {
         return Err(format!("Adresse refusée : {url}"));
@@ -61,7 +60,7 @@ pub async fn read_centrale_canine_page(
 }
 
 /// Run curl once and turn its output into the page it read.
-fn read_with_curl(url: String, headers: &HashMap<String, String>) -> RelayedPageResponse {
+fn read_with_curl(url: String, headers: &[(String, String)]) -> RelayedPageResponse {
     let mut command = Command::new(curl_path());
     command.args(["--silent", "--show-error", "--max-time", "30", "--write-out", STATUS_LINE_FORMAT]);
     for (name, value) in headers {
