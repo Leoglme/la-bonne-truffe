@@ -11,7 +11,7 @@ venv/
 .env
 .env.local
 
-# SQLite (le fichier vit dans data/, monté en volume dans Docker)
+# SQLite (le fichier vit dans data/)
 data/
 *.db
 *.db-journal
