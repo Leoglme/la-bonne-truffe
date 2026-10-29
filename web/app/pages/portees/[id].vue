@@ -1,7 +1,7 @@
 <template>
   <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
     <div
-      class="flex min-h-0 flex-1 touch-pan-y touch-pinch-zoom flex-col lg:mx-auto lg:w-full lg:max-w-[820px]"
+      class="flex min-h-0 flex-1 touch-pan-y touch-pinch-zoom flex-col lg:w-full lg:max-w-5xl"
       :class="tileClass"
       :style="swipeStyle"
       @touchstart="onTouchStart"

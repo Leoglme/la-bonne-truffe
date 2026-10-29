@@ -1,12 +1,11 @@
 import type { ComputedRef, Ref } from 'vue'
-import type { FollowUpCard, LitterCard, LitterDetail } from '~/types/api'
+import type { FollowUpCard, LitterCard, LitterDetail, LitterVisit } from '~/types/api'
 import type { LitterBrowsingOrigin, LitterFilterKey } from '~/types/Litter'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { LittersService } from '~/services/littersService'
+import { FrenchDate } from '~/utils/frenchDate'
 import { LitterPresentation } from '~/utils/litterPresentation'
-
-const PREVIOUS_VISIT_STORAGE_KEY: string = 'lbt-litters-visited-at'
 
 /** Pinia store of the litters: the home list, its filter, and the litter opened on the detail screen or the desktop panel. */
 export const useLittersStore = defineStore('litters', () => {
@@ -17,7 +16,9 @@ export const useLittersStore = defineStore('litters', () => {
   const loadError: Ref<string | null> = ref(null)
   const previousVisitAt: Ref<Date | null> = ref(null)
 
-  const visibleCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] => {
+  let hasRecordedVisit: boolean = false
+
+  const filteredCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] => {
     if (selectedFilterKey.value === 'preferred') {
       return cards.value.filter((card: LitterCard): boolean => card.tier === 'preferred')
     }
@@ -26,6 +27,19 @@ export const useLittersStore = defineStore('litters', () => {
     }
     return cards.value
   })
+
+  const newCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
+    filteredCards.value.filter((card: LitterCard): boolean => LitterPresentation.isNew(card, previousVisitAt.value)),
+  )
+
+  const alreadySeenCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
+    filteredCards.value.filter((card: LitterCard): boolean => !LitterPresentation.isNew(card, previousVisitAt.value)),
+  )
+
+  const visibleCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] => [
+    ...newCards.value,
+    ...alreadySeenCards.value,
+  ])
 
   const preferredCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
     cards.value.filter((card: LitterCard): boolean => card.tier === 'preferred'),
@@ -36,22 +50,34 @@ export const useLittersStore = defineStore('litters', () => {
   )
 
   /**
-   * Load the litters, and remember the previous visit for the « Nouveau » badges.
+   * Load the litters of the home list.
    */
   async function load(): Promise<void> {
     isLoading.value = true
     loadError.value = null
     try {
-      if (previousVisitAt.value === null) {
-        const storedVisit: string | null = localStorage.getItem(PREVIOUS_VISIT_STORAGE_KEY)
-        previousVisitAt.value = storedVisit ? new Date(storedVisit) : null
-        localStorage.setItem(PREVIOUS_VISIT_STORAGE_KEY, new Date().toISOString())
-      }
       cards.value = await LittersService.list()
     } catch (error: unknown) {
       loadError.value = error instanceof Error ? error.message : 'Chargement impossible'
     } finally {
       isLoading.value = false
+    }
+  }
+
+  /**
+   * Record the look at the home list once per launch of the app, and keep the previous one to tell the new litters.
+   */
+  async function recordVisit(): Promise<void> {
+    if (hasRecordedVisit) {
+      return
+    }
+    hasRecordedVisit = true
+    try {
+      const visit: LitterVisit = await LittersService.recordVisit()
+      previousVisitAt.value = visit.previous_visit_at ? FrenchDate.parseApiDate(visit.previous_visit_at) : null
+    } catch (error: unknown) {
+      hasRecordedVisit = false
+      loadError.value = error instanceof Error ? error.message : 'Chargement impossible'
     }
   }
 
@@ -136,10 +162,13 @@ export const useLittersStore = defineStore('litters', () => {
     isLoading,
     loadError,
     previousVisitAt,
+    newCards,
+    alreadySeenCards,
     visibleCards,
     preferredCards,
     bornLastNightCards,
     load,
+    recordVisit,
     select,
     follow,
     applyDetail,

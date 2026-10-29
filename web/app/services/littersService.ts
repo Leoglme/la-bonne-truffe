@@ -5,6 +5,7 @@ import type {
   FollowUpUpdate,
   LitterCard,
   LitterDetail,
+  LitterVisit,
 } from '~/types/api'
 import type { LitterListFilters } from '~/types/Litter'
 import { ApiClient } from './api'
@@ -19,6 +20,15 @@ export class LittersService {
    */
   static async list(filters: LitterListFilters = {}): Promise<LitterCard[]> {
     return ApiClient.get<LitterCard[]>('/api/v1/litters', { params: { tier: filters.tier, kind: filters.kind } })
+  }
+
+  /**
+   * Record that the home list is looked at now, on whatever device.
+   *
+   * @returns The previous look: the litters first seen after it are the new ones.
+   */
+  static async recordVisit(): Promise<LitterVisit> {
+    return ApiClient.post<LitterVisit>('/api/v1/litters/visit', {})
   }
 
   /**

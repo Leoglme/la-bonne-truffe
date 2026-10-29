@@ -34,3 +34,14 @@ export type UseHorizontalSwipeReturn = {
   onTouchEnd: (event: TouchEvent) => Promise<void>
   onTouchCancel: () => void
 }
+
+export type PullToRefreshGesture = 'undecided' | 'pulling' | 'ignored'
+
+export type UsePullToRefreshReturn = {
+  pullDistanceInPixels: Ref<number>
+  isReadyToRefresh: ComputedRef<boolean>
+  isRefreshing: Ref<boolean>
+  onTouchStart: (event: TouchEvent) => void
+  onTouchMove: (event: TouchEvent) => void
+  onTouchEnd: () => void
+}

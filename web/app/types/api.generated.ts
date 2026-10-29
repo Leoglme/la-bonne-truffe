@@ -543,6 +543,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/litters/visit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Litters Visit
+         * @description Record that the home list is looked at now; the dashboard calls it once per launch.
+         *
+         *     Args:
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The previous look: the litters first seen after it are the new ones.
+         */
+        post: operations["record_litters_visit_api_v1_litters_visit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/litters/{litter_id}": {
         parameters: {
             query?: never;
@@ -1205,6 +1232,14 @@ export interface components {
             colors: components["schemas"]["LitterColor"][];
             /** Photos */
             photos: string[];
+        };
+        /**
+         * LitterVisit
+         * @description The previous look at the home list: the litters first seen after it are the new ones.
+         */
+        LitterVisit: {
+            /** Previous Visit At */
+            previous_visit_at: string | null;
         };
         /**
          * LofPreference
@@ -2177,6 +2212,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_litters_visit_api_v1_litters_visit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LitterVisit"];
                 };
             };
         };

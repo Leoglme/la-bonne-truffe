@@ -53,22 +53,24 @@
           </UiEmptyStateCard>
 
           <div class="flex flex-col gap-3.5 md:hidden">
-            <LitterRowCard
-              v-for="litter in littersStore.visibleCards"
-              :key="litter.id"
-              :litter="litter"
-              :is-new="LitterPresentation.isNew(litter, littersStore.previousVisitAt)"
-            />
+            <template v-for="litter in littersStore.visibleCards" :key="litter.id">
+              <UiUpToDateSeparator v-if="litter.id === firstAlreadySeenLitterId" class="my-1.5" />
+              <LitterRowCard
+                :litter="litter"
+                :is-new="LitterPresentation.isNew(litter, littersStore.previousVisitAt)"
+              />
+            </template>
           </div>
           <div class="hidden grid-cols-2 gap-5 md:grid xl:grid-cols-3">
-            <LitterGridCard
-              v-for="litter in littersStore.visibleCards"
-              :key="litter.id"
-              :litter="litter"
-              :is-new="LitterPresentation.isNew(litter, littersStore.previousVisitAt)"
-              :is-selected="littersStore.selectedLitter?.id === litter.id"
-              @activate="(clickEvent: MouseEvent): Promise<void> => openInSidePanel(clickEvent, litter.id)"
-            />
+            <template v-for="litter in littersStore.visibleCards" :key="litter.id">
+              <UiUpToDateSeparator v-if="litter.id === firstAlreadySeenLitterId" class="col-span-full" />
+              <LitterGridCard
+                :litter="litter"
+                :is-new="LitterPresentation.isNew(litter, littersStore.previousVisitAt)"
+                :is-selected="littersStore.selectedLitter?.id === litter.id"
+                @activate="(clickEvent: MouseEvent): Promise<void> => openInSidePanel(clickEvent, litter.id)"
+              />
+            </template>
           </div>
         </div>
       </div>
@@ -111,6 +113,9 @@ const greetingSubtitle: ComputedRef<string> = computed((): string => {
 const bornLastNightLitter: ComputedRef<LitterCard | null> = computed(
   (): LitterCard | null => littersStore.bornLastNightCards[0] ?? null,
 )
+const firstAlreadySeenLitterId: ComputedRef<number | null> = computed((): number | null =>
+  littersStore.previousVisitAt === null ? null : (littersStore.alreadySeenCards[0]?.id ?? null),
+)
 
 /**
  * On a wide desktop, show the litter in the side panel instead of leaving the list.
@@ -127,7 +132,7 @@ async function openInSidePanel(clickEvent: MouseEvent, litterId: number): Promis
 }
 
 onMounted(async (): Promise<void> => {
-  await littersStore.load()
+  await Promise.all([littersStore.recordVisit(), littersStore.load()])
   const firstLitter: LitterCard | undefined = littersStore.visibleCards[0]
 
   if (littersStore.selectedLitter === null && firstLitter !== undefined) {
