@@ -1,5 +1,4 @@
-//! Reads one Centrale Canine page with the curl of Windows, the only client Cloudflare accepts from the
-//! computer's connection (docs/02-sources.md), without opening any window.
+//! Reads one Centrale Canine page with the curl of Windows, without opening any window.
 
 use std::path::PathBuf;
 use std::process::Command;
@@ -7,44 +6,18 @@ use std::process::Command;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
-use serde::Serialize;
+use super::{RelayedPageResponse, CENTRALE_CANINE_PAGES_PREFIX};
 
 /// Process creation flag that keeps curl from opening a console window.
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
-/// Only the litters pages of the Centrale Canine may be read through this command.
-const CENTRALE_CANINE_PAGES_PREFIX: &str = "https://www.centrale-canine.fr/api/breed/";
-
 /// Written by curl after the body: the HTTP status, then the `cf-mitigated` header when Cloudflare sent one.
 const STATUS_LINE_FORMAT: &str = "\n%{http_code} %header{cf-mitigated}";
 
-/// A page as curl received it, in the shape the API expects.
-#[derive(Serialize)]
-pub struct RelayedPageResponse {
-    url: String,
-    status_code: Option<u16>,
-    body: String,
-    cloudflare_mitigation: Option<String>,
-    curl_error: Option<String>,
-}
-
-impl RelayedPageResponse {
-    /// A page curl could not read.
-    fn failed(url: String, curl_error: String) -> Self {
-        Self {
-            url,
-            status_code: None,
-            body: String::new(),
-            cloudflare_mitigation: None,
-            curl_error: Some(curl_error),
-        }
-    }
-}
-
 /// Read one Centrale Canine page on a background thread, with the headers in the order the API gave them.
 #[tauri::command]
-pub async fn read_centrale_canine_page(
+pub async fn read_centrale_canine_page_with_curl(
     url: String,
     headers: Vec<(String, String)>,
 ) -> Result<RelayedPageResponse, String> {

@@ -37,13 +37,13 @@ class RelayedPagesTransport(httpx.BaseTransport):
             The relayed response, whatever its status.
 
         Raises:
-            httpx.ConnectError: When curl failed on the desktop app, or when the page was not read.
+            httpx.ConnectError: When the desktop app could not read the page, or did not read it.
         """
         relayed_response = self.responses_by_url.get(str(request.url))
         if relayed_response is None:
             return self.answer_unread_page(request)
         if relayed_response.status_code is None:
-            raise httpx.ConnectError(f"curl a échoué sur le PC : {relayed_response.curl_error}", request=request)
+            raise httpx.ConnectError(f"Lecture impossible sur le PC : {relayed_response.curl_error}", request=request)
         headers: dict[str, str] = {}
         if relayed_response.cloudflare_mitigation:
             headers[CLOUDFLARE_MITIGATION_HEADER] = relayed_response.cloudflare_mitigation

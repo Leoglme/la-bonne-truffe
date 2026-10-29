@@ -7,7 +7,7 @@ import type {
 } from '~/types/api'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { DesktopCurlService } from '~/services/desktopCurlService'
+import { DesktopPageReaderService } from '~/services/desktopPageReaderService'
 import { SourcesService } from '~/services/sourcesService'
 import { CentraleCanineRelayRunner } from '~/utils/centraleCanineRelayRunner'
 
@@ -39,7 +39,9 @@ export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', ()
           sendRelayRequest: (relayRequest: CentraleCanineRelayRequest): Promise<CentraleCanineRelayAnswer> =>
             SourcesService.relayCentraleCanine(relayRequest),
           readPageWithCurl: (pageRequest: RelayPageRequest): Promise<RelayedPageResponse> =>
-            DesktopCurlService.readCentraleCaninePage(pageRequest),
+            DesktopPageReaderService.readCentraleCaninePageWithCurl(pageRequest),
+          readPageInBrowser: (pageRequest: RelayPageRequest): Promise<RelayedPageResponse> =>
+            DesktopPageReaderService.readCentraleCaninePageInBrowser(pageRequest),
           pause: (milliseconds: number): Promise<void> =>
             new Promise((resolve: () => void): void => {
               setTimeout(resolve, milliseconds)

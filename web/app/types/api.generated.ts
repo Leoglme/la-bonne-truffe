@@ -1434,14 +1434,14 @@ export interface components {
         };
         /**
          * RelayedPageResponse
-         * @description One Centrale Canine page as the curl of the desktop app received it.
+         * @description One Centrale Canine page as the desktop app read it, with curl or its browser.
          */
         RelayedPageResponse: {
             /** Url */
             url: string;
             /**
              * Status Code
-             * @description HTTP status; none when curl could not reach the site
+             * @description HTTP status; none when the page could not be read
              */
             status_code?: number | null;
             /**
@@ -1456,7 +1456,7 @@ export interface components {
             cloudflare_mitigation?: string | null;
             /**
              * Curl Error
-             * @description Why curl failed, when it did
+             * @description Why the page could not be read, with curl or the browser (the name stays for the installed apps)
              */
             curl_error?: string | null;
         };

@@ -11,8 +11,14 @@ import { CentraleCanineRelayRunner } from '../app/utils/centraleCanineRelayRunne
 
 type RecordedRelay = {
   sentRequests: CentraleCanineRelayRequest[]
-  readUrls: string[]
+  curlReadUrls: string[]
+  browserReadUrls: string[]
   pauseCount: number
+}
+
+type ScriptedPageStatuses = {
+  curl: Record<string, number>
+  browser: Record<string, number>
 }
 
 const PAGE_HEADERS: Record<string, string> = { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' }
@@ -34,16 +40,25 @@ function apiAnswerOf(state: CentraleCanineRelayState, pageUrls: string[] = []): 
 }
 
 /**
+ * Build an empty record of what the runner did.
+ *
+ * @returns The record.
+ */
+function emptyRecordedRelay(): RecordedRelay {
+  return { sentRequests: [], curlReadUrls: [], browserReadUrls: [], pauseCount: 0 }
+}
+
+/**
  * Build dependencies that answer with scripted API answers and page statuses, and record what the runner did.
  *
  * @param apiAnswers - Answers of the API, in order.
- * @param statusCodeByUrl - Status curl gets for a page; 200 when absent.
+ * @param pageStatuses - Status curl and the browser get for a page; 200 when absent.
  * @param recordedRelay - Where the calls are recorded.
  * @returns The dependencies.
  */
 function scriptedDependencies(
   apiAnswers: CentraleCanineRelayAnswer[],
-  statusCodeByUrl: Record<string, number>,
+  pageStatuses: ScriptedPageStatuses,
   recordedRelay: RecordedRelay,
 ): CentraleCanineRelayDependencies {
   return {
@@ -56,8 +71,12 @@ function scriptedDependencies(
       return nextAnswer
     },
     readPageWithCurl: async (pageRequest: RelayPageRequest): Promise<RelayedPageResponse> => {
-      recordedRelay.readUrls.push(pageRequest.url)
-      return { url: pageRequest.url, status_code: statusCodeByUrl[pageRequest.url] ?? 200, body: '{}' }
+      recordedRelay.curlReadUrls.push(pageRequest.url)
+      return { url: pageRequest.url, status_code: pageStatuses.curl[pageRequest.url] ?? 200, body: '{}' }
+    },
+    readPageInBrowser: async (pageRequest: RelayPageRequest): Promise<RelayedPageResponse> => {
+      recordedRelay.browserReadUrls.push(pageRequest.url)
+      return { url: pageRequest.url, status_code: pageStatuses.browser[pageRequest.url] ?? 200, body: '{}' }
     },
     pause: async (): Promise<void> => {
       recordedRelay.pauseCount += 1
@@ -65,9 +84,21 @@ function scriptedDependencies(
   }
 }
 
+/**
+ * Read the statuses of the pages a relay request carried.
+ *
+ * @param relayRequest - A request sent to the API.
+ * @returns The status of each page, in order.
+ */
+function statusCodesSentIn(relayRequest: CentraleCanineRelayRequest | undefined): (number | null | undefined)[] {
+  return (relayRequest?.responses ?? []).map(
+    (response: RelayedPageResponse): number | null | undefined => response.status_code,
+  )
+}
+
 describe('CentraleCanineRelayRunner', (): void => {
   it('reads the pages the API asks for, round after round, until the run', async (): Promise<void> => {
-    const recordedRelay: RecordedRelay = { sentRequests: [], readUrls: [], pauseCount: 0 }
+    const recordedRelay: RecordedRelay = emptyRecordedRelay()
     const apiAnswers: CentraleCanineRelayAnswer[] = [
       apiAnswerOf('pages_needed', ['page-0-ille-et-vilaine', 'page-0-morbihan']),
       apiAnswerOf('pages_needed', ['page-1-ille-et-vilaine']),
@@ -75,12 +106,13 @@ describe('CentraleCanineRelayRunner', (): void => {
     ]
 
     const lastAnswer: CentraleCanineRelayAnswer = await CentraleCanineRelayRunner.relay(
-      scriptedDependencies(apiAnswers, {}, recordedRelay),
+      scriptedDependencies(apiAnswers, { curl: {}, browser: {} }, recordedRelay),
       false,
     )
 
     expect(lastAnswer.state).toBe('run_finished')
-    expect(recordedRelay.readUrls).toEqual(['page-0-ille-et-vilaine', 'page-0-morbihan', 'page-1-ille-et-vilaine'])
+    expect(recordedRelay.curlReadUrls).toEqual(['page-0-ille-et-vilaine', 'page-0-morbihan', 'page-1-ille-et-vilaine'])
+    expect(recordedRelay.browserReadUrls).toEqual([])
     expect(recordedRelay.pauseCount).toBe(3)
     expect(
       recordedRelay.sentRequests.map((relayRequest: CentraleCanineRelayRequest): number | undefined => {
@@ -90,36 +122,59 @@ describe('CentraleCanineRelayRunner', (): void => {
     expect(recordedRelay.sentRequests[2]?.relay_token).toBe('relay-token')
   })
 
-  it('stops at the first refused page and sends it at once', async (): Promise<void> => {
-    const recordedRelay: RecordedRelay = { sentRequests: [], readUrls: [], pauseCount: 0 }
+  it('reads in the browser once Cloudflare refuses curl, until the end of the relay', async (): Promise<void> => {
+    const recordedRelay: RecordedRelay = emptyRecordedRelay()
+    const apiAnswers: CentraleCanineRelayAnswer[] = [
+      apiAnswerOf('pages_needed', ['page-0-ille-et-vilaine', 'page-0-morbihan']),
+      apiAnswerOf('pages_needed', ['page-1-ille-et-vilaine']),
+      apiAnswerOf('run_finished'),
+    ]
+
+    await CentraleCanineRelayRunner.relay(
+      scriptedDependencies(apiAnswers, { curl: { 'page-0-ille-et-vilaine': 403 }, browser: {} }, recordedRelay),
+      false,
+    )
+
+    expect(recordedRelay.curlReadUrls).toEqual(['page-0-ille-et-vilaine'])
+    expect(recordedRelay.browserReadUrls).toEqual([
+      'page-0-ille-et-vilaine',
+      'page-0-morbihan',
+      'page-1-ille-et-vilaine',
+    ])
+    expect(statusCodesSentIn(recordedRelay.sentRequests[2])).toEqual([200, 200, 200])
+  })
+
+  it('stops at the first page neither curl nor the browser could read, and sends it at once', async (): Promise<void> => {
+    const recordedRelay: RecordedRelay = emptyRecordedRelay()
     const apiAnswers: CentraleCanineRelayAnswer[] = [
       apiAnswerOf('pages_needed', ['page-0-ille-et-vilaine', 'page-0-morbihan', 'page-0-finistere']),
       apiAnswerOf('run_finished'),
     ]
 
     await CentraleCanineRelayRunner.relay(
-      scriptedDependencies(apiAnswers, { 'page-0-morbihan': 403 }, recordedRelay),
+      scriptedDependencies(
+        apiAnswers,
+        { curl: { 'page-0-morbihan': 403 }, browser: { 'page-0-morbihan': 403 } },
+        recordedRelay,
+      ),
       false,
     )
 
-    expect(recordedRelay.readUrls).toEqual(['page-0-ille-et-vilaine', 'page-0-morbihan'])
-    expect(
-      recordedRelay.sentRequests[1]?.responses?.map(
-        (response: RelayedPageResponse): number | null | undefined => response.status_code,
-      ),
-    ).toEqual([200, 403])
+    expect(recordedRelay.curlReadUrls).toEqual(['page-0-ille-et-vilaine', 'page-0-morbihan'])
+    expect(recordedRelay.browserReadUrls).toEqual(['page-0-morbihan'])
+    expect(statusCodesSentIn(recordedRelay.sentRequests[1])).toEqual([200, 403])
   })
 
   it('reads nothing when the run is not due', async (): Promise<void> => {
-    const recordedRelay: RecordedRelay = { sentRequests: [], readUrls: [], pauseCount: 0 }
+    const recordedRelay: RecordedRelay = emptyRecordedRelay()
 
     const lastAnswer: CentraleCanineRelayAnswer = await CentraleCanineRelayRunner.relay(
-      scriptedDependencies([apiAnswerOf('not_due')], {}, recordedRelay),
+      scriptedDependencies([apiAnswerOf('not_due')], { curl: {}, browser: {} }, recordedRelay),
       false,
     )
 
     expect(lastAnswer.state).toBe('not_due')
-    expect(recordedRelay.readUrls).toEqual([])
+    expect(recordedRelay.curlReadUrls).toEqual([])
     expect(recordedRelay.sentRequests).toHaveLength(1)
   })
 })

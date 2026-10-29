@@ -7,15 +7,18 @@ from schemas.source_status import SourceStatus
 
 
 class RelayedPageResponse(BaseModel):
-    """One Centrale Canine page as the curl of the desktop app received it."""
+    """One Centrale Canine page as the desktop app read it, with curl or its browser."""
 
     url: str
-    status_code: int | None = Field(default=None, description="HTTP status; none when curl could not reach the site")
+    status_code: int | None = Field(default=None, description="HTTP status; none when the page could not be read")
     body: str = ""
     cloudflare_mitigation: str | None = Field(
         default=None, description="Value of the cf-mitigated header: « challenge » when Cloudflare refuses the client"
     )
-    curl_error: str | None = Field(default=None, description="Why curl failed, when it did")
+    curl_error: str | None = Field(
+        default=None,
+        description="Why the page could not be read, with curl or the browser (the name stays for the installed apps)",
+    )
 
 
 class RelayPageRequest(BaseModel):
