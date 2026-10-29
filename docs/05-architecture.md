@@ -52,6 +52,7 @@ la-bonne-truffe/
 | `GET /auth/signup-availability`, `POST /auth/signup-requests` | Inscription ouverte ou non ; demande d'inscription gardée tant qu'elle est fermée (`202`, même réponse que l'adresse ait un compte ou non) |
 | `POST /auth/forgot-password`, `POST /auth/reset-password/verify`, `POST /auth/reset-password` | Mot de passe oublié : envoi du lien, vérification du lien, nouveau mot de passe (qui connecte) |
 | `GET /litters` | Groupes de portées avec leur match, filtres `tier`, `kind`, `active`, tri par score ou fraîcheur |
+| `POST /litters/visit` | Noter que la liste est consultée maintenant (une fois par ouverture de l'app) ; renvoie la consultation précédente (`previous_visit_at`, `null` la première fois) |
 | `GET /litters/{id}` | Détail : listings par source (pour une annonce de chiot : son sexe, ses couleurs et ses photos), éleveur, raisons du score, changements, suivi |
 | `PATCH /litters/{id}/colors` | Confirmer une couleur à la main (`confirmed`) |
 | `GET /profiles`, `PUT /profiles/{id}` | Critères |

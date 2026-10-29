@@ -53,6 +53,14 @@ def test_home_list_is_sorted_by_score_and_filtered(client: TestClient, collected
     assert (gold_card["name"], gold_card["place"]) == ("Du Clos de l'Élevage D", "Saint-Aubin-du-Cormier")
 
 
+def test_a_visit_returns_the_previous_one(client: TestClient, collected: dict[str, str]) -> None:
+    first_visit = client.post("/api/v1/litters/visit", headers=collected).json()
+    second_visit = client.post("/api/v1/litters/visit", headers=collected).json()
+
+    assert first_visit == {"previous_visit_at": None}
+    assert second_visit["previous_visit_at"] is not None
+
+
 def test_detail_explains_the_score(client: TestClient, collected: dict[str, str], db: Session) -> None:
     detail = client.get(f"/api/v1/litters/{group_id_of(db, GOLD_LITTER_ID)}", headers=collected).json()
 

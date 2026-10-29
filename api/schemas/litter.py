@@ -141,6 +141,12 @@ class FollowUpNoteCreate(BaseModel):
     text: str = Field(..., min_length=1, max_length=4000)
 
 
+class LitterVisit(BaseModel):
+    """The previous look at the home list: the litters first seen after it are the new ones."""
+
+    previous_visit_at: datetime | None
+
+
 class FollowUpCard(BaseModel):
     """A followed litter as the follow-up screen lists it."""
 

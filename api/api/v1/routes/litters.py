@@ -1,4 +1,4 @@
-"""Litter routes: home screen list, detail, confirmed colours, follow-up and notes."""
+"""Litter routes: home screen list and its visits, detail, confirmed colours, follow-up and notes."""
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
@@ -15,6 +15,7 @@ from schemas.litter import (
     FollowUpUpdate,
     LitterCard,
     LitterDetail,
+    LitterVisit,
 )
 from services.auth_service import get_current_user
 from services.litter_command_service import LitterCommandService
@@ -47,6 +48,24 @@ async def list_litters(
         The cards.
     """
     return LitterQueryService.list_cards(db, current_user.id, tier, kind, active, sort)
+
+
+@router.post("/litters/visit", response_model=LitterVisit)
+async def record_litters_visit(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> LitterVisit:
+    """
+    Record that the home list is looked at now; the dashboard calls it once per launch.
+
+    Args:
+        current_user: The authenticated user.
+        db: Database session.
+
+    Returns:
+        The previous look: the litters first seen after it are the new ones.
+    """
+    return LitterVisit(previous_visit_at=LitterCommandService.record_visit(db, current_user))
 
 
 @router.get("/litters/{litter_id}", response_model=LitterDetail)

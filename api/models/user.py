@@ -1,5 +1,7 @@
 """User model: the single account that signs in to the dashboard."""
 
+from datetime import datetime
+
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,6 +19,7 @@ class User(TimestampMixin, Base):
         email: Login email, unique.
         hashed_password: bcrypt hash.
         is_active: Whether the account may sign in.
+        litters_visited_at: Last time the home list was looked at, on any device (naive UTC); None before the first.
     """
 
     __tablename__ = "users"
@@ -26,6 +29,7 @@ class User(TimestampMixin, Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
+    litters_visited_at: Mapped[datetime | None]
 
     def __repr__(self) -> str:
         return f"<User id={self.id} email={self.email}>"

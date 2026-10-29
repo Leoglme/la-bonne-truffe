@@ -39,6 +39,7 @@ MIGRATION_MODULES: list[tuple[str, str]] = [
     ("require_lof_on_profiles_left_on_preferred", "migrations.require_lof_on_profiles_left_on_preferred"),
     ("add_signup_requests_table", "migrations.add_signup_requests_table"),
     ("add_follow_up_reminder_sent_at", "migrations.add_follow_up_reminder_sent_at"),
+    ("add_user_litters_visited_at", "migrations.add_user_litters_visited_at"),
 ]
 
 _NON_MIGRATION_MODULES: set[str] = {"__init__", "run_migrations"}

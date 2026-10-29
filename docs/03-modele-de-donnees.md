@@ -5,7 +5,7 @@ SQLAlchemy côté API, SQLite dans un volume Docker (un seul utilisateur, quelqu
 ## Les tables
 
 ### `users` et `push_subscriptions`
-Copiées de DevLeadHunter : un utilisateur avec mot de passe hashé et jeton JWT ; les abonnements Web Push (`endpoint`, `p256dh`, `auth`, `user_agent`, `created_at`) avec purge automatique des endpoints morts (404/410).
+Copiées de DevLeadHunter : un utilisateur avec mot de passe hashé et jeton JWT, et `litters_visited_at` (nullable : dernière consultation de la liste des portées, sur n'importe quel appareil) ; les abonnements Web Push (`endpoint`, `p256dh`, `auth`, `user_agent`, `created_at`) avec purge automatique des endpoints morts (404/410).
 
 ### `breeds`
 Catalogue des races avec leurs identifiants par source.

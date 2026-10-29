@@ -1,4 +1,4 @@
-"""Changes the user makes on a litter: confirmed colours, follow-up status, notes."""
+"""Changes the user makes on a litter: confirmed colours, follow-up status, notes, and looks at the home list."""
 
 from datetime import UTC, datetime
 
@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from core.clock import naive_utc_now
 from models.follow_up import FollowUp, FollowUpNote
+from models.user import User
 from schemas.litter import ColorConfirmation, FollowUpNoteCreate, FollowUpUpdate
 from services.litter_query_service import LitterQueryService
 from services.matching.match_refresh import match_refresh_service
@@ -123,6 +124,23 @@ class LitterCommandService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note introuvable")
         db.delete(note)
         db.commit()
+
+    @staticmethod
+    def record_visit(db: Session, user: User) -> datetime | None:
+        """
+        Record that the user looks at the home list now, on whatever device.
+
+        Args:
+            db: Database session.
+            user: The user, loaded in this session.
+
+        Returns:
+            The previous look, naive UTC, or None on the first one.
+        """
+        previous_visit_at = user.litters_visited_at
+        user.litters_visited_at = naive_utc_now()
+        db.commit()
+        return previous_visit_at
 
     @staticmethod
     def _find_follow_up(db: Session, user_id: int, litter_group_id: int) -> FollowUp | None:
