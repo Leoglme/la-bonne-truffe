@@ -403,7 +403,8 @@ class CentraleCanineCollector:
     @staticmethod
     def parse_breeder(litter: dict[str, Any], breeder_details: dict[str, Any] | None) -> RawBreeder | None:
         """
-        Describe the breeder of a litter from its ``breeders`` entry (name, affix, SIREN, phone, town).
+        Describe the breeder of a litter from its ``breeders`` entry (name, affix, SIREN, phone, town), and
+        whether it belongs to the club of the breed (``is_member``: the Spaniel Club Français for the cocker).
 
         Args:
             litter: One ``n<id>`` object of the JSON.
@@ -435,6 +436,7 @@ class CentraleCanineCollector:
             latitude=coordinates[0] if coordinates is not None else None,
             longitude=coordinates[1] if coordinates is not None else None,
             selection_group=selection_group,
+            is_breed_club_member=SccValueParser.to_bool(breeder_details.get("is_member")),
         )
 
     @staticmethod

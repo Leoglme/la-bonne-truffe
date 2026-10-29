@@ -27,6 +27,8 @@ class Breeder(TimestampMixin, Base):
         website: Breeder's website.
         scc_breeder_id: Breeder identifier at the Centrale Canine (``n_breeder_id``).
         scc_selection_group: Centrale Canine group: 1 selected, 2 with affix, 3 without affix.
+        is_breed_club_member: Member of the club of the breed (the Spaniel Club Français for the cocker), as the
+            Centrale Canine shows it; null until a Centrale Canine page lists the breeder.
         notes: Free notes.
     """
 
@@ -47,6 +49,7 @@ class Breeder(TimestampMixin, Base):
     website: Mapped[str | None] = mapped_column(String(500))
     scc_breeder_id: Mapped[str | None] = mapped_column(String(40), unique=True)
     scc_selection_group: Mapped[int | None]
+    is_breed_club_member: Mapped[bool | None]
     notes: Mapped[str | None] = mapped_column(Text)
 
     def __repr__(self) -> str:

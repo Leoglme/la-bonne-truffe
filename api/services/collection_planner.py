@@ -116,19 +116,23 @@ class CollectionPlanner:
     @staticmethod
     def _source_slug(breed: Breed, source: ListingSource) -> str | None:
         """
-        The slug of a breed in the addresses of an HTML source.
+        The name of a breed on an HTML source: the slug of its addresses, or its name in the ads of Cœur de Cocker.
 
         Args:
             breed: The breed.
             source: The source.
 
         Returns:
-            The slug, or None while unknown for that source.
+            The name, or None while unknown for that source.
         """
         if source == ListingSource.CHIENS_DE_FRANCE:
             return breed.chiens_de_france_id
         if source == ListingSource.CHIOTS_DE_FRANCE:
             return breed.chiots_de_france_id
+        if source == ListingSource.WHOOF:
+            return breed.whoof_id
+        if source == ListingSource.COEUR_DE_COCKER:
+            return breed.coeur_de_cocker_id
         return None
 
     @staticmethod

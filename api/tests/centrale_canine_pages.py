@@ -89,6 +89,21 @@ def turn_gold(pages: Sequence[dict[str, Any]], litter_id: str) -> None:
     litter_in(pages, litter_id).update({"n_variety": "158", "n_variety_id": [345]})
 
 
+def mark_breed_club_member(pages: Sequence[dict[str, Any]], litter_id: str) -> None:
+    """
+    Make the breeder of a recorded litter a member of the club of the breed: no recorded breeder is one.
+
+    Args:
+        pages: Recorded pages.
+        litter_id: ``n_id`` of a litter of the breeder.
+    """
+    breeder_user_id = str(litter_in(pages, litter_id)["n_breeder"][0])
+    for page in pages:
+        breeders = page["litters"].get("breeders")
+        if isinstance(breeders, dict) and breeder_user_id in breeders:
+            breeders[breeder_user_id]["is_member"] = True
+
+
 def collector_serving(pages: Sequence[dict[str, Any]]) -> CentraleCanineCollector:
     """
     A collector that gets the recorded pages for Ille-et-Vilaine and an empty page for any other

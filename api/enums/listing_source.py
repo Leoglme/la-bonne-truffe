@@ -9,3 +9,5 @@ class ListingSource(StrEnum):
     CENTRALE_CANINE = "centrale_canine"
     CHIENS_DE_FRANCE = "chiens_de_france"
     CHIOTS_DE_FRANCE = "chiots_de_france"
+    WHOOF = "whoof"
+    COEUR_DE_COCKER = "coeur_de_cocker"

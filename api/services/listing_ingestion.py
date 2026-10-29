@@ -52,7 +52,7 @@ BORN_LITTER_ACTIVE_DAYS = 183
 
 ColumnValue = str | int | float | bool | date | datetime | StrEnum | list[str] | list[dict[str, str]] | None
 
-StoredValue = TypeVar("StoredValue", str, int, float)
+StoredValue = TypeVar("StoredValue", str, bool, int, float)
 
 
 @dataclass
@@ -302,6 +302,9 @@ class ListingIngestionService:
         breeder.latitude = cls._known_or_current(raw_breeder.latitude, breeder.latitude)
         breeder.longitude = cls._known_or_current(raw_breeder.longitude, breeder.longitude)
         breeder.scc_selection_group = cls._known_or_current(raw_breeder.selection_group, breeder.scc_selection_group)
+        breeder.is_breed_club_member = cls._known_or_current(
+            raw_breeder.is_breed_club_member, breeder.is_breed_club_member
+        )
         db.flush()
         return breeder.id
 

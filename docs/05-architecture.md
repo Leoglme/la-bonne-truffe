@@ -12,7 +12,7 @@ la-bonne-truffe/
 │   ├── models/          SQLAlchemy (voir 03-modele-de-donnees.md)
 │   ├── schemas/         Pydantic v2
 │   ├── services/        classes de service (collecteurs, normalisation, matching, notifier)
-│   │   ├── collectors/  centrale_canine.py, chiens_de_france.py, chiots_de_france.py
+│   │   ├── collectors/  centrale_canine.py, chiens_de_france.py, chiots_de_france.py, whoof.py, coeur_de_cocker.py
 │   │   ├── matching/    scoring.py, tiers.py, events.py
 │   │   └── push_service.py   (copié de DevLeadHunter)
 │   ├── api/v1/routes/   REST
@@ -34,7 +34,7 @@ la-bonne-truffe/
 
 - **FastAPI**, Pydantic v2, SQLAlchemy, SQLite (un seul fichier). Migrations manuelles comme DevLeadHunter (`migrations/run_migrations.py`).
 - **Worker** : processus séparé (`python worker.py`) avec **APScheduler**. Un job par source, toutes les heures, décalés de quelques minutes. Un job « récap du soir » à `digest_hour`. Un job toutes les cinq minutes pousse les rappels du suivi arrivés à leur heure. Un job « nettoyage » quotidien (`is_active`, purge des `raw_json` de plus de 90 jours).
-- **Collecteurs** : une classe par source avec la même interface `collect(profile) -> list[RawListing]`. `httpx` pour les appels, `selectolax` (ou BeautifulSoup) pour le HTML. Centrale Canine en JSON avec User-Agent navigateur, Chiens de France et Chiots de France en HTML avec le User-Agent honnête ; toutes les requêtes passent par `PoliteHttpClient` (une par seconde) et le `curl` du système depuis le PC de Léo, car Cloudflare refuse le client Python sur la Centrale Canine (voir `02-sources.md`). Le worker relève la Centrale Canine à la minute 5, Chiens de France à la minute 20 et Chiots de France à la minute 35 de chaque heure. Chaque relevé écrit une ligne `source_runs`. Sur le VPS, la Centrale Canine est relayée par l'app Windows d'un PC allumé (`POST /sources/centrale_canine/relay`).
+- **Collecteurs** : une classe par source avec la même interface `collect(profile) -> list[RawListing]`. `httpx` pour les appels, `selectolax` (ou BeautifulSoup) pour le HTML. Centrale Canine en JSON avec User-Agent navigateur, Chiens de France et Chiots de France en HTML, Whoof (JSON de l'attribut `data-page`) et Cœur de Cocker (JSON WordPress) avec le User-Agent honnête ; toutes les requêtes passent par `PoliteHttpClient` (une par seconde) et le `curl` du système, car Cloudflare refuse le client Python sur la Centrale Canine (voir `02-sources.md`). Le worker relève la Centrale Canine à la minute 5, Chiens de France à la minute 20, Chiots de France à la minute 35, Whoof à la minute 45 et Cœur de Cocker à la minute 50 de chaque heure. Chaque relevé écrit une ligne `source_runs`. Sur le VPS, la Centrale Canine est relayée par l'app Windows d'un PC allumé (`POST /sources/centrale_canine/relay`).
 - **Normalisation** : `RawListing` → `Listing` (vocabulaire canonique des couleurs, dates, LOF). `rapidfuzz` pour rapprocher les affixes.
 - **Matching** : `MatchingService.evaluate(group, profile) -> Match` (palier, score, raisons, drapeaux). Pur, sans effet de bord, testé unitairement.
 - **Événements** : `EventService.detect(previous_match, new_match, changes) -> list[Event]`, puis `NotifierService` qui envoie les push et écrit `notifications`.

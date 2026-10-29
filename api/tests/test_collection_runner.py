@@ -17,6 +17,7 @@ from tests.centrale_canine_pages import (
     collector_serving,
     litter_in,
     load_recorded_pages,
+    mark_breed_club_member,
     refusing_collector,
     remove_litter,
 )
@@ -65,7 +66,22 @@ def test_first_run_stores_every_litter_and_its_breeder(db: Session) -> None:
         "+33600000002",
     )
     assert (breeder.latitude, breeder.longitude, breeder.scc_selection_group) == (48.26, -1.40, 2)
+    assert breeder.is_breed_club_member is False
     assert db.query(Breeder).filter(Breeder.scc_breeder_id == "266172").one().siren == "000000001"
+
+
+def test_a_breeder_who_leaves_the_breed_club_is_no_longer_a_member(db: Session) -> None:
+    SeederRunner.run(db)
+    pages_of_a_member = load_recorded_pages()
+    mark_breed_club_member(pages_of_a_member, "4236807")
+    collection_runner.run_centrale_canine(db, collector_serving(pages_of_a_member))
+    breeder = db.query(Breeder).filter(Breeder.scc_breeder_id == "379540").one()
+    assert breeder.is_breed_club_member is True
+
+    collection_runner.run_centrale_canine(db, collector_serving(load_recorded_pages()))
+
+    db.refresh(breeder)
+    assert breeder.is_breed_club_member is False
 
 
 def test_department_identifiers_are_read_when_a_profile_department_has_none(db: Session) -> None:

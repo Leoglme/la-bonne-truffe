@@ -11,7 +11,7 @@ from seeders.run_seeders import SeederRunner
 from services.auth_service import AuthService
 from services.collection_runner import collection_runner
 from services.push_service import PushResult, PushService
-from tests.centrale_canine_pages import collector_serving, load_recorded_pages, turn_gold
+from tests.centrale_canine_pages import collector_serving, load_recorded_pages, mark_breed_club_member, turn_gold
 
 GOLD_LITTER_ID = "4333817"
 EXPECTED_LITTER_ID = "4337070"
@@ -22,12 +22,14 @@ COLOR_BUNDLE_LITTER_ID = "4320577"
 def collected(db: Session, monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
     """
     Seed, collect the recorded pages once (pushes stubbed), and return the bearer header of the user.
-    The expected litter 4337070 is turned gold, so that « À naître » lists one.
+    The expected litter 4337070 is turned gold, so that « À naître » lists one, and the breeder of the gold
+    litter 4333817 joins the club of the breed, so that its detail shows the badge.
     """
     monkeypatch.setattr(PushService, "send", lambda *_args, **_kwargs: PushResult(delivered=1))
     SeederRunner.run(db)
     pages = load_recorded_pages()
     turn_gold(pages, EXPECTED_LITTER_ID)
+    mark_breed_club_member(pages, GOLD_LITTER_ID)
     collection_runner.run_centrale_canine(db, collector_serving(pages))
     user = db.query(User).one()
     return {"Authorization": f"Bearer {AuthService.create_access_token(user.email)}"}
@@ -69,6 +71,7 @@ def test_detail_explains_the_score(client: TestClient, collected: dict[str, str]
     assert detail["sire"] == {"name": "Père de test 23", "rating": 1}
     assert detail["breeder"]["phone_e164"] == "+33600000004"
     assert detail["breeder"]["is_selected_breeding"] is False
+    assert detail["breeder"]["is_breed_club_member"] is True
     assert detail["listings"][0]["external_url"] == "https://www.centrale-canine.fr/portee/2834593"
     assert detail["follow_up"] is None
 

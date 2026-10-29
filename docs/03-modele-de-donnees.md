@@ -9,7 +9,7 @@ Copiées de DevLeadHunter : un utilisateur avec mot de passe hashé et jeton JWT
 
 ### `breeds`
 Catalogue des races avec leurs identifiants par source.
-`id`, `name_fr` (« Cocker spaniel anglais »), `slug`, `scc_slug` (`cocker-spaniel-anglais`), `scc_breed_id` (237), `chiens_de_france_id`, `chiots_de_france_id`, `is_active`.
+`id`, `name_fr` (« Cocker spaniel anglais »), `slug`, `scc_slug` (`cocker-spaniel-anglais`), `scc_breed_id` (237), `chiens_de_france_id`, `chiots_de_france_id`, `whoof_id` (`cocker-spaniel-anglais`), `coeur_de_cocker_id` (`Cocker Anglais`), `is_active`.
 
 ### `breed_varieties`
 Les paquets de couleur tels que chaque source les connaît.
@@ -20,7 +20,7 @@ Les paquets de couleur tels que chaque source les connaît.
 
 ### `breeders`
 L'ancre du dédoublonnage.
-`id`, `display_name`, `affix` (affixe, nullable), `affix_normalized`, `siren` (unique, nullable), `phone_e164` (nullable), `email`, `zip_code`, `city`, `department_code`, `latitude`, `longitude` (position publiée par la source), `website`, `scc_breeder_id`, `scc_selection_group` (1 sélectionné, 2 avec affixe, 3 sans affixe), `notes`.
+`id`, `display_name`, `affix` (affixe, nullable), `affix_normalized`, `siren` (unique, nullable), `phone_e164` (nullable), `email`, `zip_code`, `city`, `department_code`, `latitude`, `longitude` (position publiée par la source), `website`, `scc_breeder_id`, `scc_selection_group` (1 sélectionné, 2 avec affixe, 3 sans affixe), `is_breed_club_member` (membre du club de la race d'après les portées de la Centrale Canine, nul tant qu'elle ne liste pas l'éleveur ; ajouté le 29/10/2026), `notes`.
 
 ### `litter_groups`
 Une portée réelle, vue sur une ou plusieurs sources.
@@ -28,7 +28,7 @@ Une portée réelle, vue sur une ou plusieurs sources.
 
 ### `listings`
 Une annonce ou une déclaration, par source. Une ligne par couple `source` + `external_id`.
-`id`, `source` (`centrale_canine` | `chiens_de_france` | `chiots_de_france`), `external_id`, `external_url`, `breed_id`, `breeder_id`, `litter_group_id`, `kind` (`litter_born` | `litter_expected` | `puppy_ad`), `lof_status` (`lof` | `non_lof` | `unknown`), `litter_number`, `mating_date`, `birth_date`, `male_count`, `female_count`, `puppies_available` (nullable, depuis les annonces), `variety_source_id`, `colors` (JSON : liste de `{color, confidence}`), `color_text` (texte libre d'origine), `price_cents` (nullable), `department_code`, `zip_code`, `city`, `sire_name`, `sire_rating`, `dam_name`, `dam_rating`, `litter_rating`, `photos` (JSON, URLs), `description`, `published_at` (mise en ligne sur la source, `n_created` pour la SCC), `first_seen_at`, `last_seen_at`, `last_changed_at`, `is_active`, `content_hash`, `raw_json` (instantané brut de la source).
+`id`, `source` (`centrale_canine` | `chiens_de_france` | `chiots_de_france` | `whoof` | `coeur_de_cocker`), `external_id`, `external_url`, `breed_id`, `breeder_id`, `litter_group_id`, `kind` (`litter_born` | `litter_expected` | `puppy_ad`), `lof_status` (`lof` | `non_lof` | `unknown`), `litter_number`, `mating_date`, `birth_date`, `male_count`, `female_count`, `puppies_available` (nullable, depuis les annonces), `variety_source_id`, `colors` (JSON : liste de `{color, confidence}`), `color_text` (texte libre d'origine), `price_cents` (nullable), `department_code`, `zip_code`, `city`, `sire_name`, `sire_rating`, `dam_name`, `dam_rating`, `litter_rating`, `photos` (JSON, URLs), `description`, `published_at` (mise en ligne sur la source, `n_created` pour la SCC), `first_seen_at`, `last_seen_at`, `last_changed_at`, `is_active`, `content_hash`, `raw_json` (instantané brut de la source).
 
 ### `listing_changes`
 Historique des champs qui bougent, pour les événements (« les sexes sont apparus », « le prix a changé »).
@@ -69,6 +69,8 @@ Chaque couleur d'une annonce porte une **confiance** : `certain` (variété SCC 
 Correspondance SCC pour le cocker anglais (identifiants lus dans `litters.filters.variety` le 28/10/2026) : `158` → `[gold]` certain ; `159` → `[noir, noir_et_feu, marron, marron_et_feu]` ambigu ; `317` « autres couleurs » → `[bleu_rouan, orange_rouan, marron_rouan, tricolore, particolore]` ambigu. Une base seedée avant cette date porte `317` pour le gold : le seeder corrige l'identifiant et les couleurs d'une variété existante, retrouvée par son libellé.
 
 Texte libre (Chiens de France, Chiots de France) : dictionnaire de mots-clés, par exemple « golden », « rouge », « doré », « fauve » → `gold` ; « noir et feu », « black and tan » → `noir_et_feu` ; « chocolat », « foie », « marron » → `marron` ; « bleu rouan », « blue roan » → `bleu_rouan`. Plusieurs couleurs dans une annonce = plusieurs entrées.
+
+Whoof donne les couleurs et les marques de la robe (`blanc`, `noir`, rouané, feu…) : la couleur n'est retenue, certaine, que quand elles en nomment une sans doute (noir rouané → `bleu_rouan`). Cœur de Cocker donne un libellé par chiot (« Bleu rouan », « Bicolore » → `particolore`) ; « Autre » reste sans couleur.
 
 ## Le dédoublonnage
 

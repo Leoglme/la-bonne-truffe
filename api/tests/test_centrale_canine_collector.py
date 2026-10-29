@@ -19,6 +19,7 @@ from services.collectors.centrale_canine import (
     SccVarietyTarget,
 )
 from services.collectors.raw_listing import RawBreeder, RawListing
+from tests.centrale_canine_pages import mark_breed_club_member
 
 FIXTURES = Path(__file__).parent / "fixtures" / "centrale_canine"
 
@@ -84,11 +85,24 @@ def test_breeder_comes_from_the_breeders_block_of_the_page() -> None:
         latitude=48.26,
         longitude=-1.40,
         selection_group=2,
+        is_breed_club_member=False,
     )
     assert (listing.zip_code, listing.city) == ("35140", "Saint-Aubin-du-Cormier")
 
     breeder_with_siren = parse_first_page()["4337070"].breeder
     assert breeder_with_siren is not None and breeder_with_siren.siren == "000000001"
+
+
+def test_a_member_of_the_breed_club_is_told_by_its_breeders_entry() -> None:
+    page = load_page(0)
+    mark_breed_club_member([page], "4236807")
+
+    listings = listings_by_id(CentraleCanineCollector().parse_litters_payload(page, COCKER, "35"))
+
+    member = listings["4236807"].breeder
+    other_breeder = listings["4337070"].breeder
+    assert member is not None and member.is_breed_club_member is True
+    assert other_breeder is not None and other_breeder.is_breed_club_member is False
 
 
 def test_expected_litter_keeps_sexes_unknown_instead_of_zero() -> None:

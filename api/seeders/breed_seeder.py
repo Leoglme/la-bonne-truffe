@@ -12,6 +12,8 @@ from models.breed_variety import BreedVariety
 COCKER_SLUG = "cocker-spaniel-anglais"
 CHIENS_DE_FRANCE_COCKER_SLUG = "cocker-spaniel-anglais"
 CHIOTS_DE_FRANCE_COCKER_SLUG = "cocker-spaniel-anglais"
+WHOOF_COCKER_SLUG = "cocker-spaniel-anglais"
+COEUR_DE_COCKER_COCKER_NAME = "Cocker Anglais"
 
 
 @dataclass(frozen=True)
@@ -49,9 +51,10 @@ class BreedSeeder:
 
     def run(self, db: Session) -> int:
         """
-        Seed the breed, its slugs on Chiens de France and Chiots de France when still missing, and its
-        varieties. A variety already there, found by its label, gets the identifier and the colours of its
-        seed: a database seeded before 28/10/2026 holds « 317 » for gold, the identifier then assumed.
+        Seed the breed, its names on Chiens de France, Chiots de France, Whoof and Cœur de Cocker when still
+        missing, and its varieties. A variety already there, found by its label, gets the identifier and the
+        colours of its seed: a database seeded before 28/10/2026 holds « 317 » for gold, the identifier then
+        assumed.
 
         Args:
             db: Database session.
@@ -76,6 +79,10 @@ class BreedSeeder:
             cocker.chiens_de_france_id = CHIENS_DE_FRANCE_COCKER_SLUG
         if cocker.chiots_de_france_id is None:
             cocker.chiots_de_france_id = CHIOTS_DE_FRANCE_COCKER_SLUG
+        if cocker.whoof_id is None:
+            cocker.whoof_id = WHOOF_COCKER_SLUG
+        if cocker.coeur_de_cocker_id is None:
+            cocker.coeur_de_cocker_id = COEUR_DE_COCKER_COCKER_NAME
 
         existing_by_label = {
             variety.label: variety

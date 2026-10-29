@@ -42,6 +42,7 @@ class RawBreeder:
     latitude: float | None = None
     longitude: float | None = None
     selection_group: int | None = None
+    is_breed_club_member: bool | None = None
 
 
 @dataclass(frozen=True)

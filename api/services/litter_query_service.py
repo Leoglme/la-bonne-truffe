@@ -28,6 +28,7 @@ from schemas.litter import (
     LitterReason,
     LitterSourceListing,
 )
+from services.genetic_screening import GeneticScreeningReader
 from services.matching.snapshot_builder import LitterSnapshotBuilder
 
 SELECTED_BREEDING_GROUP = 1
@@ -283,6 +284,9 @@ class LitterQueryService:
             is_active=group.is_active,
             sources=list(dict.fromkeys(listing.source for listing in listings)),
             follow_up_status=follow_up.status if follow_up is not None else None,
+            genetic_screening=GeneticScreeningReader.of_parents(
+                snapshot.breed_slug, snapshot.sire_rating, snapshot.dam_rating
+            ),
         )
 
     @staticmethod
@@ -306,6 +310,7 @@ class LitterQueryService:
             website=breeder.website,
             is_selected_breeding=group == SELECTED_BREEDING_GROUP,
             has_affix=(group in GROUPS_WITH_AFFIX) if group is not None else (True if breeder.affix else None),
+            is_breed_club_member=breeder.is_breed_club_member is True,
         )
 
     @staticmethod

@@ -1014,6 +1014,12 @@ export interface components {
             /** Last Contact At */
             last_contact_at?: string | null;
         };
+        /**
+         * GeneticScreening
+         * @description What the Centrale Canine ratings of the parents tell about the APR and NF hereditary diseases.
+         * @enum {string}
+         */
+        GeneticScreening: "parents_tested" | "puppies_unaffected";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1046,7 +1052,7 @@ export interface components {
          * @description Source an announcement or a declaration was read from.
          * @enum {string}
          */
-        ListingSource: "centrale_canine" | "chiens_de_france" | "chiots_de_france";
+        ListingSource: "centrale_canine" | "chiens_de_france" | "chiots_de_france" | "whoof" | "coeur_de_cocker";
         /**
          * LitterBreeder
          * @description What is known of the breeder; every field may be unknown.
@@ -1068,6 +1074,11 @@ export interface components {
             is_selected_breeding: boolean;
             /** Has Affix */
             has_affix: boolean | null;
+            /**
+             * Is Breed Club Member
+             * @description Member of the club of the breed, the Spaniel Club Français for the cocker
+             */
+            is_breed_club_member: boolean;
         };
         /**
          * LitterCard
@@ -1118,6 +1129,8 @@ export interface components {
             /** Sources */
             sources: components["schemas"]["ListingSource"][];
             follow_up_status: components["schemas"]["FollowUpStatus"] | null;
+            /** @description APR and NF screening the ratings of the parents guarantee, none when they guarantee nothing */
+            genetic_screening: components["schemas"]["GeneticScreening"] | null;
         };
         /**
          * LitterColor
@@ -1176,6 +1189,8 @@ export interface components {
             /** Sources */
             sources: components["schemas"]["ListingSource"][];
             follow_up_status: components["schemas"]["FollowUpStatus"] | null;
+            /** @description APR and NF screening the ratings of the parents guarantee, none when they guarantee nothing */
+            genetic_screening: components["schemas"]["GeneticScreening"] | null;
             /** Reasons */
             reasons: components["schemas"]["LitterReason"][];
             /** Flags */

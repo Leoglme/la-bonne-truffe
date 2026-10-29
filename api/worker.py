@@ -25,6 +25,8 @@ COLLECTION_MINUTES: dict[ListingSource, int] = {
     ListingSource.CENTRALE_CANINE: 5,
     ListingSource.CHIENS_DE_FRANCE: 20,
     ListingSource.CHIOTS_DE_FRANCE: 35,
+    ListingSource.WHOOF: 45,
+    ListingSource.COEUR_DE_COCKER: 50,
 }
 
 

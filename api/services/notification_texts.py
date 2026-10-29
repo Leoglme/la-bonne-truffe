@@ -28,6 +28,8 @@ SOURCE_NAMES: dict[ListingSource, str] = {
     ListingSource.CENTRALE_CANINE: "La Centrale Canine",
     ListingSource.CHIENS_DE_FRANCE: "Chiens de France",
     ListingSource.CHIOTS_DE_FRANCE: "Chiots de France",
+    ListingSource.WHOOF: "Whoof",
+    ListingSource.COEUR_DE_COCKER: "Cœur de Cocker",
 }
 
 

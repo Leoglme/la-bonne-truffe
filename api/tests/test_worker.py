@@ -11,6 +11,8 @@ def test_every_collected_source_has_its_hourly_job() -> None:
         "collect_centrale_canine",
         "collect_chiens_de_france",
         "collect_chiots_de_france",
+        "collect_whoof",
+        "collect_coeur_de_cocker",
         "send_evening_digests",
         "send_follow_up_reminders",
     }

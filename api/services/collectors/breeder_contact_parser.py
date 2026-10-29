@@ -1,4 +1,4 @@
-"""Readers for the breeder details the sources publish: names, towns, phones, SIREN."""
+"""Readers for the breeder details the sources publish: names, towns, departments, phones, SIREN."""
 
 import re
 import unicodedata
@@ -16,6 +16,11 @@ FRENCH_COUNTRY_CODE = "33"
 SIREN_LENGTH = 9
 SIRET_LENGTH = 14
 POSTAL_CODE_LENGTH = 5
+OVERSEAS_POSTAL_CODE_PREFIXES: tuple[str, ...] = ("97", "98")
+CORSICA_POSTAL_CODE_PREFIX = "20"
+FIRST_HAUTE_CORSE_POSTAL_CODE = 20200
+CORSE_DU_SUD_DEPARTMENT_CODE = "2A"
+HAUTE_CORSE_DEPARTMENT_CODE = "2B"
 
 
 class BreederContactParser:
@@ -105,6 +110,28 @@ class BreederContactParser:
         """
         digits = NON_DIGIT_PATTERN.sub("", text or "")
         return digits if len(digits) == POSTAL_CODE_LENGTH else None
+
+    @classmethod
+    def department_code(cls, postal_code_text: str | None) -> str | None:
+        """
+        The department of a French postal code: its first two digits, three overseas, 2A or 2B in Corsica.
+
+        Args:
+            postal_code_text: Postal code as published.
+
+        Returns:
+            The department code, or None without a readable postal code.
+        """
+        postal_code = cls.postal_code(postal_code_text)
+        if postal_code is None:
+            return None
+        if postal_code.startswith(OVERSEAS_POSTAL_CODE_PREFIXES):
+            return postal_code[:3]
+        if postal_code.startswith(CORSICA_POSTAL_CODE_PREFIX):
+            if int(postal_code) < FIRST_HAUTE_CORSE_POSTAL_CODE:
+                return CORSE_DU_SUD_DEPARTMENT_CODE
+            return HAUTE_CORSE_DEPARTMENT_CODE
+        return postal_code[:2]
 
     @classmethod
     def _capitalize_word(cls, word: str, is_first_word: bool) -> str:

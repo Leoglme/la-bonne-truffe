@@ -20,8 +20,10 @@ from services.collectors.centrale_canine import (
 )
 from services.collectors.chiens_de_france import ChiensDeFranceCollector
 from services.collectors.chiots_de_france import ChiotsDeFranceCollector
+from services.collectors.coeur_de_cocker import CoeurDeCockerCollector
 from services.collectors.html_source import HtmlCollection, HtmlCollectionPlan, HtmlSourceCollector
 from services.collectors.polite_http_client import SourceReadError
+from services.collectors.whoof import WhoofCollector
 from services.listing_ingestion import IngestionSummary, listing_ingestion_service
 from services.litter_grouping import GroupingResult, litter_grouping_service
 from services.matching.match_refresh import RefreshSummary, match_refresh_service
@@ -85,6 +87,10 @@ class CollectionRunner:
             return self.run_html_source(db, source, ChiensDeFranceCollector())
         if source == ListingSource.CHIOTS_DE_FRANCE:
             return self.run_html_source(db, source, ChiotsDeFranceCollector())
+        if source == ListingSource.WHOOF:
+            return self.run_html_source(db, source, WhoofCollector())
+        if source == ListingSource.COEUR_DE_COCKER:
+            return self.run_html_source(db, source, CoeurDeCockerCollector())
         raise ValueError(f"Aucun collecteur pour {source}")
 
     def plan_centrale_canine(self, db: Session, collector: CentraleCanineCollector) -> CentraleCanineCollectionPlan:

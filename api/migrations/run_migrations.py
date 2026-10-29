@@ -40,6 +40,8 @@ MIGRATION_MODULES: list[tuple[str, str]] = [
     ("add_signup_requests_table", "migrations.add_signup_requests_table"),
     ("add_follow_up_reminder_sent_at", "migrations.add_follow_up_reminder_sent_at"),
     ("add_user_litters_visited_at", "migrations.add_user_litters_visited_at"),
+    ("add_breed_whoof_and_coeur_de_cocker_ids", "migrations.add_breed_whoof_and_coeur_de_cocker_ids"),
+    ("add_breeder_breed_club_member", "migrations.add_breeder_breed_club_member"),
 ]
 
 _NON_MIGRATION_MODULES: set[str] = {"__init__", "run_migrations"}

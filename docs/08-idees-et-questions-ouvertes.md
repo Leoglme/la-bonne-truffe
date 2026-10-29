@@ -22,10 +22,11 @@ Tranchée le 29/10/2026 : **les annonces « Type Cocker Spaniel Anglais » de Ch
 ## Idées V2 (si l'outil marche pour Léo)
 
 - **LOF Select** pour enrichir les parents : généalogie, cotations détaillées, résultats de santé si publiés.
-- **Club de race** (Spaniel Club Français) : liste des éleveurs sélectionnés, portées recommandées.
-- **chien.com** en quatrième source.
+- **Instagram** : lire les publications d'une liste de comptes professionnels d'éleveurs par l'API officielle (« Business Discovery »), avec un compte professionnel relié à une page Facebook. Un test d'une dizaine de minutes dira si c'est possible pour un usage personnel (`02`).
+- **Sites d'éleveurs** : relire une fois par jour la page « portées » des quelques éleveurs qui la tiennent à jour (quatre repérés le 29/10/2026 dans les départements du profil) et prévenir quand elle change. Utilité modeste : ces pages suivent souvent la Centrale Canine.
+- **chien.com** en source de plus.
 - **Multi-races** dans l'interface (le modèle le permet déjà) : un profil par race, un onglet par profil.
-- **Version publique** : comptes, abonnements, alertes par e-mail. Risques notés : scraper à l'échelle expose aux conditions d'utilisation et au droit des bases de données de la SCC, Cloudflare peut durcir, modèle économique faible (un adoptant n'a besoin de l'outil qu'une fois). L'angle qui vaudrait quelque chose : les portées **à naître**, être prévenu avant tout le monde. En attendant, l'inscription est fermée et chaque tentative est gardée (`signup_requests`) : elles diront si d'autres adoptants veulent l'outil avant d'ouvrir (`SIGNUP_ENABLED=true`).
+- **Version publique** : comptes, abonnements, alertes par e-mail. Risques notés : scraper à l'échelle expose aux conditions d'utilisation et au droit des bases de données de la SCC (les conditions de Whoof et de Cœur de Cocker encadrent aussi la reprise de leurs annonces, `02`), Cloudflare peut durcir, modèle économique faible (un adoptant n'a besoin de l'outil qu'une fois). L'angle qui vaudrait quelque chose : les portées **à naître**, être prévenu avant tout le monde. En attendant, l'inscription est fermée et chaque tentative est gardée (`signup_requests`) : elles diront si d'autres adoptants veulent l'outil avant d'ouvrir (`SIGNUP_ENABLED=true`).
 - **Côté éleveur** : une page pour les éleveurs qui veulent être prévenus des adoptants en attente d'une couleur dans leur département.
 
 ## Noms de rechange

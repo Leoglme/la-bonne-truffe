@@ -12,7 +12,7 @@ La **Centrale Canine** (Société Centrale Canine, qui tient le LOF) publie un *
 
 ## Ce que fait l'outil (V1)
 
-1. Un **worker** relève toutes les heures la Centrale Canine (JSON), Chiens de France (HTML) et Chiots de France (HTML) pour les races du profil.
+1. Un **worker** relève toutes les heures la Centrale Canine (JSON), Chiens de France (HTML), Chiots de France (HTML), Whoof et Cœur de Cocker (JSON) pour les races du profil.
 2. Il **normalise** chaque portée dans un vocabulaire commun (couleurs, statut LOF, dates, sexes), la **rattache à son éleveur** et **regroupe** les annonces d'une même portée vues sur plusieurs sources.
 3. Il passe chaque portée au crible des **critères** de Léo et lui donne un **score** et un **palier** (préférée, acceptable, ignorée).
 4. Il **notifie** par Web Push : tout de suite pour une portée préférée ou la naissance d'une portée suivie, dans un récap du soir pour les acceptables et pour une portée suivie qui propose moins de chiots.
@@ -21,7 +21,7 @@ La **Centrale Canine** (Société Centrale Canine, qui tient le LOF) publie un *
 ## Ce que l'outil ne fait pas (V1)
 
 - Pas de collecte de **Leboncoin** (protection anti-robot, conditions d'utilisation) : Léo garde sa recherche sauvegardée native.
-- Pas de collecte de **Facebook** (connexion obligatoire) : à la main.
+- Pas de collecte de **Facebook** (API des groupes fermée, pages réservées aux apps validées par Meta, `02-sources.md`) : à la main.
 - Pas de version publique, pas de comptes multiples, pas de monétisation.
 - Pas d'appel ou de message automatique aux éleveurs : l'outil prépare, Léo appelle.
 
@@ -44,7 +44,7 @@ La **Centrale Canine** (Société Centrale Canine, qui tient le LOF) publie un *
 | Adresse de contact | `contact@dibodev.fr` pour `ADMIN_EMAIL`, `VAPID_SUBJECT` et le User-Agent des sources HTML, toujours lue depuis le `.env` | Même adresse que DevLeadHunter |
 | Portées à naître | Incluses | C'est l'avantage décisif de la Centrale Canine |
 | Hébergement | `la-bonne-truffe.dibodev.fr` (dashboard) et `api.la-bonne-truffe.dibodev.fr` (API) sur le VPS, déployés par GitHub Actions comme DevLeadHunter | Sous-domaines créés le 28/10/2026 ; détail dans `11-deploiement.md` |
-| Centrale Canine sur le VPS | Relayée par l'app Windows d'un PC allumé ; le worker du VPS ne relève que Chiens de France et Chiots de France (`COLLECT_SKIPPED_SOURCES`) | Cloudflare refuse les adresses de serveur, même avec le `curl` de Windows, et le `curl` de Linux même depuis le PC (28 et 29/10/2026, `02-sources.md`) |
+| Centrale Canine sur le VPS | Relayée par l'app Windows d'un PC allumé ; le worker du VPS relève les autres sources (`COLLECT_SKIPPED_SOURCES`) | Cloudflare refuse les adresses de serveur, même avec le `curl` de Windows, et le `curl` de Linux même depuis le PC (28 et 29/10/2026, `02-sources.md`) |
 
 ## Questions encore ouvertes
 

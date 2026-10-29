@@ -19,6 +19,8 @@ class Breed(TimestampMixin, Base):
         scc_breed_id: Breed identifier at the Centrale Canine.
         chiens_de_france_id: Breed identifier on Chiens de France, unknown until that collector exists.
         chiots_de_france_id: Breed identifier on Chiots de France, unknown until that collector exists.
+        whoof_id: Breed slug on Whoof.
+        coeur_de_cocker_id: Breed name in the ads of Cœur de Cocker (« Cocker Anglais »).
         is_active: Whether the collectors read this breed.
     """
 
@@ -31,6 +33,8 @@ class Breed(TimestampMixin, Base):
     scc_breed_id: Mapped[int | None]
     chiens_de_france_id: Mapped[str | None] = mapped_column(String(120))
     chiots_de_france_id: Mapped[str | None] = mapped_column(String(120))
+    whoof_id: Mapped[str | None] = mapped_column(String(120))
+    coeur_de_cocker_id: Mapped[str | None] = mapped_column(String(120))
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
 
     def __repr__(self) -> str:

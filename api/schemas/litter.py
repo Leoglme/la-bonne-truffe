@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
 from enums.follow_up_status import FollowUpStatus
+from enums.genetic_screening import GeneticScreening
 from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
 from enums.lof_status import LofStatus
@@ -45,6 +46,9 @@ class LitterCard(BaseModel):
     is_active: bool
     sources: list[ListingSource]
     follow_up_status: FollowUpStatus | None
+    genetic_screening: GeneticScreening | None = Field(
+        description="APR and NF screening the ratings of the parents guarantee, none when they guarantee nothing"
+    )
 
 
 class LitterReason(BaseModel):
@@ -72,6 +76,9 @@ class LitterBreeder(BaseModel):
     website: str | None
     is_selected_breeding: bool
     has_affix: bool | None
+    is_breed_club_member: bool = Field(
+        description="Member of the club of the breed, the Spaniel Club Français for the cocker"
+    )
 
 
 class LitterSourceListing(BaseModel):
