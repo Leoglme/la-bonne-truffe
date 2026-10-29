@@ -94,7 +94,7 @@ Le worker du VPS relève Chiens de France, Chiots de France, Whoof et Cœur de C
 
 La Centrale Canine est relayée par l'app Windows des PC où elle est installée et connectée :
 - l'app démarre avec Windows, cachée dans la zone de notification, et vérifie toutes les 5 minutes si le relevé de l'heure est dû ;
-- le premier PC qui le demande le fait : il lit les pages que l'API lui donne avec le `curl.exe` de Windows, sans fenêtre, et les renvoie à l'API, qui fait le relevé habituel ; l'autre PC passe son tour ;
+- le premier PC qui le demande le fait : il lit les pages que l'API lui donne avec le `curl.exe` de Windows, ou dans une fenêtre cachée du navigateur de l'app quand Cloudflare refuse `curl`, et les renvoie à l'API, qui fait le relevé habituel ; l'autre PC passe son tour ;
 - quand aucun PC n'est allumé, ses portées attendent le prochain démarrage, et les autres sources continuent sans elle ;
 - la page Sources l'affiche « Relevée par l'app Windows » ; dans l'app Windows, « Relever maintenant » relaie tout de suite, et sur le web ou le téléphone, « Demander un relevé » le fait faire par un PC allumé dans les 5 minutes.
 

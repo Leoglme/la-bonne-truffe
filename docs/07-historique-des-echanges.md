@@ -106,3 +106,9 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 - **Recherche de sources** : plus de cinquante sites passés en revue, avec Facebook et Instagram. Les gros volumes sont fermés, par leur protection ou leurs conditions (Leboncoin, chien.com, Facebook) ; l'idée des alertes e-mail de chien.com est écartée. Restent deux petites sources propres, Whoof et Cœur de Cocker, et deux informations déjà à portée de main (`02`).
 - **Fait** : Whoof et Cœur de Cocker relevés chaque heure (`02`, `05`). Dans le détail d'une portée, deux chips : la santé des parents, tirée de leurs cotations à la Centrale Canine selon la grille du Spaniel Club Français, et « Membre du Spaniel Club Français », que les portées de la Centrale Canine donnent déjà (`02`, `06`).
 - **Écarté** : relire chaque semaine la liste des membres du club par le relais de l'app Windows, inutile puisque les portées portent l'information ; les flux RSS payants des pages Facebook, hors des conditions de Meta et fragiles.
+
+## 29 octobre (fin de matinée) : le navigateur de l'app prend le relais
+
+- **Question** : pourquoi la Centrale Canine s'ouvre dans Firefox et Chrome sur le PC, mais refuse le `curl` du relais ? Parce que Cloudflare y lance une vérification JavaScript que les navigateurs passent et que `curl` ne sait pas exécuter. Rappel : DevLeadHunter lit ses pages protégées avec un vrai Chrome piloté en arrière-plan.
+- **Décision** : quand Cloudflare refuse `curl`, l'app lit les pages dans une fenêtre cachée de son propre navigateur (WebView2). Pas de script qui masque l'automatisation, pas de proxy, pas de réponse à une vérification qui demande une personne : la lecture échoue alors après 30 secondes.
+- **Essai depuis le PC, à 10 h 33** : `curl` refusé (`403`), le navigateur caché lit la page en 4 secondes (`200`, JSON complet) (`02`).
