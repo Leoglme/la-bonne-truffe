@@ -28,14 +28,14 @@
           Relais depuis ce PC en échec : {{ centraleCanineRelayStore.lastRelayErrorMessage }}
         </p>
         <UButton
-          v-if="canRunNow(status)"
+          v-if="status.is_collected"
           size="xl"
           class="mt-1 w-full justify-center md:w-auto md:self-start"
           :loading="runningSource === status.source"
           :disabled="runningSource !== null"
           @click="runNow(status)"
         >
-          {{ runningSource === status.source ? 'Relevé en cours…' : 'Relever maintenant' }}
+          {{ buildRunButtonLabel(status) }}
         </UButton>
       </UiSectionCard>
     </div>
@@ -55,6 +55,7 @@ useHead({ title: 'Sources · La Bonne Truffe' })
 const sourcesStore: ReturnType<typeof useSourcesStore> = useSourcesStore()
 const centraleCanineRelayStore: ReturnType<typeof useCentraleCanineRelayStore> = useCentraleCanineRelayStore()
 const { isDesktopApp }: ReturnType<typeof useDesktopRuntime> = useDesktopRuntime()
+const toast: ReturnType<typeof useToast> = useToast()
 
 const SOURCE_RUN_STATUS_DOT_CLASSES: Record<SourceRunStatus, string> = {
   ok: 'bg-online',
@@ -80,6 +81,13 @@ function buildSourceStatusLine(status: SourceStatus): string {
   }
   const timeSinceRun: string = FrenchDate.formatTimeSince(FrenchDate.parseApiDate(status.last_run_at), new Date())
 
+  if (status.last_status === 'error' && status.last_success_at !== null) {
+    const timeSinceSuccess: string = FrenchDate.formatTimeSince(
+      FrenchDate.parseApiDate(status.last_success_at),
+      new Date(),
+    )
+    return `Dernier relevé en échec, ${timeSinceRun} · dernier réussi ${timeSinceSuccess}.`
+  }
   if (status.last_status === 'error') {
     return `Dernier relevé en échec, ${timeSinceRun}.`
   }
@@ -88,20 +96,23 @@ function buildSourceStatusLine(status: SourceStatus): string {
 }
 
 /**
- * Whether « Relever maintenant » has something to run from here: the server, or this computer for a source the desktop app reads.
+ * Build the label of the run button: a source the desktop app reads can only be asked for away from a computer.
  *
  * @param status - The source status.
- * @returns True when the button can run the source.
+ * @returns « Relever maintenant », « Demander un relevé », or the label of the run in progress.
  */
-function canRunNow(status: SourceStatus): boolean {
-  if (status.is_collected_by_desktop_app) {
-    return isDesktopApp.value
+function buildRunButtonLabel(status: SourceStatus): string {
+  if (runningSource.value === status.source) {
+    return 'Relevé en cours…'
   }
-  return status.is_collected
+  if (status.is_collected_by_desktop_app && !isDesktopApp.value) {
+    return 'Demander un relevé'
+  }
+  return 'Relever maintenant'
 }
 
 /**
- * Run a collection now and refresh the statuses.
+ * Run a collection now and refresh the statuses: on the server, on this computer, or by asking a computer that is on.
  *
  * @param status - The source status.
  */
@@ -109,10 +120,12 @@ async function runNow(status: SourceStatus): Promise<void> {
   runningSource.value = status.source
   runError.value = null
   try {
-    if (status.is_collected_by_desktop_app) {
+    if (!status.is_collected_by_desktop_app) {
+      sourcesStore.statuses = await SourcesService.run(status.source)
+    } else if (isDesktopApp.value) {
       await relayCentraleCanineNow()
     } else {
-      sourcesStore.statuses = await SourcesService.run(status.source)
+      await askAComputerToRelayCentraleCanine()
     }
   } catch (error: unknown) {
     runError.value = error instanceof Error ? error.message : 'Relevé impossible'
@@ -129,6 +142,14 @@ async function relayCentraleCanineNow(): Promise<void> {
   if (answer === null || answer.state === 'busy') {
     runError.value = 'La Centrale Canine est déjà en cours de relevé.'
   }
+}
+
+/**
+ * Ask the desktop app of a computer that is on to relay the Centrale Canine at its next check.
+ */
+async function askAComputerToRelayCentraleCanine(): Promise<void> {
+  await SourcesService.requestCentraleCanineRelay()
+  toast.add({ title: 'Relevé demandé : un PC allumé avec l’app le fera dans les 5 minutes.', color: 'success' })
 }
 
 onMounted((): Promise<void> => sourcesStore.load())

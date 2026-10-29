@@ -92,3 +92,21 @@ def relay_centrale_canine(
         return centrale_canine_relay.answer(db, relay_request, naive_utc_now())
     except RelayLeaseLostError as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
+
+
+@router.post("/centrale_canine/relay-request", status_code=status.HTTP_204_NO_CONTENT)
+def request_centrale_canine_relay(current_user: User = Depends(get_current_user)) -> None:
+    """
+    Ask the desktop app of a computer that is on to read the Centrale Canine at its next check, within five minutes.
+
+    Args:
+        current_user: The authenticated user.
+
+    Raises:
+        HTTPException: 409 when this server reads the Centrale Canine itself.
+    """
+    if ListingSource.CENTRALE_CANINE not in DESKTOP_RELAYED_SOURCES:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Ce serveur relève lui-même la Centrale Canine"
+        )
+    centrale_canine_relay.request_run()

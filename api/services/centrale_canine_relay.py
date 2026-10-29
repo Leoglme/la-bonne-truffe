@@ -50,7 +50,13 @@ class CentraleCanineRelay:
     def __init__(self) -> None:
         """Start without any relay in progress."""
         self.lease: RelayLease | None = None
+        self.is_run_requested = False
         self._lock = threading.Lock()
+
+    def request_run(self) -> None:
+        """Have the next desktop app that checks in run the collection, even when the last run is recent."""
+        with self._lock:
+            self.is_run_requested = True
 
     def answer(
         self, db: Session, relay_request: CentraleCanineRelayRequest, now: datetime
@@ -78,7 +84,8 @@ class CentraleCanineRelay:
 
     def _start(self, db: Session, is_requested_by_user: bool, now: datetime) -> CentraleCanineRelayAnswer:
         """
-        Give the relay to the calling app, unless another one holds it or the last run is recent.
+        Give the relay to the calling app, unless another one holds it, or the last run is recent and nobody
+        asked for one.
 
         Args:
             db: Database session.
@@ -92,10 +99,12 @@ class CentraleCanineRelay:
             return CentraleCanineRelayAnswer(
                 state=CentraleCanineRelayState.BUSY, relay_token=None, page_requests=[], source_statuses=[]
             )
-        if not is_requested_by_user and not self._is_run_due(db, now):
+        is_run_wanted = is_requested_by_user or self.is_run_requested or self._is_run_due(db, now)
+        if not is_run_wanted:
             return CentraleCanineRelayAnswer(
                 state=CentraleCanineRelayState.NOT_DUE, relay_token=None, page_requests=[], source_statuses=[]
             )
+        self.is_run_requested = False
         return self._advance(db, secrets.token_urlsafe(16), [], now)
 
     def _advance(

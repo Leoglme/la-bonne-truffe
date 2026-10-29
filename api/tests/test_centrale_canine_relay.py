@@ -22,6 +22,7 @@ from services.push_service import PushResult, PushService
 from tests.centrale_canine_pages import EMPTY_PAGE, RECORDED_DEPARTMENT_TERM_ID, load_recorded_pages
 
 RELAY_URL = "/api/v1/sources/centrale_canine/relay"
+RELAY_REQUEST_URL = "/api/v1/sources/centrale_canine/relay-request"
 
 
 @pytest.fixture
@@ -104,6 +105,27 @@ def test_a_recent_run_is_not_due_unless_asked_from_the_sources_page(
 
     assert scheduled_answer["state"] == "not_due"
     assert requested_answer["state"] == "pages_needed"
+
+
+def test_a_run_asked_from_the_phone_starts_at_the_next_check_of_a_computer(
+    client: TestClient, relay_headers: dict[str, str], db: Session
+) -> None:
+    db.add(SourceRun(source=ListingSource.CENTRALE_CANINE, started_at=naive_utc_now(), status=SourceRunStatus.OK))
+    db.commit()
+
+    request_response = client.post(RELAY_REQUEST_URL, headers=relay_headers)
+    next_check_answer = client.post(RELAY_URL, json={}, headers=relay_headers).json()
+
+    assert request_response.status_code == 204
+    assert next_check_answer["state"] == "pages_needed"
+
+
+def test_a_run_cannot_be_asked_when_the_server_reads_the_centrale_canine_itself(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    response = client.post(RELAY_REQUEST_URL, headers=auth_headers)
+
+    assert response.status_code == 409
 
 
 def test_a_second_computer_waits_while_the_first_one_relays(client: TestClient, relay_headers: dict[str, str]) -> None:

@@ -31,4 +31,11 @@ export class SourcesService {
   static async relayCentraleCanine(relayRequest: CentraleCanineRelayRequest): Promise<CentraleCanineRelayAnswer> {
     return ApiClient.post<CentraleCanineRelayAnswer>('/api/v1/sources/centrale_canine/relay', relayRequest)
   }
+
+  /**
+   * Ask the desktop app of a computer that is on to relay the Centrale Canine at its next check.
+   */
+  static async requestCentraleCanineRelay(): Promise<void> {
+    await ApiClient.post('/api/v1/sources/centrale_canine/relay-request', {})
+  }
 }

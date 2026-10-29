@@ -841,6 +841,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sources/centrale_canine/relay-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Centrale Canine Relay
+         * @description Ask the desktop app of a computer that is on to read the Centrale Canine at its next check, within five minutes.
+         *
+         *     Args:
+         *         current_user: The authenticated user.
+         *
+         *     Raises:
+         *         HTTPException: 409 when this server reads the Centrale Canine itself.
+         */
+        post: operations["request_centrale_canine_relay_api_v1_sources_centrale_canine_relay_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2545,6 +2571,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    request_centrale_canine_relay_api_v1_sources_centrale_canine_relay_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
