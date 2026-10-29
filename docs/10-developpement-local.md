@@ -1,10 +1,10 @@
 # Développement local
 
-Comment faire tourner La Bonne Truffe sur un poste de dev : l'API FastAPI et son worker, le dashboard Nuxt, la fenêtre Tauri, et la stack Docker. Le déploiement sur le VPS est dans [11-deploiement.md](11-deploiement.md).
+Comment faire tourner La Bonne Truffe sur un poste de dev : l'API FastAPI et son worker, le dashboard Nuxt et la fenêtre Tauri. Le déploiement sur le VPS est dans [11-deploiement.md](11-deploiement.md).
 
 ## Prérequis
 
-- Python 3.11 ou plus récent (l'image Docker utilise 3.12).
+- Python 3.11 ou plus récent.
 - Node.js 22 ou plus récent.
 - Rust stable et, sous Windows, les outils de build de Visual Studio (pour Tauri uniquement).
 
@@ -88,12 +88,3 @@ npm run tauri:build   # installeur NSIS dans src-tauri/target/release/bundle/
 Le build desktop est une génération statique (`NUXT_DESKTOP_BUILD=1`). La fenêtre se cache dans la zone de notification à la fermeture, une seconde instance ramène la première, et l'app vérifie au démarrage les mises à jour publiées dans les releases GitHub. Les releases sont construites par le workflow `desktop-release.yml`, qui remplace `__TAURI_UPDATER_PUBKEY__` par la clé publique de l'updater et signe l'installeur, comme dans DevLeadHunter (clés dans `11-deploiement.md`). Pas de notification native sur Windows : les alertes arrivent sur l'iPhone et l'iPad.
 
 En release, l'app démarre avec Windows, cachée dans la zone de notification. Pour essayer le relais de la Centrale Canine en local, mettre `COLLECT_SKIPPED_SOURCES=centrale_canine` dans `api/.env` et relancer l'API : elle ne relève plus la source elle-même, et la fenêtre de `npm run tauri:dev`, une fois connectée, la relaie 30 secondes plus tard, ou tout de suite avec « Relever maintenant » sur la page Sources.
-
-## Docker
-
-```bash
-cp api/.env.example api/.env    # puis le remplir
-docker compose up -d --build
-```
-
-Deux services sur la même image : `api` (migrations + seeders au démarrage, puis uvicorn sur `127.0.0.1:8000`) et `worker` (`python worker.py`). La base SQLite est dans le volume `data`, partagé par les deux. Le VPS n'utilise pas Docker : l'API et le worker y tournent en services systemd (`11-deploiement.md`).

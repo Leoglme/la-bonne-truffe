@@ -1,6 +1,6 @@
 # Déploiement
 
-La Bonne Truffe tourne sur le VPS, à côté de DevLeadHunter et avec la même mécanique : trois workflows GitHub Actions copient le code par SSH, systemd fait tourner l'API et le worker, pm2 le serveur Nuxt, et nginx termine le HTTPS avec les certificats Let's Encrypt créés par certbot. Le `docker-compose.yml` sert à lancer la stack en conteneurs sur un poste ; le VPS ne s'en sert pas.
+La Bonne Truffe tourne sur le VPS, à côté de DevLeadHunter et avec la même mécanique : trois workflows GitHub Actions copient le code par SSH, systemd fait tourner l'API et le worker, pm2 le serveur Nuxt, et nginx termine le HTTPS avec les certificats Let's Encrypt créés par certbot.
 
 ## Ce qui tourne sur le VPS
 
@@ -96,6 +96,6 @@ La Centrale Canine est relayée par l'app Windows des PC où elle est installée
 - l'app démarre avec Windows, cachée dans la zone de notification, et vérifie toutes les 5 minutes si le relevé de l'heure est dû ;
 - le premier PC qui le demande le fait : il lit les pages que l'API lui donne avec le `curl.exe` de Windows, sans fenêtre, et les renvoie à l'API, qui fait le relevé habituel ; l'autre PC passe son tour ;
 - quand aucun PC n'est allumé, ses portées attendent le prochain démarrage, et les autres sources continuent sans elle ;
-- la page Sources l'affiche « Relevée par l'app Windows » ; « Relever maintenant » n'y apparaît que dans l'app Windows.
+- la page Sources l'affiche « Relevée par l'app Windows » ; dans l'app Windows, « Relever maintenant » relaie tout de suite, et sur le web ou le téléphone, « Demander un relevé » le fait faire par un PC allumé dans les 5 minutes.
 
 Un relais envoie environ 1 Mo de pages : la conf nginx de l'API accepte 10 Mo par requête (`client_max_body_size`).

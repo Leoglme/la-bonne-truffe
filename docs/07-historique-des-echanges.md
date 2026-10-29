@@ -94,3 +94,9 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 - **Tests depuis des serveurs** : le VPS, l'hébergement o2switch et deux runners GitHub Actions, dont un Windows avec le `curl.exe` accepté depuis le PC, reçoivent tous `403` de Cloudflare (`02`). Changer le User-Agent n'y ferait rien, et contourner la protection est exclu.
 - **Demande** : que l'app tourne cachée dans la zone de notification sur les deux PC, démarrée avec Windows, et relève la Centrale Canine dès qu'un PC est allumé, sans fenêtre de navigateur ; PC éteints, les autres sources continuent seules, chaque source restant indépendante.
 - **Fait** : l'API donne à l'app les pages à lire, l'app les lit avec le `curl.exe` de Windows et les renvoie, l'API fait le relevé habituel. Un seul PC relaie à la fois, au plus une fois toutes les 55 minutes (`02`, `05`, `11`).
+
+## 29 octobre (matin) : premier relais refusé, demande depuis le téléphone, ménage
+
+- **Premier « Relever maintenant » depuis l'app v0.1.9** : la Centrale Canine renvoie `403`, `cf-mitigated: challenge`, et le même `curl.exe` lancé à la main depuis le PC est refusé aussi (09 h 47), alors qu'il passait à 00 h 34. Le relais a fait ce qu'il devait : une page lue, refusée, arrêt, échec inscrit. L'app envoie désormais les en-têtes dans l'ordre du collecteur qui avait marché le 28/10, au lieu d'un ordre qui changeait à chaque requête.
+- **Demande** : un bouton de relevé aussi sur le téléphone. Fait : « Demander un relevé » sur le web et le téléphone, qu'un PC allumé exécute à sa vérification suivante, dans les 5 minutes ; la ligne d'une source en échec dit aussi quand elle a réussi pour la dernière fois.
+- **Ménage** : supprimés le brief de départ (`00`), le prompt de la première session cloud (`09`), et `docker-compose.yml` avec le `Dockerfile` de l'API, que ni le VPS ni les workflows n'utilisent.

@@ -6,7 +6,6 @@ Ce dépôt contient le **cadrage complet** et le code de l'application :
 
 - `api/` : FastAPI, SQLAlchemy et SQLite, worker APScheduler, collecteur Centrale Canine, Web Push.
 - `web/` : Nuxt 4, Tailwind v4 et Nuxt UI, PWA avec Web Push, empaquetée en Tauri 2 pour Windows (`web/src-tauri/`).
-- `docker-compose.yml` : l'API et le worker en conteneurs, la base SQLite dans un volume.
 - `.github/workflows/` et `deploy/nginx/` : le déploiement sur le VPS (https://la-bonne-truffe.dibodev.fr et https://api.la-bonne-truffe.dibodev.fr) et la release de l'app Windows.
 
 Pour lancer le projet en local : [docs/10-developpement-local.md](docs/10-developpement-local.md). Pour le déployer : [docs/11-deploiement.md](docs/11-deploiement.md).
@@ -15,7 +14,6 @@ Pour lancer le projet en local : [docs/10-developpement-local.md](docs/10-develo
 
 | Fichier | Contenu |
 |---|---|
-| [docs/00-brief-pour-l-ia-qui-code.md](docs/00-brief-pour-l-ia-qui-code.md) | Le brief de départ : rôle, jalons, règles, définition de « fini » |
 | [docs/01-cadrage.md](docs/01-cadrage.md) | Le besoin, le périmètre V1, les décisions prises, les questions ouvertes |
 | [docs/02-sources.md](docs/02-sources.md) | Les sources de données, avec l'API JSON de la Centrale Canine vérifiée (URL, paramètres, champs) |
 | [docs/03-modele-de-donnees.md](docs/03-modele-de-donnees.md) | Les tables, le vocabulaire des couleurs, le dédoublonnage |
@@ -24,7 +22,7 @@ Pour lancer le projet en local : [docs/10-developpement-local.md](docs/10-develo
 | [docs/06-maquette-et-design.md](docs/06-maquette-et-design.md) | La maquette validée, la direction artistique, les composants, l'icône |
 | [docs/07-historique-des-echanges.md](docs/07-historique-des-echanges.md) | Le résumé chronologique des discussions de cadrage |
 | [docs/08-idees-et-questions-ouvertes.md](docs/08-idees-et-questions-ouvertes.md) | Ce qui est gardé pour plus tard |
-| [docs/10-developpement-local.md](docs/10-developpement-local.md) | Lancer l'API, le worker, le dashboard, Tauri et Docker en local ; les commandes `cli.py` |
+| [docs/10-developpement-local.md](docs/10-developpement-local.md) | Lancer l'API, le worker, le dashboard et Tauri en local ; les commandes `cli.py` |
 | [docs/11-deploiement.md](docs/11-deploiement.md) | Le VPS, les workflows GitHub Actions, les secrets, nginx, le premier déploiement |
 
 ## La maquette

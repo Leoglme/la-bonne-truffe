@@ -1,6 +1,6 @@
 # Modèle de données
 
-SQLAlchemy côté API, SQLite dans un volume Docker (un seul utilisateur, quelques milliers de lignes au plus). Toutes les tables métier portent `user_id` et des horodatages `created_at` / `updated_at` en UTC naïf (convention DevLeadHunter : l'API renvoie de l'UTC sans suffixe Z, le front affiche en heure locale).
+SQLAlchemy côté API, SQLite dans un seul fichier (un seul utilisateur, quelques milliers de lignes au plus). Toutes les tables métier portent `user_id` et des horodatages `created_at` / `updated_at` en UTC naïf (convention DevLeadHunter : l'API renvoie de l'UTC sans suffixe Z, le front affiche en heure locale).
 
 ## Les tables
 

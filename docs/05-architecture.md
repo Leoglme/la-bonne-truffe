@@ -27,13 +27,12 @@ la-bonne-truffe/
 ├── design/              maquette, icône, illustration, photos
 ├── docs/                ce cadrage
 ├── deploy/nginx/        confs nginx du VPS
-├── .github/workflows/   déploiement de l'API et du web, release de l'app Windows
-└── docker-compose.yml   api + worker + volume SQLite
+└── .github/workflows/   déploiement de l'API et du web, release de l'app Windows
 ```
 
 ## Côté API (Python 3.11+)
 
-- **FastAPI**, Pydantic v2, SQLAlchemy, SQLite (fichier dans un volume). Migrations manuelles comme DevLeadHunter (`migrations/run_migrations.py`).
+- **FastAPI**, Pydantic v2, SQLAlchemy, SQLite (un seul fichier). Migrations manuelles comme DevLeadHunter (`migrations/run_migrations.py`).
 - **Worker** : processus séparé (`python worker.py`) avec **APScheduler**. Un job par source, toutes les heures, décalés de quelques minutes. Un job « récap du soir » à `digest_hour`. Un job toutes les cinq minutes pousse les rappels du suivi arrivés à leur heure. Un job « nettoyage » quotidien (`is_active`, purge des `raw_json` de plus de 90 jours).
 - **Collecteurs** : une classe par source avec la même interface `collect(profile) -> list[RawListing]`. `httpx` pour les appels, `selectolax` (ou BeautifulSoup) pour le HTML. Centrale Canine en JSON avec User-Agent navigateur, Chiens de France et Chiots de France en HTML avec le User-Agent honnête ; toutes les requêtes passent par `PoliteHttpClient` (une par seconde) et le `curl` du système depuis le PC de Léo, car Cloudflare refuse le client Python sur la Centrale Canine (voir `02-sources.md`). Le worker relève la Centrale Canine à la minute 5, Chiens de France à la minute 20 et Chiots de France à la minute 35 de chaque heure. Chaque relevé écrit une ligne `source_runs`. Sur le VPS, la Centrale Canine est relayée par l'app Windows d'un PC allumé (`POST /sources/centrale_canine/relay`).
 - **Normalisation** : `RawListing` → `Listing` (vocabulaire canonique des couleurs, dates, LOF). `rapidfuzz` pour rapprocher les affixes.
@@ -61,6 +60,7 @@ la-bonne-truffe/
 | `GET /sources` | État de chaque source (dernier relevé, statut) |
 | `POST /sources/{source}/run` | Lancer un relevé à la main |
 | `POST /sources/centrale_canine/relay` | Relais de la Centrale Canine par l'app Windows : les pages à lire, puis le relevé |
+| `POST /sources/centrale_canine/relay-request` | Demander un relevé de la Centrale Canine depuis le web ou le téléphone : un PC allumé le fait à sa vérification suivante |
 | `GET /notifications`, `POST /notifications/read-all`, `GET /notifications/vapid-key`, `POST /notifications/subscribe`, `DELETE /notifications/subscribe`, `POST /notifications/test` | Cloche et Web Push |
 | `GET /health` | Santé de l'API et de la base (503 si la base ne répond pas) |
 
