@@ -1,7 +1,8 @@
 """Readers for the breeder details the sources publish: names, towns, departments, phones, SIREN."""
 
 import re
-import unicodedata
+
+from core.text import without_accents
 
 LOWERCASE_NAME_WORDS: frozenset[str] = frozenset(
     {"de", "du", "des", "la", "le", "les", "et", "en", "sur", "sous", "aux", "au", "à"}
@@ -57,9 +58,8 @@ class BreederContactParser:
         Returns:
             « clos ecotay », or None when empty.
         """
-        decomposed = unicodedata.normalize("NFKD", affix or "")
-        without_accents = "".join(character for character in decomposed if not unicodedata.combining(character))
-        words = NON_LETTER_OR_DIGIT_PATTERN.sub(" ", without_accents.lower()).split()
+        plain_affix = without_accents(affix or "").lower()
+        words = NON_LETTER_OR_DIGIT_PATTERN.sub(" ", plain_affix).split()
         kept_words = [word for word in words if word not in AFFIX_KEY_IGNORED_WORDS]
         return " ".join(kept_words) or None
 

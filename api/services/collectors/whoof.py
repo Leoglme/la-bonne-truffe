@@ -9,7 +9,6 @@ import html
 import json
 import logging
 import time
-import unicodedata
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
@@ -18,6 +17,7 @@ import httpx
 
 from core.clock import french_date_of
 from core.config import settings
+from core.text import without_accents
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
 from enums.listing_kind import ListingKind
@@ -276,8 +276,8 @@ class WhoofCollector:
         for color in coat.get("colors") or []:
             value = color.get("value") if isinstance(color, dict) else None
             if isinstance(value, str) and value:
-                decomposed = unicodedata.normalize("NFKD", value.split("-")[0].lower())
-                words.append("".join(character for character in decomposed if not unicodedata.combining(character)))
+                color_without_shade = value.split("-")[0]
+                words.append(without_accents(color_without_shade.lower()))
         return words
 
     @classmethod

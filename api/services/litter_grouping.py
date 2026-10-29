@@ -10,12 +10,12 @@ listings of the same source are never grouped on a guess: a source lists a litte
 """
 
 import re
-import unicodedata
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
+from core.text import without_accents
 from enums.listing_kind import ListingKind
 from models.listing import Listing
 from models.litter_group import LitterGroup
@@ -200,9 +200,8 @@ class LitterGroupingService:
         Returns:
             « violette of loving star ».
         """
-        decomposed = unicodedata.normalize("NFKD", name)
-        without_accents = "".join(character for character in decomposed if not unicodedata.combining(character))
-        return " ".join(NON_LETTER_OR_DIGIT_PATTERN.sub(" ", without_accents.lower()).split())
+        plain_name = without_accents(name).lower()
+        return " ".join(NON_LETTER_OR_DIGIT_PATTERN.sub(" ", plain_name).split())
 
     @staticmethod
     def _refresh_group(db: Session, group: LitterGroup) -> None:

@@ -8,7 +8,6 @@ import json
 import logging
 import re
 import time
-import unicodedata
 from collections.abc import Callable
 from datetime import UTC, date, datetime
 from typing import Any
@@ -17,6 +16,7 @@ import httpx
 
 from core.clock import FRENCH_TIMEZONE
 from core.config import settings
+from core.text import without_accents
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
 from enums.listing_kind import ListingKind
@@ -244,8 +244,7 @@ class CoeurDeCockerCollector:
         """
         if not isinstance(text, str):
             return ""
-        decomposed = unicodedata.normalize("NFKD", text.strip().lower())
-        return "".join(character for character in decomposed if not unicodedata.combining(character))
+        return without_accents(text.strip().lower())
 
     @staticmethod
     def _date(text: Any) -> date | None:
