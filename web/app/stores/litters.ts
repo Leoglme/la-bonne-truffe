@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue'
-import type { LitterCard, LitterDetail } from '~/types/api'
-import type { LitterFilterKey } from '~/types/Litter'
+import type { FollowUpCard, LitterCard, LitterDetail } from '~/types/api'
+import type { LitterBrowsingOrigin, LitterFilterKey } from '~/types/Litter'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { LittersService } from '~/services/littersService'
@@ -8,7 +8,7 @@ import { LitterPresentation } from '~/utils/litterPresentation'
 
 const PREVIOUS_VISIT_STORAGE_KEY: string = 'lbt-litters-visited-at'
 
-/** Pinia store of the litters: the home list, its filter, and the litter opened in the desktop panel. */
+/** Pinia store of the litters: the home list, its filter, and the litter opened on the detail screen or the desktop panel. */
 export const useLittersStore = defineStore('litters', () => {
   const cards: Ref<LitterCard[]> = ref([])
   const selectedFilterKey: Ref<LitterFilterKey> = ref('all')
@@ -75,14 +75,44 @@ export const useLittersStore = defineStore('litters', () => {
       return litter
     }
     const detail: LitterDetail = await LittersService.setFollowUp(litter.id, { status: 'to_contact' })
+    applyDetail(detail)
+    return detail
+  }
 
-    if (selectedLitter.value?.id === litter.id) {
+  /**
+   * Write the new detail of a litter into the opened litter, and its follow-up status into its card.
+   *
+   * @param detail - The detail returned by the API.
+   */
+  function applyDetail(detail: LitterDetail): void {
+    if (selectedLitter.value?.id === detail.id) {
       selectedLitter.value = detail
     }
     cards.value = cards.value.map((card: LitterCard): LitterCard =>
-      card.id === litter.id ? { ...card, follow_up_status: 'to_contact' } : card,
+      card.id === detail.id ? { ...card, follow_up_status: detail.follow_up?.status ?? null } : card,
     )
-    return detail
+  }
+
+  /**
+   * List the litters a swipe on the detail screen goes through, in the order of the screen it was opened from.
+   *
+   * @param origin - The follow-up screen, or the home list (also for a litter opened from a notification).
+   * @param litterId - The litter shown, looked for in the whole home list when the filter hides it.
+   * @returns The ids of the litters, in screen order.
+   */
+  async function listBrowsableLitterIds(origin: LitterBrowsingOrigin, litterId: number): Promise<number[]> {
+    if (origin === 'follow-ups') {
+      const followUpsStore: ReturnType<typeof useFollowUpsStore> = useFollowUpsStore()
+      if (followUpsStore.cards.length === 0) {
+        await followUpsStore.load()
+      }
+      return followUpsStore.cardsInScreenOrder.map((card: FollowUpCard): number => card.litter.id)
+    }
+    if (cards.value.length === 0) {
+      await load()
+    }
+    const visibleIds: number[] = visibleCards.value.map((card: LitterCard): number => card.id)
+    return visibleIds.includes(litterId) ? visibleIds : cards.value.map((card: LitterCard): number => card.id)
   }
 
   /**
@@ -112,6 +142,8 @@ export const useLittersStore = defineStore('litters', () => {
     load,
     select,
     follow,
+    applyDetail,
+    listBrowsableLitterIds,
     followOrOpenFollowUp,
   }
 })

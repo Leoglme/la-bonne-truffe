@@ -1,6 +1,6 @@
 <template>
   <div
-    class="mx-auto flex min-h-dvh w-full max-w-[820px] flex-col px-5 pt-14 pb-[34px] md:px-8 md:pt-9 md:pb-10 xl:grid xl:max-w-none xl:grid-cols-[minmax(0,1fr)_600px] xl:grid-rows-[auto_minmax(0,1fr)] xl:p-0"
+    class="mx-auto flex min-h-dvh w-full max-w-[820px] flex-col px-5 pt-6 pb-[34px] md:px-8 md:pt-9 md:pb-10 xl:grid xl:max-w-none xl:grid-cols-[minmax(0,1fr)_600px] xl:grid-rows-[auto_minmax(0,1fr)] xl:p-0"
   >
     <header class="flex xl:col-start-2 xl:row-start-1 xl:px-20 xl:pt-8">
       <UiAppLogo />

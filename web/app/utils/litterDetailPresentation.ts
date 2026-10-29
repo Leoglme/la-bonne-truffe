@@ -1,5 +1,12 @@
 import type { LitterCard, LitterDetail, LitterSourceListing } from '~/types/api'
-import type { LitterDayFact, LitterDayFactKey, LitterKeyFact, LitterPrimaryAction } from '~/types/Litter'
+import type {
+  LitterDayFact,
+  LitterDayFactKey,
+  LitterKeyFact,
+  LitterListingLine,
+  LitterPrimaryAction,
+} from '~/types/Litter'
+import type { UiPhotoViewerPhoto } from '~/types/UiPhotoViewer'
 import { LISTING_KIND_LABELS, LISTING_SOURCE_LABELS, LISTING_SOURCE_LINK_LABELS } from '~/constants/litterLabels'
 import { FrenchDate } from '~/utils/frenchDate'
 import { LitterPresentation } from '~/utils/litterPresentation'
@@ -66,6 +73,61 @@ export class LitterDetailPresentation {
   }
 
   /**
+   * Build the cards of the listings: one per puppy ad, « Chiot 1 », « Chiot 2 »…, and « Vu sur » for the others.
+   *
+   * @param litter - The litter.
+   * @returns One line per listing, in the order of the API.
+   */
+  static buildListingLines(litter: LitterDetail): LitterListingLine[] {
+    const puppyAds: LitterSourceListing[] = this.listPuppyAds(litter)
+    return litter.listings.map((listing: LitterSourceListing, index: number): LitterListingLine => {
+      const key: string = `${listing.source}-${index}`
+      if (listing.kind !== 'puppy_ad') {
+        return {
+          key,
+          href: listing.external_url,
+          label: 'Vu sur',
+          description: this.buildSourceLine(listing),
+          thumbnailUrl: null,
+        }
+      }
+      return {
+        key,
+        href: listing.external_url,
+        label: this.buildPuppyLabel(puppyAds.indexOf(listing), puppyAds.length),
+        description: this.joinKnownParts([this.buildPuppyDescription(listing), LISTING_SOURCE_LABELS[listing.source]]),
+        thumbnailUrl: listing.photos[0] ?? null,
+      }
+    })
+  }
+
+  /**
+   * Build the photos of the full-screen viewer, each captioned with the puppy its ad shows.
+   *
+   * @param litter - The litter.
+   * @returns The photos, « Chiot 2 · Femelle » under those of a puppy ad.
+   */
+  static buildViewerPhotos(litter: LitterDetail): UiPhotoViewerPhoto[] {
+    const puppyAds: LitterSourceListing[] = this.listPuppyAds(litter)
+    return litter.photos.map((url: string): UiPhotoViewerPhoto => {
+      const puppyIndex: number = puppyAds.findIndex((listing: LitterSourceListing): boolean =>
+        listing.photos.includes(url),
+      )
+      const puppyAd: LitterSourceListing | undefined = puppyAds[puppyIndex]
+      if (puppyAd === undefined) {
+        return { url, caption: null }
+      }
+      return {
+        url,
+        caption: this.joinKnownParts([
+          this.buildPuppyLabel(puppyIndex, puppyAds.length),
+          this.buildPuppyDescription(puppyAd),
+        ]),
+      }
+    })
+  }
+
+  /**
    * Pick where the primary button leads: the breeder's phone when known, else the litter on its source.
    *
    * @param litter - The litter.
@@ -87,6 +149,56 @@ export class LitterDetailPresentation {
       }
     }
     return null
+  }
+
+  /**
+   * List the puppy ads of a litter, one per puppy, in the order of the API.
+   *
+   * @param litter - The litter.
+   * @returns Its listings of kind « annonce ».
+   */
+  private static listPuppyAds(litter: LitterDetail): LitterSourceListing[] {
+    return litter.listings.filter((listing: LitterSourceListing): boolean => listing.kind === 'puppy_ad')
+  }
+
+  /**
+   * Join the parts of a line that are known.
+   *
+   * @param parts - The parts, null when unknown.
+   * @returns « Chiot 1 · Mâle · Chiens de France ».
+   */
+  private static joinKnownParts(parts: (string | null)[]): string {
+    return parts.filter((part: string | null): part is string => part !== null).join(' · ')
+  }
+
+  /**
+   * Name a puppy by its ad: numbered when the litter has several puppy ads.
+   *
+   * @param puppyIndex - Position of the ad among the puppy ads of the litter.
+   * @param puppyCount - Number of puppy ads of the litter.
+   * @returns « Chiot 2 », or « Chiot » when it is the only one.
+   */
+  private static buildPuppyLabel(puppyIndex: number, puppyCount: number): string {
+    return puppyCount > 1 ? `Chiot ${puppyIndex + 1}` : 'Chiot'
+  }
+
+  /**
+   * Describe the puppy of an ad: its sex and its colour, when the ad tells them.
+   *
+   * @param listing - The puppy ad.
+   * @returns « Mâle · Gold », « Femelle », or null when the ad tells neither.
+   */
+  private static buildPuppyDescription(listing: LitterSourceListing): string | null {
+    const parts: string[] = []
+    if (listing.male_count === 1 && listing.female_count === 0) {
+      parts.push('Mâle')
+    } else if (listing.female_count === 1 && listing.male_count === 0) {
+      parts.push('Femelle')
+    }
+    if (LitterPresentation.hasKnownColors(listing.colors)) {
+      parts.push(LitterPresentation.buildColorLabel(listing.colors, true))
+    }
+    return parts.length > 0 ? parts.join(' · ') : null
   }
 
   /**

@@ -54,6 +54,16 @@ export class LittersService {
   }
 
   /**
+   * Stop following a litter: its status, reminder and notes are deleted.
+   *
+   * @param litterId - The litter.
+   * @returns The detail, without follow-up.
+   */
+  static async removeFollowUp(litterId: number): Promise<LitterDetail> {
+    return ApiClient.delete<LitterDetail>(`/api/v1/litters/${litterId}/follow-up`)
+  }
+
+  /**
    * Add a dated note to the follow-up of a litter.
    *
    * @param litterId - The litter.
@@ -62,6 +72,16 @@ export class LittersService {
    */
   static async addNote(litterId: number, text: string): Promise<FollowUpNote> {
     return ApiClient.post<FollowUpNote>(`/api/v1/litters/${litterId}/notes`, { text })
+  }
+
+  /**
+   * Delete a note of the follow-up of a litter.
+   *
+   * @param litterId - The litter.
+   * @param noteId - The note.
+   */
+  static async removeNote(litterId: number, noteId: number): Promise<void> {
+    await ApiClient.delete(`/api/v1/litters/${litterId}/notes/${noteId}`)
   }
 
   /**

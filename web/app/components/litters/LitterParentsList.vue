@@ -10,11 +10,9 @@
         <span class="text-[11px] font-extrabold text-ink-label md:text-[13px]">{{ parent.role }}</span>
         <span class="text-[15px] font-bold md:text-[17px]">{{ parent.name }}</span>
       </span>
-      <span class="text-xs font-extrabold whitespace-nowrap text-ink-secondary md:hidden">{{
-        parent.compactRating
-      }}</span>
       <span
-        class="hidden rounded-full bg-chip px-3 py-1.5 text-sm font-extrabold whitespace-nowrap text-ink-secondary md:inline"
+        v-if="parent.rating"
+        class="shrink-0 rounded-full bg-chip px-2.5 py-1 text-xs font-extrabold whitespace-nowrap text-ink-secondary md:px-3 md:py-1.5 md:text-sm"
       >
         {{ parent.rating }}
       </span>
@@ -48,14 +46,13 @@ const parents: ComputedRef<LitterParentLine[]> = computed((): LitterParentLine[]
  *
  * @param role - « PÈRE » or « MÈRE ».
  * @param parent - The parent.
- * @returns The line, with the full and the compact rating.
+ * @returns The line; its rating stays null when the Centrale Canine gives none.
  */
 function buildParentLine(role: string, parent: LitterParent): LitterParentLine {
   return {
     role,
     name: parent.name,
-    rating: parent.rating === null ? 'Sans cotation' : `Cotation ${parent.rating} / 6`,
-    compactRating: parent.rating === null ? 'Sans cot.' : `Cot. ${parent.rating} / 6`,
+    rating: parent.rating === null ? null : `Cotation ${parent.rating} / 6`,
   }
 }
 </script>

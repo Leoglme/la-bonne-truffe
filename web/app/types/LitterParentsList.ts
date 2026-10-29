@@ -7,6 +7,5 @@ export type LitterParentsListProps = {
 export type LitterParentLine = {
   role: string
   name: string
-  rating: string
-  compactRating: string
+  rating: string | null
 }

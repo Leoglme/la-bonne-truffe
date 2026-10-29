@@ -1,7 +1,7 @@
 <template>
   <div class="flex min-h-0 flex-1">
     <section class="flex min-h-0 min-w-0 flex-1 flex-col" aria-label="Portées">
-      <header class="flex shrink-0 items-center justify-between px-5 pt-[58px] md:px-8 md:pt-9 lg:hidden">
+      <header class="flex shrink-0 items-center justify-between px-5 pt-4 md:px-8 md:pt-9 lg:hidden">
         <UiAppLogo />
         <div class="flex items-center gap-3">
           <NotificationBellButton />
@@ -30,7 +30,7 @@
         <HomeBornLastNightCard v-if="bornLastNightLitter" :litter="bornLastNightLitter" />
 
         <div class="flex shrink-0 flex-col gap-5 md:gap-4">
-          <div class="flex flex-wrap items-center justify-between gap-2 md:gap-3 lg:hidden">
+          <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between lg:hidden">
             <h2 class="m-0 font-display text-xl font-semibold whitespace-nowrap md:text-2xl">Les portées</h2>
             <LitterFilterChips />
           </div>

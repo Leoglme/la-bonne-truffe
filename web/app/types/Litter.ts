@@ -33,3 +33,13 @@ export type LitterPrimaryAction = {
   label: string
   isCall: boolean
 }
+
+export type LitterBrowsingOrigin = 'home' | 'follow-ups'
+
+export type LitterListingLine = {
+  key: string
+  href: string | null
+  label: string
+  description: string
+  thumbnailUrl: string | null
+}

@@ -12,6 +12,13 @@ const DAY_AND_SHORT_MONTH_FORMAT: Intl.DateTimeFormat = new Intl.DateTimeFormat(
   month: 'short',
 })
 const WEEKDAY_FORMAT: Intl.DateTimeFormat = new Intl.DateTimeFormat(FRENCH_LOCALE, { weekday: 'long' })
+const DAY_AND_TIME_FORMAT: Intl.DateTimeFormat = new Intl.DateTimeFormat(FRENCH_LOCALE, {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  hour: '2-digit',
+  minute: '2-digit',
+})
 
 /** API dates read as the instant or the day they stand for, then written the French way. */
 export class FrenchDate {
@@ -66,6 +73,16 @@ export class FrenchDate {
   }
 
   /**
+   * Write a moment with its weekday, its day and its time.
+   *
+   * @param moment - The moment.
+   * @returns « vendredi 30 octobre à 09:00 ».
+   */
+  static formatDayAndTime(moment: Date): string {
+    return DAY_AND_TIME_FORMAT.format(moment)
+  }
+
+  /**
    * Write a date as the local day a date input holds.
    *
    * @param day - The day.
@@ -75,6 +92,18 @@ export class FrenchDate {
     const month: string = String(day.getMonth() + 1).padStart(2, '0')
     const dayOfMonth: string = String(day.getDate()).padStart(2, '0')
     return `${day.getFullYear()}-${month}-${dayOfMonth}`
+  }
+
+  /**
+   * Write a moment as the local day and time a date-time input holds.
+   *
+   * @param moment - The moment.
+   * @returns « 2026-10-30T09:00 ».
+   */
+  static formatInputDayAndTime(moment: Date): string {
+    const hours: string = String(moment.getHours()).padStart(2, '0')
+    const minutes: string = String(moment.getMinutes()).padStart(2, '0')
+    return `${this.formatInputDay(moment)}T${hours}:${minutes}`
   }
 
   /**

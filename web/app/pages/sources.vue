@@ -6,26 +6,14 @@
       </p>
       <p v-if="runError" role="alert" class="m-0 text-[15px] font-bold text-coral-text">{{ runError }}</p>
       <UiSectionCard v-for="status in sourcesStore.statuses" :key="status.source" class="gap-3">
-        <div class="flex items-center justify-between gap-3">
-          <span class="flex items-center gap-2.5">
-            <span
-              class="size-[9px] shrink-0 rounded-full"
-              :class="status.last_status ? SOURCE_RUN_STATUS_DOT_CLASSES[status.last_status] : 'bg-line-strong'"
-              aria-hidden="true"
-            />
-            <h2 class="m-0 font-display text-[22px] font-semibold">{{ status.label }}</h2>
-          </span>
-          <UButton
-            v-if="canRunNow(status)"
-            color="neutral"
-            variant="outline"
-            class="shrink-0"
-            :disabled="runningSource !== null"
-            @click="runNow(status)"
-          >
-            {{ runningSource === status.source ? 'Relevé en cours…' : 'Relever maintenant' }}
-          </UButton>
-        </div>
+        <span class="flex items-center gap-2.5">
+          <span
+            class="size-[9px] shrink-0 rounded-full"
+            :class="status.last_status ? SOURCE_RUN_STATUS_DOT_CLASSES[status.last_status] : 'bg-line-strong'"
+            aria-hidden="true"
+          />
+          <h2 class="m-0 font-display text-[22px] font-semibold">{{ status.label }}</h2>
+        </span>
         <p class="m-0 text-[15px] text-ink-muted">{{ buildSourceStatusLine(status) }}</p>
         <p v-if="status.is_collected_by_desktop_app" class="m-0 text-sm text-ink-muted">
           Relevée par l’app Windows, quand un PC où elle tourne est allumé.
@@ -39,6 +27,16 @@
         >
           Relais depuis ce PC en échec : {{ centraleCanineRelayStore.lastRelayErrorMessage }}
         </p>
+        <UButton
+          v-if="canRunNow(status)"
+          size="xl"
+          class="mt-1 w-full justify-center md:w-auto md:self-start"
+          :loading="runningSource === status.source"
+          :disabled="runningSource !== null"
+          @click="runNow(status)"
+        >
+          {{ runningSource === status.source ? 'Relevé en cours…' : 'Relever maintenant' }}
+        </UButton>
       </UiSectionCard>
     </div>
   </UiTabScreen>

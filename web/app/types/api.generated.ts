@@ -623,7 +623,19 @@ export interface paths {
          */
         put: operations["set_litter_follow_up_api_v1_litters__litter_id__follow_up_put"];
         post?: never;
-        delete?: never;
+        /**
+         * Remove Litter Follow Up
+         * @description Stop following a litter: its status, reminder and notes are deleted.
+         *
+         *     Args:
+         *         litter_id: The litter.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The detail, without follow-up.
+         */
+        delete: operations["remove_litter_follow_up_api_v1_litters__litter_id__follow_up_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -653,6 +665,32 @@ export interface paths {
          */
         post: operations["add_litter_note_api_v1_litters__litter_id__notes_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/litters/{litter_id}/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Litter Note
+         * @description Delete a note of the follow-up of a litter.
+         *
+         *     Args:
+         *         litter_id: The litter.
+         *         note_id: The note.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         */
+        delete: operations["remove_litter_note_api_v1_litters__litter_id__notes__note_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1143,7 +1181,7 @@ export interface components {
         LitterSort: "score" | "freshness";
         /**
          * LitterSourceListing
-         * @description The litter as one source shows it (« Vu sur »).
+         * @description The litter as one source shows it (« Vu sur »); for a puppy ad, one puppy of the litter.
          */
         LitterSourceListing: {
             source: components["schemas"]["ListingSource"];
@@ -1159,6 +1197,14 @@ export interface components {
             last_seen_at: string;
             /** Is Active */
             is_active: boolean;
+            /** Male Count */
+            male_count: number | null;
+            /** Female Count */
+            female_count: number | null;
+            /** Colors */
+            colors: components["schemas"]["LitterColor"][];
+            /** Photos */
+            photos: string[];
         };
         /**
          * LofPreference
@@ -2236,6 +2282,37 @@ export interface operations {
             };
         };
     };
+    remove_litter_follow_up_api_v1_litters__litter_id__follow_up_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                litter_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LitterDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     add_litter_note_api_v1_litters__litter_id__notes_post: {
         parameters: {
             query?: never;
@@ -2259,6 +2336,36 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["FollowUpNoteResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_litter_note_api_v1_litters__litter_id__notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                litter_id: number;
+                note_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

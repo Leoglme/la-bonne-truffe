@@ -47,7 +47,7 @@
           <li
             v-for="row in shownColorRows"
             :key="row.color"
-            class="flex flex-wrap items-center justify-between gap-3 border-t border-line py-3"
+            class="flex flex-col gap-2.5 border-t border-line py-3 md:flex-row md:items-center md:justify-between md:gap-3"
           >
             <span class="inline-flex items-center gap-3 text-[17px] font-bold md:min-w-40">
               <CockerIllustration :coat="row.coat" :size-in-pixels="40" />
@@ -91,11 +91,13 @@
             {{ region }}
           </button>
         </div>
-        <p class="m-0 text-[15px] text-ink-muted">{{ departmentsSentence }}</p>
+        <p v-if="hasNoDepartment" role="alert" class="m-0 text-[15px] font-bold text-coral-text">
+          Aucun département : choisis au moins une région.
+        </p>
       </UiSectionCard>
 
-      <UiSectionCard title="Le chiot" class="gap-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+      <UiSectionCard title="Le chiot" class="gap-6">
+        <div class="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between md:gap-3">
           <span class="text-[17px] font-bold md:min-w-40">Pedigree LOF</span>
           <UiChoiceButtons
             :model-value="draft.lof_preference"
@@ -104,7 +106,7 @@
             @update:model-value="setLofPreference"
           />
         </div>
-        <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between md:gap-3">
           <span class="text-[17px] font-bold md:min-w-40">Sexe</span>
           <UiChoiceButtons
             :model-value="draft.sex_preference"
@@ -122,7 +124,7 @@
         </div>
       </UiSectionCard>
 
-      <UiSectionCard title="Notifications" class="gap-4">
+      <UiSectionCard title="Notifications" class="gap-6">
         <div class="flex items-center justify-between gap-3">
           <span class="flex flex-col">
             <span class="text-[17px] font-bold">Portée préférée</span>
@@ -136,7 +138,7 @@
         <div class="flex items-center justify-between gap-3">
           <span class="flex flex-col">
             <span class="text-[17px] font-bold">Récap du soir</span>
-            <span class="text-sm text-ink-muted">Les acceptables et tes suivis, à {{ draft.digest_hour }} h</span>
+            <span class="text-sm text-ink-muted">Les acceptables et tes suivis, à {{ draft.digest_hour }}&nbsp;h</span>
           </span>
           <USwitch v-model="draft.notify_acceptable_in_digest" aria-label="Recevoir le récap du soir" />
         </div>
@@ -160,7 +162,6 @@ import {
   SEX_OPTIONS,
 } from '~/constants/criteriaOptions'
 import { ChoiceValues } from '~/utils/choiceValues'
-import { FrenchText } from '~/utils/frenchText'
 
 useHead({ title: 'Critères · La Bonne Truffe' })
 
@@ -178,15 +179,9 @@ const saveLabel: ComputedRef<string> = computed((): string => {
   }
   return criteriaStore.hasUnsavedChanges ? 'Enregistrer' : 'À jour'
 })
-const departmentsSentence: ComputedRef<string> = computed((): string => {
-  const codes: string[] = criteriaStore.draft?.department_codes ?? []
-  if (codes.length === 0) {
-    return 'Aucun département : choisis au moins une région.'
-  }
-  const countWord: string = FrenchText.spellOutCount(codes.length, 'masculine')
-  const departments: string = FrenchText.pickForm(codes.length, 'département', 'départements')
-  return `${countWord} ${departments}, du plus proche au plus loin : ${codes.join(' · ')}. Plus c’est proche, plus ça compte.`
-})
+const hasNoDepartment: ComputedRef<boolean> = computed(
+  (): boolean => (criteriaStore.draft?.department_codes ?? []).length === 0,
+)
 
 /**
  * Set the level of a colour from its choice buttons.

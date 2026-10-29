@@ -1,7 +1,7 @@
 <template>
   <div class="flex min-h-0 flex-1 flex-col">
     <header
-      class="flex shrink-0 items-start justify-between gap-4 px-5 pt-[58px] md:px-8 md:pt-9 lg:mx-auto lg:w-full lg:max-w-[820px]"
+      class="flex shrink-0 items-start justify-between gap-4 px-5 pt-4 md:px-8 md:pt-9 lg:mx-auto lg:w-full lg:max-w-[820px]"
     >
       <div class="flex min-w-0 flex-col gap-0.5 md:gap-1">
         <h1 class="m-0 font-display text-[30px] leading-[1.1] font-semibold md:text-[40px]">{{ props.title }}</h1>

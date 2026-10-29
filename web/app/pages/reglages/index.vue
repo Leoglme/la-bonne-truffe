@@ -13,7 +13,15 @@
         <ClientOnly>
           <p class="m-0 text-[15px] text-ink-muted">{{ userStore.user?.email }}</p>
         </ClientOnly>
-        <UButton color="neutral" variant="outline" class="self-start" @click="logout">Se déconnecter</UButton>
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="xl"
+          class="w-full justify-center md:w-auto md:self-start"
+          @click="logout"
+        >
+          Se déconnecter
+        </UButton>
       </UiSectionCard>
     </div>
   </UiTabScreen>

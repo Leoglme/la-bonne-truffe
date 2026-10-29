@@ -25,10 +25,9 @@
         </div>
         <UButton
           v-if="isSubscribed"
-          color="neutral"
-          variant="outline"
-          class="self-start"
-          :disabled="isSendingTest"
+          size="xl"
+          class="w-full justify-center md:w-auto md:self-start"
+          :loading="isSendingTest"
           @click="sendTestNotification"
         >
           {{ isSendingTest ? 'Envoi…' : 'Envoyer une notification de test' }}
