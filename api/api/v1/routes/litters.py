@@ -115,6 +115,27 @@ async def set_litter_follow_up(
     return LitterQueryService.detail(db, current_user.id, litter_id)
 
 
+@router.delete("/litters/{litter_id}/follow-up", response_model=LitterDetail)
+async def remove_litter_follow_up(
+    litter_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> LitterDetail:
+    """
+    Stop following a litter: its status, reminder and notes are deleted.
+
+    Args:
+        litter_id: The litter.
+        current_user: The authenticated user.
+        db: Database session.
+
+    Returns:
+        The detail, without follow-up.
+    """
+    LitterCommandService.remove_follow_up(db, current_user.id, litter_id)
+    return LitterQueryService.detail(db, current_user.id, litter_id)
+
+
 @router.post("/litters/{litter_id}/notes", response_model=FollowUpNoteResponse, status_code=status.HTTP_201_CREATED)
 async def add_litter_note(
     litter_id: int,
@@ -136,6 +157,25 @@ async def add_litter_note(
     """
     note = LitterCommandService.add_note(db, current_user.id, litter_id, payload)
     return FollowUpNoteResponse(id=note.id, created_at=note.created_at, text=note.text)
+
+
+@router.delete("/litters/{litter_id}/notes/{note_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_litter_note(
+    litter_id: int,
+    note_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    """
+    Delete a note of the follow-up of a litter.
+
+    Args:
+        litter_id: The litter.
+        note_id: The note.
+        current_user: The authenticated user.
+        db: Database session.
+    """
+    LitterCommandService.remove_note(db, current_user.id, litter_id, note_id)
 
 
 @router.get("/follow-ups", response_model=list[FollowUpCard])

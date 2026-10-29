@@ -22,6 +22,7 @@ class FollowUp(TimestampMixin, Base):
         litter_group_id: Followed litter.
         status: ``FollowUpStatus`` value.
         next_reminder_at: When to call back, null for no reminder.
+        reminder_sent_at: When the reminder was pushed, null until then.
         last_contact_at: Last call or message.
     """
 
@@ -37,6 +38,7 @@ class FollowUp(TimestampMixin, Base):
         str_enum_column(FollowUpStatus), default=FollowUpStatus.NEW, nullable=False
     )
     next_reminder_at: Mapped[datetime | None]
+    reminder_sent_at: Mapped[datetime | None]
     last_contact_at: Mapped[datetime | None]
 
     def __repr__(self) -> str:

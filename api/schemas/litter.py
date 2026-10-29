@@ -75,7 +75,7 @@ class LitterBreeder(BaseModel):
 
 
 class LitterSourceListing(BaseModel):
-    """The litter as one source shows it (« Vu sur »)."""
+    """The litter as one source shows it (« Vu sur »); for a puppy ad, one puppy of the litter."""
 
     source: ListingSource
     kind: ListingKind
@@ -83,6 +83,10 @@ class LitterSourceListing(BaseModel):
     litter_number: str | None
     last_seen_at: datetime
     is_active: bool
+    male_count: int | None
+    female_count: int | None
+    colors: list[LitterColor]
+    photos: list[str]
 
 
 class FollowUpNoteResponse(BaseModel):

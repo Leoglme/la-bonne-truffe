@@ -1,4 +1,4 @@
-"""Sends the notifications: immediate pushes, the evening digest, and the « source en panne » alert."""
+"""Sends the notifications: immediate pushes, the evening digest, follow-up reminders and the « source en panne » alert."""
 
 import logging
 from datetime import datetime
@@ -6,11 +6,13 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from core.clock import to_french_time
+from enums.follow_up_status import FollowUpStatus
 from enums.listing_source import ListingSource
 from enums.match_event_kind import MatchEventKind
 from enums.notification_kind import NotificationKind
 from enums.source_run_status import SourceRunStatus
 from models.digest_entry import DigestEntry
+from models.follow_up import FollowUp
 from models.litter_group import LitterGroup
 from models.notification import Notification
 from models.search_profile import SearchProfile
@@ -226,6 +228,42 @@ class NotifierService:
         db.commit()
         logger.warning("Source %s down: alert sent", source)
         return True
+
+    def send_due_follow_up_reminders(self, db: Session, now: datetime) -> int:
+        """
+        Push every follow-up reminder whose time has come, once; a dismissed litter is not reminded.
+
+        Args:
+            db: Database session; committed when a reminder is sent.
+            now: Current time, naive UTC.
+
+        Returns:
+            Number of reminders sent.
+        """
+        due_follow_ups = (
+            db.query(FollowUp)
+            .filter(
+                FollowUp.next_reminder_at.is_not(None),
+                FollowUp.next_reminder_at <= now,
+                FollowUp.reminder_sent_at.is_(None),
+                FollowUp.status != FollowUpStatus.DISMISSED,
+            )
+            .all()
+        )
+        for follow_up in due_follow_ups:
+            group = db.get(LitterGroup, follow_up.litter_group_id)
+            snapshot = LitterSnapshotBuilder.build(db, group) if group is not None else None
+            self.send(
+                db,
+                user_id=follow_up.user_id,
+                kind=NotificationKind.FOLLOW_UP_REMINDER,
+                body=NotificationTexts.follow_up_reminder(snapshot.name if snapshot is not None else None),
+                litter_group_id=follow_up.litter_group_id,
+                now=now,
+            )
+            follow_up.reminder_sent_at = now
+        db.commit()
+        return len(due_follow_ups)
 
     @staticmethod
     def _queue_for_digest(

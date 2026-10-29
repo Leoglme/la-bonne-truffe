@@ -137,6 +137,19 @@ class NotificationTexts:
         """
         return f"Demande d’inscription : {name} ({email}) aimerait utiliser La Bonne Truffe."
 
+    @staticmethod
+    def follow_up_reminder(litter_name: str | None) -> str:
+        """
+        Body of the push sent at the time of a follow-up reminder.
+
+        Args:
+            litter_name: Name of the followed litter, None when it is unknown.
+
+        Returns:
+            « C'est l'heure d'appeler Ar Ti Marellek. »
+        """
+        return f"C’est l’heure d’appeler {litter_name}." if litter_name else "C’est l’heure de rappeler l’éleveur."
+
     @classmethod
     def _acceptable_litters_sentence(cls, snapshots: list[LitterSnapshot]) -> str:
         """

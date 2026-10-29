@@ -47,7 +47,7 @@ class CollectionWorker:
 
         One job per collected source runs every hour, a few minutes apart (``COLLECTION_MINUTES``). The
         evening digest job wakes at minute 0 of every hour and sends the digests whose ``digest_hour``
-        has come.
+        has come. The follow-up reminders are pushed within five minutes of their time.
 
         Returns:
             The configured scheduler, not started.
@@ -59,6 +59,7 @@ class CollectionWorker:
                 continue
             scheduler.add_job(self.collect_source, "cron", minute=minute, args=[source], id=f"collect_{source.value}")
         scheduler.add_job(self.send_evening_digests, "cron", minute=0, id="send_evening_digests")
+        scheduler.add_job(self.send_follow_up_reminders, "cron", minute="*/5", id="send_follow_up_reminders")
         return scheduler
 
     def collect_source(self, source: ListingSource) -> None:
@@ -89,6 +90,16 @@ class CollectionWorker:
             sent_count = notifier_service.send_due_evening_digests(db, naive_utc_now())
             if sent_count:
                 logger.info("Evening digest sent to %d user(s)", sent_count)
+        finally:
+            db.close()
+
+    def send_follow_up_reminders(self) -> None:
+        """Every five minutes: push the follow-up reminders whose time has come."""
+        db = SessionLocal()
+        try:
+            sent_count = notifier_service.send_due_follow_up_reminders(db, naive_utc_now())
+            if sent_count:
+                logger.info("%d follow-up reminder(s) sent", sent_count)
         finally:
             db.close()
 

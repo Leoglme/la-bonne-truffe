@@ -80,6 +80,33 @@ def test_follow_and_note_a_litter(client: TestClient, collected: dict[str, str],
     assert follow_ups[0]["last_note"]["text"] == "Appel : liste d'attente ouverte."
 
 
+def test_delete_a_note(client: TestClient, collected: dict[str, str], db: Session) -> None:
+    litter_id = group_id_of(db, EXPECTED_LITTER_ID)
+    note_id = client.post(
+        f"/api/v1/litters/{litter_id}/notes", json={"text": "Rappeler jeudi."}, headers=collected
+    ).json()["id"]
+
+    deleted = client.delete(f"/api/v1/litters/{litter_id}/notes/{note_id}", headers=collected)
+    deleted_again = client.delete(f"/api/v1/litters/{litter_id}/notes/{note_id}", headers=collected)
+    detail = client.get(f"/api/v1/litters/{litter_id}", headers=collected).json()
+
+    assert deleted.status_code == 204
+    assert deleted_again.status_code == 404
+    assert detail["follow_up"]["notes"] == []
+
+
+def test_stop_following_a_litter(client: TestClient, collected: dict[str, str], db: Session) -> None:
+    litter_id = group_id_of(db, EXPECTED_LITTER_ID)
+    client.put(f"/api/v1/litters/{litter_id}/follow-up", json={"status": "contacted"}, headers=collected)
+    client.post(f"/api/v1/litters/{litter_id}/notes", json={"text": "Liste d'attente."}, headers=collected)
+
+    detail = client.delete(f"/api/v1/litters/{litter_id}/follow-up", headers=collected).json()
+    follow_ups = client.get("/api/v1/follow-ups", headers=collected).json()
+
+    assert detail["follow_up"] is None
+    assert follow_ups == []
+
+
 def test_confirming_a_colour_turns_the_bundle_into_a_certain_colour(
     client: TestClient, collected: dict[str, str], db: Session
 ) -> None:

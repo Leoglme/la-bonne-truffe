@@ -34,7 +34,7 @@ la-bonne-truffe/
 ## Côté API (Python 3.11+)
 
 - **FastAPI**, Pydantic v2, SQLAlchemy, SQLite (fichier dans un volume). Migrations manuelles comme DevLeadHunter (`migrations/run_migrations.py`).
-- **Worker** : processus séparé (`python worker.py`) avec **APScheduler**. Un job par source, toutes les heures, décalés de quelques minutes. Un job « récap du soir » à `digest_hour`. Un job « nettoyage » quotidien (`is_active`, purge des `raw_json` de plus de 90 jours).
+- **Worker** : processus séparé (`python worker.py`) avec **APScheduler**. Un job par source, toutes les heures, décalés de quelques minutes. Un job « récap du soir » à `digest_hour`. Un job toutes les cinq minutes pousse les rappels du suivi arrivés à leur heure. Un job « nettoyage » quotidien (`is_active`, purge des `raw_json` de plus de 90 jours).
 - **Collecteurs** : une classe par source avec la même interface `collect(profile) -> list[RawListing]`. `httpx` pour les appels, `selectolax` (ou BeautifulSoup) pour le HTML. Centrale Canine en JSON avec User-Agent navigateur, Chiens de France et Chiots de France en HTML avec le User-Agent honnête ; toutes les requêtes passent par `PoliteHttpClient` (une par seconde) et le `curl` du système depuis le PC de Léo, car Cloudflare refuse le client Python sur la Centrale Canine (voir `02-sources.md`). Le worker relève la Centrale Canine à la minute 5, Chiens de France à la minute 20 et Chiots de France à la minute 35 de chaque heure. Chaque relevé écrit une ligne `source_runs`. Sur le VPS, la Centrale Canine est relayée par l'app Windows d'un PC allumé (`POST /sources/centrale_canine/relay`).
 - **Normalisation** : `RawListing` → `Listing` (vocabulaire canonique des couleurs, dates, LOF). `rapidfuzz` pour rapprocher les affixes.
 - **Matching** : `MatchingService.evaluate(group, profile) -> Match` (palier, score, raisons, drapeaux). Pur, sans effet de bord, testé unitairement.
@@ -52,10 +52,11 @@ la-bonne-truffe/
 | `GET /auth/signup-availability`, `POST /auth/signup-requests` | Inscription ouverte ou non ; demande d'inscription gardée tant qu'elle est fermée (`202`, même réponse que l'adresse ait un compte ou non) |
 | `POST /auth/forgot-password`, `POST /auth/reset-password/verify`, `POST /auth/reset-password` | Mot de passe oublié : envoi du lien, vérification du lien, nouveau mot de passe (qui connecte) |
 | `GET /litters` | Groupes de portées avec leur match, filtres `tier`, `kind`, `active`, tri par score ou fraîcheur |
-| `GET /litters/{id}` | Détail : listings par source, éleveur, raisons du score, changements, suivi |
+| `GET /litters/{id}` | Détail : listings par source (pour une annonce de chiot : son sexe, ses couleurs et ses photos), éleveur, raisons du score, changements, suivi |
 | `PATCH /litters/{id}/colors` | Confirmer une couleur à la main (`confirmed`) |
 | `GET /profiles`, `PUT /profiles/{id}` | Critères |
 | `GET /follow-ups`, `PUT /litters/{id}/follow-up`, `POST /litters/{id}/notes` | Suivi et notes |
+| `DELETE /litters/{id}/follow-up`, `DELETE /litters/{id}/notes/{note_id}` | Ne plus suivre une portée (statut, rappel et notes effacés, renvoie le détail) ; supprimer une note (`204`) |
 | `GET /sources` | État de chaque source (dernier relevé, statut) |
 | `POST /sources/{source}/run` | Lancer un relevé à la main |
 | `POST /sources/centrale_canine/relay` | Relais de la Centrale Canine par l'app Windows : les pages à lire, puis le relevé |

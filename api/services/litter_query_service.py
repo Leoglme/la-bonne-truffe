@@ -5,6 +5,8 @@ from enum import StrEnum
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from enums.coat_color import CoatColor
+from enums.color_confidence import ColorConfidence
 from enums.listing_kind import ListingKind
 from enums.match_flag import MatchFlag
 from enums.match_tier import MatchTier
@@ -136,6 +138,13 @@ class LitterQueryService:
                     litter_number=listing.litter_number,
                     last_seen_at=listing.last_seen_at,
                     is_active=listing.is_active,
+                    male_count=listing.male_count,
+                    female_count=listing.female_count,
+                    colors=[
+                        LitterColor(color=CoatColor(entry["color"]), confidence=ColorConfidence(entry["confidence"]))
+                        for entry in listing.colors
+                    ],
+                    photos=listing.photos,
                 )
                 for listing in listings
             ],

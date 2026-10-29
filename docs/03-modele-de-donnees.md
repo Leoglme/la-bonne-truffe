@@ -44,7 +44,7 @@ Le verdict d'un groupe de portée face à un profil. Recalculé à chaque relev�
 
 ### `follow_ups` et `follow_up_notes`
 Le suivi perso.
-`follow_ups` : `id`, `litter_group_id`, `status` (`new` | `to_contact` | `contacted` | `waiting` | `reserved` | `dismissed`), `next_reminder_at` (nullable), `last_contact_at`, `updated_at`.
+`follow_ups` : `id`, `litter_group_id`, `status` (`new` | `to_contact` | `contacted` | `waiting` | `reserved` | `dismissed`), `next_reminder_at` (nullable), `reminder_sent_at` (nullable : heure d'envoi du push du rappel, remise à vide quand le rappel change), `last_contact_at`, `updated_at`.
 `follow_up_notes` : `id`, `follow_up_id`, `created_at`, `text`.
 
 ### `source_runs`
