@@ -1,5 +1,6 @@
 import type { ApiErrorBody } from '~/types/ApiClient'
 import type {
+  CurrentSession,
   LoginCredentials,
   PasswordResetConfirm,
   PasswordResetRequest,
@@ -11,7 +12,6 @@ import type {
   SignupRequestPayload,
   SignupRequestRecorded,
   TokenResponse,
-  User,
 } from '~/types/api'
 
 const TOKEN_REJECTION_STATUSES: number[] = [400, 401, 403]
@@ -126,15 +126,17 @@ export class AuthService {
   }
 
   /**
-   * Read the user a token belongs to.
+   * Read the session a token opens: its user and, once the token is past half its life, a fresh token to keep.
    *
    * @param token - Bearer token.
-   * @returns The signed-in user.
+   * @returns The signed-in user, and the renewed token to send from now on, null while the token is young.
    * @throws TokenRejectedError when the API refuses the token, Error when it cannot be reached.
    */
-  static async getCurrentUser(token: string): Promise<User> {
+  static async readSession(token: string): Promise<CurrentSession> {
     const response: Response = await fetch(`${this.apiBase()}/api/v1/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
+    }).catch((): never => {
+      throw new Error('L’API ne répond pas')
     })
     if (TOKEN_REJECTION_STATUSES.includes(response.status)) {
       throw new TokenRejectedError('Jeton refusé')

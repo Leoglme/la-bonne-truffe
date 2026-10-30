@@ -89,6 +89,16 @@ class UserResponse(BaseModel):
     created_at: datetime
 
 
+class CurrentSession(BaseModel):
+    """
+    What ``GET /auth/me`` answers: the signed-in user and, once the token is past half its life, a fresh
+    token the dashboard keeps from then on, so a device that opens the app now and then never signs out.
+    """
+
+    user: UserResponse
+    renewed_token: str | None
+
+
 class PasswordResetRequest(BaseModel):
     """Email typed on the « Mot de passe oublié » screen."""
 

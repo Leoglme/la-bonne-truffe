@@ -71,7 +71,7 @@ def test_signup_signs_in_with_the_starting_profile(client: TestClient, db: Sessi
 
     assert response.status_code == 201
     me = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {response.json()['access_token']}"})
-    assert me.json()["name"] == "Marie"
+    assert me.json()["user"]["name"] == "Marie"
     account = db.query(User).filter(User.email == "marie@exemple.fr").one()
     profile = db.query(SearchProfile).filter(SearchProfile.user_id == account.id).one()
     assert profile.name == STARTING_PROFILE_NAME
@@ -190,7 +190,7 @@ def test_reset_password_changes_the_password_and_signs_in(
 
     assert response.status_code == 200
     me = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {response.json()['access_token']}"})
-    assert me.json()["email"] == user.email
+    assert me.json()["user"]["email"] == user.email
     old_login = client.post("/api/v1/auth/login", json={"email": user.email, "password": TEST_PASSWORD})
     new_login = client.post("/api/v1/auth/login", json={"email": user.email, "password": NEW_PASSWORD})
     assert (old_login.status_code, new_login.status_code) == (401, 200)

@@ -240,16 +240,20 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Read Current User
-         * @description Return the signed-in user.
+         * Read Current Session
+         * @description Return the signed-in user and, once the token is past half its life, a fresh token to keep.
+         *
+         *     The dashboard calls this on every navigation and the Windows app before every relay check: a device
+         *     that opens the app at least once in half a token lifetime stays signed in for good.
          *
          *     Args:
+         *         token: Raw bearer token, already accepted by the auth dependency.
          *         current_user: The authenticated user.
          *
          *     Returns:
-         *         The user.
+         *         The user, and the renewed token or None.
          */
-        get: operations["read_current_user_api_v1_auth_me_get"];
+        get: operations["read_current_session_api_v1_auth_me_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -949,6 +953,16 @@ export interface components {
          * @enum {string}
          */
         ColorPreferenceLevel: "preferred" | "acceptable" | "ignored";
+        /**
+         * CurrentSession
+         * @description What ``GET /auth/me`` answers: the signed-in user and, once the token is past half its life, a fresh
+         *     token the dashboard keeps from then on, so a device that opens the app now and then never signs out.
+         */
+        CurrentSession: {
+            user: components["schemas"]["UserResponse"];
+            /** Renewed Token */
+            renewed_token: string | null;
+        };
         /**
          * DepartmentResponse
          * @description A French department, grouped by region in the criteria screen.
@@ -1956,7 +1970,7 @@ export interface operations {
             };
         };
     };
-    read_current_user_api_v1_auth_me_get: {
+    read_current_session_api_v1_auth_me_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1971,7 +1985,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserResponse"];
+                    "application/json": components["schemas"]["CurrentSession"];
                 };
             };
         };

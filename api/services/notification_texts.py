@@ -126,6 +126,24 @@ class NotificationTexts:
         return f"{SOURCE_NAMES[source]} ne répond plus depuis {failed_run_count} relevés.{reason}"
 
     @staticmethod
+    def source_silent(source: ListingSource, silent_hours: int) -> str:
+        """
+        Body of the alert sent when a source the Windows app relays has had no successful run for hours.
+
+        Args:
+            source: The silent source.
+            silent_hours: Hours without a successful run before the alert.
+
+        Returns:
+            « La Centrale Canine n'a pas été relevée depuis 3 h : aucun PC allumé avec l'app Windows, ou l'app
+            déconnectée. »
+        """
+        return (
+            f"{SOURCE_NAMES[source]} n’a pas été relevée depuis {silent_hours} h : "
+            "aucun PC allumé avec l’app Windows, ou l’app déconnectée."
+        )
+
+    @staticmethod
     def signup_request(name: str, email: str) -> str:
         """
         Body of the push telling the admin that someone tried to sign up while signups are closed.

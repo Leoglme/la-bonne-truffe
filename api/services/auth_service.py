@@ -65,6 +65,35 @@ class AuthService:
         expire = datetime.now(UTC) + (expires_delta or timedelta(minutes=settings.access_token_expire_minutes))
         return jwt.encode({"sub": email, "exp": expire}, settings.secret_key, algorithm=settings.algorithm)
 
+    @classmethod
+    def renew_access_token_if_due(cls, token: str, now: datetime) -> str | None:
+        """
+        Issue a fresh token when the given one is past half its lifetime (the sliding session).
+
+        The token has already been accepted by the auth dependency; a token that fails to decode here
+        is simply not renewed.
+
+        Args:
+            token: Raw JWT the request carried.
+            now: Current time, aware UTC.
+
+        Returns:
+            A new token to use from now on, or None while the current one is young enough.
+        """
+        try:
+            payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        except jwt.PyJWTError:
+            return None
+        email = payload.get("sub")
+        expires_at_timestamp = payload.get("exp")
+        if not isinstance(email, str) or not isinstance(expires_at_timestamp, int | float):
+            return None
+        expires_at = datetime.fromtimestamp(expires_at_timestamp, tz=UTC)
+        lifetime = timedelta(minutes=settings.access_token_expire_minutes)
+        if expires_at - now >= lifetime / 2:
+            return None
+        return cls.create_access_token(email)
+
     @staticmethod
     def get_user_by_email(db: Session, email: str) -> User | None:
         """

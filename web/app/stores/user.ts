@@ -1,5 +1,12 @@
 import type { ComputedRef, Ref } from 'vue'
-import type { LoginCredentials, PasswordResetConfirm, SignupPayload, TokenResponse, User } from '~/types/api'
+import type {
+  CurrentSession,
+  LoginCredentials,
+  PasswordResetConfirm,
+  SignupPayload,
+  TokenResponse,
+  User,
+} from '~/types/api'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { AuthService, TokenRejectedError } from '~/services/authService'
@@ -8,7 +15,7 @@ const TOKEN_STORAGE_KEY: string = 'lbt-token'
 const USER_STORAGE_KEY: string = 'lbt-user'
 const SESSION_VALIDATION_INTERVAL_MS: number = 60_000
 
-/** Pinia store of the session: bearer token and signed-in user, kept in localStorage. */
+/** Pinia store of the session: bearer token and signed-in user, kept in localStorage; the API renews the token. */
 export const useUserStore = defineStore('user', () => {
   const user: Ref<User | null> = ref(null)
   const token: Ref<string | null> = ref(null)
@@ -66,16 +73,26 @@ export const useUserStore = defineStore('user', () => {
    * @param tokenResponse - Token returned by the login, the signup or the password reset.
    */
   async function startSession(tokenResponse: TokenResponse): Promise<void> {
-    const signedInUser: User = await AuthService.getCurrentUser(tokenResponse.access_token)
-    token.value = tokenResponse.access_token
+    const session: CurrentSession = await AuthService.readSession(tokenResponse.access_token)
+    keepSession(session.renewed_token ?? tokenResponse.access_token, session.user)
+  }
+
+  /**
+   * Keep the session on this device: the token to send from now on, and the user it belongs to.
+   *
+   * @param sessionToken - Bearer token, the one the API just renewed when the previous was past half its life.
+   * @param signedInUser - The user the token belongs to.
+   */
+  function keepSession(sessionToken: string, signedInUser: User): void {
+    token.value = sessionToken
     user.value = signedInUser
-    localStorage.setItem(TOKEN_STORAGE_KEY, tokenResponse.access_token)
+    localStorage.setItem(TOKEN_STORAGE_KEY, sessionToken)
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(signedInUser))
     lastValidatedAt = Date.now()
   }
 
   /**
-   * Check the saved token against the API.
+   * Check the saved token against the API, which renews it once it is past half its life.
    *
    * @returns False only when the API refused the token; an unreachable API keeps the saved session.
    */
@@ -87,9 +104,8 @@ export const useUserStore = defineStore('user', () => {
       return true
     }
     try {
-      user.value = await AuthService.getCurrentUser(token.value)
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user.value))
-      lastValidatedAt = Date.now()
+      const session: CurrentSession = await AuthService.readSession(token.value)
+      keepSession(session.renewed_token ?? token.value, session.user)
       return true
     } catch (error: unknown) {
       if (error instanceof TokenRejectedError) {

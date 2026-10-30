@@ -3,6 +3,7 @@ import type { components } from '~/types/api.generated'
 type Schemas = components['schemas']
 
 export type User = Schemas['UserResponse']
+export type CurrentSession = Schemas['CurrentSession']
 export type LoginCredentials = Schemas['UserLogin']
 export type SignupPayload = Schemas['UserSignup']
 export type SignupAvailability = Schemas['SignupAvailability']

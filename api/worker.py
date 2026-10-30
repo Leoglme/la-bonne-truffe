@@ -15,11 +15,14 @@ from enums.listing_source import ListingSource
 from migrations.run_migrations import MigrationRunner
 from services.collection_runner import collection_runner
 from services.notifier import notifier_service
-from services.source_status_service import COLLECTED_SOURCES
+from services.source_status_service import COLLECTED_SOURCES, DESKTOP_RELAYED_SOURCES
 
 logger = logging.getLogger("worker")
 
 SCHEDULER_TIMEZONE = "Europe/Paris"
+
+# Minute of every hour at which the silence of a relayed source is checked, after the relay of the hour.
+SILENCE_CHECK_MINUTE = 15
 
 COLLECTION_MINUTES: dict[ListingSource, int] = {
     ListingSource.CENTRALE_CANINE: 5,
@@ -33,15 +36,21 @@ COLLECTION_MINUTES: dict[ListingSource, int] = {
 class CollectionWorker:
     """Builds the scheduler with every collection job and runs it until stopped."""
 
-    def __init__(self, collected_sources: frozenset[ListingSource] = COLLECTED_SOURCES) -> None:
+    def __init__(
+        self,
+        collected_sources: frozenset[ListingSource] = COLLECTED_SOURCES,
+        relayed_sources: frozenset[ListingSource] = DESKTOP_RELAYED_SOURCES,
+    ) -> None:
         """
         Prepare the worker.
 
         Args:
             collected_sources: Sources to read, injected by the tests; otherwise every source the ``.env`` does
                 not skip (``COLLECT_SKIPPED_SOURCES``).
+            relayed_sources: Sources the Windows app relays instead, watched for silence.
         """
         self.collected_sources = collected_sources
+        self.relayed_sources = relayed_sources
 
     def build_scheduler(self) -> BlockingScheduler:
         """
@@ -49,7 +58,8 @@ class CollectionWorker:
 
         One job per collected source runs every hour, a few minutes apart (``COLLECTION_MINUTES``). The
         evening digest job wakes at minute 0 of every hour and sends the digests whose ``digest_hour``
-        has come. The follow-up reminders are pushed within five minutes of their time.
+        has come. The follow-up reminders are pushed within five minutes of their time. When the Windows
+        app relays a source, an hourly job tells Léo once per silence that nobody relays it any more.
 
         Returns:
             The configured scheduler, not started.
@@ -62,6 +72,8 @@ class CollectionWorker:
             scheduler.add_job(self.collect_source, "cron", minute=minute, args=[source], id=f"collect_{source.value}")
         scheduler.add_job(self.send_evening_digests, "cron", minute=0, id="send_evening_digests")
         scheduler.add_job(self.send_follow_up_reminders, "cron", minute="*/5", id="send_follow_up_reminders")
+        if self.relayed_sources:
+            scheduler.add_job(self.alert_silent_sources, "cron", minute=SILENCE_CHECK_MINUTE, id="alert_silent_sources")
         return scheduler
 
     def collect_source(self, source: ListingSource) -> None:
@@ -102,6 +114,15 @@ class CollectionWorker:
             sent_count = notifier_service.send_due_follow_up_reminders(db, naive_utc_now())
             if sent_count:
                 logger.info("%d follow-up reminder(s) sent", sent_count)
+        finally:
+            db.close()
+
+    def alert_silent_sources(self) -> None:
+        """Hourly check: tell Léo when a source the Windows app relays has had no successful run for hours."""
+        db = SessionLocal()
+        try:
+            for source in sorted(self.relayed_sources):
+                notifier_service.alert_if_source_silent(db, source, naive_utc_now())
         finally:
             db.close()
 

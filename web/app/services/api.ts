@@ -1,4 +1,7 @@
 import type { ApiErrorBody, ApiQueryParams } from '~/types/ApiClient'
+import { TokenRejectedError } from '~/services/authService'
+
+const TOKEN_REJECTED_STATUS: number = 401
 
 /** HTTP client every service goes through: bearer token, JSON encoding, and error unwrapping. */
 export class ApiClient {
@@ -87,7 +90,8 @@ export class ApiClient {
    * @param endpoint - Path starting with `/api/`.
    * @param options - Fetch options; the auth and content-type headers are added here.
    * @returns The parsed body, or undefined when the response has none.
-   * @throws Error carrying the API `detail` message when the status is not ok, or when the API cannot be reached.
+   * @throws TokenRejectedError when the API refuses the session, Error carrying the API `detail` message for any
+   *   other refusal, or when the API cannot be reached.
    */
   private static async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const userStore: ReturnType<typeof useUserStore> = useUserStore()
@@ -104,6 +108,9 @@ export class ApiClient {
       throw new Error('L’API ne répond pas')
     })
 
+    if (response.status === TOKEN_REJECTED_STATUS) {
+      throw new TokenRejectedError(await this.readErrorMessage(response))
+    }
     if (!response.ok) {
       throw new Error(await this.readErrorMessage(response))
     }

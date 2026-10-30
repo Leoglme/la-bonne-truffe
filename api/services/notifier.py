@@ -1,7 +1,10 @@
-"""Sends the notifications: immediate pushes, the evening digest, follow-up reminders and the « source en panne » alert."""
+"""
+Sends the notifications: immediate pushes, the evening digest, follow-up reminders, and the alerts of a source
+that fails or that nobody relays any more.
+"""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -27,6 +30,9 @@ logger = logging.getLogger(__name__)
 
 # Consecutive failed runs of a source before Léo is told (docs/02, « Politesse et robustesse »).
 FAILED_RUNS_BEFORE_ALERT = 3
+
+# Time without a successful run of a source the Windows app relays before Léo is told (docs/04).
+SILENCE_BEFORE_ALERT = timedelta(hours=3)
 
 IMMEDIATE_EVENT_KINDS: dict[MatchEventKind, NotificationKind] = {
     MatchEventKind.NEW_PREFERRED: NotificationKind.NEW_PREFERRED,
@@ -212,21 +218,46 @@ class NotifierService:
             .first()
         )
         outage_start = last_success.finished_at if last_success is not None else None
-        already_alerted = db.query(Notification).filter(
-            Notification.kind == NotificationKind.SOURCE_DOWN,
-            # The alert body starts with the source name (NotificationTexts.source_down).
-            Notification.body.startswith(SOURCE_NAMES[source]),
-        )
-        if outage_start is not None:
-            already_alerted = already_alerted.filter(Notification.sent_at > outage_start)
-        if already_alerted.first() is not None:
+        if self._has_alerted_since(db, NotificationKind.SOURCE_DOWN, source, outage_start):
             return False
 
         body = NotificationTexts.source_down(source, FAILED_RUNS_BEFORE_ALERT, last_runs[0].error_message)
-        for (user_id,) in db.query(User.id).filter(User.is_active.is_(True)):
-            self.send(db, user_id=user_id, kind=NotificationKind.SOURCE_DOWN, body=body, litter_group_id=None, now=now)
-        db.commit()
+        self._alert_every_user(db, NotificationKind.SOURCE_DOWN, body, now)
         logger.warning("Source %s down: alert sent", source)
+        return True
+
+    def alert_if_source_silent(self, db: Session, source: ListingSource, now: datetime) -> bool:
+        """
+        Tell every user once per silence when a source has had no successful run for ``SILENCE_BEFORE_ALERT``.
+
+        Meant for the sources the Windows app relays: their runs are not scheduled here, so a computer that
+        is off or an app that is signed out leaves no failed run behind, only silence. The next successful
+        run ends the silence; a new one is alerted again.
+
+        Args:
+            db: Database session; committed when an alert is sent.
+            source: The source to check.
+            now: Current time, naive UTC.
+
+        Returns:
+            Whether an alert was sent.
+        """
+        last_success = (
+            db.query(SourceRun)
+            .filter(SourceRun.source == source, SourceRun.status == SourceRunStatus.OK)
+            .order_by(SourceRun.started_at.desc(), SourceRun.id.desc())
+            .first()
+        )
+        last_success_at = (last_success.finished_at or last_success.started_at) if last_success is not None else None
+        if last_success_at is not None and last_success_at > now - SILENCE_BEFORE_ALERT:
+            return False
+        if self._has_alerted_since(db, NotificationKind.SOURCE_SILENT, source, last_success_at):
+            return False
+
+        silent_hours = int(SILENCE_BEFORE_ALERT.total_seconds() // 3600)
+        body = NotificationTexts.source_silent(source, silent_hours)
+        self._alert_every_user(db, NotificationKind.SOURCE_SILENT, body, now)
+        logger.warning("Source %s silent: alert sent", source)
         return True
 
     def send_due_follow_up_reminders(self, db: Session, now: datetime) -> int:
@@ -294,6 +325,41 @@ class NotifierService:
         elif event == MatchEventKind.AVAILABILITY_CHANGE and entry.sent_at is not None:
             entry.sent_at = None
             entry.created_at = now
+
+    @staticmethod
+    def _has_alerted_since(db: Session, kind: NotificationKind, source: ListingSource, since: datetime | None) -> bool:
+        """
+        Whether an alert of that kind about a source was already sent after a moment.
+
+        Args:
+            db: Database session.
+            kind: Kind of alert.
+            source: The source; the alert body starts with its name (``NotificationTexts``).
+            since: Start of the outage or of the silence; None looks at every alert ever sent.
+
+        Returns:
+            True when such an alert exists.
+        """
+        alerts = db.query(Notification).filter(
+            Notification.kind == kind, Notification.body.startswith(SOURCE_NAMES[source])
+        )
+        if since is not None:
+            alerts = alerts.filter(Notification.sent_at > since)
+        return alerts.first() is not None
+
+    def _alert_every_user(self, db: Session, kind: NotificationKind, body: str, now: datetime) -> None:
+        """
+        Push an alert to every active user and keep it in their bell history.
+
+        Args:
+            db: Database session; committed.
+            kind: Kind of alert.
+            body: The sentence.
+            now: Sending time, naive UTC.
+        """
+        for (user_id,) in db.query(User.id).filter(User.is_active.is_(True)):
+            self.send(db, user_id=user_id, kind=kind, body=body, litter_group_id=None, now=now)
+        db.commit()
 
 
 notifier_service = NotifierService()

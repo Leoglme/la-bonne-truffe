@@ -54,6 +54,7 @@ Les notifications suivent des **événements**, pas des lignes. Chaque couple (g
 | `source_down` | Une source échoue trois relevés de suite | Push, une fois par panne |
 | `signup_request` | Quelqu'un tente de s'inscrire pendant que l'inscription est fermée (`05`) | Push au compte du `.env`, une fois par adresse |
 | `follow_up_reminder` | L'heure du rappel d'une portée suivie est passée (`next_reminder_at`), sauf si elle est écartée | Push dans les cinq minutes, une fois par rappel ; un rappel déplacé repart : « C'est l'heure d'appeler Ar Ti Marellek. » |
+| `source_silent` | Une source relayée par l'app Windows (`11`) n'a aucun relevé réussi depuis trois heures : aucun PC allumé avec l'app, ou l'app déconnectée | Push, une fois par silence ; un relevé réussi clôt le silence, le suivant est de nouveau signalé |
 
 Une disparition (`is_active` → faux) ne notifie pas, elle grise la carte. Le récap du soir n'est envoyé que s'il contient quelque chose.
 

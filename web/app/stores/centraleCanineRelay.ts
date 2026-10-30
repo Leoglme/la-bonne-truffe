@@ -7,12 +7,14 @@ import type {
 } from '~/types/api'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { TokenRejectedError } from '~/services/authService'
 import { DesktopPageReaderService } from '~/services/desktopPageReaderService'
 import { SourcesService } from '~/services/sourcesService'
 import { CentraleCanineRelayRunner } from '~/utils/centraleCanineRelayRunner'
 
 const FIRST_CHECK_DELAY_MS: number = 30_000
 const CHECK_INTERVAL_MS: number = 5 * 60_000
+const LOGIN_PATH: string = '/connexion'
 
 /** Pinia store of the Centrale Canine relay: the desktop app reads it in the background, when a run is due. */
 export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', () => {
@@ -23,13 +25,23 @@ export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', ()
   let isWatching: boolean = false
 
   /**
-   * Relay once, unless a relay already runs on this computer or nobody is signed in.
+   * Relay once, after the session check the hidden window never makes by itself; a refused session shows the login screen.
    *
    * @param isRequestedByUser - « Relever maintenant »: run even when the last run is recent.
    * @returns The last answer of the API, or null when nothing was sent.
    */
   async function relay(isRequestedByUser: boolean): Promise<CentraleCanineRelayAnswer | null> {
-    if (isRelaying || !useUserStore().token) {
+    const userStore: ReturnType<typeof useUserStore> = useUserStore()
+
+    if (isRelaying || !userStore.token) {
+      return null
+    }
+    const hasValidSession: boolean = await userStore.validateSession()
+
+    if (!hasValidSession) {
+      if (!userStore.token) {
+        await signOut()
+      }
       return null
     }
     isRelaying = true
@@ -55,11 +67,24 @@ export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', ()
       }
       return answer
     } catch (error: unknown) {
-      lastRelayErrorMessage.value = error instanceof Error ? error.message : 'Relais impossible'
+      if (error instanceof TokenRejectedError) {
+        await signOut()
+      } else {
+        lastRelayErrorMessage.value = error instanceof Error ? error.message : 'Relais impossible'
+      }
       throw error
     } finally {
       isRelaying = false
     }
+  }
+
+  /**
+   * Stop relaying and show the login screen: the API refused the session of this computer.
+   */
+  async function signOut(): Promise<void> {
+    stopWatching()
+    useUserStore().logout()
+    await navigateTo(LOGIN_PATH)
   }
 
   /**

@@ -1,5 +1,7 @@
 """Authentication routes: login, signup or the signup request while closed, the forgotten password, the user."""
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -7,6 +9,7 @@ from core.config import settings
 from core.database import get_db
 from models.user import User
 from schemas.user import (
+    CurrentSession,
     PasswordResetConfirm,
     PasswordResetRequest,
     PasswordResetRequested,
@@ -21,7 +24,7 @@ from schemas.user import (
     UserSignup,
 )
 from services.account_service import account_service
-from services.auth_service import AuthService, get_current_user
+from services.auth_service import AuthService, get_current_user, oauth2_scheme
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -152,15 +155,24 @@ async def reset_password(payload: PasswordResetConfirm, db: Session = Depends(ge
     return Token(access_token=AuthService.create_access_token(user.email))
 
 
-@router.get("/me", response_model=UserResponse)
-async def read_current_user(current_user: User = Depends(get_current_user)) -> User:
+@router.get("/me", response_model=CurrentSession)
+async def read_current_session(
+    token: str = Depends(oauth2_scheme), current_user: User = Depends(get_current_user)
+) -> CurrentSession:
     """
-    Return the signed-in user.
+    Return the signed-in user and, once the token is past half its life, a fresh token to keep.
+
+    The dashboard calls this on every navigation and the Windows app before every relay check: a device
+    that opens the app at least once in half a token lifetime stays signed in for good.
 
     Args:
+        token: Raw bearer token, already accepted by the auth dependency.
         current_user: The authenticated user.
 
     Returns:
-        The user.
+        The user, and the renewed token or None.
     """
-    return current_user
+    return CurrentSession(
+        user=UserResponse.model_validate(current_user),
+        renewed_token=AuthService.renew_access_token_if_due(token, datetime.now(UTC)),
+    )
