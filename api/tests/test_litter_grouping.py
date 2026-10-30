@@ -109,6 +109,32 @@ def test_three_puppy_ads_of_one_litter_make_one_group_that_counts_its_puppies(db
     assert (snapshot.male_count, snapshot.female_count) == (2, 1)
 
 
+def test_reserved_puppy_ads_no_longer_count_among_the_puppies(db: Session) -> None:
+    breeder = seeded_breeder(db)
+    born_on = date(2026, 9, 1)
+    for_sale = add_listing(
+        db, breeder, ListingSource.CHIENS_DE_FRANCE, "chiot-1", ListingKind.PUPPY_AD, "Mère 1", born_on, None, 1, 0, 1
+    )
+    add_listing(
+        db, breeder, ListingSource.CHIENS_DE_FRANCE, "chiot-2", ListingKind.PUPPY_AD, "Mère 1", born_on, None, 0, 1, 0
+    )
+    add_listing(
+        db, breeder, ListingSource.CHIENS_DE_FRANCE, "chiot-3", ListingKind.PUPPY_AD, "Mère 1", born_on, None, 0, 1, 0
+    )
+
+    litter_grouping_service.regroup(db, NOW)
+    group = db.get(LitterGroup, for_sale.litter_group_id)
+    assert group is not None
+    offered = LitterSnapshotBuilder.build(db, group)
+    for_sale.puppies_available = 0
+    litter_grouping_service.regroup(db, NOW)
+    all_gone = LitterSnapshotBuilder.build(db, group)
+
+    assert offered is not None and all_gone is not None
+    assert (offered.male_count, offered.female_count, offered.puppies_available) == (1, 0, 1)
+    assert (all_gone.male_count, all_gone.female_count, all_gone.puppies_available) == (0, 0, 0)
+
+
 def test_matings_dated_days_apart_by_two_sources_join_when_both_name_the_same_mother(db: Session) -> None:
     breeder = seeded_breeder(db)
     declared = add_listing(

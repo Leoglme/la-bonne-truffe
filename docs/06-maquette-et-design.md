@@ -23,7 +23,7 @@ Sources HTML de chaque écran dans `design/mockup/` (format `.dc.html` : le HTML
 | `iPhoneConnexion.dc.html`, `iPhoneInscription.dc.html` | iPhone 390 × 844 | Mêmes écrans en une colonne ; la connexion montre l'état refusé (bandeau corail pastel « E-mail ou mot de passe incorrect », bordure corail sur le mot de passe) |
 | `DesktopConnexion.dc.html` | 1440 × 900 | Formulaire dans une colonne de 600 px sur le crème, photo et bannière dans une tuile à droite |
 
-Ajoutées au détail d'une portée le 29/10/2026, sans maquette, dans le style de la chip neutre « Élevage avec affixe » : la santé des parents (« Parents testés APR et NF », « Chiots indemnes d'APR et de NF ») et « Membre du Spaniel Club Français ». Comme l'affixe, elles prennent un libellé court dans le volet du desktop et sur iPhone (« Chiots indemnes APR et NF », « Spaniel Club Français »).
+Ajoutées au détail d'une portée le 29/10/2026, sans maquette, dans le style de la chip neutre « Élevage avec affixe » : la santé des parents (« Parents testés APR et NF », « Chiots indemnes d'APR et de NF ») et « Membre du Spaniel Club Français ». Comme l'affixe, elles prennent un libellé court dans le volet du desktop et sur iPhone (« Chiots indemnes APR et NF », « Spaniel Club Français »). Le 30/10/2026, la chip « 2 chiots dispo » s'ajoute quand une source dit combien de chiots restent (`puppies_available`), en corail pastel quand il n'en reste aucun (« Plus aucun chiot dispo ») ; la ligne de résumé du suivi la reprend seulement quand elle apporte quelque chose de plus que les sexes (moins de chiots que de sexes comptés, ou sexes inconnus).
 
 ## Direction artistique
 

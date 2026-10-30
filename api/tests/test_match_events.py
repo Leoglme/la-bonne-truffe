@@ -71,7 +71,7 @@ def test_a_followed_litter_offering_fewer_puppies_raises_availability_change_at_
     assert first_drop == second_drop == [MatchEventKind.AVAILABILITY_CHANGE]
 
 
-def test_fewer_puppies_raise_nothing_on_a_litter_not_followed_or_excluded() -> None:
+def test_fewer_puppies_raise_nothing_on_a_litter_not_followed() -> None:
     not_followed = EventService.detect(
         MatchTier.PREFERRED,
         MatchTier.PREFERRED,
@@ -80,6 +80,11 @@ def test_fewer_puppies_raise_nothing_on_a_litter_not_followed_or_excluded() -> N
         is_followed=False,
         has_fewer_puppies_available=True,
     )
+
+    assert not_followed == []
+
+
+def test_a_followed_litter_losing_its_last_puppy_is_told_although_excluded() -> None:
     excluded = EventService.detect(
         MatchTier.ACCEPTABLE,
         MatchTier.EXCLUDED,
@@ -89,4 +94,4 @@ def test_fewer_puppies_raise_nothing_on_a_litter_not_followed_or_excluded() -> N
         has_fewer_puppies_available=True,
     )
 
-    assert not_followed == excluded == []
+    assert excluded == [MatchEventKind.AVAILABILITY_CHANGE]

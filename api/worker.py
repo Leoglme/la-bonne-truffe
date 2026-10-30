@@ -111,7 +111,7 @@ class CollectionWorker:
             db.close()
 
     def send_evening_digests(self) -> None:
-        """Hourly check: send the digests of the profiles whose digest hour is now."""
+        """Hourly check: send the digests whose hour has come today and that are not sent yet."""
         db = SessionLocal()
         try:
             sent_count = notifier_service.send_due_evening_digests(db, naive_utc_now())

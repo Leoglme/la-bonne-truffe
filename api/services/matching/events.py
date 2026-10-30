@@ -15,7 +15,7 @@ ALWAYS_NEWS_EVENTS: frozenset[MatchEventKind] = frozenset(
 class EventService:
     """
     Compares the previous and the new verdict of a group; each (group, event) is raised once, except a drop of
-    the puppies left on a followed litter, raised at every drop.
+    the puppies left on a followed litter, raised at every drop whatever the tier of the litter.
     """
 
     @staticmethod
@@ -64,7 +64,7 @@ class EventService:
             and not was_ever_preferred
         ):
             events.append(MatchEventKind.NEW_ACCEPTABLE)
-        if has_fewer_puppies_available and is_followed and new_tier != MatchTier.EXCLUDED:
+        if has_fewer_puppies_available and is_followed:
             events.append(MatchEventKind.AVAILABILITY_CHANGE)
         return events
 

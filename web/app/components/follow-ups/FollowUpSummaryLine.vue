@@ -4,6 +4,7 @@
     <template v-if="distanceLabel">{{ distanceLabel }} · </template>
     <LitterSexCounts v-if="props.litter.kind !== 'litter_expected'" :litter="props.litter" />
     <template v-else>{{ FollowUpPresentation.buildExpectedBirthPhrase(props.litter) }}</template>
+    <template v-if="puppiesAvailableLabel"> · {{ puppiesAvailableLabel }}</template>
     · {{ LitterPresentation.buildColorLabel(props.litter.colors, true).toLowerCase() }}
   </span>
 </template>
@@ -24,5 +25,10 @@ const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
 
 const distanceLabel: ComputedRef<string | null> = computed((): string | null =>
   LitterPresentation.buildDistanceLabel(props.litter, locationStore.position),
+)
+const puppiesAvailableLabel: ComputedRef<string | null> = computed((): string | null =>
+  LitterPresentation.arePuppiesAvailableWorthTelling(props.litter)
+    ? LitterPresentation.buildPuppiesAvailableLabel(props.litter)
+    : null,
 )
 </script>

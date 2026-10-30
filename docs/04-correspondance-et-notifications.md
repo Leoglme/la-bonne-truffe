@@ -11,7 +11,8 @@ Un groupe est exclu si :
 - sa couleur est **certaine** et réglée sur « ignorée » (si plusieurs couleurs certaines, exclu seulement si toutes sont ignorées) ;
 - le profil exige le LOF et le statut est `non_lof` ;
 - le profil veut un sexe et ce sexe est **connu absent** (compteur à 0 après la naissance, ou annonce qui dit « plus que des mâles ») ;
-- le prix est connu et dépasse le plafond.
+- le prix est connu et dépasse le plafond ;
+- il ne reste aucun chiot disponible (`puppies_available` à 0 : chaque chiot réservé, vendu ou adopté sur ses annonces). La portée quitte l'accueil mais reste dans le suivi.
 
 Une information **inconnue ne filtre jamais** : elle fait descendre dans le palier et pose un drapeau (`color_to_confirm`, `sex_unknown`, `lof_unknown`, `price_unknown`).
 
@@ -54,9 +55,9 @@ Les notifications suivent des **événements**, pas des lignes. Chaque couple (g
 | `source_down` | Une source échoue trois relevés de suite | Push, une fois par panne |
 | `signup_request` | Quelqu'un tente de s'inscrire pendant que l'inscription est fermée (`05`) | Push au compte du `.env`, une fois par adresse |
 | `follow_up_reminder` | L'heure du rappel d'une portée suivie est passée (`next_reminder_at`), sauf si elle est écartée ou si la portée a disparu de ses sources (le rappel est alors noté comme passé, sans push) | Push dans les cinq minutes, une fois par rappel ; un rappel déplacé repart : « C'est l'heure d'appeler Ar Ti Marellek. » |
-| `source_silent` | Une source relayée par l'app Windows (`11`) n'a aucun relevé réussi depuis trois heures : aucun PC allumé avec l'app, ou l'app déconnectée | Push, une fois par silence ; un relevé réussi clôt le silence, le suivant est de nouveau signalé |
+| `source_silent` | Une source relayée par l'app Windows (`11`) n'a aucun relevé réussi depuis trois heures de journée, entre 8 h et 23 h (heure française) : aucun PC allumé avec l'app, ou l'app déconnectée. Un PC éteint la nuit n'est pas une panne ; le silence d'une journée est signalé au plus tôt à 11 h | Push, une fois par silence ; un relevé réussi clôt le silence, le suivant est de nouveau signalé |
 
-Une disparition (`is_active` → faux) ne notifie pas, elle grise la carte. Le récap du soir n'est envoyé que s'il contient quelque chose.
+Une disparition (`is_active` → faux) ne notifie pas, elle grise la carte. Le récap du soir n'est envoyé que s'il contient quelque chose. Il part à `digest_hour` avec ce qui a été mis de côté avant cette heure ; si le worker était arrêté à ce moment-là, l'heure pleine suivante le rattrape, une seule fois ; ce qui arrive après `digest_hour` attend le lendemain.
 
 **Ce qui est une nouveauté** (décidé le 28/10/2026, `EventService.is_news`) : `new_preferred` et `new_acceptable` ne partent que pour une portée mise en ligne depuis **3 jours au plus**. Une portée en ligne depuis plus longtemps est notée comme traitée, sans push ni ligne dans le récap : le premier relevé, ou l'ajout d'un département aux critères, ne déverse pas les portées publiées depuis des semaines. `born` et `upgraded` partent quel que soit l'âge de la portée.
 
@@ -106,5 +107,6 @@ Code : `api/services/matching/` (`tiers.py`, `scoring.py`, `matching_service.py`
 - **Réglages coupés** : un événement que le profil ne veut pas recevoir est quand même noté comme traité, pour qu'un réglage rallumé ne déverse pas d'anciennes portées.
 - **Critères modifiés** : l'enregistrement relance l'évaluation **sans notifier** (Léo regarde l'app à ce moment-là).
 - **Regroupement** : deux annonces d'une même source ne sont jamais regroupées sur une supposition (une source liste une portée une fois), seulement par numéro de portée ; la règle « une seule portée candidate en 60 jours » ne vaut que pour une annonce sans date de naissance.
-- **Chiots encore disponibles** (`availability_change`, ajouté le 29/10/2026) : chaque regroupement recalcule `litter_groups.puppies_available` depuis les annonces actives : le plus petit nombre donné par une annonce de portée (Chiots de France), sinon un chiot par annonce de chiot encore à vendre (Chiens de France ; une annonce réservée, vendue ou retirée ne compte plus). La Centrale Canine ne donne pas ce nombre. Quand il baisse sur une portée du suivi qui n'est pas exclue, une ligne part dans le récap du soir, à chaque baisse ; le récap donne le nombre au moment de l'envoi. Couper le récap du soir coupe aussi ces lignes.
+- **Chiots encore disponibles** (`availability_change`, ajouté le 29/10/2026) : chaque regroupement recalcule `litter_groups.puppies_available` depuis les annonces actives : le plus petit nombre donné par une annonce de portée (Chiots de France), sinon un chiot par annonce de chiot encore à vendre (Chiens de France ; une annonce réservée, vendue ou retirée ne compte plus). La Centrale Canine ne donne pas ce nombre. Quand il baisse sur une portée du suivi, une ligne part dans le récap du soir, à chaque baisse, jusqu'à « plus aucun chiot disponible » ; le récap donne le nombre au moment de l'envoi. Couper le récap du soir coupe aussi ces lignes. Une portée à zéro chiot est exclue (voir les filtres durs) ; les mâles et femelles d'une portée connue par des annonces de chiots ne comptent que les chiots encore à vendre, et la carte porte `puppies_available` (« 2 chiots dispo »).
+- **Annonces de chiots** (30/10/2026) : une portée connue seulement par des annonces de chiots (Whoof, Chiens de France, Cœur de Cocker) est née : son push le dit (« Nouvelle portée, née le… »), avec ses sexes et sa date de disponibilité, comme une déclaration de naissance ; seule une saillie déclarée est « à naître ».
 - Le texte des notifications met le département entre parenthèses quand la ville n'est pas connue : « Née le 27 octobre (Ille-et-Vilaine) : une portée gold, 2 mâles et 3 femelles. Dispo vers le 22 décembre. »

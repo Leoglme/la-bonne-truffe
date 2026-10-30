@@ -1,10 +1,11 @@
 """The evening digest tells when a followed litter offers fewer puppies, at every drop (docs/04, ``availability_change``)."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import pytest
 from sqlalchemy.orm import Session
 
+from core.clock import naive_utc_of_french_time
 from enums.follow_up_status import FollowUpStatus
 from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
@@ -159,6 +160,33 @@ def test_the_digest_tells_the_new_acceptable_litters_then_the_followed_ones_offe
         "Récap du soir : 1 portée acceptable : une portée noir et feu (Ille-et-Vilaine)."
         " De Kerlann, plus aucun chiot disponible."
     ]
+
+
+def test_a_digest_missed_at_its_hour_goes_out_at_the_next_full_hour_once(db: Session, pushed_bodies: list[str]) -> None:
+    litter_ad = gold_litter_offering_four_puppies(db, is_followed=True)
+    litter_ad.puppies_available = 2
+    collect(db, SECOND_MORNING)
+
+    second_day = SECOND_EVENING.date()
+    before_its_hour = notifier_service.send_due_evening_digests(db, naive_utc_of_french_time(second_day, 18))
+    caught_up = notifier_service.send_due_evening_digests(db, naive_utc_of_french_time(second_day, 20))
+    once_more = notifier_service.send_due_evening_digests(db, naive_utc_of_french_time(second_day, 21))
+
+    assert (before_its_hour, caught_up, once_more) == (0, 1, 0)
+    assert pushed_bodies == ["Récap du soir : De Kerlann, plus que 2 chiots disponibles."]
+
+
+def test_an_entry_queued_after_the_digest_hour_waits_for_the_next_day(db: Session, pushed_bodies: list[str]) -> None:
+    litter_ad = gold_litter_offering_four_puppies(db, is_followed=True)
+    litter_ad.puppies_available = 2
+    second_day = SECOND_EVENING.date()
+    collect(db, naive_utc_of_french_time(second_day, 20) + timedelta(minutes=20))
+
+    same_evening = notifier_service.send_due_evening_digests(db, naive_utc_of_french_time(second_day, 21))
+    next_evening = notifier_service.send_due_evening_digests(db, THIRD_EVENING)
+
+    assert (same_evening, next_evening) == (0, 1)
+    assert pushed_bodies == ["Récap du soir : De Kerlann, plus que 2 chiots disponibles."]
 
 
 def test_a_litter_not_followed_offering_fewer_puppies_stays_out_of_the_digest(

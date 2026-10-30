@@ -1094,6 +1094,11 @@ export interface components {
             male_count: number | null;
             /** Female Count */
             female_count: number | null;
+            /**
+             * Puppies Available
+             * @description Puppies still offered across the active listings, null while no source tells
+             */
+            puppies_available: number | null;
             /** Birth Date */
             birth_date: string | null;
             /** Expected Birth Date */
@@ -1164,6 +1169,11 @@ export interface components {
             male_count: number | null;
             /** Female Count */
             female_count: number | null;
+            /**
+             * Puppies Available
+             * @description Puppies still offered across the active listings, null while no source tells
+             */
+            puppies_available: number | null;
             /** Birth Date */
             birth_date: string | null;
             /** Expected Birth Date */

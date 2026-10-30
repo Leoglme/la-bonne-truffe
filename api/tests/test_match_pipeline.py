@@ -1,12 +1,13 @@
 """A run end to end on the recorded pages: matching, news window, pushes, birth, digest, source alert, profile save."""
 
-from datetime import datetime
+from datetime import timedelta
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from core.clock import french_date_of, naive_utc_now, naive_utc_of_french_time
 from enums.match_tier import MatchTier
 from enums.notification_kind import NotificationKind
 from models.digest_entry import DigestEntry
@@ -165,9 +166,11 @@ def test_evening_digest_is_sent_once_at_the_digest_hour(db: Session, pushed_bodi
     mark_published_an_hour_ago(bundle_only_pages, RECENT_BUNDLE_LITTER_ID)
     collection_runner.run_centrale_canine(db, collector_serving(bundle_only_pages))
 
-    assert notifier_service.send_due_evening_digests(db, datetime(2026, 10, 28, 17, 0)) == 0
-    assert notifier_service.send_due_evening_digests(db, datetime(2026, 10, 28, 18, 0)) == 1
-    assert notifier_service.send_due_evening_digests(db, datetime(2026, 10, 28, 18, 30)) == 0
+    tomorrow = french_date_of(naive_utc_now()) + timedelta(days=1)
+    digest_due_at = naive_utc_of_french_time(tomorrow, 19)
+    assert notifier_service.send_due_evening_digests(db, naive_utc_of_french_time(tomorrow, 17)) == 0
+    assert notifier_service.send_due_evening_digests(db, digest_due_at) == 1
+    assert notifier_service.send_due_evening_digests(db, digest_due_at + timedelta(minutes=30)) == 0
     assert pushed_bodies == [
         "Récap du soir : 1 portée acceptable : une portée noir ou noir et feu ou marron ou marron et feu"
         " (à confirmer) (Ille-et-Vilaine)."

@@ -40,6 +40,9 @@ class LitterCard(BaseModel):
     lof_status: LofStatus
     male_count: int | None
     female_count: int | None
+    puppies_available: int | None = Field(
+        description="Puppies still offered across the active listings, null while no source tells"
+    )
     birth_date: date | None
     expected_birth_date: date | None
     available_from: date | None

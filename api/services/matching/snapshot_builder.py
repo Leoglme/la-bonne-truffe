@@ -228,8 +228,8 @@ class LitterSnapshotBuilder:
     def _sex_counts(cls, listings: list[Listing]) -> tuple[int | None, int | None]:
         """
         Males and females of a litter: as the Centrale Canine declares the born litter, else the puppies
-        still offered by a litter ad, else the puppies its puppy ads offer, one puppy per ad. A declared
-        mating reports none.
+        still offered by a litter ad, else the puppies its puppy ads still offer, one puppy per ad (a
+        reserved, sold or adopted puppy no longer counts). A declared mating reports none.
 
         Args:
             listings: Active listings of the group.
@@ -255,9 +255,10 @@ class LitterSnapshotBuilder:
         ]
         if not puppy_ads:
             return None, None
+        offered_puppy_ads = [listing for listing in puppy_ads if listing.puppies_available != 0]
         return (
-            sum(listing.male_count or 0 for listing in puppy_ads),
-            sum(listing.female_count or 0 for listing in puppy_ads),
+            sum(listing.male_count or 0 for listing in offered_puppy_ads),
+            sum(listing.female_count or 0 for listing in offered_puppy_ads),
         )
 
     @staticmethod

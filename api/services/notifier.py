@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
 
-from core.clock import to_french_time
+from core.clock import naive_utc_of_french_time, to_french_time
 from enums.follow_up_status import FollowUpStatus
 from enums.listing_source import ListingSource
 from enums.match_event_kind import MatchEventKind
@@ -33,6 +33,10 @@ FAILED_RUNS_BEFORE_ALERT = 3
 
 # Time without a successful run of a source the Windows app relays before Léo is told (docs/04).
 SILENCE_BEFORE_ALERT = timedelta(hours=3)
+
+# French hours between which a silence counts: a computer off for the night is not an outage.
+SILENCE_WATCH_START_HOUR = 8
+SILENCE_WATCH_END_HOUR = 23
 
 IMMEDIATE_EVENT_KINDS: dict[MatchEventKind, NotificationKind] = {
     MatchEventKind.NEW_PREFERRED: NotificationKind.NEW_PREFERRED,
@@ -136,8 +140,12 @@ class NotifierService:
 
     def send_due_evening_digests(self, db: Session, now: datetime) -> int:
         """
-        Send the evening digest of every profile whose ``digest_hour`` is the current French hour.
-        A digest is sent only when it holds at least one litter still active.
+        Send the evening digest of every profile whose ``digest_hour`` has come today, in French time.
+
+        The digest carries what was queued before that hour; an entry queued later waits for the next
+        day. The check runs every hour, so a digest missed at its hour (worker stopped at that moment)
+        goes out at the next full hour, once. A digest is sent only when it holds at least one litter
+        still active.
 
         Args:
             db: Database session; committed at the end.
@@ -146,21 +154,30 @@ class NotifierService:
         Returns:
             Number of digests sent.
         """
-        current_hour = to_french_time(now).hour
+        french_now = to_french_time(now)
         profiles = (
             db.query(SearchProfile)
             .filter(
                 SearchProfile.is_active.is_(True),
                 SearchProfile.notify_acceptable_in_digest.is_(True),
-                SearchProfile.digest_hour == current_hour,
+                SearchProfile.digest_hour <= french_now.hour,
             )
             .all()
         )
+        digest_hours_by_user: dict[int, int] = {}
+        for profile in profiles:
+            earliest_hour = digest_hours_by_user.get(profile.user_id, profile.digest_hour)
+            digest_hours_by_user[profile.user_id] = min(earliest_hour, profile.digest_hour)
         sent_count = 0
-        for user_id in sorted({profile.user_id for profile in profiles}):
+        for user_id, digest_hour in sorted(digest_hours_by_user.items()):
+            digest_due_at = naive_utc_of_french_time(french_now.date(), digest_hour)
             entries = (
                 db.query(DigestEntry)
-                .filter(DigestEntry.user_id == user_id, DigestEntry.sent_at.is_(None))
+                .filter(
+                    DigestEntry.user_id == user_id,
+                    DigestEntry.sent_at.is_(None),
+                    DigestEntry.created_at < digest_due_at,
+                )
                 .order_by(DigestEntry.id)
                 .all()
             )
@@ -232,7 +249,9 @@ class NotifierService:
 
         Meant for the sources the Windows app relays: their runs are not scheduled here, so a computer that
         is off or an app that is signed out leaves no failed run behind, only silence. The next successful
-        run ends the silence; a new one is alerted again.
+        run ends the silence; a new one is alerted again. Only the day counts, from ``SILENCE_WATCH_START_HOUR``
+        to ``SILENCE_WATCH_END_HOUR`` French time: a computer off for the night is no outage, and the silence
+        of a day is told three hours after the day starts at the earliest.
 
         Args:
             db: Database session; committed when an alert is sent.
@@ -242,6 +261,9 @@ class NotifierService:
         Returns:
             Whether an alert was sent.
         """
+        french_now = to_french_time(now)
+        if not SILENCE_WATCH_START_HOUR <= french_now.hour < SILENCE_WATCH_END_HOUR:
+            return False
         last_success = (
             db.query(SourceRun)
             .filter(SourceRun.source == source, SourceRun.status == SourceRunStatus.OK)
@@ -249,7 +271,9 @@ class NotifierService:
             .first()
         )
         last_success_at = (last_success.finished_at or last_success.started_at) if last_success is not None else None
-        if last_success_at is not None and last_success_at > now - SILENCE_BEFORE_ALERT:
+        watch_started_at = naive_utc_of_french_time(french_now.date(), SILENCE_WATCH_START_HOUR)
+        silence_started_at = max(last_success_at, watch_started_at) if last_success_at is not None else watch_started_at
+        if silence_started_at > now - SILENCE_BEFORE_ALERT:
             return False
         if self._has_alerted_since(db, NotificationKind.SOURCE_SILENT, source, last_success_at):
             return False

@@ -98,6 +98,6 @@ La Centrale Canine est relayée par l'app Windows des PC où elle est installée
 - quand aucun PC n'est allumé, ses portées attendent le prochain démarrage, et les autres sources continuent sans elle ;
 - la page Sources l'affiche « Relevée par l'app Windows » ; dans l'app Windows, « Relever maintenant » relaie tout de suite, et sur le web ou le téléphone, « Demander un relevé » le fait faire par un PC allumé dans les 5 minutes ;
 - l'app fait vérifier sa session avant chaque relais, ce qui renouvelle le jeton avant qu'il expire (`05`) ; une session refusée la ramène à l'écran de connexion, à rouvrir depuis la zone de notification pour se reconnecter ;
-- quand aucun PC ne l'a relayée depuis trois heures, le worker du VPS pousse une alerte sur le téléphone, une fois par silence ; un relevé réussi clôt le silence (`04`).
+- quand aucun PC ne l'a relayée depuis trois heures de journée (entre 8 h et 23 h : la nuit ne compte pas), le worker du VPS pousse une alerte sur le téléphone, une fois par silence ; un relevé réussi clôt le silence (`04`).
 
 Un relais envoie environ 1 Mo de pages : la conf nginx de l'API accepte 10 Mo par requête (`client_max_body_size`).

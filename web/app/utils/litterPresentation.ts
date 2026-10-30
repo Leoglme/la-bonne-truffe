@@ -94,6 +94,38 @@ export class LitterPresentation {
   }
 
   /**
+   * Write how many puppies a litter still offers, when a source tells.
+   *
+   * @param card - The litter.
+   * @returns « 2 chiots dispo », « 1 chiot dispo », « Plus aucun chiot dispo », or null while unknown or before the birth.
+   */
+  static buildPuppiesAvailableLabel(card: LitterCard): string | null {
+    if (card.puppies_available === null || card.kind === 'litter_expected') {
+      return null
+    }
+    if (card.puppies_available === 0) {
+      return 'Plus aucun chiot dispo'
+    }
+    return `${card.puppies_available} ${FrenchText.pickForm(card.puppies_available, 'chiot dispo', 'chiots dispo')}`
+  }
+
+  /**
+   * Whether the puppies left add something to the sexes of a card: fewer than the sexes count, or sexes unknown.
+   *
+   * @param card - The litter.
+   * @returns True when the line of a card should say it.
+   */
+  static arePuppiesAvailableWorthTelling(card: LitterCard): boolean {
+    if (card.puppies_available === null || card.kind === 'litter_expected') {
+      return false
+    }
+    if (card.male_count === null || card.female_count === null) {
+      return true
+    }
+    return card.puppies_available < card.male_count + card.female_count
+  }
+
+  /**
    * Build the place of a litter: its town, else its department.
    *
    * @param card - The litter.

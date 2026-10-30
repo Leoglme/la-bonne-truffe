@@ -46,7 +46,8 @@ class TierRules:
     @classmethod
     def is_excluded(cls, snapshot: LitterSnapshot, criteria: ProfileCriteria) -> bool:
         """
-        The hard filters of docs/04, first step.
+        The hard filters of docs/04, first step. A litter whose every puppy is reserved, sold or adopted is
+        excluded too: there is nothing left to call about.
 
         Args:
             snapshot: The litter.
@@ -68,6 +69,8 @@ class TierRules:
         if criteria.lof_preference == LofPreference.REQUIRED and snapshot.lof_status == LofStatus.NON_LOF:
             return True
         if cls._is_wanted_sex_known_absent(snapshot, criteria):
+            return True
+        if snapshot.puppies_available == 0:
             return True
         return (
             snapshot.price_cents is not None

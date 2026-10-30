@@ -22,6 +22,16 @@
       {{ LOF_STATUS_LABELS[props.litter.lof_status] }}
     </span>
     <span
+      v-if="puppiesAvailableLabel"
+      class="rounded-full"
+      :class="[
+        chipSizeClass,
+        props.litter.puppies_available === 0 ? 'bg-coral-pastel text-coral-text' : 'bg-chip text-ink-secondary',
+      ]"
+    >
+      {{ puppiesAvailableLabel }}
+    </span>
+    <span
       v-for="breedingQualityChip in breedingQualityChips"
       :key="breedingQualityChip"
       class="rounded-full bg-chip text-ink-secondary"
@@ -58,6 +68,9 @@ const chipSizeClass: ComputedRef<string> = computed((): string =>
   props.isInSidePanel
     ? 'gap-1.5 px-3 py-1.5 text-[13px] font-extrabold'
     : 'gap-1.5 px-3 py-1.5 text-[13px] font-extrabold md:gap-2 md:px-3.5 md:py-2 md:text-[15px]',
+)
+const puppiesAvailableLabel: ComputedRef<string | null> = computed((): string | null =>
+  LitterPresentation.buildPuppiesAvailableLabel(props.litter),
 )
 const breedingQualityChips: ComputedRef<BreedingQualityChip[]> = computed((): BreedingQualityChip[] => {
   const chips: BreedingQualityChip[] = []

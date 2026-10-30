@@ -105,5 +105,5 @@ class LitterSnapshot:
 
     @property
     def is_born(self) -> bool:
-        """Whether the litter is born (its sexes are then known at the Centrale Canine)."""
-        return self.kind == ListingKind.LITTER_BORN
+        """Whether the puppies are born: a birth declaration or puppy ads, not a declared mating."""
+        return self.kind != ListingKind.LITTER_EXPECTED

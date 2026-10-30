@@ -72,6 +72,14 @@ def test_gold_litter_born_in_the_closest_department_scores_96_and_is_preferred()
     assert verdict.flags == ()
 
 
+def test_a_litter_with_no_puppy_left_is_excluded() -> None:
+    all_reserved = replace(GOLD_BORN_IN_35, puppies_available=0)
+    one_left = replace(GOLD_BORN_IN_35, puppies_available=1)
+
+    assert MatchingService.evaluate(all_reserved, LEO, TODAY).tier == MatchTier.EXCLUDED
+    assert MatchingService.evaluate(one_left, LEO, TODAY).tier == MatchTier.PREFERRED
+
+
 def test_score_is_capped_at_100_with_bonuses() -> None:
     selected = replace(GOLD_BORN_IN_35, appeared_on=TODAY, breeder_selection_group=1, sire_rating=4, dam_rating=5)
 

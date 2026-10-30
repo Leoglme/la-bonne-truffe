@@ -155,4 +155,4 @@ def test_a_run_groups_the_ads_of_one_litter_and_counts_the_puppies_left(db: Sess
     assert group.puppies_available == 2
     snapshot = LitterSnapshotBuilder.build(db, group)
     assert snapshot is not None
-    assert (snapshot.male_count, snapshot.female_count, snapshot.department_code) == (3, 0, "53")
+    assert (snapshot.male_count, snapshot.female_count, snapshot.department_code) == (2, 0, "53")

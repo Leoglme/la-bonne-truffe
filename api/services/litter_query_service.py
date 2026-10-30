@@ -387,6 +387,7 @@ class LitterQueryService:
             lof_status=snapshot.lof_status,
             male_count=snapshot.male_count,
             female_count=snapshot.female_count,
+            puppies_available=snapshot.puppies_available,
             birth_date=group.birth_date,
             expected_birth_date=group.expected_birth_date,
             available_from=group.available_from,
