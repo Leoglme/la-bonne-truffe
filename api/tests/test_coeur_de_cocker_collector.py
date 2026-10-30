@@ -77,3 +77,12 @@ def test_a_plan_without_breed_reads_nothing() -> None:
 def test_an_answer_that_is_not_the_list_of_ads_fails_the_run(body: str) -> None:
     with pytest.raises(SourceReadError):
         coeur_de_cocker_collector_serving(body=body).collect(PLAN)
+
+
+def test_the_breeding_name_gives_the_affix_of_the_breeder() -> None:
+    listings = coeur_de_cocker_collector_serving().collect(PLAN).listings
+
+    assert [(listing.breeder.display_name, listing.breeder.affix) for listing in listings if listing.breeder] == [
+        ("Élevage de test A", "De test A"),
+        ("Élevage de test B", "De test B"),
+    ]

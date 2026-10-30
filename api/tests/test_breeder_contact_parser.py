@@ -55,3 +55,18 @@ def test_siren_is_read_alone_or_from_a_siret() -> None:
 def test_postal_code_needs_five_digits() -> None:
     assert BreederContactParser.postal_code("35140") == "35140"
     assert BreederContactParser.postal_code("3514") is None
+
+
+@pytest.mark.parametrize(
+    ("breeding_name", "affix"),
+    [
+        ("Élevage du Clos de l'Écotay", "Du Clos de l'Écotay"),
+        ("Elevage de test A", "De test A"),
+        ("ÉLEVAGE DES JOYAUX", "DES JOYAUX"),
+        ("Du Clos de l'Écotay", "Du Clos de l'Écotay"),
+        ("Élevage", None),
+        (None, None),
+    ],
+)
+def test_affix_of_breeding_name_drops_the_word_elevage(breeding_name: str | None, affix: str | None) -> None:
+    assert BreederContactParser.affix_of_breeding_name(breeding_name) == affix

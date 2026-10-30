@@ -180,7 +180,8 @@ class CoeurDeCockerCollector:
     @staticmethod
     def _breeder(ad: dict[str, Any]) -> RawBreeder | None:
         """
-        The breeder of an ad, named by its Cœur de Cocker slug.
+        The breeder of an ad, named by its Cœur de Cocker slug; its breeding name gives the affix that joins it to
+        the same breeder on the Centrale Canine (same affix, same department).
 
         Args:
             ad: The ad.
@@ -191,10 +192,9 @@ class CoeurDeCockerCollector:
         slug = ad.get("eleveur_slug")
         if not isinstance(slug, str) or not slug:
             return None
-        name = ad.get("eleveur_nom")
-        return RawBreeder(
-            source_id=slug, display_name=BreederContactParser.readable_name(name if isinstance(name, str) else None)
-        )
+        published_name = ad.get("eleveur_nom")
+        name = BreederContactParser.readable_name(published_name if isinstance(published_name, str) else None)
+        return RawBreeder(source_id=slug, display_name=name, affix=BreederContactParser.affix_of_breeding_name(name))
 
     @staticmethod
     def _price_cents(text: Any) -> int | None:

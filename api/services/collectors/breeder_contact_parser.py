@@ -11,6 +11,7 @@ ELIDED_ARTICLES: frozenset[str] = frozenset({"l", "d"})
 AFFIX_KEY_IGNORED_WORDS: frozenset[str] = frozenset({"de", "du", "des", "la", "le", "les", "l", "d"})
 APOSTROPHES: tuple[str, ...] = ("'", "’")
 NON_DIGIT_PATTERN = re.compile(r"\D")
+BREEDING_NAME_PREFIX_PATTERN = re.compile(r"^[eé]levage(?:\s+|$)", re.IGNORECASE)
 NON_LETTER_OR_DIGIT_PATTERN = re.compile(r"[^a-z0-9]+")
 FRENCH_NATIONAL_PHONE_LENGTH = 10
 FRENCH_COUNTRY_CODE = "33"
@@ -46,6 +47,23 @@ class BreederContactParser:
             return cleaned
         words = cleaned.lower().split(" ")
         return " ".join(cls._capitalize_word(word, is_first_word=index == 0) for index, word in enumerate(words))
+
+    @staticmethod
+    def affix_of_breeding_name(name: str | None) -> str | None:
+        """
+        The affix a breeding name carries, once the word « Élevage » that opens it is dropped.
+
+        Args:
+            name: Name of the breeding as published (« Élevage du Clos de l'Écotay »).
+
+        Returns:
+            « Du Clos de l'Écotay », the name itself when it does not open with that word, or None when empty.
+        """
+        cleaned = " ".join((name or "").split())
+        affix = BREEDING_NAME_PREFIX_PATTERN.sub("", cleaned)
+        if not affix:
+            return None
+        return affix[:1].upper() + affix[1:]
 
     @staticmethod
     def affix_key(affix: str | None) -> str | None:

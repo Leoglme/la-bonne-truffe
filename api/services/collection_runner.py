@@ -211,8 +211,9 @@ class CollectionRunner:
         db: Session, source_run: SourceRun, collect_and_store: Callable[[], IngestionSummary]
     ) -> tuple[IngestionSummary, GroupingResult]:
         """
-        Collect and store, record the outcome on the run line, then regroup, score and notify; after a
-        failure, send the « source en panne » alert when it is due.
+        Collect and store, then regroup, score and notify, and record the outcome on the run line: a crash in
+        the grouping or the matching fails the run, and the next run finds the births again; after a failure,
+        send the « source en panne » alert when it is due.
 
         Args:
             db: Database session.
@@ -225,13 +226,21 @@ class CollectionRunner:
         summary = IngestionSummary()
         try:
             summary = collect_and_store()
+            should_notify = CollectionRunner._has_succeeded_before(db, source_run)
+            now = naive_utc_now()
+            grouping = litter_grouping_service.regroup(db, now)
+            match_refresh_service.refresh(
+                db,
+                now,
+                set(grouping.born_group_ids),
+                should_notify=should_notify,
+                fewer_puppies_group_ids=set(grouping.fewer_puppies_group_ids),
+            )
             source_run.status = SourceRunStatus.OK
-            source_run.listings_seen = summary.seen_count
-            source_run.listings_new = len(summary.new_listing_ids)
-            source_run.listings_changed = len(summary.changed_listing_ids)
         except Exception as error:
             # A failing source must never stop the others: the error goes to the run line.
             db.rollback()
+            grouping = GroupingResult()
             source_run.status = SourceRunStatus.ERROR
             source_run.error_message = str(error)[:2000]
             if isinstance(error, SourceReadError):
@@ -239,21 +248,14 @@ class CollectionRunner:
             else:
                 logger.exception("%s run crashed", source_run.source)
         finally:
+            source_run.listings_seen = summary.seen_count
+            source_run.listings_new = len(summary.new_listing_ids)
+            source_run.listings_changed = len(summary.changed_listing_ids)
             source_run.finished_at = naive_utc_now()
             db.commit()
 
         if source_run.status != SourceRunStatus.OK:
             notifier_service.alert_if_source_down(db, source_run.source, naive_utc_now())
-            return summary, GroupingResult()
-        now = naive_utc_now()
-        grouping = litter_grouping_service.regroup(db, now)
-        match_refresh_service.refresh(
-            db,
-            now,
-            set(grouping.born_group_ids),
-            should_notify=CollectionRunner._has_succeeded_before(db, source_run),
-            fewer_puppies_group_ids=set(grouping.fewer_puppies_group_ids),
-        )
         return summary, grouping
 
     @staticmethod

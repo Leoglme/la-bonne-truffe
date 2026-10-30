@@ -17,6 +17,7 @@ from models.source_run import SourceRun
 from seeders.run_seeders import SeederRunner
 from services.collection_planner import CollectionPlanner
 from services.collection_runner import collection_runner
+from services.matching.match_refresh import match_refresh_service
 from services.push_service import PushResult, PushService
 from tests.centrale_canine_pages import (
     collector_serving,
@@ -150,6 +151,33 @@ def test_birth_declared_under_a_new_identifier_joins_its_mating(db: Session, mon
     assert birth.litter_group_id == mating.litter_group_id
     assert report.grouping.born_group_ids == [mating.litter_group_id]
     assert group is not None and group.birth_date == date(2026, 10, 27)
+    assert db.query(Notification).filter(Notification.kind == NotificationKind.BORN).count() == 1
+
+
+def test_a_crash_after_the_collection_fails_the_run_and_the_next_run_still_tells_the_birth(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(PushService, "send", lambda *_args, **_kwargs: PushResult(delivered=1))
+    SeederRunner.run(db)
+    pages = load_recorded_pages()
+    turn_gold(pages, "4337070")
+    collection_runner.run_centrale_canine(db, collector_serving(pages))
+    declare_birth_under_new_id(pages, "4337070", "9990001", BIRTH_ON_27_OCTOBER_2026, male_count=1, female_count=4)
+    refresh_as_usual = match_refresh_service.refresh
+
+    def refresh_on_a_locked_database(*_args: object, **_kwargs: object) -> None:
+        """Fail as SQLite does when the API holds the database."""
+        raise RuntimeError("database is locked")
+
+    monkeypatch.setattr(match_refresh_service, "refresh", refresh_on_a_locked_database)
+    failed = collection_runner.run_centrale_canine(db, collector_serving(pages))
+    monkeypatch.setattr(match_refresh_service, "refresh", refresh_as_usual)
+    recovered = collection_runner.run_centrale_canine(db, collector_serving(pages))
+
+    mating = db.query(Listing).filter(Listing.external_id == "4337070").one()
+    assert (failed.source_run.status, failed.source_run.error_message) == ("error", "database is locked")
+    assert failed.source_run.listings_seen == recovered.source_run.listings_seen
+    assert (recovered.source_run.status, recovered.grouping.born_group_ids) == ("ok", [mating.litter_group_id])
     assert db.query(Notification).filter(Notification.kind == NotificationKind.BORN).count() == 1
 
 

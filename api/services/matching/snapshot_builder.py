@@ -93,9 +93,26 @@ class LitterSnapshotBuilder:
             expected_birth_date=group.expected_birth_date,
             available_from=group.available_from,
             breeder_selection_group=breeder.scc_selection_group if breeder is not None else None,
-            sire_rating=cls._first_known([listing.sire_rating for listing in active_listings]),
-            dam_rating=cls._first_known([listing.dam_rating for listing in active_listings]),
+            sire_rating=cls._first_known(
+                [listing.sire_rating for listing in cls.centrale_canine_first(active_listings)]
+            ),
+            dam_rating=cls._first_known([listing.dam_rating for listing in cls.centrale_canine_first(active_listings)]),
         )
+
+    @staticmethod
+    def centrale_canine_first(listings: list[Listing]) -> list[Listing]:
+        """
+        Put the Centrale Canine listings first: what the breeder declared to the LOF wins over an ad.
+
+        Args:
+            listings: Listings of a group, in id order.
+
+        Returns:
+            The same listings, the Centrale Canine ones first, the others in their order.
+        """
+        declared = [listing for listing in listings if listing.source == ListingSource.CENTRALE_CANINE]
+        advertised = [listing for listing in listings if listing.source != ListingSource.CENTRALE_CANINE]
+        return declared + advertised
 
     @staticmethod
     def active_listings_of(listings: list[Listing]) -> list[Listing]:
@@ -237,9 +254,8 @@ class LitterSnapshotBuilder:
         Returns:
             The male and female counts, each None while unknown.
         """
-        born_litters = sorted(
-            (listing for listing in listings if listing.kind == ListingKind.LITTER_BORN),
-            key=lambda listing: listing.source != ListingSource.CENTRALE_CANINE,
+        born_litters = cls.centrale_canine_first(
+            [listing for listing in listings if listing.kind == ListingKind.LITTER_BORN]
         )
         if born_litters:
             return (

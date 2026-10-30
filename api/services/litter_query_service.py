@@ -1,5 +1,6 @@
 """Reads the litters for the dashboard: cards, detail, follow-ups. Every query is scoped to the user."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Self
@@ -169,7 +170,6 @@ class LitterQueryService:
         if card is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portée introuvable")
         listings = facts.listings_by_group.get(group.id, [])
-        main_listing = next((listing for listing in listings if listing.is_active), listings[0])
         breeder = facts.breeders_by_id.get(group.breeder_id) if group.breeder_id is not None else None
         follow_up = facts.follow_ups_by_group.get(group.id)
         photos = list(dict.fromkeys(photo for listing in listings for photo in listing.photos))
@@ -182,12 +182,8 @@ class LitterQueryService:
             flags=[MatchFlag(flag) for flag in match.flags] if match is not None else [],
             litter_number=next((listing.litter_number for listing in listings if listing.litter_number), None),
             mating_date=group.mating_date,
-            sire=LitterParent(name=main_listing.sire_name, rating=main_listing.sire_rating)
-            if main_listing.sire_name
-            else None,
-            dam=LitterParent(name=main_listing.dam_name, rating=main_listing.dam_rating)
-            if main_listing.dam_name
-            else None,
+            sire=cls._parent(listings, lambda listing: listing.sire_name, lambda listing: listing.sire_rating),
+            dam=cls._parent(listings, lambda listing: listing.dam_name, lambda listing: listing.dam_rating),
             breeder=cls._breeder(breeder) if breeder is not None else None,
             photos=photos,
             listings=[
@@ -402,6 +398,33 @@ class LitterQueryService:
                 snapshot.breed_slug, snapshot.sire_rating, snapshot.dam_rating
             ),
         )
+
+    @staticmethod
+    def _parent(
+        listings: list[Listing],
+        name_of: Callable[[Listing], str | None],
+        rating_of: Callable[[Listing], int | None],
+    ) -> LitterParent | None:
+        """
+        A parent of the litter, merged across its active listings in the order of the snapshot (Centrale
+        Canine first): the first name a listing gives, with the first rating a listing gives.
+
+        Args:
+            listings: Every listing of the group, in id order.
+            name_of: Reads the name of the parent on a listing.
+            rating_of: Reads the rating of the parent on a listing.
+
+        Returns:
+            The parent, or None while no listing names it.
+        """
+        ordered_listings = LitterSnapshotBuilder.centrale_canine_first(
+            LitterSnapshotBuilder.active_listings_of(listings)
+        )
+        name = next((name_of(listing) for listing in ordered_listings if name_of(listing)), None)
+        if name is None:
+            return None
+        rating = next((rating_of(listing) for listing in ordered_listings if rating_of(listing) is not None), None)
+        return LitterParent(name=name, rating=rating)
 
     @staticmethod
     def _breeder(breeder: Breeder) -> LitterBreeder:

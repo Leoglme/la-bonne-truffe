@@ -77,7 +77,8 @@ class ListingIngestionService:
         now: datetime,
     ) -> IngestionSummary:
         """
-        Store a run: new listings, changed fields, and listings that disappeared from the departments read.
+        Store a run: new listings, changed fields, listings that disappeared from the departments read, and
+        listings of a litter born too long ago, kept inactive whether or not their ad is still online.
 
         Args:
             db: Database session; committed at the end.
@@ -93,6 +94,7 @@ class ListingIngestionService:
         known_department_codes = {code for (code,) in db.query(Department.code)}
         latest_by_external_id = {raw_listing.external_id: raw_listing for raw_listing in raw_listings}
         summary.seen_count = len(latest_by_external_id)
+        oldest_active_birth = (now - timedelta(days=BORN_LITTER_ACTIVE_DAYS)).date()
 
         for raw_listing in latest_by_external_id.values():
             listing = (
@@ -111,6 +113,7 @@ class ListingIngestionService:
                     breeder_id=breeder_id,
                     first_seen_at=now,
                     last_seen_at=now,
+                    is_active=self._is_born_recently_enough_to_follow(raw_listing.birth_date, oldest_active_birth),
                 )
                 self._apply_content(listing, raw_listing, known_department_codes)
                 db.add(listing)
@@ -122,24 +125,23 @@ class ListingIngestionService:
             was_active = listing.is_active
             self._apply_content(listing, raw_listing, known_department_codes)
             has_changed = self._record_changes(db, listing.id, values_before, self._tracked_values(listing), now)
-            if not was_active:
-                db.add(
-                    ListingChange(
-                        listing_id=listing.id, field="is_active", old_value="false", new_value="true", changed_at=now
-                    )
-                )
+            is_active_now = self._is_born_recently_enough_to_follow(listing.birth_date, oldest_active_birth)
+            if was_active != is_active_now:
+                self._record_activity_change(db, listing.id, is_active_now, now)
                 has_changed = True
+            if was_active and not is_active_now:
+                summary.deactivated_listing_ids.append(listing.id)
             if breeder_id is not None:
                 listing.breeder_id = breeder_id
             listing.last_seen_at = now
             listing.missed_run_count = 0
-            listing.is_active = True
+            listing.is_active = is_active_now
             if has_changed:
                 listing.last_changed_at = now
                 summary.changed_listing_ids.append(listing.id)
 
-        summary.deactivated_listing_ids = self._deactivate_missing(
-            db, source, set(latest_by_external_id), collected_department_codes, now
+        summary.deactivated_listing_ids.extend(
+            self._deactivate_missing(db, source, set(latest_by_external_id), collected_department_codes, now)
         )
         db.commit()
         return summary
@@ -147,7 +149,7 @@ class ListingIngestionService:
     @classmethod
     def _apply_content(cls, listing: Listing, raw_listing: RawListing, known_department_codes: set[str]) -> None:
         """
-        Copy what the source says onto the stored listing, and refresh its content hash.
+        Copy what the source says onto the stored listing.
 
         Args:
             listing: Listing to update.
@@ -182,6 +184,20 @@ class ListingIngestionService:
         listing.description = raw_listing.description
         listing.published_at = raw_listing.published_at
         listing.raw_json = raw_listing.raw_json
+
+    @staticmethod
+    def _is_born_recently_enough_to_follow(birth_date: date | None, oldest_active_birth: date) -> bool:
+        """
+        Whether a litter is still worth following: not born yet, or born after the oldest birth still followed.
+
+        Args:
+            birth_date: Birth of the litter, None before it or when unknown.
+            oldest_active_birth: Day before which a birth is too old (``BORN_LITTER_ACTIVE_DAYS``).
+
+        Returns:
+            True when the listing stays active.
+        """
+        return birth_date is None or birth_date >= oldest_active_birth
 
     @classmethod
     def _tracked_values(cls, listing: Listing) -> dict[str, str | None]:
@@ -385,8 +401,9 @@ class ListingIngestionService:
         """
         return new_value if new_value is not None else current_value
 
-    @staticmethod
+    @classmethod
     def _deactivate_missing(
+        cls,
         db: Session,
         source: ListingSource,
         seen_external_ids: set[str],
@@ -395,7 +412,7 @@ class ListingIngestionService:
     ) -> list[int]:
         """
         Count a missed run for every active listing of the departments read that the run did not see,
-        and deactivate those missed twice in a row or born more than six months ago.
+        and deactivate those missed twice in a row.
 
         Args:
             db: Database session.
@@ -408,7 +425,6 @@ class ListingIngestionService:
             Ids of the listings deactivated by this run.
         """
         deactivated_ids: list[int] = []
-        oldest_active_birth = (now - timedelta(days=BORN_LITTER_ACTIVE_DAYS)).date()
         active_listings = (
             db.query(Listing)
             .filter(
@@ -419,19 +435,35 @@ class ListingIngestionService:
             .all()
         )
         for listing in active_listings:
-            if listing.external_id not in seen_external_ids:
-                listing.missed_run_count += 1
-            is_gone = listing.missed_run_count >= MISSED_RUNS_BEFORE_INACTIVE
-            is_too_old = listing.birth_date is not None and listing.birth_date < oldest_active_birth
-            if is_gone or is_too_old:
+            if listing.external_id in seen_external_ids:
+                continue
+            listing.missed_run_count += 1
+            if listing.missed_run_count >= MISSED_RUNS_BEFORE_INACTIVE:
                 listing.is_active = False
-                db.add(
-                    ListingChange(
-                        listing_id=listing.id, field="is_active", old_value="true", new_value="false", changed_at=now
-                    )
-                )
+                cls._record_activity_change(db, listing.id, False, now)
                 deactivated_ids.append(listing.id)
         return deactivated_ids
+
+    @staticmethod
+    def _record_activity_change(db: Session, listing_id: int, is_active_now: bool, now: datetime) -> None:
+        """
+        Write the history line of a listing that goes online or offline.
+
+        Args:
+            db: Database session.
+            listing_id: The listing.
+            is_active_now: Its activity after the change.
+            now: Run time.
+        """
+        db.add(
+            ListingChange(
+                listing_id=listing_id,
+                field="is_active",
+                old_value=str(not is_active_now).lower(),
+                new_value=str(is_active_now).lower(),
+                changed_at=now,
+            )
+        )
 
     @staticmethod
     def _serialize(value: ColumnValue) -> str | None:

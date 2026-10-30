@@ -46,7 +46,7 @@ class LitterGroupingService:
         Group the listings that have no group yet, then refresh the dates and state of every group.
 
         Args:
-            db: Database session; committed at the end.
+            db: Database session; flushed, not committed: the caller commits with the matching that follows.
             now: Run time, naive UTC.
 
         Returns:
@@ -84,7 +84,7 @@ class LitterGroupingService:
                 and group.puppies_available < puppies_available_before
             ):
                 result.fewer_puppies_group_ids.append(group.id)
-        db.commit()
+        db.flush()
         return result
 
     @staticmethod

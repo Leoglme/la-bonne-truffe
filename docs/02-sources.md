@@ -77,7 +77,7 @@ GET https://www.centrale-canine.fr/api/breed/le-chien-de-race--cocker-spaniel-an
 - l'éleveur vient du bloc `breeders` : il est retrouvé par SIREN, puis identifiant SCC, puis téléphone, puis affixe et département ; une valeur connue n'est jamais effacée ; `is_member` devient `is_breed_club_member`, mis à jour à chaque relevé (un éleveur qui quitte le club le perd) ;
 - `n_created` devient `published_at` : la fraîcheur et les nouveautés partent de cette date (voir `04-correspondance-et-notifications.md`) ;
 - `external_id` = `n_id`, et `n_servicing_number` devient `mating_number`, que la déclaration de naissance garde (le numéro de portée `LOF-2026016223-…` le contient). Quand la naissance garde aussi le `n_id` de la saillie, elle apparaît comme un changement de la même annonce (`kind`, `birth_date`, compteurs dans `listing_changes`) ; quand elle arrive sous un nouvel identifiant, le regroupement la rattache à la saillie par le numéro de saillie (`03`). Lequel des deux fait la Centrale Canine n'a pas encore été observé sur un vrai relevé : les deux cas donnent la même portée et le même push « née ».
-- Une annonce absente de deux relevés de suite (dans les départements relevés) passe inactive, de même qu'une portée née depuis plus de six mois.
+- Une annonce absente de deux relevés de suite (dans les départements relevés) passe inactive, de même qu'une portée née depuis plus de six mois, qu'elle soit encore en ligne ou non : le relevé la garde inactive (une annonce adoptée que Cœur de Cocker laisse en ligne ne clignote pas).
 
 **Autres pages SCC utiles plus tard** : `ÉLEVEURS DE LA RACE` (annuaire), LOF Select (base de pedigrees, cotations, généalogie).
 
@@ -198,7 +198,7 @@ Une annonce disparue répond par une redirection 302 vers l'accueil, pas par une
 | Éleveur | `eleveur_slug`, `eleveur_nom` | |
 | Lien, photos | `slug` (page `/adoption/chien/<slug>/`), `photos_urls` (adresses séparées par des virgules) | |
 
-**Comment le collecteur lit cette source** (`api/services/collectors/coeur_de_cocker.py`) : une requête par relevé, puis les chiots des races et des départements du profil. Un chiot devient une annonce de chiot (`puppy_ad`) d'un seul chiot, disponible tant que son statut est `disponible`. La robe donne une couleur certaine quand son libellé en nomme une (« Bleu rouan », « Bicolore » → particolore, « Fauve » → gold…), sinon elle reste inconnue. L'éleveur est nommé par son slug Cœur de Cocker.
+**Comment le collecteur lit cette source** (`api/services/collectors/coeur_de_cocker.py`) : une requête par relevé, puis les chiots des races et des départements du profil. Un chiot devient une annonce de chiot (`puppy_ad`) d'un seul chiot, disponible tant que son statut est `disponible`. La robe donne une couleur certaine quand son libellé en nomme une (« Bleu rouan », « Bicolore » → particolore, « Fauve » → gold…), sinon elle reste inconnue. L'éleveur est nommé par son slug Cœur de Cocker ; son nom d'élevage (« Élevage de test A ») donne l'affixe (« De test A »), qui le rattache à l'éleveur de la Centrale Canine du même département : la même portée vue sur les deux sources ne fait qu'un groupe.
 
 ## 6. Leboncoin : pas collecté
 
@@ -220,7 +220,7 @@ Agrégateur avec alerte e-mail par race et pays. Pas prioritaire : ses annonces 
 
 - Un relevé par heure et par source. Une requête par seconde au plus. User-Agent honnête : `LaBonneTruffe/1.0 (+mailto:<adresse de Léo>)` **sauf** pour la Centrale Canine qui exige un User-Agent de navigateur (voir plus haut).
 - Mettre en cache les pages vues (ETag ou hash), ne relire une annonce que si la liste indique un changement.
-- Chaque relevé écrit une ligne dans `source_runs` (début, fin, statut, nombre vu, nouveau, modifié, erreur). Le dashboard montre « Relevé il y a 12 min » et une pastille verte ou rouge par source.
+- Chaque relevé écrit une ligne dans `source_runs` (début, fin, statut, nombre vu, nouveau, modifié, erreur). Le regroupement et la correspondance font partie du relevé : s'ils échouent (base verrouillée par l'API, par exemple), le relevé est en erreur ; les annonces relevées restent enregistrées, le regroupement et la correspondance sont annulés et refaits au relevé suivant, naissances comprises. Le dashboard montre « Relevé il y a 12 min » et une pastille verte ou rouge par source.
 - Une erreur sur une source n'empêche pas les autres. Trois échecs de suite déclenchent une notification à Léo.
 
 ## Contexte légal utile
