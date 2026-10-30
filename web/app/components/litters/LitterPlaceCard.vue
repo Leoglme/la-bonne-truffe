@@ -21,19 +21,17 @@
       <span v-if="distanceLabel" class="text-[13px] text-ink-muted">{{ distanceLabel }}</span>
     </span>
     <UButton
+      icon="i-lucide-map"
       color="neutral"
       variant="outline"
       size="lg"
+      square
       aria-label="Voir sur la carte"
       aria-haspopup="dialog"
-      class="shrink-0 gap-2 px-4"
+      class="size-[52px] min-h-[52px] shrink-0 justify-center p-0"
+      :ui="{ leadingIcon: 'size-[22px]' }"
       @click="isMapDrawerOpen = true"
-    >
-      <template #leading>
-        <UiCustomIcon name="pin" :size-in-pixels="20" :stroke-width="2.2" class="size-[18px]" />
-      </template>
-      Carte
-    </UButton>
+    />
     <UiMapAppDrawer v-model:open="isMapDrawerOpen" :destination="mapDestination" />
   </div>
 </template>

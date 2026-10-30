@@ -11,12 +11,6 @@ export type DeviceLocationPermission = 'unknown' | 'granted' | 'denied' | 'unava
 
 export type MapAppKey = 'apple_maps' | 'google_maps' | 'waze'
 
-export type MapApp = {
-  label: string
-  iconName: string
-  colorClass: string
-}
-
 export type MapAppLink = {
   key: MapAppKey
   label: string

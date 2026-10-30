@@ -1,5 +1,5 @@
 import type { MapAppKey, MapAppLink, MapDestination } from '~/types/Location'
-import { MAP_APPS } from '~/constants/mapApps'
+import { MAP_APP_LABELS } from '~/constants/mapApps'
 
 const MAP_APP_KEYS: MapAppKey[] = ['apple_maps', 'google_maps', 'waze']
 
@@ -14,7 +14,7 @@ export class MapLinks {
   static buildDirectionsLinks(destination: MapDestination): MapAppLink[] {
     return MAP_APP_KEYS.map((key: MapAppKey): MapAppLink => ({
       key,
-      label: MAP_APPS[key].label,
+      label: MAP_APP_LABELS[key],
       href: this.buildDirectionsHref(key, destination),
     }))
   }

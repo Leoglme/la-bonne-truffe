@@ -22,9 +22,7 @@
               class="flex min-h-[64px] items-center gap-3.5 rounded-2xl bg-cream px-3.5 text-ink no-underline hover:text-ink"
               @click="emit('update:open', false)"
             >
-              <span class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-card shadow-card">
-                <UIcon :name="MAP_APPS[link.key].iconName" class="size-6" :class="MAP_APPS[link.key].colorClass" />
-              </span>
+              <UiMapAppIcon :app="link.key" />
               <span class="grow text-[17px] font-bold">{{ link.label }}</span>
               <UIcon name="i-lucide-chevron-right" class="size-5 shrink-0 text-ink-muted" />
             </a>
@@ -49,7 +47,6 @@ import type { ComputedRef, PropType } from 'vue'
 import type { MapAppLink, MapDestination } from '~/types/Location'
 import type { UiMapAppDrawerEmits, UiMapAppDrawerProps } from '~/types/UiMapAppDrawer'
 import { computed } from 'vue'
-import { MAP_APPS } from '~/constants/mapApps'
 import { MapLinks } from '~/utils/mapLinks'
 
 const props: UiMapAppDrawerProps = defineProps({
