@@ -378,6 +378,8 @@ class LitterQueryService:
             town=city,
             department_code=snapshot.department_code,
             department_name=snapshot.department_name,
+            breeder_latitude=breeder.latitude if breeder is not None else None,
+            breeder_longitude=breeder.longitude if breeder is not None else None,
             kind=snapshot.kind,
             tier=match.tier if match is not None else None,
             score=match.score if match is not None else None,

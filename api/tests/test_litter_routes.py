@@ -57,6 +57,7 @@ def test_home_list_is_sorted_by_score_and_filtered(client: TestClient, collected
     assert [card["id"] for card in expected] == [group_id_of(db, EXPECTED_LITTER_ID)]
     gold_card = next(card for card in cards if card["id"] == group_id_of(db, GOLD_LITTER_ID))
     assert (gold_card["name"], gold_card["place"]) == ("Du Clos de l'Élevage D", "Saint-Aubin-du-Cormier")
+    assert (gold_card["breeder_latitude"], gold_card["breeder_longitude"]) == (48.26, -1.4)
 
 
 def test_a_visit_returns_the_previous_one(client: TestClient, collected: dict[str, str]) -> None:

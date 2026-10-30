@@ -31,6 +31,8 @@ class LitterCard(BaseModel):
     town: str | None
     department_code: str | None
     department_name: str | None
+    breeder_latitude: float | None = Field(description="Position of the breeding, when a source gives it")
+    breeder_longitude: float | None = Field(description="Position of the breeding, when a source gives it")
     kind: ListingKind
     tier: MatchTier | None
     score: int | None

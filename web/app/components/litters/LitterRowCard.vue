@@ -21,7 +21,9 @@
           Nouveau
         </span>
       </span>
-      <span class="text-[13px] text-ink-muted">{{ LitterPresentation.buildPlaceLine(props.litter) }}</span>
+      <span class="text-[13px] text-ink-muted">
+        {{ LitterPresentation.buildPlaceLine(props.litter, locationStore.position) }}
+      </span>
       <span class="mt-0.5 flex items-center gap-1.5 text-[13px] font-bold text-ink-secondary">
         <span class="rounded-full bg-chip px-[9px] py-[3px]">
           {{ LitterPresentation.buildColorLabel(props.litter.colors, true) }}
@@ -42,4 +44,6 @@ const props: LitterRowCardProps = defineProps({
   litter: { type: Object as PropType<LitterCard>, required: true },
   isNew: { type: Boolean, default: false },
 })
+
+const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
 </script>

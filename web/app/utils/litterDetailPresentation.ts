@@ -6,6 +6,7 @@ import type {
   LitterListingLine,
   LitterPrimaryAction,
 } from '~/types/Litter'
+import type { DevicePosition, GeographicPoint, MapDestination } from '~/types/Location'
 import type { UiPhotoViewerPhoto } from '~/types/UiPhotoViewer'
 import { LISTING_KIND_LABELS, LISTING_SOURCE_LABELS, LISTING_SOURCE_LINK_LABELS } from '~/constants/litterLabels'
 import { FrenchDate } from '~/utils/frenchDate'
@@ -33,12 +34,42 @@ export class LitterDetailPresentation {
   }
 
   /**
-   * Build the place line under the name: the town and its department.
+   * Build the place line under the name: the town and its department, then how far it is.
    *
    * @param litter - The litter.
-   * @returns « Redon, Ille-et-Vilaine », or the department alone.
+   * @param position - Position of the device, null while unknown.
+   * @returns « Redon, Ille-et-Vilaine · à 32 km », or the department alone.
    */
-  static buildTownAndDepartment(litter: LitterCard): string {
+  static buildTownAndDepartment(litter: LitterCard, position: DevicePosition | null): string {
+    const distanceLabel: string | null = LitterPresentation.buildDistanceLabel(litter, position)
+    return this.joinKnownParts([this.buildPlaceName(litter), distanceLabel])
+  }
+
+  /**
+   * Pick where the map apps take the person: the breeding itself when its position is known, else its place.
+   *
+   * @param litter - The litter.
+   * @returns The destination, or null while neither the position nor the place is known.
+   */
+  static buildMapDestination(litter: LitterCard): MapDestination | null {
+    const hasKnownPlace: boolean = litter.town !== null || litter.department_name !== null
+    const point: GeographicPoint | null =
+      litter.breeder_latitude !== null && litter.breeder_longitude !== null
+        ? { latitude: litter.breeder_latitude, longitude: litter.breeder_longitude }
+        : null
+    if (point === null && !hasKnownPlace) {
+      return null
+    }
+    return { point, placeName: this.buildPlaceName(litter) }
+  }
+
+  /**
+   * Name the place of a litter: the town and its department.
+   *
+   * @param litter - The litter.
+   * @returns « Redon, Ille-et-Vilaine », the department alone, or « Lieu à confirmer ».
+   */
+  private static buildPlaceName(litter: LitterCard): string {
     const parts: string[] = [litter.town, litter.department_name].filter(
       (part: string | null): part is string => part !== null,
     )

@@ -15,7 +15,9 @@
     <div class="flex items-start justify-between gap-3">
       <div class="flex min-w-0 flex-col gap-0.5">
         <h2 class="m-0 font-display text-[26px] leading-[1.1] font-semibold">{{ props.litter.name }}</h2>
-        <span class="text-sm text-ink-muted">{{ LitterDetailPresentation.buildTownAndDepartment(props.litter) }}</span>
+        <span class="text-sm text-ink-muted">
+          {{ LitterDetailPresentation.buildTownAndDepartment(props.litter, locationStore.position) }}
+        </span>
       </div>
       <LitterScoreBubble :litter="props.litter" is-in-side-panel />
     </div>
@@ -44,16 +46,30 @@
       >
         {{ props.litter.follow_up ? 'Suivie' : 'Suivre' }}
       </UButton>
+      <UButton
+        v-if="mapDestination"
+        color="neutral"
+        variant="outline"
+        size="lg"
+        aria-label="Voir sur la carte"
+        aria-haspopup="dialog"
+        class="px-4"
+        @click="isMapDrawerOpen = true"
+      >
+        <UiCustomIcon name="pin" :size-in-pixels="20" :stroke-width="2.2" class="size-5" />
+      </UButton>
     </div>
+    <UiMapAppDrawer v-if="mapDestination" v-model:open="isMapDrawerOpen" :destination="mapDestination" />
   </aside>
 </template>
 
 <script lang="ts" setup>
-import type { ComputedRef, PropType } from 'vue'
+import type { ComputedRef, PropType, Ref } from 'vue'
 import type { LitterDetail } from '~/types/api'
 import type { LitterPrimaryAction } from '~/types/Litter'
 import type { LitterDetailPanelProps } from '~/types/LitterDetailPanel'
-import { computed } from 'vue'
+import type { MapDestination } from '~/types/Location'
+import { computed, ref } from 'vue'
 import { LitterDetailPresentation } from '~/utils/litterDetailPresentation'
 
 const props: LitterDetailPanelProps = defineProps({
@@ -61,11 +77,17 @@ const props: LitterDetailPanelProps = defineProps({
 })
 
 const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
+const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
+
+const isMapDrawerOpen: Ref<boolean> = ref(false)
 
 const photoBadge: ComputedRef<string | null> = computed((): string | null =>
   LitterDetailPresentation.buildPhotoBadge(props.litter, new Date()),
 )
 const primaryAction: ComputedRef<LitterPrimaryAction | null> = computed((): LitterPrimaryAction | null =>
   LitterDetailPresentation.resolvePrimaryAction(props.litter),
+)
+const mapDestination: ComputedRef<MapDestination | null> = computed((): MapDestination | null =>
+  LitterDetailPresentation.buildMapDestination(props.litter),
 )
 </script>

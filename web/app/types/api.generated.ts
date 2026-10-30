@@ -1073,6 +1073,16 @@ export interface components {
             department_code: string | null;
             /** Department Name */
             department_name: string | null;
+            /**
+             * Breeder Latitude
+             * @description Position of the breeding, when a source gives it
+             */
+            breeder_latitude: number | null;
+            /**
+             * Breeder Longitude
+             * @description Position of the breeding, when a source gives it
+             */
+            breeder_longitude: number | null;
             kind: components["schemas"]["ListingKind"];
             tier: components["schemas"]["MatchTier"] | null;
             /** Score */
@@ -1133,6 +1143,16 @@ export interface components {
             department_code: string | null;
             /** Department Name */
             department_name: string | null;
+            /**
+             * Breeder Latitude
+             * @description Position of the breeding, when a source gives it
+             */
+            breeder_latitude: number | null;
+            /**
+             * Breeder Longitude
+             * @description Position of the breeding, when a source gives it
+             */
+            breeder_longitude: number | null;
             kind: components["schemas"]["ListingKind"];
             tier: components["schemas"]["MatchTier"] | null;
             /** Score */

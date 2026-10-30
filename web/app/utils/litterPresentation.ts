@@ -1,7 +1,9 @@
 import type { LitterCard, LitterColor } from '~/types/api'
 import type { CockerCoat } from '~/types/CockerCoat'
+import type { DevicePosition } from '~/types/Location'
 import { COAT_COLOR_LABELS } from '~/constants/coatColorLabels'
 import { COCKER_COAT_PALETTES, ILLUSTRATED_COATS } from '~/constants/cockerCoatPalettes'
+import { CrowFliesDistance } from '~/utils/crowFliesDistance'
 import { FrenchDate } from '~/utils/frenchDate'
 import { FrenchText } from '~/utils/frenchText'
 
@@ -102,13 +104,47 @@ export class LitterPresentation {
   }
 
   /**
-   * Build the place line of a card: the place, then what matters next.
+   * Measure how far the breeding is from the person, when both positions are known.
    *
    * @param card - The litter.
-   * @returns « Redon », « Ploërmel · naissance vers le 7 nov. », « Ancenis · non LOF ».
+   * @param position - Position of the device, null while unknown.
+   * @returns The kilometres as the crow flies, or null.
    */
-  static buildPlaceLine(card: LitterCard): string {
+  static kilometersFromHome(card: LitterCard, position: DevicePosition | null): number | null {
+    if (position === null || card.breeder_latitude === null || card.breeder_longitude === null) {
+      return null
+    }
+    return CrowFliesDistance.kilometersBetween(position, {
+      latitude: card.breeder_latitude,
+      longitude: card.breeder_longitude,
+    })
+  }
+
+  /**
+   * Write how far the breeding is, for a line of a card.
+   *
+   * @param card - The litter.
+   * @param position - Position of the device, null while unknown.
+   * @returns « à 32 km », or null while either position is unknown.
+   */
+  static buildDistanceLabel(card: LitterCard, position: DevicePosition | null): string | null {
+    const kilometers: number | null = this.kilometersFromHome(card, position)
+    return kilometers === null ? null : CrowFliesDistance.buildLabel(kilometers)
+  }
+
+  /**
+   * Build the place line of a card: the place, how far it is, then what matters next.
+   *
+   * @param card - The litter.
+   * @param position - Position of the device, null while unknown.
+   * @returns « Redon · à 32 km », « Ploërmel · naissance vers le 7 nov. », « Ancenis · non LOF ».
+   */
+  static buildPlaceLine(card: LitterCard, position: DevicePosition | null): string {
     const parts: string[] = [this.buildPlace(card)]
+    const distanceLabel: string | null = this.buildDistanceLabel(card, position)
+    if (distanceLabel !== null) {
+      parts.push(distanceLabel)
+    }
     if (card.kind === 'litter_expected' && card.expected_birth_date) {
       const expectedBirthDay: Date = FrenchDate.parseDay(card.expected_birth_date)
       parts.push(`naissance vers le ${FrenchDate.formatDayAndShortMonth(expectedBirthDay)}`)

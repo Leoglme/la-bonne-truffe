@@ -22,7 +22,9 @@
       </LitterTileFrame>
       <span class="flex flex-col gap-0.5 px-1.5">
         <span class="font-display text-[21px] leading-[1.2] font-semibold lg:text-[19px]">{{ props.litter.name }}</span>
-        <span class="text-[15px] text-ink-muted lg:text-sm">{{ LitterPresentation.buildPlaceLine(props.litter) }}</span>
+        <span class="text-[15px] text-ink-muted lg:text-sm">
+          {{ LitterPresentation.buildPlaceLine(props.litter, locationStore.position) }}
+        </span>
       </span>
       <span class="flex items-center gap-2 px-1.5 text-[15px] font-bold text-ink-secondary lg:text-sm">
         <span class="rounded-full bg-chip px-2.5 py-1 lg:px-[9px] lg:py-[3px]">
@@ -50,6 +52,8 @@ const props: LitterGridCardProps = defineProps({
 const emit: LitterGridCardEmits = defineEmits<{
   (event: 'activate', clickEvent: MouseEvent): void
 }>()
+
+const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
 
 /**
  * Let the page show the litter in its side panel, otherwise open the detail screen.
