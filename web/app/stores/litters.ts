@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue'
-import type { FollowUpCard, LitterCard, LitterDetail, LitterVisit } from '~/types/api'
+import type { CoatColor, FollowUpCard, LitterCard, LitterDetail, LitterVisit } from '~/types/api'
 import type { LitterBrowsingOrigin, LitterFilterKey } from '~/types/Litter'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
@@ -106,7 +106,20 @@ export const useLittersStore = defineStore('litters', () => {
   }
 
   /**
-   * Write the new detail of a litter into the opened litter, and its follow-up status into its card.
+   * Confirm the colour heard from the breeder, or remove the confirmation; the API re-scores the litter at once.
+   *
+   * @param litterId - The litter.
+   * @param colors - The confirmed colours, none to go back to what the sources say.
+   * @returns The updated detail.
+   */
+  async function confirmColors(litterId: number, colors: CoatColor[]): Promise<LitterDetail> {
+    const detail: LitterDetail = await LittersService.confirmColors(litterId, { colors })
+    applyDetail(detail)
+    return detail
+  }
+
+  /**
+   * Write the new detail of a litter into the opened litter, and its fresh facts (colours, score, follow-up) into its card.
    *
    * @param detail - The detail returned by the API.
    */
@@ -115,7 +128,7 @@ export const useLittersStore = defineStore('litters', () => {
       selectedLitter.value = detail
     }
     cards.value = cards.value.map((card: LitterCard): LitterCard =>
-      card.id === detail.id ? { ...card, follow_up_status: detail.follow_up?.status ?? null } : card,
+      card.id === detail.id ? { ...card, ...detail } : card,
     )
   }
 
@@ -171,6 +184,7 @@ export const useLittersStore = defineStore('litters', () => {
     recordVisit,
     select,
     follow,
+    confirmColors,
     applyDetail,
     listBrowsableLitterIds,
     followOrOpenFollowUp,

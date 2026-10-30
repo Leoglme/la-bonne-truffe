@@ -97,6 +97,7 @@
           </div>
           <LitterKeyFacts :litter="litter" class="shrink-0" />
           <LitterInfoChips :litter="litter" class="shrink-0" />
+          <LitterColorConfirmation :litter="litter" class="shrink-0" />
           <div v-if="litter.photos.length > 1" class="grid shrink-0 grid-cols-4 gap-2 md:flex md:gap-2.5">
             <button
               v-for="(photo, photoIndex) in galleryPhotos"

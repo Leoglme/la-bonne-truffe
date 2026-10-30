@@ -21,6 +21,7 @@
     </div>
     <LitterKeyFacts :litter="props.litter" is-in-side-panel />
     <LitterInfoChips :litter="props.litter" is-in-side-panel />
+    <LitterColorConfirmation :litter="props.litter" is-in-side-panel />
     <LitterReasonsCard :litter="props.litter" is-in-side-panel />
     <div class="grow" />
     <div class="flex gap-2.5">

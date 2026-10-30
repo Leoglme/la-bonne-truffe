@@ -13,7 +13,6 @@ Tranchée le 29/10/2026 : **les annonces « Type Cocker Spaniel Anglais » de Ch
 ## Idées V1.5 (après que ça tourne)
 
 - **Temps de route** réel depuis chez Léo (géocodage des codes postaux + distance routière approximative), affiché sur les cartes comme dans la maquette (« à 1 h de chez toi »), à la place du rang du département.
-- **Confirmation de couleur en un geste** depuis le détail après un appel (« C'était noir et feu »), qui remonte le match.
 - **Coordonnées de l'éleveur** : afficher le téléphone et le SIREN de la Centrale Canine, bouton d'appel direct, lien vers la page de l'élevage.
 - **Lien Leboncoin préconstruit** (recherche sauvegardée) et **lien chien.com** par race, pour un coup d'œil manuel depuis l'app.
 - **Rappels** du suivi poussés en notification (« Rappeler De Kerlann aujourd'hui »).

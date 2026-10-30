@@ -53,7 +53,7 @@ la-bonne-truffe/
 | `GET /litters` | Groupes de portées avec leur match, filtres `tier`, `kind`, `active`, tri par score ou fraîcheur |
 | `POST /litters/visit` | Noter que la liste est consultée maintenant (une fois par ouverture de l'app) ; renvoie la consultation précédente (`previous_visit_at`, `null` la première fois) |
 | `GET /litters/{id}` | Détail : listings par source (pour une annonce de chiot : son sexe, ses couleurs et ses photos), éleveur, raisons du score, changements, suivi |
-| `PATCH /litters/{id}/colors` | Confirmer une couleur à la main (`confirmed`) |
+| `PATCH /litters/{id}/colors` | Confirmer une couleur à la main (`confirmed`) depuis le détail, après l'appel à l'éleveur ; une liste vide retire la confirmation |
 | `GET /profiles`, `PUT /profiles/{id}` | Critères |
 | `GET /follow-ups`, `PUT /litters/{id}/follow-up`, `POST /litters/{id}/notes` | Suivi et notes |
 | `DELETE /litters/{id}/follow-up`, `DELETE /litters/{id}/notes/{note_id}` | Ne plus suivre une portée (statut, rappel et notes effacés, renvoie le détail) ; supprimer une note (`204`) |
