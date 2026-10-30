@@ -9,7 +9,6 @@ export const useCriteriaStore = defineStore('criteria', () => {
   const savedProfile: Ref<SearchProfile | null> = ref(null)
   const draft: Ref<SearchProfileUpdate | null> = ref(null)
   const departments: Ref<Department[]> = ref([])
-  const isLoading: Ref<boolean> = ref(true)
   const loadError: Ref<string | null> = ref(null)
   const isSaving: Ref<boolean> = ref(false)
   const saveError: Ref<string | null> = ref(null)
@@ -49,7 +48,6 @@ export const useCriteriaStore = defineStore('criteria', () => {
    * Load the first profile of the user and the departments.
    */
   async function load(): Promise<void> {
-    isLoading.value = true
     loadError.value = null
     try {
       const [profiles, loadedDepartments]: [SearchProfile[], Department[]] = await Promise.all([
@@ -61,8 +59,6 @@ export const useCriteriaStore = defineStore('criteria', () => {
       draft.value = savedProfile.value ? buildProfileUpdate(savedProfile.value) : null
     } catch (error: unknown) {
       loadError.value = error instanceof Error ? error.message : 'Chargement impossible'
-    } finally {
-      isLoading.value = false
     }
   }
 
@@ -161,7 +157,6 @@ export const useCriteriaStore = defineStore('criteria', () => {
     savedProfile,
     draft,
     departments,
-    isLoading,
     loadError,
     isSaving,
     saveError,

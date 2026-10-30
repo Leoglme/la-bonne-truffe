@@ -1,4 +1,4 @@
-import type { ApiErrorBody, ApiQueryParams } from '~/types/ApiClient'
+import type { ApiErrorBody } from '~/types/ApiClient'
 import { TokenRejectedError } from '~/services/authService'
 
 const TOKEN_REJECTED_STATUS: number = 401
@@ -9,11 +9,10 @@ export class ApiClient {
    * Send a GET request.
    *
    * @param endpoint - Path starting with `/api/`.
-   * @param options - Optional query parameters; null and undefined values are dropped.
    * @returns The parsed response body.
    */
-  static get<T>(endpoint: string, options?: { params?: ApiQueryParams }): Promise<T> {
-    return this.request<T>(this.withQuery(endpoint, options?.params), { method: 'GET' })
+  static get<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'GET' })
   }
 
   /**
@@ -61,27 +60,6 @@ export class ApiClient {
       method: 'DELETE',
       ...(data === undefined ? {} : { body: JSON.stringify(data) }),
     })
-  }
-
-  /**
-   * Append a query string, skipping the parameters that carry no value.
-   *
-   * @param endpoint - Path to decorate.
-   * @param params - Query parameters.
-   * @returns The path, with its query string when at least one parameter survived.
-   */
-  private static withQuery(endpoint: string, params?: ApiQueryParams): string {
-    if (!params) {
-      return endpoint
-    }
-    const search: URLSearchParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]: [string, unknown]): void => {
-      if (value !== null && value !== undefined) {
-        search.append(key, String(value))
-      }
-    })
-    const queryString: string = search.toString()
-    return queryString ? `${endpoint}?${queryString}` : endpoint
   }
 
   /**

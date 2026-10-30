@@ -15,11 +15,9 @@ class Settings(BaseSettings):
         env_file=".env", env_file_encoding="utf-8", case_sensitive=False, populate_by_name=True, extra="ignore"
     )
 
-    env: str = "development"
     debug: bool = True
     api_version: str = "v1"
     api_prefix: str = "/api/v1"
-    api_base_url: str = Field(default="http://localhost:8000", alias="API_BASE_URL")
     web_base_url: str = Field(
         default="http://localhost:3000",
         alias="WEB_BASE_URL",

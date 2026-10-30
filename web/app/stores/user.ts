@@ -22,7 +22,6 @@ export const useUserStore = defineStore('user', () => {
   const emailTypedWhileSignedOut: Ref<string> = ref('')
   let lastValidatedAt: number = 0
 
-  const isAuthenticated: ComputedRef<boolean> = computed((): boolean => user.value !== null && token.value !== null)
   const firstName: ComputedRef<string> = computed((): string => user.value?.name ?? '')
 
   /**
@@ -131,7 +130,6 @@ export const useUserStore = defineStore('user', () => {
     user,
     token,
     emailTypedWhileSignedOut,
-    isAuthenticated,
     firstName,
     restoreSession,
     login,

@@ -26,7 +26,7 @@ from services.collectors.polite_http_client import SourceReadError
 from services.collectors.whoof import WhoofCollector
 from services.listing_ingestion import IngestionSummary, listing_ingestion_service
 from services.litter_grouping import GroupingResult, litter_grouping_service
-from services.matching.match_refresh import RefreshSummary, match_refresh_service
+from services.matching.match_refresh import match_refresh_service
 from services.notifier import notifier_service
 from services.scc_reference_sync import scc_reference_sync
 
@@ -44,7 +44,6 @@ class CentraleCanineRunReport:
     collection: CentraleCanineCollection = field(default_factory=CentraleCanineCollection)
     summary: IngestionSummary = field(default_factory=IngestionSummary)
     grouping: GroupingResult = field(default_factory=GroupingResult)
-    refresh: RefreshSummary = field(default_factory=RefreshSummary)
 
 
 @dataclass
@@ -56,7 +55,6 @@ class HtmlRunReport:
     collection: HtmlCollection = field(default_factory=HtmlCollection)
     summary: IngestionSummary = field(default_factory=IngestionSummary)
     grouping: GroupingResult = field(default_factory=GroupingResult)
-    refresh: RefreshSummary = field(default_factory=RefreshSummary)
 
 
 class CollectionRunner:
@@ -152,7 +150,7 @@ class CollectionRunner:
                 naive_utc_now(),
             )
 
-        report.summary, report.grouping, report.refresh = self._finish_run(db, source_run, collect_and_store)
+        report.summary, report.grouping = self._finish_run(db, source_run, collect_and_store)
         return report
 
     def run_html_source(self, db: Session, source: ListingSource, collector: HtmlSourceCollector) -> HtmlRunReport:
@@ -188,7 +186,7 @@ class CollectionRunner:
                 db, source, report.collection.listings, report.collection.collected_department_codes, naive_utc_now()
             )
 
-        report.summary, report.grouping, report.refresh = self._finish_run(db, source_run, collect_and_store)
+        report.summary, report.grouping = self._finish_run(db, source_run, collect_and_store)
         return report
 
     @staticmethod
@@ -211,7 +209,7 @@ class CollectionRunner:
     @staticmethod
     def _finish_run(
         db: Session, source_run: SourceRun, collect_and_store: Callable[[], IngestionSummary]
-    ) -> tuple[IngestionSummary, GroupingResult, RefreshSummary]:
+    ) -> tuple[IngestionSummary, GroupingResult]:
         """
         Collect and store, record the outcome on the run line, then regroup, score and notify; after a
         failure, send the « source en panne » alert when it is due.
@@ -222,7 +220,7 @@ class CollectionRunner:
             collect_and_store: Reads the source and stores its listings.
 
         Returns:
-            The ingestion summary, the grouping and the match refresh, empty after a failure.
+            The ingestion summary and the grouping, empty after a failure.
         """
         summary = IngestionSummary()
         try:
@@ -246,17 +244,17 @@ class CollectionRunner:
 
         if source_run.status != SourceRunStatus.OK:
             notifier_service.alert_if_source_down(db, source_run.source, naive_utc_now())
-            return summary, GroupingResult(), RefreshSummary()
+            return summary, GroupingResult()
         now = naive_utc_now()
         grouping = litter_grouping_service.regroup(db, now)
-        refresh = match_refresh_service.refresh(
+        match_refresh_service.refresh(
             db,
             now,
             set(grouping.born_group_ids),
             should_notify=CollectionRunner._has_succeeded_before(db, source_run),
             fewer_puppies_group_ids=set(grouping.fewer_puppies_group_ids),
         )
-        return summary, grouping, refresh
+        return summary, grouping
 
     @staticmethod
     def _has_succeeded_before(db: Session, source_run: SourceRun) -> bool:

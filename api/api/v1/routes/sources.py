@@ -53,12 +53,14 @@ def run_source(
         The statuses after the run.
 
     Raises:
-        HTTPException: 409 for a source the desktop app reads; 501 for a source this machine does not collect.
+        HTTPException: 409 for a source the desktop app reads; 501 for a source this server does not collect.
     """
     if source in DESKTOP_RELAYED_SOURCES:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cette source est relevée par l'app Windows")
     if source not in COLLECTED_SOURCES:
-        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Cette source n'est pas encore relevée")
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Cette source n'est pas relevée par ce serveur"
+        )
     collection_runner.run_source(db, source)
     return SourceStatusService.list_statuses(db)
 

@@ -43,7 +43,6 @@ export type RelayedPageResponse = Schemas['RelayedPageResponse']
 export type Department = Schemas['DepartmentResponse']
 
 export type CoatColor = Schemas['CoatColor']
-export type ColorConfidence = Schemas['ColorConfidence']
 export type ColorPreferenceLevel = Schemas['ColorPreferenceLevel']
 export type GeneticScreening = Schemas['GeneticScreening']
 export type ListingKind = Schemas['ListingKind']

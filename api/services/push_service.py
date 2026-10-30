@@ -1,12 +1,11 @@
 """
 Web Push delivery — send PWA notifications to the user's browsers (VAPID).
 
-Copied from DevLeadHunter and gathered in a class. Best-effort by design: ``notify`` never raises,
+Best-effort by design: ``send`` never raises,
 so a push failure can never break the run that triggered it. Stale endpoints (HTTP 404/410) are
 pruned automatically.
 """
 
-import asyncio
 import base64
 import json
 import logging
@@ -17,7 +16,6 @@ from pywebpush import WebPushException, webpush
 from sqlalchemy.orm import Session
 
 from core.config import settings
-from core.database import SessionLocal
 from models.push_subscription import PushSubscription
 
 logger = logging.getLogger(__name__)
@@ -124,33 +122,6 @@ class PushService:
             )
             db.commit()
         return result
-
-    async def notify(self, user_id: int, title: str, body: str, url: str = "/", tag: str | None = None) -> None:
-        """
-        Deliver a push without blocking the event loop (own session in a worker thread). Never raises.
-
-        Args:
-            user_id: Target user.
-            title: Notification title.
-            body: Notification body.
-            url: In-app path to open on click.
-            tag: Optional notification tag.
-        """
-        if not self.is_configured():
-            return
-
-        def send_in_own_session() -> None:
-            """Send with a session owned by the worker thread."""
-            db = SessionLocal()
-            try:
-                self.send(db, user_id, title, body, url, tag)
-            finally:
-                db.close()
-
-        try:
-            await asyncio.to_thread(send_in_own_session)
-        except Exception as error:
-            logger.warning("Push notify failed (user=%s): %s", user_id, error)
 
 
 push_service = PushService()

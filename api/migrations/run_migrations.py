@@ -2,22 +2,15 @@
 
 Each migration runs at most once: the module name is recorded in ``schema_migrations``.
 Before applying tracked migrations, ``init_db()`` ensures all SQLAlchemy model tables exist.
-
-Run with:
-    python migrations/run_migrations.py
+Run through ``cli.py init-db``.
 """
 
 import importlib
-import sys
 from pathlib import Path
-
-_ROOT = Path(__file__).resolve().parent.parent
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
 
 from sqlalchemy import Engine, text
 
-from core.database import engine, init_db
+from core.database import init_db
 
 _SCHEMA_TABLE_DDL = """
 CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -42,6 +35,7 @@ MIGRATION_MODULES: list[tuple[str, str]] = [
     ("add_user_litters_visited_at", "migrations.add_user_litters_visited_at"),
     ("add_breed_whoof_and_coeur_de_cocker_ids", "migrations.add_breed_whoof_and_coeur_de_cocker_ids"),
     ("add_breeder_breed_club_member", "migrations.add_breeder_breed_club_member"),
+    ("drop_listing_content_hash", "migrations.drop_listing_content_hash"),
 ]
 
 _NON_MIGRATION_MODULES: set[str] = {"__init__", "run_migrations"}
@@ -131,8 +125,3 @@ class MigrationRunner:
             self.mark_applied(migration_name)
             applied.append(migration_name)
         return applied
-
-
-if __name__ == "__main__":
-    applied_names = MigrationRunner(engine).run()
-    print("Applied: " + ", ".join(applied_names) if applied_names else "Database already up to date.")

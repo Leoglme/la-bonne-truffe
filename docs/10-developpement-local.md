@@ -23,7 +23,7 @@ Dans `.env`, changer au moins `SECRET_KEY` et `ADMIN_PASSWORD`. L'adresse `conta
 .venv/bin/python cli.py init-db      # migrations + seeders (départements, cocker, utilisateur, profil de départ)
 .venv/bin/python cli.py vapid-keys   # coller les deux lignes affichées dans .env
 .venv/bin/python main.py             # API sur http://localhost:8000, documentation sur /docs
-.venv/bin/python worker.py           # worker APScheduler : un relevé par source chaque heure (5e, 20e et 35e minutes)
+.venv/bin/python worker.py           # worker APScheduler : un relevé par source chaque heure (minutes 5, 20, 35, 45 et 50)
 ```
 
 `init-db` est idempotent : il ne recrée ni ne modifie ce qui existe déjà. La base SQLite vit dans `api/data/` (ignoré par git).

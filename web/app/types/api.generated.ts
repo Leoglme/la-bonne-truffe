@@ -406,33 +406,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/breeds": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Breeds
-         * @description Return the breed catalogue, by French name.
-         *
-         *     Args:
-         *         current_user: The authenticated user.
-         *         db: Database session.
-         *
-         *     Returns:
-         *         Every breed.
-         */
-        get: operations["list_breeds_api_v1_breeds_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/departments": {
         parameters: {
             query?: never;
@@ -804,7 +777,7 @@ export interface paths {
          *         The statuses after the run.
          *
          *     Raises:
-         *         HTTPException: 409 for a source the desktop app reads; 501 for a source this machine does not collect.
+         *         HTTPException: 409 for a source the desktop app reads; 501 for a source this server does not collect.
          */
         post: operations["run_source_api_v1_sources__source__run_post"];
         delete?: never;
@@ -875,20 +848,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /**
-         * BreedResponse
-         * @description A breed searchable by a profile.
-         */
-        BreedResponse: {
-            /** Id */
-            id: number;
-            /** Name Fr */
-            name_fr: string;
-            /** Slug */
-            slug: string;
-            /** Is Active */
-            is_active: boolean;
-        };
         /**
          * CentraleCanineRelayAnswer
          * @description What the desktop app does next.
@@ -2138,26 +2097,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TestNotificationResult"];
-                };
-            };
-        };
-    };
-    list_breeds_api_v1_breeds_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BreedResponse"][];
                 };
             };
         };

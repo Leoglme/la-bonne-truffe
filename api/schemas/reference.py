@@ -1,17 +1,6 @@
-"""Reference data schemas: breeds and departments."""
+"""Reference data schemas: the French departments."""
 
 from pydantic import BaseModel, ConfigDict
-
-
-class BreedResponse(BaseModel):
-    """A breed searchable by a profile."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    name_fr: str
-    slug: str
-    is_active: bool
 
 
 class DepartmentResponse(BaseModel):

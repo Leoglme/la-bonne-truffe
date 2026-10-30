@@ -25,9 +25,6 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# Ces fichiers ajoutent la racine au sys.path avant leurs imports.
-"seeders/*.py" = ["E402"]
-"migrations/*.py" = ["E402"]
 "models/__init__.py" = ["F401"]   # baril de ré-exports : les imports SONT l'API du package
 
 [tool.ruff.format]

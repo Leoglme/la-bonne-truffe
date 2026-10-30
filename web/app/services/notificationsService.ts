@@ -45,13 +45,12 @@ export class NotificationsService {
   }
 
   /**
-   * Fetch a page of the notification history, newest first, with the unread count.
+   * Fetch the notification history, newest first, with the unread count.
    *
-   * @param before - Return the notifications whose id is strictly below this one.
-   * @returns The page and the unread count.
+   * @returns The notifications and the unread count.
    */
-  static async getHistory(before?: number): Promise<NotificationHistory> {
-    return ApiClient.get<NotificationHistory>('/api/v1/notifications', { params: { before } })
+  static async getHistory(): Promise<NotificationHistory> {
+    return ApiClient.get<NotificationHistory>('/api/v1/notifications')
   }
 
   /**

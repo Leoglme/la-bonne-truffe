@@ -154,9 +154,7 @@ jobs:
             set -e
             cd "${{ env.APP_DIR }}/api"
             cat > .env <<'EOF'
-            ENV=production
             DEBUG=false
-            API_BASE_URL=https://api.la-bonne-truffe.dibodev.fr
             WEB_BASE_URL=https://la-bonne-truffe.dibodev.fr
             CORS_ORIGINS=https://la-bonne-truffe.dibodev.fr,tauri://localhost,http://tauri.localhost
             DATABASE_URL=sqlite:///${{ env.DATA_DIR }}/la-bonne-truffe.db

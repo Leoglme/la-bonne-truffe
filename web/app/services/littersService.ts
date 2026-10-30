@@ -7,7 +7,6 @@ import type {
   LitterDetail,
   LitterVisit,
 } from '~/types/api'
-import type { LitterListFilters } from '~/types/Litter'
 import { ApiClient } from './api'
 
 /** HTTP client for the /litters and /follow-ups API resources. */
@@ -15,11 +14,10 @@ export class LittersService {
   /**
    * Fetch the litters of the home screen, best score first.
    *
-   * @param filters - Tier or kind filter.
    * @returns The cards.
    */
-  static async list(filters: LitterListFilters = {}): Promise<LitterCard[]> {
-    return ApiClient.get<LitterCard[]>('/api/v1/litters', { params: { tier: filters.tier, kind: filters.kind } })
+  static async list(): Promise<LitterCard[]> {
+    return ApiClient.get<LitterCard[]>('/api/v1/litters')
   }
 
   /**

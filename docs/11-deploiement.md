@@ -56,7 +56,7 @@ gh secret set TAURI_UPDATER_PUBKEY < ~/.tauri/la-bonne-truffe.key.pub
 read -rsp "Clé Resend : " resend_api_key; echo; printf '%s' "$resend_api_key" | gh secret set RESEND_API_KEY; unset resend_api_key
 ```
 
-Les adresses (`API_BASE_URL`, `WEB_BASE_URL`, `CORS_ORIGINS`), `DATABASE_URL`, `COLLECT_SKIPPED_SOURCES` et l'adresse `contact@dibodev.fr` (`ADMIN_EMAIL`, `VAPID_SUBJECT`, User-Agent) ne sont pas secrètes : elles sont écrites dans `deploy-api.yml`. L'inscription reste ouverte, comme le veut `SIGNUP_ENABLED` par défaut : pour la fermer, ajouter `SIGNUP_ENABLED=false` au `.env` qu'écrit `deploy-api.yml`.
+Les adresses (`WEB_BASE_URL`, `CORS_ORIGINS`), `DATABASE_URL`, `COLLECT_SKIPPED_SOURCES` et l'adresse `contact@dibodev.fr` (`ADMIN_EMAIL`, `VAPID_SUBJECT`, User-Agent) ne sont pas secrètes : elles sont écrites dans `deploy-api.yml`. L'inscription est fermée par défaut (`SIGNUP_ENABLED=false`, chaque tentative est gardée dans `signup_requests`) : pour l'ouvrir, ajouter `SIGNUP_ENABLED=true` au `.env` qu'écrit `deploy-api.yml`.
 
 ## Nginx
 

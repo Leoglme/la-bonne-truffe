@@ -14,4 +14,3 @@ class NotificationKind(StrEnum):
     SOURCE_SILENT = "source_silent"
     SIGNUP_REQUEST = "signup_request"
     FOLLOW_UP_REMINDER = "follow_up_reminder"
-    TEST = "test"

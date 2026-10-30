@@ -29,7 +29,7 @@ Pour lancer le projet en local : [docs/10-developpement-local.md](docs/10-develo
 
 Maquette interactive (iPad portrait, iPhone, desktop, icône) : https://claude.ai/artifact/4uDTwYLUxdssydGN9bhb53
 
-Les sources HTML de chaque écran sont dans [design/mockup/](design/mockup/), l'icône dans [design/icone-app.svg](design/icone-app.svg), l'illustration de cocker dans [design/illustration-cocker.svg](design/illustration-cocker.svg), les photos et leurs crédits dans [design/photos/](design/photos/).
+Les sources HTML de chaque écran sont dans [design/mockup/](design/mockup/), l'icône dans [design/icone-app.svg](design/icone-app.svg), l'illustration de cocker dans [design/illustration-cocker.svg](design/illustration-cocker.svg), les photos des écrans de connexion dans [web/public/images/auth/](web/public/images/auth/), avec leurs crédits dans `docs/06-maquette-et-design.md`.
 
 ⚠️ Les éleveurs, numéros de portée, dates et cotations de la maquette sont **inventés**. Les vraies données viendront des sources décrites dans `docs/02-sources.md`.
 

@@ -55,7 +55,6 @@ class Listing(TimestampMixin, Base):
         last_changed_at: Last collection that saw a field change.
         missed_run_count: Consecutive runs that did not see the listing; two make it inactive.
         is_active: False once the listing has left its source.
-        content_hash: Hash of the normalized content, to detect changes.
         raw_json: Raw snapshot from the source.
     """
 
@@ -99,7 +98,6 @@ class Listing(TimestampMixin, Base):
     last_changed_at: Mapped[datetime | None]
     missed_run_count: Mapped[int] = mapped_column(default=0, nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False, index=True)
-    content_hash: Mapped[str | None] = mapped_column(String(64))
     raw_json: Mapped[dict[str, Any] | None] = mapped_column(JSON)
 
     def __repr__(self) -> str:

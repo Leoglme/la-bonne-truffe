@@ -1,6 +1,5 @@
 """Re-evaluates every active litter for every active profile, stores the verdicts, raises the events."""
 
-from dataclasses import dataclass, field
 from datetime import datetime
 
 from sqlalchemy.orm import Session
@@ -19,14 +18,6 @@ from services.matching.snapshot_builder import LitterSnapshotBuilder
 from services.notifier import notifier_service
 
 
-@dataclass
-class RefreshSummary:
-    """What a refresh did."""
-
-    evaluated_count: int = 0
-    raised_events: list[tuple[int, MatchEventKind]] = field(default_factory=list)
-
-
 class MatchRefreshService:
     """Keeps ``listing_matches`` in step with the litters and the profiles."""
 
@@ -38,7 +29,7 @@ class MatchRefreshService:
         should_notify: bool = True,
         profile_ids: set[int] | None = None,
         fewer_puppies_group_ids: set[int] | None = None,
-    ) -> RefreshSummary:
+    ) -> None:
         """
         Evaluate every active group against every active profile.
 
@@ -53,11 +44,7 @@ class MatchRefreshService:
             should_notify: Whether the raised events are sent.
             profile_ids: Only these profiles (a new account); every active profile when None.
             fewer_puppies_group_ids: Groups that offer fewer puppies since the previous run.
-
-        Returns:
-            The summary.
         """
-        summary = RefreshSummary()
         today = french_date_of(now)
         groups = db.query(LitterGroup).filter(LitterGroup.is_active.is_(True)).order_by(LitterGroup.id).all()
         profile_query = db.query(SearchProfile).filter(SearchProfile.is_active.is_(True))
@@ -81,7 +68,6 @@ class MatchRefreshService:
                 match = self._store_verdict(db, group.id, profile.id, verdict, now)
                 previous_tier = match.tier if match.id is not None else None
                 match.tier = verdict.tier
-                summary.evaluated_count += 1
 
                 is_followed = group.id in followed_group_ids
                 events = EventService.detect(
@@ -100,12 +86,10 @@ class MatchRefreshService:
                 handled = dict(match.notified_events)
                 for event in events:
                     handled[event.value] = now.isoformat()
-                    summary.raised_events.append((group.id, event))
                 if MatchEventKind.BORN in events and verdict.tier == MatchTier.PREFERRED:
                     handled.setdefault(MatchEventKind.NEW_PREFERRED.value, now.isoformat())
                 match.notified_events = handled
         db.commit()
-        return summary
 
     @staticmethod
     def _store_verdict(

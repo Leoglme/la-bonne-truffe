@@ -49,7 +49,7 @@ pub fn enable_autostart_on_first_launch(app: &App) {
             let _ = std::fs::create_dir_all(&data_dir);
             let _ = std::fs::write(&marker, b"");
         }
-        Err(error) => log::error!("launch at Windows startup not enabled: {error}"),
+        Err(error) => eprintln!("launch at Windows startup not enabled: {error}"),
     }
 }
 

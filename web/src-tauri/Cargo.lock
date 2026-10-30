@@ -1982,9 +1982,7 @@ dependencies = [
 name = "la-bonne-truffe-desktop"
 version = "0.1.0"
 dependencies = [
- "log",
  "serde",
- "serde_json",
  "tauri",
  "tauri-build",
  "tauri-plugin-autostart",

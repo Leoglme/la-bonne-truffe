@@ -70,11 +70,11 @@ Les icônes de la maquette sont des SVG dessinés à la main dans le style Lucid
 
 ### L'icône de l'app et le logo
 
-`design/icone-app.svg` : carré arrondi corail `#E2552F` (rayon 22,5 % du côté, comme iOS), truffe crème `#FFF3E6` avec deux narines corail et un reflet blanc. Déclinaisons PNG à générer : 1024, 512, 192, 180, 120, 60. Variante claire (fond crème, truffe brune `#2B2420`) pour les contextes sombres.
+`design/icone-app.svg` : carré arrondi corail `#E2552F` (rayon 22,5 % du côté, comme iOS), truffe crème `#FFF3E6` avec deux narines corail et un reflet blanc. Déclinaisons PNG à générer : 1024, 512, 192, 180. Variante claire (fond crème, truffe brune `#2B2420`) pour les contextes sombres.
 
 Dans l'app, le logo = la même icône arrondie, **sans le reflet blanc** de l'icône d'écran d'accueil (comme « Le logo dans l'app » de `Icone.dc.html`), suivie du nom « La Bonne Truffe » en Fredoka 600, **sur tous les écrans** (composant `UiAppLogo`) : 32 px et 19 px sur iPhone, 36 px et 22 px sur iPad, 38 px et 21 px dans la barre latérale desktop, où le nom passe sur deux lignes exactement comme dans `Desktop.dc.html` (la barre fait 236 px). La maquette iPad `Main.dc.html` est en retard sur ce point : elle montre encore une truffe brune seule ; c'est ce document qui fait foi (validé par Léo le 28/10/2026). Dans la bannière de notification iOS, c'est l'icône de l'app qui apparaît.
 
-Les PNG sont générés dans `web/public/icons/` (1024, 512, 192, 120, 60), plus `web/public/apple-touch-icon.png` (180, **carré plein** : iOS arrondit lui-même et noircirait des coins transparents), `icons/icon-maskable-512.png` (carré plein, la truffe tient dans la zone sûre) et `favicon-32x32.png`. Les icônes Windows de Tauri sont dans `web/src-tauri/icons/` (`npx tauri icon`).
+Les PNG sont générés dans `web/public/icons/` (1024, 512, 192), plus `web/public/apple-touch-icon.png` (180, **carré plein** : iOS arrondit lui-même et noircirait des coins transparents), `icons/icon-maskable-512.png` (carré plein, la truffe tient dans la zone sûre) et `favicon-32x32.png`. Les icônes Windows de Tauri sont dans `web/src-tauri/icons/` (`npx tauri icon`, en ne gardant que celles que `tauri.conf.json` liste : l'installeur est NSIS, pas le Store).
 
 ### L'illustration de cocker
 
@@ -119,3 +119,17 @@ Les maquettes `.dc.html` n'embarquent pas leur moteur de rendu. Pour comparer, c
 - **Desktop** : barre latérale + grille de trois colonnes + volet de détail à partir de 1280 px ; entre 1024 et 1280 px, deux colonnes et l'écran de détail s'ouvre en plein. La barre latérale ajoute Réglages sous Sources (absent de la maquette, nécessaire pour la déconnexion). Les autres écrans et le détail se calent contre la barre latérale, sur 1024 px au plus, au lieu de se centrer.
 - Écrans sans maquette (Réglages, Sources, historique des notifications, Critères et Suivi sur iPhone et desktop, inscription et mot de passe oublié sur desktop) : mêmes composants, mêmes cotes que les écrans iPad.
 - **Écrans d'authentification** : un seul cadre, `AuthScreen`, en une colonne jusqu'à 1280 px (l'iPad à l'horizontale garde la mise en page de l'iPad), puis le visuel à gauche et le formulaire à droite. Sur ces grands écrans, une photo étirée en paysage sortait zoomée et pixelisée : le visuel devient un panneau crème dégradé où la photo tient dans une carte au format 2:3, entourée sur la connexion et l'inscription de deux photos de décor inclinées. Les pastilles de l'inscription et la notification de la connexion se centrent sous la carte du milieu, comme sur iPad. Sur téléphone, la pastille unique de l'inscription dit « Prévenu même avant la naissance », pour tenir dès 320 px. Les champs sont les `UFormField` et `UInput` de Nuxt UI, habillés dans `app.config.ts`. Le mot de passe est masqué par défaut, contrairement à l'état montré sur l'inscription de la maquette : le trousseau iOS ne propose un mot de passe fort que sur un champ masqué ; le bouton œil l'affiche. « Ce lien ne marche plus » (lien expiré ou déjà utilisé) n'a pas de maquette : tuile neutre, pastille horloge, mêmes boutons. « C'est noté ! » (inscription tentée pendant qu'elle est fermée) non plus : tuile gold, pastille cloche, l'adresse gardée en gras, « Retour à la connexion ».
+
+## Les photos
+
+Cinq photos Unsplash (licence Unsplash : utilisation libre, attribution appréciée), servies par les écrans de connexion depuis `web/public/images/auth/` :
+
+| Fichier | Page Unsplash | Usage |
+|---|---|---|
+| `chiot-gold-plaid.jpg` | https://unsplash.com/fr/photos/un-chien-brun-allonge-sur-une-couverture-blanche-Nj3E3DJjilQ | connexion |
+| `cocker-gold-dos.jpg` | https://unsplash.com/fr/photos/petit-chien-brun-et-blanc-a-poil-long-couche-sur-de-lherbe-verte-G8cB8hY3yvU | inscription, recompressée à 324 Ko |
+| `cocker-gold-balle.jpg` | https://unsplash.com/fr/photos/chien-brun-a-poil-long-sur-le-champ-dherbe-verte-pendant-la-journee--7ac4wXLouE | lien envoyé, et décor de la connexion et de l'inscription sur grand écran |
+| `chiot-gold-fleurs.jpg` | https://unsplash.com/fr/photos/un-chien-regardant-la-camera-4gRgy5rjFLI | décor de la connexion |
+| `cocker-gold-herbe.jpg` | https://unsplash.com/fr/photos/un-chien-cocker-spaniel-est-assis-sur-lherbe-ah1X0SpRlUc | décor de l'inscription, réduite à 800 px de large |
+
+Dans l'application, les photos des portées viennent des annonces ; sans photo, l'illustration de cocker colorée selon la robe.

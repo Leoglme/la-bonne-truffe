@@ -63,9 +63,9 @@ la-bonne-truffe/
 | `POST /sources/centrale_canine/relay-request` | Demander un relevé de la Centrale Canine depuis le web ou le téléphone : un PC allumé le fait à sa vérification suivante |
 | `GET /notifications`, `POST /notifications/read-all`, `GET /notifications/vapid-key`, `POST /notifications/subscribe`, `DELETE /notifications/subscribe`, `POST /notifications/test` | Cloche et Web Push |
 | `GET /health` | Santé de l'API et de la base (503 si la base ne répond pas) |
+| `GET /departments` | Référentiel des départements |
 
 Toutes les routes sont préfixées par `/api/v1`.
-| `GET /departments`, `GET /breeds` | Référentiels |
 
 ## Côté web (Nuxt 4)
 
@@ -100,4 +100,4 @@ Détail, secrets et premier déploiement dans `11-deploiement.md`.
 - Sur le VPS, comme DevLeadHunter et sans Docker : l'API (uvicorn) et le worker en services systemd dans un venv, la base SQLite hors du dossier redéployé, le web Nuxt en SSR sous pm2, nginx et les certificats certbot devant (`deploy/nginx/`).
 - Adresses : https://la-bonne-truffe.dibodev.fr pour le dashboard, https://api.la-bonne-truffe.dibodev.fr pour l'API.
 - GitHub Actions : `deploy-api.yml` et `deploy-web.yml` contrôlent (ruff, mypy et pytest ; Prettier, ESLint et vue-tsc) puis déploient à chaque push sur `main` ; `desktop-release.yml` publie l'installeur Windows signé en release GitHub, où l'updater de l'app le trouve.
-- Variables d'environnement, écrites dans le `.env` du VPS par `deploy-api.yml` : `SECRET_KEY`, `ADMIN_PASSWORD`, `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY_B64` depuis les secrets GitHub ; `ADMIN_EMAIL`, `VAPID_SUBJECT` (mailto), `COLLECT_USER_AGENT_CONTACT`, `COLLECT_SKIPPED_SOURCES`, `DATABASE_URL`, `API_BASE_URL`, `WEB_BASE_URL` et `CORS_ORIGINS` en clair dans le workflow.
+- Variables d'environnement, écrites dans le `.env` du VPS par `deploy-api.yml` : `SECRET_KEY`, `ADMIN_PASSWORD`, `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY_B64` depuis les secrets GitHub ; `ADMIN_EMAIL`, `VAPID_SUBJECT` (mailto), `COLLECT_USER_AGENT_CONTACT`, `COLLECT_SKIPPED_SOURCES`, `DATABASE_URL`, `WEB_BASE_URL` et `CORS_ORIGINS` en clair dans le workflow.

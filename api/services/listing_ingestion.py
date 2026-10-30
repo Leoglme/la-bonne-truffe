@@ -1,6 +1,5 @@
 """Stores the listings of a run: insert, update, change history, disappearance."""
 
-import hashlib
 import json
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
@@ -181,20 +180,6 @@ class ListingIngestionService:
         listing.description = raw_listing.description
         listing.published_at = raw_listing.published_at
         listing.raw_json = raw_listing.raw_json
-        listing.content_hash = cls.content_hash(cls._tracked_values(listing))
-
-    @staticmethod
-    def content_hash(tracked_values: dict[str, str | None]) -> str:
-        """
-        Hash the tracked content of a listing, to tell at a glance whether it moved.
-
-        Args:
-            tracked_values: Serialized tracked fields.
-
-        Returns:
-            Hex SHA-256 of the tracked fields.
-        """
-        return hashlib.sha256(json.dumps(tracked_values, sort_keys=True).encode("utf-8")).hexdigest()
 
     @classmethod
     def _tracked_values(cls, listing: Listing) -> dict[str, str | None]:
