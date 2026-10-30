@@ -6,7 +6,9 @@ from sqlalchemy import Engine, event
 from sqlalchemy.orm import Session
 
 from enums.listing_source import ListingSource
+from enums.notification_kind import NotificationKind
 from models.listing import Listing
+from models.notification import Notification
 from models.user import User
 from seeders.run_seeders import SeederRunner
 from services.auth_service import AuthService
@@ -159,6 +161,38 @@ def test_a_skipped_source_is_not_collected_and_cannot_be_run(
     assert statuses["centrale_canine"]["is_collected"] is False
     assert statuses["chiens_de_france"]["is_collected"] is True
     assert run_response.status_code == 501
+
+
+def test_notifications_carry_their_litters(client: TestClient, collected: dict[str, str], db: Session) -> None:
+    user = db.query(User).one()
+    gold_group_id = group_id_of(db, GOLD_LITTER_ID)
+    expected_group_id = group_id_of(db, EXPECTED_LITTER_ID)
+    db.add(
+        Notification(
+            user_id=user.id, kind=NotificationKind.BORN, title="t", body="b", url="/", litter_group_id=gold_group_id
+        )
+    )
+    db.add(
+        Notification(
+            user_id=user.id,
+            kind=NotificationKind.EVENING_DIGEST,
+            title="t",
+            body="b",
+            url="/",
+            digest_litters=[{"litter_group_id": expected_group_id, "event": "new_acceptable"}],
+        )
+    )
+    db.commit()
+
+    items = client.get("/api/v1/notifications", headers=collected).json()["items"]
+
+    digest, born = items[0], items[1]
+    assert (born["litter"]["name"], born["litter"]["breeder_phone_e164"]) == ("Du Clos de l'Élevage D", "+33600000004")
+    assert born["litters"] == []
+    assert digest["litter"] is None
+    assert [(litter["id"], litter["digest_event"]) for litter in digest["litters"]] == [
+        (expected_group_id, "new_acceptable")
+    ]
 
 
 def test_unknown_litter_is_a_404(client: TestClient, collected: dict[str, str]) -> None:

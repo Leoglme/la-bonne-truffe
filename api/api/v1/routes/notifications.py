@@ -13,13 +13,13 @@ from models.push_subscription import PushSubscription
 from models.user import User
 from schemas.notification import (
     NotificationListResponse,
-    NotificationResponse,
     PushSubscriptionCreate,
     PushSubscriptionDelete,
     TestNotificationResult,
     VapidKeyResponse,
 )
 from services.auth_service import get_current_user
+from services.notification_query_service import notification_query_service
 from services.push_service import push_service
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
@@ -33,7 +33,7 @@ async def list_notifications(
     db: Session = Depends(get_db),
 ) -> NotificationListResponse:
     """
-    Return a page of the user's notification history, newest first, with the unread count.
+    Return a page of the notification history, newest first, with its litters and the unread count.
 
     Args:
         limit: Page size.
@@ -44,17 +44,7 @@ async def list_notifications(
     Returns:
         The page and the unread count.
     """
-    query = db.query(Notification).filter(Notification.user_id == current_user.id)
-    if before is not None:
-        query = query.filter(Notification.id < before)
-    rows = query.order_by(Notification.id.desc()).limit(limit).all()
-    unread_count = (
-        db.query(Notification).filter(Notification.user_id == current_user.id, Notification.read_at.is_(None)).count()
-    )
-    return NotificationListResponse(
-        items=[NotificationResponse.model_validate(row) for row in rows],
-        unread_count=unread_count,
-    )
+    return notification_query_service.list_history(db, current_user.id, limit, before)
 
 
 @router.post("/read-all", status_code=status.HTTP_204_NO_CONTENT)

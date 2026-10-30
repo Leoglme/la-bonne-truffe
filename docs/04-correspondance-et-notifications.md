@@ -65,13 +65,14 @@ Une disparition (`is_active` → faux) ne notifie pas, elle grise la carte. Le r
 
 ## Texte des notifications
 
-Titre : « La Bonne Truffe ». Corps : couleur, lieu, sexes, en une phrase. Exemples :
+Titre : ce qui arrive et à qui, en quelques mots (« Portée née · De Kerlann », « Passée en préférée · … », « Rappel · appeler De Kerlann », « Récap du soir · 2 portées acceptables », « La Centrale Canine ne répond plus », « Demande d'inscription ») ; iOS affiche déjà le nom de l'app. Corps : couleur, lieu, sexes, en une phrase, sans répéter le titre. Exemples :
 - « Née cette nuit à Redon : une portée gold, 2 mâles et 3 femelles. Dispo vers le 22 décembre. »
 - « À naître à Ploërmel : une portée gold déclarée, naissance vers le 7 novembre. »
-- « Récap du soir : 2 portées acceptables, dont 1 noir et feu à Quimper. »
-- « Récap du soir : De Kerlann, plus que 2 chiots disponibles. » (portée suivie, nommée comme sur sa carte)
+- « 2 portées acceptables, dont 1 noir et feu à Quimper. » (titre « Récap du soir · 2 portées acceptables »)
+- « De Kerlann, plus que 2 chiots disponibles. » (portée suivie, nommée comme sur sa carte)
+- « Noir et feu, 2 mâles et 5 femelles (Finistère). » (titre « Rappel · appeler De Kerlann »)
 
-L'URL de la notification ouvre le détail du groupe dans le dashboard.
+L'URL de la notification ouvre le détail du groupe dans le dashboard, la page Sources pour une alerte de source. Chaque notification garde la portée qu'elle concerne et, pour le récap, ses portées avec leur événement (`notifications.digest_litters`) : la cloche les affiche avec leur vignette, leur lieu et leurs sexes (`GET /notifications`, champs `litter` et `litters`).
 
 ## Le profil de départ de Léo
 

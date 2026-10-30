@@ -17,7 +17,7 @@ from services.account_emails import AccountEmails
 from services.auth_service import AuthService
 from services.email_service import EmailService, email_service
 from services.matching.match_refresh import match_refresh_service
-from services.notification_texts import NotificationTexts
+from services.notification_texts import SIGNUP_REQUEST_TITLE, NotificationTexts
 from services.notifier import notifier_service
 from services.search_profile_service import SearchProfileService
 
@@ -187,6 +187,7 @@ class AccountService:
             db,
             user_id=admin.id,
             kind=NotificationKind.SIGNUP_REQUEST,
+            title=SIGNUP_REQUEST_TITLE,
             body=NotificationTexts.signup_request(name, email),
             litter_group_id=None,
             now=now,

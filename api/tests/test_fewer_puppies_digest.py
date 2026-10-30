@@ -140,8 +140,8 @@ def test_a_followed_litter_offering_fewer_puppies_is_told_in_the_evening_digest_
 
     assert (first_digest_count, second_digest_count) == (1, 1)
     assert pushed_bodies == [
-        "Récap du soir : De Kerlann, plus que 2 chiots disponibles.",
-        "Récap du soir : De Kerlann, plus qu’un chiot disponible.",
+        "De Kerlann, plus que 2 chiots disponibles.",
+        "De Kerlann, plus qu’un chiot disponible.",
     ]
     assert db.query(DigestEntry).count() == 1
 
@@ -157,8 +157,7 @@ def test_the_digest_tells_the_new_acceptable_litters_then_the_followed_ones_offe
     notifier_service.send_due_evening_digests(db, SECOND_EVENING)
 
     assert pushed_bodies == [
-        "Récap du soir : 1 portée acceptable : une portée noir et feu (Ille-et-Vilaine)."
-        " De Kerlann, plus aucun chiot disponible."
+        "1 portée acceptable : une portée noir et feu (Ille-et-Vilaine). De Kerlann, plus aucun chiot disponible."
     ]
 
 
@@ -173,7 +172,7 @@ def test_a_digest_missed_at_its_hour_goes_out_at_the_next_full_hour_once(db: Ses
     once_more = notifier_service.send_due_evening_digests(db, naive_utc_of_french_time(second_day, 21))
 
     assert (before_its_hour, caught_up, once_more) == (0, 1, 0)
-    assert pushed_bodies == ["Récap du soir : De Kerlann, plus que 2 chiots disponibles."]
+    assert pushed_bodies == ["De Kerlann, plus que 2 chiots disponibles."]
 
 
 def test_an_entry_queued_after_the_digest_hour_waits_for_the_next_day(db: Session, pushed_bodies: list[str]) -> None:
@@ -186,7 +185,7 @@ def test_an_entry_queued_after_the_digest_hour_waits_for_the_next_day(db: Sessio
     next_evening = notifier_service.send_due_evening_digests(db, THIRD_EVENING)
 
     assert (same_evening, next_evening) == (0, 1)
-    assert pushed_bodies == ["Récap du soir : De Kerlann, plus que 2 chiots disponibles."]
+    assert pushed_bodies == ["De Kerlann, plus que 2 chiots disponibles."]
 
 
 def test_a_litter_not_followed_offering_fewer_puppies_stays_out_of_the_digest(

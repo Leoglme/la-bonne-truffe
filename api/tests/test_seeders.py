@@ -95,6 +95,7 @@ def test_migrations_create_every_table_and_record_themselves(tmp_path: Path) -> 
         "add_breeder_breed_club_member",
         "drop_listing_content_hash",
         "add_listing_mating_number",
+        "add_notification_digest_litters",
     ]
     assert runner.run() == []
     tables = set(inspect(database_engine).get_table_names())

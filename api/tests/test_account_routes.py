@@ -133,7 +133,8 @@ def test_a_signup_request_is_kept_and_pushed_to_the_admin_once(client: TestClien
     assert (signup_request.name, signup_request.email) == ("Marie-Anne", "marie@exemple.fr")
     notification = db.query(Notification).one()
     assert (notification.user_id, notification.kind) == (user.id, NotificationKind.SIGNUP_REQUEST)
-    assert notification.body == "Demande d’inscription : Marie (marie@exemple.fr) aimerait utiliser La Bonne Truffe."
+    assert notification.title == "Demande d’inscription"
+    assert notification.body == "Marie (marie@exemple.fr) aimerait utiliser La Bonne Truffe."
 
 
 def test_a_signup_request_from_an_account_is_answered_alike_and_not_kept(

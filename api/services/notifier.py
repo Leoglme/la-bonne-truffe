@@ -17,13 +17,13 @@ from enums.source_run_status import SourceRunStatus
 from models.digest_entry import DigestEntry
 from models.follow_up import FollowUp
 from models.litter_group import LitterGroup
-from models.notification import Notification
+from models.notification import DigestLitterEntry, Notification
 from models.search_profile import SearchProfile
 from models.source_run import SourceRun
 from models.user import User
 from services.matching.criteria import LitterSnapshot
 from services.matching.snapshot_builder import LitterSnapshotBuilder
-from services.notification_texts import NOTIFICATION_TITLE, SOURCE_NAMES, NotificationTexts
+from services.notification_texts import SOURCE_NAMES, NotificationTexts
 from services.push_service import push_service
 
 logger = logging.getLogger(__name__)
@@ -33,6 +33,8 @@ FAILED_RUNS_BEFORE_ALERT = 3
 
 # Time without a successful run of a source the Windows app relays before Léo is told (docs/04).
 SILENCE_BEFORE_ALERT = timedelta(hours=3)
+
+SOURCES_PAGE = "/sources"
 
 # French hours between which a silence counts: a computer off for the night is not an outage.
 SILENCE_WATCH_START_HOUR = 8
@@ -92,6 +94,7 @@ class NotifierService:
                     db,
                     user_id=profile.user_id,
                     kind=IMMEDIATE_EVENT_KINDS[event],
+                    title=NotificationTexts.litter_event_title(event, snapshot),
                     body=NotificationTexts.litter_event(event, snapshot),
                     litter_group_id=snapshot.group_id,
                     now=now,
@@ -103,9 +106,12 @@ class NotifierService:
         db: Session,
         user_id: int,
         kind: NotificationKind,
+        title: str,
         body: str,
         litter_group_id: int | None,
         now: datetime,
+        url: str | None = None,
+        digest_litters: list[DigestLitterEntry] | None = None,
     ) -> Notification:
         """
         Push one notification to every device of the user and keep it in the bell history.
@@ -114,22 +120,26 @@ class NotifierService:
             db: Database session; the caller commits.
             user_id: Recipient.
             kind: Kind of notification.
+            title: What and who, in a few words.
             body: The sentence.
             litter_group_id: Litter the notification opens, if any.
             now: Sending time, naive UTC.
+            url: Page a tap opens; the litter when there is one, the home list otherwise.
+            digest_litters: Litters of an evening digest, each with its event.
 
         Returns:
             The stored notification, with its delivery counts.
         """
-        url = f"/portees/{litter_group_id}" if litter_group_id is not None else "/"
-        result = push_service.send(db, user_id, NOTIFICATION_TITLE, body, url, tag=f"{kind}-{litter_group_id}")
+        opened_url = url or (f"/portees/{litter_group_id}" if litter_group_id is not None else "/")
+        result = push_service.send(db, user_id, title, body, opened_url, tag=f"{kind}-{litter_group_id}")
         notification = Notification(
             user_id=user_id,
             kind=kind,
-            title=NOTIFICATION_TITLE,
+            title=title,
             body=body,
-            url=url,
+            url=opened_url,
             litter_group_id=litter_group_id,
+            digest_litters=digest_litters or [],
             sent_at=now,
             delivered_count=result.delivered,
             failed_count=result.failed,
@@ -183,6 +193,7 @@ class NotifierService:
             )
             acceptable_snapshots: list[LitterSnapshot] = []
             followed_with_fewer_puppies: list[LitterSnapshot] = []
+            digest_litters: list[DigestLitterEntry] = []
             for entry in entries:
                 group = db.get(LitterGroup, entry.litter_group_id)
                 snapshot = LitterSnapshotBuilder.build(db, group) if group is not None and group.is_active else None
@@ -193,15 +204,20 @@ class NotifierService:
                     acceptable_snapshots.append(snapshot)
                 elif snapshot.puppies_available is not None:
                     followed_with_fewer_puppies.append(snapshot)
+                else:
+                    continue
+                digest_litters.append({"litter_group_id": snapshot.group_id, "event": entry.event_kind.value})
             litter_group_ids = {snapshot.group_id for snapshot in [*acceptable_snapshots, *followed_with_fewer_puppies]}
             if litter_group_ids:
                 self.send(
                     db,
                     user_id=user_id,
                     kind=NotificationKind.EVENING_DIGEST,
+                    title=NotificationTexts.evening_digest_title(len(acceptable_snapshots)),
                     body=NotificationTexts.evening_digest(acceptable_snapshots, followed_with_fewer_puppies),
                     litter_group_id=next(iter(litter_group_ids)) if len(litter_group_ids) == 1 else None,
                     now=now,
+                    digest_litters=digest_litters,
                 )
                 sent_count += 1
         db.commit()
@@ -239,7 +255,7 @@ class NotifierService:
             return False
 
         body = NotificationTexts.source_down(source, FAILED_RUNS_BEFORE_ALERT, last_runs[0].error_message)
-        self._alert_every_user(db, NotificationKind.SOURCE_DOWN, body, now)
+        self._alert_every_user(db, NotificationKind.SOURCE_DOWN, NotificationTexts.source_down_title(source), body, now)
         logger.warning("Source %s down: alert sent", source)
         return True
 
@@ -280,7 +296,9 @@ class NotifierService:
 
         silent_hours = int(SILENCE_BEFORE_ALERT.total_seconds() // 3600)
         body = NotificationTexts.source_silent(source, silent_hours)
-        self._alert_every_user(db, NotificationKind.SOURCE_SILENT, body, now)
+        self._alert_every_user(
+            db, NotificationKind.SOURCE_SILENT, NotificationTexts.source_silent_title(source), body, now
+        )
         logger.warning("Source %s silent: alert sent", source)
         return True
 
@@ -317,7 +335,8 @@ class NotifierService:
                 db,
                 user_id=follow_up.user_id,
                 kind=NotificationKind.FOLLOW_UP_REMINDER,
-                body=NotificationTexts.follow_up_reminder(snapshot.name if snapshot is not None else None),
+                title=NotificationTexts.follow_up_reminder_title(snapshot.name if snapshot is not None else None),
+                body=NotificationTexts.follow_up_reminder(snapshot),
                 litter_group_id=follow_up.litter_group_id,
                 now=now,
             )
@@ -376,18 +395,21 @@ class NotifierService:
             alerts = alerts.filter(Notification.sent_at > since)
         return alerts.first() is not None
 
-    def _alert_every_user(self, db: Session, kind: NotificationKind, body: str, now: datetime) -> None:
+    def _alert_every_user(self, db: Session, kind: NotificationKind, title: str, body: str, now: datetime) -> None:
         """
-        Push an alert to every active user and keep it in their bell history.
+        Push an alert about a source to every active user, opening the sources page, and keep it in their bell.
 
         Args:
             db: Database session; committed.
             kind: Kind of alert.
+            title: What is wrong, in a few words.
             body: The sentence.
             now: Sending time, naive UTC.
         """
         for (user_id,) in db.query(User.id).filter(User.is_active.is_(True)):
-            self.send(db, user_id=user_id, kind=kind, body=body, litter_group_id=None, now=now)
+            self.send(
+                db, user_id=user_id, kind=kind, title=title, body=body, litter_group_id=None, now=now, url=SOURCES_PAGE
+            )
         db.commit()
 
 

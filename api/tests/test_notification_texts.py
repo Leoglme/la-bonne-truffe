@@ -42,6 +42,20 @@ def test_a_litter_of_puppy_ads_is_told_as_born() -> None:
     assert body.endswith("Dispo vers le 9 novembre.")
 
 
+def test_the_title_says_what_and_who() -> None:
+    assert NotificationTexts.litter_event_title(MatchEventKind.BORN, GOLD_PUPPY_ADS_IN_53) == (
+        "Portée née · De la Vallée de la Mayenne"
+    )
+    assert NotificationTexts.evening_digest_title(2) == "Récap du soir · 2 portées acceptables"
+    assert NotificationTexts.evening_digest_title(0) == "Récap du soir · tes portées suivies"
+    assert NotificationTexts.follow_up_reminder_title("De Kerlann") == "Rappel · appeler De Kerlann"
+
+
+def test_the_reminder_body_describes_the_litter() -> None:
+    assert NotificationTexts.follow_up_reminder(GOLD_PUPPY_ADS_IN_53) == "Gold, 2 mâles et 0 femelle (Mayenne)."
+    assert NotificationTexts.follow_up_reminder(None) == "C’est l’heure de rappeler l’éleveur."
+
+
 def test_only_a_declared_mating_is_told_as_expected() -> None:
     mating = replace(
         GOLD_PUPPY_ADS_IN_53,

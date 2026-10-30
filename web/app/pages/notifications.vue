@@ -1,6 +1,6 @@
 <template>
-  <UiTabScreen title="Notifications" subtitle="Ce que la truffe t’a signalé.">
-    <div class="flex flex-col gap-3">
+  <UiTabScreen title="Notifications" :subtitle="subtitle">
+    <div class="flex flex-col gap-6">
       <p v-if="bellStore.loadError" role="alert" class="m-0 text-[15px] font-bold text-coral-text">
         {{ bellStore.loadError }}
       </p>
@@ -19,44 +19,46 @@
         aria-label="Chargement des notifications"
         class="flex flex-col gap-3"
       >
-        <USkeleton v-for="placeholder in 3" :key="placeholder" class="h-[84px] rounded-card-compact" />
+        <USkeleton v-for="placeholder in 3" :key="placeholder" class="h-[96px] rounded-card-compact" />
       </div>
-      <NuxtLink
-        v-for="notification in bellStore.notifications"
-        :key="notification.id"
-        :to="notification.url"
-        class="flex flex-col gap-1 rounded-card-compact bg-card px-[22px] py-4 text-ink no-underline shadow-card hover:text-ink"
-      >
-        <span class="flex items-center justify-between gap-3 text-[13px]">
-          <span class="font-extrabold">{{ notification.title }}</span>
-          <span class="text-ink-muted">{{ formatTimeSinceSent(notification.sent_at) }}</span>
-        </span>
-        <span class="text-[15px] leading-[1.4]">{{ notification.body }}</span>
-      </NuxtLink>
+      <section v-for="section in daySections" :key="section.key" class="flex flex-col gap-2.5">
+        <h2 class="m-0 font-display text-[22px] font-semibold">{{ section.title }}</h2>
+        <template v-for="notification in section.notifications" :key="notification.id">
+          <NotificationDigestCard v-if="notification.kind === 'evening_digest'" :notification="notification" />
+          <NotificationCard v-else :notification="notification" />
+        </template>
+      </section>
     </div>
   </UiTabScreen>
 </template>
 
 <script lang="ts" setup>
-import { onMounted } from 'vue'
-import { FrenchDate } from '~/utils/frenchDate'
+import type { ComputedRef, Ref } from 'vue'
+import type { NotificationDaySection } from '~/types/Notification'
+import { computed, onMounted, ref } from 'vue'
+import { FrenchText } from '~/utils/frenchText'
+import { NotificationPresentation } from '~/utils/notificationPresentation'
 
 useHead({ title: 'Notifications · La Bonne Truffe' })
 
 const bellStore: ReturnType<typeof useBellStore> = useBellStore()
 
-/**
- * Write how long ago a notification was sent.
- *
- * @param sentAt - Sending time, from the API.
- * @returns « il y a 12 min ».
- */
-function formatTimeSinceSent(sentAt: string): string {
-  return FrenchDate.formatTimeSince(FrenchDate.parseApiDate(sentAt), new Date())
-}
+const newNotificationCount: Ref<number> = ref(0)
+
+const daySections: ComputedRef<NotificationDaySection[]> = computed((): NotificationDaySection[] =>
+  NotificationPresentation.groupByDay(bellStore.notifications, new Date()),
+)
+const subtitle: ComputedRef<string> = computed((): string => {
+  if (newNotificationCount.value === 0) {
+    return 'Ce que la truffe t’a signalé.'
+  }
+  const count: string = FrenchText.spellOutCount(newNotificationCount.value, 'feminine')
+  return `${count} ${FrenchText.pickForm(newNotificationCount.value, 'nouvelle', 'nouvelles')} depuis ta dernière visite.`
+})
 
 onMounted(async (): Promise<void> => {
   await bellStore.load()
+  newNotificationCount.value = bellStore.unreadCount
   if (bellStore.unreadCount > 0) {
     await bellStore.markAllRead()
   }

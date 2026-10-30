@@ -172,7 +172,7 @@ def test_evening_digest_is_sent_once_at_the_digest_hour(db: Session, pushed_bodi
     assert notifier_service.send_due_evening_digests(db, digest_due_at) == 1
     assert notifier_service.send_due_evening_digests(db, digest_due_at + timedelta(minutes=30)) == 0
     assert pushed_bodies == [
-        "Récap du soir : 1 portée acceptable : une portée noir ou noir et feu ou marron ou marron et feu"
+        "1 portée acceptable : une portée noir ou noir et feu ou marron ou marron et feu"
         " (à confirmer) (Ille-et-Vilaine)."
     ]
 

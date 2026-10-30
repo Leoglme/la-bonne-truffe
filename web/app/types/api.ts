@@ -20,6 +20,8 @@ export type PushSubscriptionPayload = Schemas['PushSubscriptionCreate']
 export type TestNotificationResult = Schemas['TestNotificationResult']
 export type NotificationHistory = Schemas['NotificationListResponse']
 export type SentNotification = Schemas['NotificationResponse']
+export type NotificationLitter = Schemas['NotificationLitter']
+export type NotificationKind = Schemas['NotificationKind']
 
 export type LitterCard = Schemas['LitterCard']
 export type LitterDetail = Schemas['LitterDetail']

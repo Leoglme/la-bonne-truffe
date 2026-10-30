@@ -33,6 +33,7 @@ from schemas.litter import (
     LitterReason,
     LitterSourceListing,
 )
+from schemas.notification import NotificationLitter
 from services.genetic_screening import GeneticScreeningReader
 from services.matching.snapshot_builder import LitterSnapshotBuilder
 
@@ -253,6 +254,37 @@ class LitterQueryService:
             cards,
             key=lambda card: (card.next_reminder_at is None, card.next_reminder_at or card.litter.first_seen_at),
         )
+
+    @classmethod
+    def list_notification_litters(
+        cls, db: Session, user_id: int, litter_group_ids: set[int]
+    ) -> dict[int, NotificationLitter]:
+        """
+        The litters the notifications of a user show: their card and the breeder's phone, by group.
+
+        Args:
+            db: Database session.
+            user_id: The user.
+            litter_group_ids: Groups the notifications are about.
+
+        Returns:
+            One litter per group still readable, by group id.
+        """
+        if not litter_group_ids:
+            return {}
+        groups = db.query(LitterGroup).filter(LitterGroup.id.in_(litter_group_ids)).all()
+        facts = LitterCardFacts.load(db, user_id, groups)
+        matches_by_group = cls._matches_by_group(db, user_id)
+        litters: dict[int, NotificationLitter] = {}
+        for group in groups:
+            card = cls._card(group, matches_by_group.get(group.id), facts)
+            if card is None:
+                continue
+            breeder = facts.breeders_by_id.get(group.breeder_id) if group.breeder_id is not None else None
+            litters[group.id] = NotificationLitter(
+                **card.model_dump(), breeder_phone_e164=breeder.phone_e164 if breeder is not None else None
+            )
+        return litters
 
     @staticmethod
     def get_group(db: Session, litter_group_id: int) -> LitterGroup:

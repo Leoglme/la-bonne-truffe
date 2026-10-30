@@ -271,7 +271,7 @@ export interface paths {
         };
         /**
          * List Notifications
-         * @description Return a page of the user's notification history, newest first, with the unread count.
+         * @description Return a page of the notification history, newest first, with its litters and the unread count.
          *
          *     Args:
          *         limit: Page size.
@@ -1320,6 +1320,12 @@ export interface components {
          */
         LofStatus: "lof" | "non_lof" | "unknown";
         /**
+         * MatchEventKind
+         * @description An event of a litter group; each (group, kind) pair is notified once, except a drop of the puppies left.
+         * @enum {string}
+         */
+        MatchEventKind: "new_preferred" | "born" | "new_acceptable" | "upgraded" | "availability_change";
+        /**
          * MatchFlag
          * @description An unknown fact: it never excludes a litter, it keeps it below « préférée » and is shown to confirm.
          * @enum {string}
@@ -1332,6 +1338,12 @@ export interface components {
          */
         MatchTier: "preferred" | "acceptable" | "ignored" | "excluded";
         /**
+         * NotificationKind
+         * @description Event a sent notification reports (see docs/04-correspondance-et-notifications.md).
+         * @enum {string}
+         */
+        NotificationKind: "new_preferred" | "born" | "upgraded" | "evening_digest" | "source_down" | "source_silent" | "signup_request" | "follow_up_reminder";
+        /**
          * NotificationListResponse
          * @description A page of the notification history plus the unread count that lights the bell.
          */
@@ -1342,14 +1354,98 @@ export interface components {
             unread_count: number;
         };
         /**
+         * NotificationLitter
+         * @description A litter as a notification shows it: its card, the breeder's phone, and its part in a digest.
+         */
+        NotificationLitter: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /**
+             * Place
+             * @description Town when known, else department name
+             */
+            place: string | null;
+            /** Town */
+            town: string | null;
+            /** Department Code */
+            department_code: string | null;
+            /** Department Name */
+            department_name: string | null;
+            /**
+             * Breeder Latitude
+             * @description Position of the breeding, when a source gives it
+             */
+            breeder_latitude: number | null;
+            /**
+             * Breeder Longitude
+             * @description Position of the breeding, when a source gives it
+             */
+            breeder_longitude: number | null;
+            kind: components["schemas"]["ListingKind"];
+            tier: components["schemas"]["MatchTier"] | null;
+            /** Score */
+            score: number | null;
+            /** Colors */
+            colors: components["schemas"]["LitterColor"][];
+            lof_status: components["schemas"]["LofStatus"];
+            /** Male Count */
+            male_count: number | null;
+            /** Female Count */
+            female_count: number | null;
+            /**
+             * Puppies Available
+             * @description Puppies still offered across the active listings, null while no source tells
+             */
+            puppies_available: number | null;
+            /**
+             * Price Cents
+             * @description Lowest price of the active listings, null while no source gives one
+             */
+            price_cents: number | null;
+            /** Birth Date */
+            birth_date: string | null;
+            /** Expected Birth Date */
+            expected_birth_date: string | null;
+            /** Available From */
+            available_from: string | null;
+            /** Photo Url */
+            photo_url: string | null;
+            /**
+             * First Seen At
+             * Format: date-time
+             */
+            first_seen_at: string;
+            /**
+             * Last Seen At
+             * Format: date-time
+             * @description Last time a source still showed one of its listings
+             */
+            last_seen_at: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Sources */
+            sources: components["schemas"]["ListingSource"][];
+            follow_up_status: components["schemas"]["FollowUpStatus"] | null;
+            /** @description APR and NF screening the ratings of the parents guarantee, none when they guarantee nothing */
+            genetic_screening: components["schemas"]["GeneticScreening"] | null;
+            /**
+             * Breeder Phone E164
+             * @description Phone of the breeder, for the call button of a reminder
+             */
+            breeder_phone_e164: string | null;
+            /** @description Its event in a digest; null elsewhere */
+            digest_event?: components["schemas"]["MatchEventKind"] | null;
+        };
+        /**
          * NotificationResponse
-         * @description One sent notification, as the bell lists it.
+         * @description One sent notification, as the bell lists it, with the litters it is about.
          */
         NotificationResponse: {
             /** Id */
             id: number;
-            /** Kind */
-            kind: string;
+            kind: components["schemas"]["NotificationKind"];
             /** Title */
             title: string;
             /** Body */
@@ -1365,6 +1461,13 @@ export interface components {
             sent_at: string;
             /** Read At */
             read_at: string | null;
+            /** @description The litter of the notification, when it can still be read */
+            litter: components["schemas"]["NotificationLitter"] | null;
+            /**
+             * Litters
+             * @description The litters of an evening digest, empty elsewhere
+             */
+            litters: components["schemas"]["NotificationLitter"][];
         };
         /**
          * PasswordResetConfirm

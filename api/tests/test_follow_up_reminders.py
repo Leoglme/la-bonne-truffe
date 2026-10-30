@@ -59,7 +59,7 @@ def test_a_due_reminder_is_pushed_once(client: TestClient, collected: dict[str, 
     reminder = db.query(Notification).filter(Notification.kind == NotificationKind.FOLLOW_UP_REMINDER).one()
 
     assert (first_count, second_count) == (1, 0)
-    assert reminder.body.startswith("C’est l’heure d’appeler ")
+    assert reminder.title.startswith("Rappel · appeler ")
     assert reminder.url == f"/portees/{litter_id}"
 
 

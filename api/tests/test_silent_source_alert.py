@@ -55,7 +55,7 @@ def test_a_source_never_run_is_alerted_once(db: Session, user: User) -> None:
     assert alert.body == (
         "La Centrale Canine n’a pas été relevée depuis 3 h : aucun PC allumé avec l’app Windows, ou l’app déconnectée."
     )
-    assert alert.url == "/"
+    assert alert.url == "/sources"
 
 
 def test_a_recent_successful_run_keeps_quiet(db: Session, user: User) -> None:

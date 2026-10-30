@@ -7,7 +7,14 @@ from enums.match_event_kind import MatchEventKind
 from services.matching.criteria import LitterSnapshot
 from services.matching.scoring import ScoreCalculator
 
-NOTIFICATION_TITLE = "La Bonne Truffe"
+SIGNUP_REQUEST_TITLE = "Demande d’inscription"
+DIGEST_TITLE = "Récap du soir"
+
+LITTER_EVENT_TITLES: dict[MatchEventKind, str] = {
+    MatchEventKind.NEW_PREFERRED: "Portée préférée",
+    MatchEventKind.BORN: "Portée née",
+    MatchEventKind.UPGRADED: "Passée en préférée",
+}
 
 FRENCH_MONTHS: tuple[str, ...] = (
     "janvier",
@@ -34,7 +41,76 @@ SOURCE_NAMES: dict[ListingSource, str] = {
 
 
 class NotificationTexts:
-    """Writes the body of every notification. An unknown fact is left out, never invented."""
+    """Writes the title and the body of every notification. An unknown fact is left out, never invented."""
+
+    @staticmethod
+    def litter_event_title(event: MatchEventKind, snapshot: LitterSnapshot) -> str:
+        """
+        Title of an immediate notification about one litter.
+
+        Args:
+            event: The event.
+            snapshot: The litter.
+
+        Returns:
+            « Portée née · De Kerlann ».
+        """
+        return f"{LITTER_EVENT_TITLES[event]} · {snapshot.name}"
+
+    @staticmethod
+    def evening_digest_title(acceptable_count: int) -> str:
+        """
+        Title of the evening digest.
+
+        Args:
+            acceptable_count: New acceptable litters in the digest.
+
+        Returns:
+            « Récap du soir · 2 portées acceptables », or « Récap du soir · tes portées suivies » without any.
+        """
+        if acceptable_count == 0:
+            return f"{DIGEST_TITLE} · tes portées suivies"
+        plural = "s" if acceptable_count > 1 else ""
+        return f"{DIGEST_TITLE} · {acceptable_count} portée{plural} acceptable{plural}"
+
+    @staticmethod
+    def follow_up_reminder_title(litter_name: str | None) -> str:
+        """
+        Title of the push sent at the time of a follow-up reminder.
+
+        Args:
+            litter_name: Name of the followed litter, None when it is unknown.
+
+        Returns:
+            « Rappel · appeler De Kerlann ».
+        """
+        return f"Rappel · appeler {litter_name}" if litter_name else "Rappel · appeler l’éleveur"
+
+    @staticmethod
+    def source_down_title(source: ListingSource) -> str:
+        """
+        Title of the alert sent when a source fails several runs in a row.
+
+        Args:
+            source: The failing source.
+
+        Returns:
+            « La Centrale Canine ne répond plus ».
+        """
+        return f"{SOURCE_NAMES[source]} ne répond plus"
+
+    @staticmethod
+    def source_silent_title(source: ListingSource) -> str:
+        """
+        Title of the alert sent when a source the Windows app relays is no longer relayed.
+
+        Args:
+            source: The silent source.
+
+        Returns:
+            « La Centrale Canine n'est plus relevée ».
+        """
+        return f"{SOURCE_NAMES[source]} n’est plus relevée"
 
     @staticmethod
     def french_day(day: date) -> str:
@@ -94,8 +170,8 @@ class NotificationTexts:
                 unknown is left out. The two lists hold at least one litter between them.
 
         Returns:
-            « Récap du soir : 2 portées acceptables, dont 1 noir et feu (Finistère). De Kerlann, plus que
-            2 chiots disponibles. »
+            « 2 portées acceptables, dont 1 noir et feu (Finistère). De Kerlann, plus que 2 chiots
+            disponibles. »
         """
         sentences: list[str] = []
         if acceptable_snapshots:
@@ -107,7 +183,7 @@ class NotificationTexts:
         ]
         if puppies_left_phrases:
             sentences.append(f"{' ; '.join(puppies_left_phrases)}.")
-        return f"Récap du soir : {' '.join(sentences)}"
+        return " ".join(sentences)
 
     @staticmethod
     def source_down(source: ListingSource, failed_run_count: int, error_message: str | None) -> str:
@@ -153,22 +229,26 @@ class NotificationTexts:
             email: Address typed on the signup screen.
 
         Returns:
-            « Demande d'inscription : Marie (marie@exemple.fr) aimerait utiliser La Bonne Truffe. »
+            « Marie (marie@exemple.fr) aimerait utiliser La Bonne Truffe. »
         """
-        return f"Demande d’inscription : {name} ({email}) aimerait utiliser La Bonne Truffe."
+        return f"{name} ({email}) aimerait utiliser La Bonne Truffe."
 
-    @staticmethod
-    def follow_up_reminder(litter_name: str | None) -> str:
+    @classmethod
+    def follow_up_reminder(cls, snapshot: LitterSnapshot | None) -> str:
         """
-        Body of the push sent at the time of a follow-up reminder.
+        Body of the push sent at the time of a follow-up reminder: the litter in a few words.
 
         Args:
-            litter_name: Name of the followed litter, None when it is unknown.
+            snapshot: The followed litter, None when it cannot be read any more.
 
         Returns:
-            « C'est l'heure d'appeler Ar Ti Marellek. »
+            « Noir et feu, 2 mâles et 5 femelles (Finistère). », or « C'est l'heure de rappeler l'éleveur. »
         """
-        return f"C’est l’heure d’appeler {litter_name}." if litter_name else "C’est l’heure de rappeler l’éleveur."
+        if snapshot is None:
+            return "C’est l’heure de rappeler l’éleveur."
+        color = cls._color_phrase(snapshot)
+        place = f" ({snapshot.department_name})" if snapshot.department_name else ""
+        return f"{color[:1].upper()}{color[1:]}{cls._sexes_phrase(snapshot)}{place}."
 
     @classmethod
     def _acceptable_litters_sentence(cls, snapshots: list[LitterSnapshot]) -> str:
