@@ -19,3 +19,5 @@ tauri-plugin-process = "2.4.0"
 tauri-plugin-single-instance = "2.5.5"
 tauri-plugin-autostart = "2.7.0"
 serde = { version = "1", features = ["derive"] }
+# Required by `tauri::generate_context!`, which parses the compiled config with it.
+serde_json = "1"
