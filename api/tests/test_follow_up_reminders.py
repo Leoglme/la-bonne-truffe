@@ -1,4 +1,4 @@
-"""Follow-up reminders: pushed once when their time comes, again when moved, never for a dismissed litter."""
+"""Follow-up reminders: pushed once when their time comes, again when moved, never for a dismissed or a gone litter."""
 
 from datetime import UTC, datetime, timedelta
 
@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from core.clock import naive_utc_now
 from enums.notification_kind import NotificationKind
 from models.listing import Listing
+from models.litter_group import LitterGroup
 from models.notification import Notification
 from models.user import User
 from seeders.run_seeders import SeederRunner
@@ -82,3 +83,20 @@ def test_a_dismissed_litter_is_not_reminded(client: TestClient, collected: dict[
     set_reminder(client, collected, any_litter_id(db), "dismissed", minutes_from_now=-1)
 
     assert notifier_service.send_due_follow_up_reminders(db, naive_utc_now()) == 0
+
+
+def test_a_litter_gone_from_its_sources_is_not_reminded(
+    client: TestClient, collected: dict[str, str], db: Session
+) -> None:
+    litter_id = any_litter_id(db)
+    set_reminder(client, collected, litter_id, "to_contact", minutes_from_now=-1)
+    group = db.get(LitterGroup, litter_id)
+    assert group is not None
+    group.is_active = False
+    db.commit()
+
+    first_count = notifier_service.send_due_follow_up_reminders(db, naive_utc_now())
+    second_count = notifier_service.send_due_follow_up_reminders(db, naive_utc_now())
+
+    assert (first_count, second_count) == (0, 0)
+    assert db.query(Notification).filter(Notification.kind == NotificationKind.FOLLOW_UP_REMINDER).count() == 0

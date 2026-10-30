@@ -262,10 +262,11 @@ class NotifierService:
 
     def send_due_follow_up_reminders(self, db: Session, now: datetime) -> int:
         """
-        Push every follow-up reminder whose time has come, once; a dismissed litter is not reminded.
+        Push every follow-up reminder whose time has come, once; a dismissed litter is not reminded, and a
+        litter gone from its sources has its reminder recorded as passed without a push.
 
         Args:
-            db: Database session; committed when a reminder is sent.
+            db: Database session; committed when a reminder is handled.
             now: Current time, naive UTC.
 
         Returns:
@@ -281,9 +282,13 @@ class NotifierService:
             )
             .all()
         )
+        sent_count = 0
         for follow_up in due_follow_ups:
+            follow_up.reminder_sent_at = now
             group = db.get(LitterGroup, follow_up.litter_group_id)
-            snapshot = LitterSnapshotBuilder.build(db, group) if group is not None else None
+            if group is None or not group.is_active:
+                continue
+            snapshot = LitterSnapshotBuilder.build(db, group)
             self.send(
                 db,
                 user_id=follow_up.user_id,
@@ -292,9 +297,9 @@ class NotifierService:
                 litter_group_id=follow_up.litter_group_id,
                 now=now,
             )
-            follow_up.reminder_sent_at = now
+            sent_count += 1
         db.commit()
-        return len(due_follow_ups)
+        return sent_count
 
     @staticmethod
     def _queue_for_digest(

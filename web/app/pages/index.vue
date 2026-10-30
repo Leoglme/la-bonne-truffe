@@ -118,13 +118,22 @@ const firstAlreadySeenLitterId: ComputedRef<number | null> = computed((): number
 )
 
 /**
+ * Whether the screen is wide enough for the side panel that shows the selected litter.
+ *
+ * @returns True on a wide desktop.
+ */
+function isSidePanelShown(): boolean {
+  return window.matchMedia(SIDE_PANEL_MEDIA_QUERY).matches
+}
+
+/**
  * On a wide desktop, show the litter in the side panel instead of leaving the list.
  *
  * @param clickEvent - The click on the card.
  * @param litterId - The litter.
  */
 async function openInSidePanel(clickEvent: MouseEvent, litterId: number): Promise<void> {
-  if (!window.matchMedia(SIDE_PANEL_MEDIA_QUERY).matches) {
+  if (!isSidePanelShown()) {
     return
   }
   clickEvent.preventDefault()
@@ -135,7 +144,7 @@ onMounted(async (): Promise<void> => {
   await Promise.all([littersStore.recordVisit(), littersStore.load()])
   const firstLitter: LitterCard | undefined = littersStore.visibleCards[0]
 
-  if (littersStore.selectedLitter === null && firstLitter !== undefined) {
+  if (isSidePanelShown() && littersStore.selectedLitter === null && firstLitter !== undefined) {
     await littersStore.select(firstLitter.id)
   }
 })
