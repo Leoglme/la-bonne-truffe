@@ -127,6 +127,27 @@ export const useLittersStore = defineStore('litters', () => {
   }
 
   /**
+   * Confirm the males and females heard from the breeder, or go back to the sources with both null; re-scored at once.
+   *
+   * @param litterId - The litter.
+   * @param maleCount - Males, null with the females to remove the confirmation.
+   * @param femaleCount - Females.
+   * @returns The updated detail.
+   */
+  async function confirmSexes(
+    litterId: number,
+    maleCount: number | null,
+    femaleCount: number | null,
+  ): Promise<LitterDetail> {
+    const detail: LitterDetail = await LittersService.confirmSexes(litterId, {
+      male_count: maleCount,
+      female_count: femaleCount,
+    })
+    applyDetail(detail)
+    return detail
+  }
+
+  /**
    * Write the new detail of a litter into the opened litter, and its fresh facts (colours, score, follow-up) into its card.
    *
    * @param detail - The detail returned by the API.
@@ -194,6 +215,7 @@ export const useLittersStore = defineStore('litters', () => {
     select,
     follow,
     confirmColors,
+    confirmSexes,
     applyDetail,
     listBrowsableLitterIds,
     followOrOpenFollowUp,

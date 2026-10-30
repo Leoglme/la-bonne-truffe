@@ -16,6 +16,7 @@ from schemas.litter import (
     LitterCard,
     LitterDetail,
     LitterVisit,
+    SexConfirmation,
 )
 from services.auth_service import get_current_user
 from services.litter_command_service import LitterCommandService
@@ -108,6 +109,29 @@ async def confirm_litter_colors(
         The updated detail.
     """
     LitterCommandService.confirm_colors(db, litter_id, payload)
+    return LitterQueryService.detail(db, current_user.id, litter_id)
+
+
+@router.patch("/litters/{litter_id}/sexes", response_model=LitterDetail)
+async def confirm_litter_sexes(
+    litter_id: int,
+    payload: SexConfirmation,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> LitterDetail:
+    """
+    Confirm the males and females of a litter after a call, when the sources do not tell.
+
+    Args:
+        litter_id: The litter.
+        payload: Confirmed counts, both empty to remove the confirmation.
+        current_user: The authenticated user.
+        db: Database session.
+
+    Returns:
+        The updated detail.
+    """
+    LitterCommandService.confirm_sexes(db, litter_id, payload)
     return LitterQueryService.detail(db, current_user.id, litter_id)
 
 

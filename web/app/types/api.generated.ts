@@ -604,6 +604,35 @@ export interface paths {
         patch: operations["confirm_litter_colors_api_v1_litters__litter_id__colors_patch"];
         trace?: never;
     };
+    "/api/v1/litters/{litter_id}/sexes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Confirm Litter Sexes
+         * @description Confirm the males and females of a litter after a call, when the sources do not tell.
+         *
+         *     Args:
+         *         litter_id: The litter.
+         *         payload: Confirmed counts, both empty to remove the confirmation.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The updated detail.
+         */
+        patch: operations["confirm_litter_sexes_api_v1_litters__litter_id__sexes_patch"];
+        trace?: never;
+    };
     "/api/v1/litters/{litter_id}/follow-up": {
         parameters: {
             query?: never;
@@ -1095,6 +1124,11 @@ export interface components {
             /** Female Count */
             female_count: number | null;
             /**
+             * Has Confirmed Sexes
+             * @description Whether the sexes were confirmed by hand after a call
+             */
+            has_confirmed_sexes: boolean;
+            /**
              * Puppies Available
              * @description Puppies still offered across the active listings, null while no source tells
              */
@@ -1180,6 +1214,11 @@ export interface components {
             male_count: number | null;
             /** Female Count */
             female_count: number | null;
+            /**
+             * Has Confirmed Sexes
+             * @description Whether the sexes were confirmed by hand after a call
+             */
+            has_confirmed_sexes: boolean;
             /**
              * Puppies Available
              * @description Puppies still offered across the active listings, null while no source tells
@@ -1394,6 +1433,11 @@ export interface components {
             male_count: number | null;
             /** Female Count */
             female_count: number | null;
+            /**
+             * Has Confirmed Sexes
+             * @description Whether the sexes were confirmed by hand after a call
+             */
+            has_confirmed_sexes: boolean;
             /**
              * Puppies Available
              * @description Puppies still offered across the active listings, null while no source tells
@@ -1659,6 +1703,16 @@ export interface components {
             digest_hour: number;
             /** Notify Birth Of Followed */
             notify_birth_of_followed: boolean;
+        };
+        /**
+         * SexConfirmation
+         * @description Males and females heard from the breeder; both left empty go back to what the sources say.
+         */
+        SexConfirmation: {
+            /** Male Count */
+            male_count?: number | null;
+            /** Female Count */
+            female_count?: number | null;
         };
         /**
          * SexPreference
@@ -2428,6 +2482,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ColorConfirmation"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LitterDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_litter_sexes_api_v1_litters__litter_id__sexes_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                litter_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SexConfirmation"];
             };
         };
         responses: {

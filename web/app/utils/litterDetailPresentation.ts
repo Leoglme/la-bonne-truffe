@@ -176,10 +176,12 @@ export class LitterDetailPresentation {
    * List what the breeder has to confirm: the unknown facts that kept the litter below « préférée ».
    *
    * @param litter - The litter.
-   * @returns « À confirmer avec l’éleveur : le LOF, les sexes », or null when nothing is unknown.
+   * @returns « À confirmer avec l’éleveur : le LOF, les sexes », never the sexes of a litter to come, or null when
+   *   nothing is unknown.
    */
   static buildFactsToConfirmLine(litter: LitterDetail): string | null {
     const facts: string[] = litter.flags
+      .filter((flag: MatchFlag): boolean => flag !== 'sex_unknown' || litter.kind !== 'litter_expected')
       .map((flag: MatchFlag): string | null => MATCH_FLAG_LABELS[flag])
       .filter((fact: string | null): fact is string => fact !== null)
     return facts.length > 0 ? `À confirmer avec l’éleveur : ${facts.join(', ')}` : null

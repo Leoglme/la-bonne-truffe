@@ -12,29 +12,34 @@
     @update:open="(isOpen: boolean): void => emit('update:open', isOpen)"
   >
     <template #body>
-      <ul class="m-0 flex list-none flex-col gap-2.5 p-0">
-        <li v-for="link in links" :key="link.key">
-          <a
-            :href="link.href"
-            target="_blank"
-            rel="noopener"
-            class="flex min-h-[52px] items-center justify-between rounded-2xl bg-cream px-4 text-[17px] font-bold text-ink no-underline hover:text-ink"
-            @click="emit('update:open', false)"
-          >
-            {{ link.label }}
-            <UIcon name="i-lucide-arrow-up-right" class="size-5 text-ink-muted" />
-          </a>
-        </li>
-      </ul>
-      <UButton
-        color="neutral"
-        variant="outline"
-        size="lg"
-        class="w-full justify-center"
-        @click="emit('update:open', false)"
-      >
-        Annuler
-      </UButton>
+      <div class="flex flex-col gap-5">
+        <ul class="m-0 flex list-none flex-col gap-2.5 p-0">
+          <li v-for="link in links" :key="link.key">
+            <a
+              :href="link.href"
+              target="_blank"
+              rel="noopener"
+              class="flex min-h-[64px] items-center gap-3.5 rounded-2xl bg-cream px-3.5 text-ink no-underline hover:text-ink"
+              @click="emit('update:open', false)"
+            >
+              <span class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-card shadow-card">
+                <UIcon :name="MAP_APPS[link.key].iconName" class="size-6" :class="MAP_APPS[link.key].colorClass" />
+              </span>
+              <span class="grow text-[17px] font-bold">{{ link.label }}</span>
+              <UIcon name="i-lucide-chevron-right" class="size-5 shrink-0 text-ink-muted" />
+            </a>
+          </li>
+        </ul>
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="lg"
+          class="w-full justify-center"
+          @click="emit('update:open', false)"
+        >
+          Annuler
+        </UButton>
+      </div>
     </template>
   </UDrawer>
 </template>
@@ -44,6 +49,7 @@ import type { ComputedRef, PropType } from 'vue'
 import type { MapAppLink, MapDestination } from '~/types/Location'
 import type { UiMapAppDrawerEmits, UiMapAppDrawerProps } from '~/types/UiMapAppDrawer'
 import { computed } from 'vue'
+import { MAP_APPS } from '~/constants/mapApps'
 import { MapLinks } from '~/utils/mapLinks'
 
 const props: UiMapAppDrawerProps = defineProps({

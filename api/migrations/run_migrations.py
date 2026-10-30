@@ -38,6 +38,7 @@ MIGRATION_MODULES: list[tuple[str, str]] = [
     ("drop_listing_content_hash", "migrations.drop_listing_content_hash"),
     ("add_listing_mating_number", "migrations.add_listing_mating_number"),
     ("add_notification_digest_litters", "migrations.add_notification_digest_litters"),
+    ("add_litter_group_confirmed_sexes", "migrations.add_litter_group_confirmed_sexes"),
 ]
 
 _NON_MIGRATION_MODULES: set[str] = {"__init__", "run_migrations"}

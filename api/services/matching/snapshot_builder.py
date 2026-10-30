@@ -71,7 +71,7 @@ class LitterSnapshotBuilder:
         if not active_listings:
             return None
         department_code = cls.department_code_of(listings)
-        male_count, female_count = cls._sex_counts(active_listings)
+        male_count, female_count = cls._sex_counts(group, active_listings)
 
         return LitterSnapshot(
             group_id=group.id,
@@ -242,18 +242,23 @@ class LitterSnapshotBuilder:
         return LofStatus.UNKNOWN
 
     @classmethod
-    def _sex_counts(cls, listings: list[Listing]) -> tuple[int | None, int | None]:
+    def _sex_counts(cls, group: LitterGroup, listings: list[Listing]) -> tuple[int | None, int | None]:
         """
-        Males and females of a litter: as the Centrale Canine declares the born litter, else the puppies
-        still offered by a litter ad, else the puppies its puppy ads still offer, one puppy per ad (a
-        reserved, sold or adopted puppy no longer counts). A declared mating reports none.
+        Males and females of a litter, from the most trusted source first.
+
+        The counts confirmed by hand after a call win; else those the Centrale Canine declares for the born
+        litter; else the puppies still offered by a litter ad; else the puppies its puppy ads still offer, one
+        puppy per ad (a reserved, sold or adopted puppy no longer counts). A declared mating reports none.
 
         Args:
+            group: The group, holding the counts confirmed by hand.
             listings: Active listings of the group.
 
         Returns:
             The male and female counts, each None while unknown.
         """
+        if group.confirmed_male_count is not None and group.confirmed_female_count is not None:
+            return group.confirmed_male_count, group.confirmed_female_count
         born_litters = cls.centrale_canine_first(
             [listing for listing in listings if listing.kind == ListingKind.LITTER_BORN]
         )

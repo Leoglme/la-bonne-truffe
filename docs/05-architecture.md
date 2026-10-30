@@ -53,7 +53,8 @@ la-bonne-truffe/
 | `GET /litters` | Groupes de portées avec leur match, filtres `tier`, `kind`, `active`, tri par score ou fraîcheur |
 | `POST /litters/visit` | Noter que la liste est consultée maintenant (une fois par ouverture de l'app) ; renvoie la consultation précédente (`previous_visit_at`, `null` la première fois) |
 | `GET /litters/{id}` | Détail : listings par source (pour une annonce de chiot : son sexe, ses couleurs et ses photos), éleveur, parents (nom et cotation pris sur la première annonce active qui les donne, Centrale Canine d'abord), raisons du score, changements, suivi |
-| `PATCH /litters/{id}/colors` | Confirmer une couleur à la main (`confirmed`) depuis le détail, après l'appel à l'éleveur ; une liste vide retire la confirmation |
+| `PATCH /litters/{id}/colors` | Confirmer une ou plusieurs couleurs à la main (`confirmed`) depuis le détail, après l'appel à l'éleveur ; une liste vide retire la confirmation |
+| `PATCH /litters/{id}/sexes` | Confirmer les mâles et les femelles à la main depuis le détail, quand les sources ne les donnent pas ; les deux vides retirent la confirmation (`has_confirmed_sexes` sur la carte) |
 | `GET /profiles`, `PUT /profiles/{id}` | Critères |
 | `GET /follow-ups`, `PUT /litters/{id}/follow-up`, `POST /litters/{id}/notes` | Suivi et notes |
 | `DELETE /litters/{id}/follow-up`, `DELETE /litters/{id}/notes/{note_id}` | Ne plus suivre une portée (statut, rappel et notes effacés, renvoie le détail) ; supprimer une note (`204`) |

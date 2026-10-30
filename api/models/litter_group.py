@@ -25,6 +25,8 @@ class LitterGroup(TimestampMixin, Base):
         is_active: False once every listing is gone, or six months after the birth.
         is_grouping_probable: True when listings were grouped on a guess (no birth date, single candidate).
         confirmed_colors: Canonical colours confirmed by hand after a call; they override every source.
+        confirmed_male_count: Males confirmed by hand after a call, with the females; they override every source.
+        confirmed_female_count: Females confirmed by hand after a call, with the males.
         puppies_available: Puppies the litter still offers across its active listings, null while no source tells.
         first_seen_at: First time a source showed this litter.
         last_seen_at: Last time a source showed this litter.
@@ -42,6 +44,8 @@ class LitterGroup(TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False, index=True)
     is_grouping_probable: Mapped[bool] = mapped_column(default=False, nullable=False)
     confirmed_colors: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    confirmed_male_count: Mapped[int | None]
+    confirmed_female_count: Mapped[int | None]
     puppies_available: Mapped[int | None]
     first_seen_at: Mapped[datetime] = mapped_column(default=naive_utc_now, nullable=False)
     last_seen_at: Mapped[datetime] = mapped_column(default=naive_utc_now, nullable=False)

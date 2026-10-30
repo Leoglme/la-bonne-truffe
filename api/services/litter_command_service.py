@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from core.clock import naive_utc_now
 from models.follow_up import FollowUp, FollowUpNote
 from models.user import User
-from schemas.litter import ColorConfirmation, FollowUpNoteCreate, FollowUpUpdate
+from schemas.litter import ColorConfirmation, FollowUpNoteCreate, FollowUpUpdate, SexConfirmation
 from services.litter_query_service import LitterQueryService
 from services.matching.match_refresh import match_refresh_service
 
@@ -28,6 +28,22 @@ class LitterCommandService:
         """
         group = LitterQueryService.get_group(db, litter_group_id)
         group.confirmed_colors = [color.value for color in dict.fromkeys(payload.colors)]
+        db.commit()
+        match_refresh_service.refresh(db, naive_utc_now(), should_notify=False)
+
+    @staticmethod
+    def confirm_sexes(db: Session, litter_group_id: int, payload: SexConfirmation) -> None:
+        """
+        Store the males and females confirmed after a call; they override every source. Re-evaluates silently.
+
+        Args:
+            db: Database session.
+            litter_group_id: The litter.
+            payload: Confirmed counts, both empty to remove the confirmation.
+        """
+        group = LitterQueryService.get_group(db, litter_group_id)
+        group.confirmed_male_count = payload.male_count
+        group.confirmed_female_count = payload.female_count
         db.commit()
         match_refresh_service.refresh(db, naive_utc_now(), should_notify=False)
 

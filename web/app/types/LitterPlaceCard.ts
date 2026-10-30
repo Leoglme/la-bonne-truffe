@@ -1,6 +1,6 @@
 import type { LitterDetail } from '~/types/api'
 
-export type LitterColorConfirmationProps = {
+export type LitterPlaceCardProps = {
   litter: LitterDetail
   isInSidePanel: boolean
 }

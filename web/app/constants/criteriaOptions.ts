@@ -19,6 +19,8 @@ export const OTHER_COLOR_ROWS: CriteriaColorRow[] = [
   { color: 'zibeline', coat: 'inconnue' },
 ]
 
+export const ALL_COLOR_ROWS: CriteriaColorRow[] = [...MAIN_COLOR_ROWS, ...OTHER_COLOR_ROWS]
+
 export const COLOR_LEVEL_OPTIONS: UiChoiceButtonsOption[] = [
   { value: 'preferred', label: 'Préférée' },
   { value: 'acceptable', label: 'Acceptable' },

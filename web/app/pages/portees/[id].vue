@@ -19,7 +19,7 @@
           class="absolute inset-0 border-0 bg-transparent p-0"
           @click="openPhotoViewer(0)"
         >
-          <LitterVisual :litter="litter" photo-position="center 30%" />
+          <LitterVisual :litter="litter" photo-position="center 30%" photo-loading="eager" />
         </button>
         <LitterVisual
           v-else-if="litter"
@@ -99,7 +99,8 @@
           </div>
           <LitterKeyFacts :litter="litter" class="shrink-0" />
           <LitterInfoChips :litter="litter" class="shrink-0" />
-          <LitterColorConfirmation :litter="litter" class="shrink-0" />
+          <LitterPlaceCard :litter="litter" class="shrink-0" />
+          <LitterCallConfirmation :litter="litter" class="shrink-0" />
           <div v-if="litter.photos.length > 1" class="grid shrink-0 grid-cols-4 gap-2 md:flex md:gap-2.5">
             <button
               v-for="(photo, photoIndex) in galleryPhotos"
@@ -128,15 +129,14 @@
         </div>
 
         <div
-          v-if="primaryAction || mapDestination"
-          class="flex shrink-0 gap-2.5 border-t border-line bg-cream px-5 pt-3 pb-[26px] md:px-8 md:pt-4 md:pb-[30px]"
+          v-if="primaryAction"
+          class="flex shrink-0 border-t border-line bg-cream px-5 pt-3 pb-[26px] md:px-8 md:pt-4 md:pb-[30px]"
         >
           <UButton
-            v-if="primaryAction"
             :to="primaryAction.href"
             :target="primaryAction.isCall ? undefined : '_blank'"
             size="xl"
-            class="min-h-[54px] grow justify-center gap-2 px-4 text-[17px] md:min-h-[60px] md:gap-2.5 md:text-[19px]"
+            class="min-h-[54px] w-full justify-center gap-2 px-4 text-[17px] md:min-h-[60px] md:gap-2.5 md:text-[19px]"
           >
             <template #leading>
               <UiCustomIcon
@@ -149,21 +149,6 @@
               <UIcon v-else name="i-lucide-external-link" class="size-[18px] md:size-5" />
             </template>
             {{ primaryAction.label }}
-          </UButton>
-          <UButton
-            v-if="mapDestination"
-            color="neutral"
-            variant="outline"
-            size="lg"
-            aria-label="Voir sur la carte"
-            aria-haspopup="dialog"
-            class="min-h-[54px] shrink-0 gap-2 px-4 md:min-h-[60px]"
-            @click="isMapDrawerOpen = true"
-          >
-            <template #leading>
-              <UiCustomIcon name="pin" :size-in-pixels="20" :stroke-width="2.2" class="size-[18px] md:size-5" />
-            </template>
-            Carte
           </UButton>
         </div>
       </div>
@@ -186,7 +171,6 @@
       :photos="viewerPhotos"
       :start-index="photoViewerStartIndex"
     />
-    <UiMapAppDrawer v-if="mapDestination" v-model:open="isMapDrawerOpen" :destination="mapDestination" />
   </div>
 </template>
 
@@ -196,7 +180,6 @@ import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
 import type { LitterDetail } from '~/types/api'
 import type { HorizontalSwipeDirection, UseHorizontalSwipeReturn } from '~/types/Composables'
 import type { LitterBrowsingOrigin, LitterPrimaryAction } from '~/types/Litter'
-import type { MapDestination } from '~/types/Location'
 import type { UiPhotoViewerPhoto } from '~/types/UiPhotoViewer'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { LitterDetailPresentation } from '~/utils/litterDetailPresentation'
@@ -221,7 +204,6 @@ const isFollowUpActionRunning: Ref<boolean> = ref(false)
 const browsableLitterIds: Ref<number[]> = ref([])
 const isPhotoViewerOpen: Ref<boolean> = ref(false)
 const photoViewerStartIndex: Ref<number> = ref(0)
-const isMapDrawerOpen: Ref<boolean> = ref(false)
 
 const litterId: ComputedRef<number> = computed((): number => Number(route.params['id']))
 const litter: ComputedRef<LitterDetail | null> = computed((): LitterDetail | null =>
@@ -235,9 +217,6 @@ const photoBadge: ComputedRef<string | null> = computed((): string | null =>
 )
 const primaryAction: ComputedRef<LitterPrimaryAction | null> = computed((): LitterPrimaryAction | null =>
   litter.value ? LitterDetailPresentation.resolvePrimaryAction(litter.value) : null,
-)
-const mapDestination: ComputedRef<MapDestination | null> = computed((): MapDestination | null =>
-  litter.value ? LitterDetailPresentation.buildMapDestination(litter.value) : null,
 )
 const otherPhotos: ComputedRef<string[]> = computed((): string[] => (litter.value?.photos ?? []).slice(1))
 const galleryPhotos: ComputedRef<string[]> = computed((): string[] =>

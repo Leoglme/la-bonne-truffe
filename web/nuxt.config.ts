@@ -58,7 +58,7 @@ export default defineNuxtConfig({
   },
 
   icon: {
-    // Bundle the Lucide icons the app uses, so the offline Tauri window never fetches them.
+    // Bundle the Lucide and Simple Icons the app uses, so the offline Tauri window never fetches them.
     clientBundle: { scan: true },
   },
 

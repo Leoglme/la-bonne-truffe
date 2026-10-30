@@ -415,6 +415,7 @@ class LitterQueryService:
             lof_status=snapshot.lof_status,
             male_count=snapshot.male_count,
             female_count=snapshot.female_count,
+            has_confirmed_sexes=group.confirmed_male_count is not None,
             puppies_available=snapshot.puppies_available,
             price_cents=snapshot.price_cents,
             birth_date=group.birth_date,

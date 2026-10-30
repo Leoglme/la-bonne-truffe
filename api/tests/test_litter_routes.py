@@ -139,6 +139,25 @@ def test_confirming_a_colour_turns_the_bundle_into_a_certain_colour(
     assert detail["reasons"][0]["text"] == "Noir et feu, une couleur acceptable"
 
 
+def test_confirming_the_sexes_fills_the_unknown_counts(
+    client: TestClient, collected: dict[str, str], db: Session
+) -> None:
+    litter_id = group_id_of(db, EXPECTED_LITTER_ID)
+
+    confirmed = client.patch(
+        f"/api/v1/litters/{litter_id}/sexes", json={"male_count": 2, "female_count": 3}, headers=collected
+    ).json()
+    half_given = client.patch(f"/api/v1/litters/{litter_id}/sexes", json={"male_count": 2}, headers=collected)
+    cleared = client.patch(
+        f"/api/v1/litters/{litter_id}/sexes", json={"male_count": None, "female_count": None}, headers=collected
+    ).json()
+
+    assert (confirmed["male_count"], confirmed["female_count"], confirmed["has_confirmed_sexes"]) == (2, 3, True)
+    assert "sex_unknown" not in confirmed["flags"]
+    assert half_given.status_code == 422
+    assert (cleared["male_count"], cleared["female_count"], cleared["has_confirmed_sexes"]) == (None, None, False)
+
+
 def test_sources_report_their_last_run(client: TestClient, collected: dict[str, str]) -> None:
     statuses = {status["source"]: status for status in client.get("/api/v1/sources", headers=collected).json()}
 

@@ -171,6 +171,7 @@ import type { CriteriaColorRow } from '~/types/Criteria'
 import { computed, onMounted, ref } from 'vue'
 import { COAT_COLOR_LABELS } from '~/constants/coatColorLabels'
 import {
+  ALL_COLOR_ROWS,
   COLOR_LEVEL_OPTIONS,
   DIGEST_HOUR_OPTIONS,
   LOF_OPTIONS,
@@ -189,7 +190,7 @@ const areOtherColorsShown: Ref<boolean> = ref(false)
 
 const draft: ComputedRef<SearchProfileUpdate | null> = computed((): SearchProfileUpdate | null => criteriaStore.draft)
 const shownColorRows: ComputedRef<CriteriaColorRow[]> = computed((): CriteriaColorRow[] =>
-  areOtherColorsShown.value ? [...MAIN_COLOR_ROWS, ...OTHER_COLOR_ROWS] : MAIN_COLOR_ROWS,
+  areOtherColorsShown.value ? ALL_COLOR_ROWS : MAIN_COLOR_ROWS,
 )
 const saveLabel: ComputedRef<string> = computed((): string => {
   if (criteriaStore.isSaving) {

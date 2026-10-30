@@ -56,6 +56,16 @@ export class LitterPresentation {
   }
 
   /**
+   * Whether both sexes of a litter are known.
+   *
+   * @param card - The litter.
+   * @returns False while a source or a call has not given the males and the females.
+   */
+  static hasKnownSexes(card: LitterCard): boolean {
+    return card.male_count !== null && card.female_count !== null
+  }
+
+  /**
    * Build the label of the colour chip.
    *
    * @param colors - Colours of the litter.

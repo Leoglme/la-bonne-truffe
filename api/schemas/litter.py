@@ -1,8 +1,9 @@
 """Litter schemas: the cards of the home screen and the detail screen."""
 
 from datetime import date, datetime
+from typing import Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
@@ -13,6 +14,8 @@ from enums.listing_source import ListingSource
 from enums.lof_status import LofStatus
 from enums.match_flag import MatchFlag
 from enums.match_tier import MatchTier
+
+MAX_PUPPIES_PER_SEX = 20
 
 
 class LitterColor(BaseModel):
@@ -40,6 +43,7 @@ class LitterCard(BaseModel):
     lof_status: LofStatus
     male_count: int | None
     female_count: int | None
+    has_confirmed_sexes: bool = Field(description="Whether the sexes were confirmed by hand after a call")
     puppies_available: int | None = Field(
         description="Puppies still offered across the active listings, null while no source tells"
     )
@@ -139,6 +143,28 @@ class ColorConfirmation(BaseModel):
     """Colours confirmed by hand after a call; an empty list removes the confirmation."""
 
     colors: list[CoatColor] = Field(..., max_length=4)
+
+
+class SexConfirmation(BaseModel):
+    """Males and females heard from the breeder; both left empty go back to what the sources say."""
+
+    male_count: int | None = Field(default=None, ge=0, le=MAX_PUPPIES_PER_SEX)
+    female_count: int | None = Field(default=None, ge=0, le=MAX_PUPPIES_PER_SEX)
+
+    @model_validator(mode="after")
+    def check_both_or_none(self) -> Self:
+        """
+        Refuse one sex without the other.
+
+        Returns:
+            The confirmation.
+
+        Raises:
+            ValueError: When only one count is given.
+        """
+        if (self.male_count is None) != (self.female_count is None):
+            raise ValueError("Donne les mâles et les femelles ensemble, ou aucun des deux")
+        return self
 
 
 class FollowUpUpdate(BaseModel):
