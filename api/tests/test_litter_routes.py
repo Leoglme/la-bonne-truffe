@@ -2,6 +2,7 @@
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import Engine, event
 from sqlalchemy.orm import Session
 
 from enums.listing_source import ListingSource
@@ -16,6 +17,9 @@ from tests.centrale_canine_pages import collector_serving, load_recorded_pages, 
 GOLD_LITTER_ID = "4333817"
 EXPECTED_LITTER_ID = "4337070"
 COLOR_BUNDLE_LITTER_ID = "4320577"
+
+# One query per table whatever the length of the list (user, profile, matches, groups, listings, breeders, follow-ups, breeds, departments).
+HOME_LIST_QUERY_LIMIT = 12
 
 
 @pytest.fixture
@@ -158,3 +162,25 @@ def test_a_skipped_source_is_not_collected_and_cannot_be_run(
 
 def test_unknown_litter_is_a_404(client: TestClient, collected: dict[str, str]) -> None:
     assert client.get("/api/v1/litters/9999", headers=collected).status_code == 404
+
+
+def test_home_list_runs_a_bounded_number_of_queries(
+    client: TestClient, collected: dict[str, str], engine: Engine
+) -> None:
+    statements: list[str] = []
+
+    def keep_statement(
+        _connection: object, _cursor: object, statement: str, _parameters: object, _context: object, _many: bool
+    ) -> None:
+        """Keep every SQL statement the request runs."""
+        statements.append(statement)
+
+    event.listen(engine, "before_cursor_execute", keep_statement)
+    try:
+        response = client.get("/api/v1/litters", headers=collected)
+    finally:
+        event.remove(engine, "before_cursor_execute", keep_statement)
+
+    assert response.status_code == 200
+    assert len(response.json()) == 9
+    assert len(statements) <= HOME_LIST_QUERY_LIMIT, f"{len(statements)} queries for 9 litters"

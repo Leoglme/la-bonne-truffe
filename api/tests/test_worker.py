@@ -1,4 +1,4 @@
-"""The collection worker: one hourly job per source this machine collects, the digests, the reminders, the silence watch."""
+"""The collection worker: one hourly job per source this machine collects, the digests, the reminders, the silence watch, the nightly housekeeping."""
 
 from enums.listing_source import ListingSource
 from worker import CollectionWorker
@@ -15,6 +15,7 @@ def test_every_collected_source_has_its_hourly_job() -> None:
         "collect_coeur_de_cocker",
         "send_evening_digests",
         "send_follow_up_reminders",
+        "purge_old_listing_data",
     }
 
 
@@ -28,6 +29,7 @@ def test_a_skipped_source_has_no_job() -> None:
         "collect_chiots_de_france",
         "send_evening_digests",
         "send_follow_up_reminders",
+        "purge_old_listing_data",
     }
 
 
@@ -41,4 +43,5 @@ def test_a_source_relayed_by_the_desktop_app_is_watched_for_silence() -> None:
         "send_evening_digests",
         "send_follow_up_reminders",
         "alert_silent_sources",
+        "purge_old_listing_data",
     }

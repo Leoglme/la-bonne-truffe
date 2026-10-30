@@ -1,6 +1,8 @@
 """Reads the litters for the dashboard: cards, detail, follow-ups. Every query is scoped to the user."""
 
+from dataclasses import dataclass, field
 from enum import StrEnum
+from typing import Self
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -10,7 +12,9 @@ from enums.color_confidence import ColorConfidence
 from enums.listing_kind import ListingKind
 from enums.match_flag import MatchFlag
 from enums.match_tier import MatchTier
+from models.breed import Breed
 from models.breeder import Breeder
+from models.department import Department
 from models.follow_up import FollowUp, FollowUpNote
 from models.listing import Listing
 from models.listing_match import ListingMatch
@@ -42,6 +46,65 @@ class LitterSort(StrEnum):
     FRESHNESS = "freshness"
 
 
+@dataclass
+class LitterCardFacts:
+    """What the cards of some groups are built from, loaded in one query per table instead of one per litter."""
+
+    listings_by_group: dict[int, list[Listing]] = field(default_factory=dict)
+    breeds_by_id: dict[int, Breed] = field(default_factory=dict)
+    breeders_by_id: dict[int, Breeder] = field(default_factory=dict)
+    departments_by_code: dict[str, Department] = field(default_factory=dict)
+    follow_ups_by_group: dict[int, FollowUp] = field(default_factory=dict)
+
+    @classmethod
+    def load(cls, db: Session, user_id: int, groups: list[LitterGroup]) -> Self:
+        """
+        Load the listings, breeds, breeders, departments and the user's follow-ups of some groups.
+
+        Args:
+            db: Database session.
+            user_id: The user.
+            groups: The groups to build cards for.
+
+        Returns:
+            The facts, empty for no group.
+        """
+        facts = cls()
+        if not groups:
+            return facts
+        group_ids = [group.id for group in groups]
+        for listing in db.query(Listing).filter(Listing.litter_group_id.in_(group_ids)).order_by(Listing.id):
+            if listing.litter_group_id is not None:
+                facts.listings_by_group.setdefault(listing.litter_group_id, []).append(listing)
+        facts.breeds_by_id = {
+            breed.id: breed for breed in db.query(Breed).filter(Breed.id.in_({group.breed_id for group in groups}))
+        }
+        breeder_ids = {group.breeder_id for group in groups if group.breeder_id is not None}
+        if breeder_ids:
+            facts.breeders_by_id = {
+                breeder.id: breeder for breeder in db.query(Breeder).filter(Breeder.id.in_(breeder_ids))
+            }
+        department_codes = {
+            code
+            for code in (
+                LitterSnapshotBuilder.department_code_of(listings) for listings in facts.listings_by_group.values()
+            )
+            if code is not None
+        }
+        if department_codes:
+            facts.departments_by_code = {
+                department.code: department
+                for department in db.query(Department).filter(Department.code.in_(department_codes))
+            }
+        facts.follow_ups_by_group = {
+            follow_up.litter_group_id: follow_up
+            for follow_up in db.query(FollowUp).filter(
+                FollowUp.user_id == user_id, FollowUp.litter_group_id.in_(group_ids)
+            )
+        }
+        return facts
+
+
 class LitterQueryService:
     """Builds the litter payloads from the groups, their listings and the user's active profile."""
 
@@ -71,16 +134,11 @@ class LitterQueryService:
         """
         matches_by_group = cls._matches_by_group(db, user_id)
         groups = db.query(LitterGroup).filter(LitterGroup.is_active.is_(is_active)).all()
+        listed_groups = [group for group in groups if cls._is_listed(matches_by_group.get(group.id), tier)]
+        facts = LitterCardFacts.load(db, user_id, listed_groups)
         cards: list[LitterCard] = []
-        for group in groups:
-            match = matches_by_group.get(group.id)
-            if match is not None and match.tier == MatchTier.EXCLUDED:
-                continue
-            if tier is not None and (match is None or match.tier != tier):
-                continue
-            if tier is None and match is not None and match.tier == MatchTier.IGNORED:
-                continue
-            card = cls._card(db, user_id, group, match)
+        for group in listed_groups:
+            card = cls._card(group, matches_by_group.get(group.id), facts)
             if card is None or (kind is not None and card.kind != kind):
                 continue
             cards.append(card)
@@ -106,13 +164,14 @@ class LitterQueryService:
         """
         group = cls.get_group(db, litter_group_id)
         match = cls._matches_by_group(db, user_id).get(group.id)
-        card = cls._card(db, user_id, group, match)
+        facts = LitterCardFacts.load(db, user_id, [group])
+        card = cls._card(group, match, facts)
         if card is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portée introuvable")
-        listings = db.query(Listing).filter(Listing.litter_group_id == group.id).order_by(Listing.id).all()
+        listings = facts.listings_by_group.get(group.id, [])
         main_listing = next((listing for listing in listings if listing.is_active), listings[0])
-        breeder = db.get(Breeder, group.breeder_id) if group.breeder_id is not None else None
-        follow_up = cls._follow_up(db, user_id, group.id)
+        breeder = facts.breeders_by_id.get(group.breeder_id) if group.breeder_id is not None else None
+        follow_up = facts.follow_ups_by_group.get(group.id)
         photos = list(dict.fromkeys(photo for listing in listings for photo in listing.photos))
 
         return LitterDetail(
@@ -164,20 +223,23 @@ class LitterQueryService:
         Returns:
             The follow-up cards.
         """
-        matches_by_group = cls._matches_by_group(db, user_id)
         follow_ups = db.query(FollowUp).filter(FollowUp.user_id == user_id).all()
+        if not follow_ups:
+            return []
+        matches_by_group = cls._matches_by_group(db, user_id)
+        followed_group_ids = [follow_up.litter_group_id for follow_up in follow_ups]
+        groups_by_id = {
+            group.id: group for group in db.query(LitterGroup).filter(LitterGroup.id.in_(followed_group_ids))
+        }
+        facts = LitterCardFacts.load(db, user_id, list(groups_by_id.values()))
+        last_notes = cls._last_notes_by_follow_up(db, [follow_up.id for follow_up in follow_ups])
         cards: list[FollowUpCard] = []
         for follow_up in follow_ups:
-            group = db.get(LitterGroup, follow_up.litter_group_id)
-            card = cls._card(db, user_id, group, matches_by_group.get(follow_up.litter_group_id)) if group else None
+            group = groups_by_id.get(follow_up.litter_group_id)
+            card = cls._card(group, matches_by_group.get(group.id), facts) if group is not None else None
             if card is None:
                 continue
-            last_note = (
-                db.query(FollowUpNote)
-                .filter(FollowUpNote.follow_up_id == follow_up.id)
-                .order_by(FollowUpNote.created_at.desc(), FollowUpNote.id.desc())
-                .first()
-            )
+            last_note = last_notes.get(follow_up.id)
             cards.append(
                 FollowUpCard(
                     litter=card,
@@ -241,26 +303,73 @@ class LitterQueryService:
             for match in db.query(ListingMatch).filter(ListingMatch.profile_id == profile.id)
         }
 
+    @staticmethod
+    def _is_listed(match: ListingMatch | None, tier: MatchTier | None) -> bool:
+        """
+        Whether a group belongs to the home list: never an excluded one, only the asked tier when there is
+        one, and an ignored one only when asked for.
+
+        Args:
+            match: The match of the group for the active profile, if evaluated.
+            tier: The tier asked for, if any.
+
+        Returns:
+            True when the group is listed.
+        """
+        if match is not None and match.tier == MatchTier.EXCLUDED:
+            return False
+        if tier is not None:
+            return match is not None and match.tier == tier
+        return match is None or match.tier != MatchTier.IGNORED
+
+    @staticmethod
+    def _last_notes_by_follow_up(db: Session, follow_up_ids: list[int]) -> dict[int, FollowUpNote]:
+        """
+        The newest note of each follow-up, in one query.
+
+        Args:
+            db: Database session.
+            follow_up_ids: The follow-ups.
+
+        Returns:
+            Follow-up id → its newest note, absent when it has none.
+        """
+        last_notes: dict[int, FollowUpNote] = {}
+        notes = (
+            db.query(FollowUpNote)
+            .filter(FollowUpNote.follow_up_id.in_(follow_up_ids))
+            .order_by(FollowUpNote.created_at.desc(), FollowUpNote.id.desc())
+        )
+        for note in notes:
+            last_notes.setdefault(note.follow_up_id, note)
+        return last_notes
+
     @classmethod
-    def _card(cls, db: Session, user_id: int, group: LitterGroup, match: ListingMatch | None) -> LitterCard | None:
+    def _card(cls, group: LitterGroup, match: ListingMatch | None, facts: LitterCardFacts) -> LitterCard | None:
         """
         Build the card of a group.
 
         Args:
-            db: Database session.
-            user_id: The user.
             group: The litter.
             match: Its match for the active profile, if evaluated.
+            facts: The listings, breeds, breeders, departments and follow-ups already loaded.
 
         Returns:
             The card, or None for a group without listing.
         """
-        snapshot = LitterSnapshotBuilder.build(db, group)
+        listings = facts.listings_by_group.get(group.id, [])
+        breeder = facts.breeders_by_id.get(group.breeder_id) if group.breeder_id is not None else None
+        department_code = LitterSnapshotBuilder.department_code_of(listings)
+        snapshot = LitterSnapshotBuilder.build_from_listings(
+            group,
+            listings,
+            breed=facts.breeds_by_id.get(group.breed_id),
+            breeder=breeder,
+            department=facts.departments_by_code.get(department_code) if department_code is not None else None,
+        )
         if snapshot is None:
             return None
-        listings = db.query(Listing).filter(Listing.litter_group_id == group.id).order_by(Listing.id).all()
-        breeder = db.get(Breeder, group.breeder_id) if group.breeder_id is not None else None
-        follow_up = cls._follow_up(db, user_id, group.id)
+        follow_up = facts.follow_ups_by_group.get(group.id)
         city = breeder.city if breeder is not None else None
         return LitterCard(
             id=group.id,
@@ -311,25 +420,6 @@ class LitterQueryService:
             is_selected_breeding=group == SELECTED_BREEDING_GROUP,
             has_affix=(group in GROUPS_WITH_AFFIX) if group is not None else (True if breeder.affix else None),
             is_breed_club_member=breeder.is_breed_club_member is True,
-        )
-
-    @staticmethod
-    def _follow_up(db: Session, user_id: int, litter_group_id: int) -> FollowUp | None:
-        """
-        The user's follow-up of a litter.
-
-        Args:
-            db: Database session.
-            user_id: The user.
-            litter_group_id: The litter.
-
-        Returns:
-            The follow-up, if any.
-        """
-        return (
-            db.query(FollowUp)
-            .filter(FollowUp.user_id == user_id, FollowUp.litter_group_id == litter_group_id)
-            .one_or_none()
         )
 
     @staticmethod

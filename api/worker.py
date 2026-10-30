@@ -14,6 +14,7 @@ from core.database import SessionLocal, engine
 from enums.listing_source import ListingSource
 from migrations.run_migrations import MigrationRunner
 from services.collection_runner import collection_runner
+from services.housekeeping_service import housekeeping_service
 from services.notifier import notifier_service
 from services.source_status_service import COLLECTED_SOURCES, DESKTOP_RELAYED_SOURCES
 
@@ -23,6 +24,10 @@ SCHEDULER_TIMEZONE = "Europe/Paris"
 
 # Minute of every hour at which the silence of a relayed source is checked, after the relay of the hour.
 SILENCE_CHECK_MINUTE = 15
+
+# French hour of the nightly housekeeping, between two collections.
+HOUSEKEEPING_HOUR = 4
+HOUSEKEEPING_MINUTE = 30
 
 COLLECTION_MINUTES: dict[ListingSource, int] = {
     ListingSource.CENTRALE_CANINE: 5,
@@ -59,7 +64,8 @@ class CollectionWorker:
         One job per collected source runs every hour, a few minutes apart (``COLLECTION_MINUTES``). The
         evening digest job wakes at minute 0 of every hour and sends the digests whose ``digest_hour``
         has come. The follow-up reminders are pushed within five minutes of their time. When the Windows
-        app relays a source, an hourly job tells Léo once per silence that nobody relays it any more.
+        app relays a source, an hourly job tells Léo once per silence that nobody relays it any more. A
+        nightly job drops the raw pages and the change history nobody reads any more.
 
         Returns:
             The configured scheduler, not started.
@@ -74,6 +80,13 @@ class CollectionWorker:
         scheduler.add_job(self.send_follow_up_reminders, "cron", minute="*/5", id="send_follow_up_reminders")
         if self.relayed_sources:
             scheduler.add_job(self.alert_silent_sources, "cron", minute=SILENCE_CHECK_MINUTE, id="alert_silent_sources")
+        scheduler.add_job(
+            self.purge_old_listing_data,
+            "cron",
+            hour=HOUSEKEEPING_HOUR,
+            minute=HOUSEKEEPING_MINUTE,
+            id="purge_old_listing_data",
+        )
         return scheduler
 
     def collect_source(self, source: ListingSource) -> None:
@@ -123,6 +136,19 @@ class CollectionWorker:
         try:
             for source in sorted(self.relayed_sources):
                 notifier_service.alert_if_source_silent(db, source, naive_utc_now())
+        finally:
+            db.close()
+
+    def purge_old_listing_data(self) -> None:
+        """Nightly: clear the raw pages of the listings gone for three months, and the field changes as old."""
+        db = SessionLocal()
+        try:
+            report = housekeeping_service.purge_old_listing_data(db, naive_utc_now())
+            logger.info(
+                "Housekeeping: %d raw page(s) cleared, %d change(s) deleted",
+                report.raw_pages_cleared,
+                report.changes_deleted,
+            )
         finally:
             db.close()
 

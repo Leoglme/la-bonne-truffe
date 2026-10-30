@@ -25,8 +25,7 @@ class LitterSnapshotBuilder:
     @classmethod
     def build(cls, db: Session, group: LitterGroup) -> LitterSnapshot | None:
         """
-        Merge the listings of a group: a born listing wins over a declaration, LOF over unknown, a
-        confirmed colour over everything.
+        Merge the listings of a group, read from the database with its breed, breeder and department.
 
         Args:
             db: Database session.
@@ -36,15 +35,42 @@ class LitterSnapshotBuilder:
             The snapshot, or None when the group has no listing left.
         """
         listings = db.query(Listing).filter(Listing.litter_group_id == group.id).order_by(Listing.id).all()
-        active_listings = [listing for listing in listings if listing.is_active] or listings
+        department_code = cls.department_code_of(listings)
+        return cls.build_from_listings(
+            group,
+            listings,
+            breed=db.get(Breed, group.breed_id),
+            breeder=db.get(Breeder, group.breeder_id) if group.breeder_id is not None else None,
+            department=db.get(Department, department_code) if department_code is not None else None,
+        )
+
+    @classmethod
+    def build_from_listings(
+        cls,
+        group: LitterGroup,
+        listings: list[Listing],
+        breed: Breed | None,
+        breeder: Breeder | None,
+        department: Department | None,
+    ) -> LitterSnapshot | None:
+        """
+        Merge the listings of a group: a born listing wins over a declaration, LOF over unknown, a
+        confirmed colour over everything.
+
+        Args:
+            group: The group.
+            listings: Every listing of the group, in id order.
+            breed: Breed of the group, when known.
+            breeder: Breeder of the group, when known.
+            department: Department ``department_code_of`` the listings gives, when known.
+
+        Returns:
+            The snapshot, or None when the group has no listing.
+        """
+        active_listings = cls.active_listings_of(listings)
         if not active_listings:
             return None
-        breed = db.get(Breed, group.breed_id)
-        breeder = db.get(Breeder, group.breeder_id) if group.breeder_id is not None else None
-        department_code = next(
-            (listing.department_code for listing in active_listings if listing.department_code), None
-        )
-        department = db.get(Department, department_code) if department_code is not None else None
+        department_code = cls.department_code_of(listings)
         male_count, female_count = cls._sex_counts(active_listings)
 
         return LitterSnapshot(
@@ -69,6 +95,34 @@ class LitterSnapshotBuilder:
             breeder_selection_group=breeder.scc_selection_group if breeder is not None else None,
             sire_rating=cls._first_known([listing.sire_rating for listing in active_listings]),
             dam_rating=cls._first_known([listing.dam_rating for listing in active_listings]),
+        )
+
+    @staticmethod
+    def active_listings_of(listings: list[Listing]) -> list[Listing]:
+        """
+        The listings still online, or every listing once all are gone: the litter then shows greyed.
+
+        Args:
+            listings: Every listing of the group.
+
+        Returns:
+            The listings the snapshot is built from.
+        """
+        return [listing for listing in listings if listing.is_active] or listings
+
+    @classmethod
+    def department_code_of(cls, listings: list[Listing]) -> str | None:
+        """
+        The department of a litter: the first one its active listings give.
+
+        Args:
+            listings: Every listing of the group.
+
+        Returns:
+            The department code, or None while no listing gives one.
+        """
+        return next(
+            (listing.department_code for listing in cls.active_listings_of(listings) if listing.department_code), None
         )
 
     @staticmethod
