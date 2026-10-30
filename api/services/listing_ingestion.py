@@ -21,6 +21,7 @@ TRACKED_FIELDS: tuple[str, ...] = (
     "kind",
     "lof_status",
     "litter_number",
+    "mating_number",
     "mating_date",
     "birth_date",
     "male_count",
@@ -157,6 +158,7 @@ class ListingIngestionService:
         listing.kind = raw_listing.kind
         listing.lof_status = raw_listing.lof_status
         listing.litter_number = raw_listing.litter_number
+        listing.mating_number = raw_listing.mating_number
         listing.mating_date = raw_listing.mating_date
         listing.birth_date = raw_listing.birth_date
         listing.male_count = raw_listing.male_count

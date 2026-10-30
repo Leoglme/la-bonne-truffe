@@ -379,6 +379,7 @@ class CentraleCanineCollector:
             lof_status=LofStatus.LOF,
             external_url=CentraleCanineCollector._absolute_url(relative_url),
             litter_number=SccValueParser.to_text(litter.get("n_litter_number")),
+            mating_number=SccValueParser.to_text(litter.get("n_servicing_number")),
             mating_date=SccValueParser.to_french_date(litter.get("n_servicing_date")),
             birth_date=birth_date,
             male_count=SccValueParser.to_int(litter.get("n_male_number")) if is_born else None,

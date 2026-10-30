@@ -2,24 +2,31 @@
 
 from datetime import date, datetime
 
+import pytest
 from sqlalchemy.orm import Session
 
+from enums.notification_kind import NotificationKind
 from models.breeder import Breeder
 from models.department import Department
 from models.listing import Listing
 from models.listing_change import ListingChange
+from models.litter_group import LitterGroup
+from models.notification import Notification
 from models.search_profile import SearchProfile
 from models.source_run import SourceRun
 from seeders.run_seeders import SeederRunner
 from services.collection_planner import CollectionPlanner
 from services.collection_runner import collection_runner
+from services.push_service import PushResult, PushService
 from tests.centrale_canine_pages import (
     collector_serving,
+    declare_birth_under_new_id,
     litter_in,
     load_recorded_pages,
     mark_breed_club_member,
     refusing_collector,
     remove_litter,
+    turn_gold,
 )
 
 BIRTH_ON_27_OCTOBER_2026 = 1793102400
@@ -124,6 +131,26 @@ def test_birth_of_an_expected_litter_is_recorded_as_changes(db: Session) -> None
     assert (listing.male_count, listing.female_count) == (1, 4)
     assert {"kind", "birth_date", "male_count", "female_count"} <= changed_fields
     assert listing.last_changed_at is not None
+
+
+def test_birth_declared_under_a_new_identifier_joins_its_mating(db: Session, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(PushService, "send", lambda *_args, **_kwargs: PushResult(delivered=1))
+    SeederRunner.run(db)
+    pages = load_recorded_pages()
+    turn_gold(pages, "4337070")
+    collection_runner.run_centrale_canine(db, collector_serving(pages))
+    declare_birth_under_new_id(pages, "4337070", "9990001", BIRTH_ON_27_OCTOBER_2026, male_count=1, female_count=4)
+
+    report = collection_runner.run_centrale_canine(db, collector_serving(pages))
+
+    mating = db.query(Listing).filter(Listing.external_id == "4337070").one()
+    birth = db.query(Listing).filter(Listing.external_id == "9990001").one()
+    group = db.get(LitterGroup, mating.litter_group_id) if mating.litter_group_id is not None else None
+    assert (mating.mating_number, birth.mating_number) == ("2026032501", "2026032501")
+    assert birth.litter_group_id == mating.litter_group_id
+    assert report.grouping.born_group_ids == [mating.litter_group_id]
+    assert group is not None and group.birth_date == date(2026, 10, 27)
+    assert db.query(Notification).filter(Notification.kind == NotificationKind.BORN).count() == 1
 
 
 def test_unchanged_run_records_nothing(db: Session) -> None:

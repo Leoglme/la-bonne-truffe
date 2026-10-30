@@ -29,6 +29,7 @@ def add_listing(
     male_count: int | None = None,
     female_count: int | None = None,
     puppies_available: int | None = None,
+    mating_number: str | None = None,
 ) -> Listing:
     """
     Store a listing of the cocker for a breeder.
@@ -45,6 +46,7 @@ def add_listing(
         male_count: Males, if known.
         female_count: Females, if known.
         puppies_available: Puppies still offered, if the ad says.
+        mating_number: Mating declaration number on the source, if given.
 
     Returns:
         The listing, flushed.
@@ -62,6 +64,7 @@ def add_listing(
         male_count=male_count,
         female_count=female_count,
         puppies_available=puppies_available,
+        mating_number=mating_number,
         first_seen_at=NOW,
         last_seen_at=NOW,
     )
@@ -220,3 +223,63 @@ def test_a_puppy_ad_reserved_or_gone_lowers_the_puppies_its_litter_offers(db: Se
     assert group is not None
     assert after_a_reservation.fewer_puppies_group_ids == after_an_ad_left.fewer_puppies_group_ids == [group.id]
     assert group.puppies_available == 1
+
+
+def test_a_birth_declared_under_a_new_identifier_joins_its_mating(db: Session) -> None:
+    breeder = seeded_breeder(db)
+    mating = add_listing(
+        db,
+        breeder,
+        ListingSource.CENTRALE_CANINE,
+        "mating-1",
+        ListingKind.LITTER_EXPECTED,
+        "Mère de test",
+        mating_date=date(2026, 8, 25),
+        mating_number="2026032501",
+    )
+    litter_grouping_service.regroup(db, NOW)
+    birth = add_listing(
+        db,
+        breeder,
+        ListingSource.CENTRALE_CANINE,
+        "birth-1",
+        ListingKind.LITTER_BORN,
+        "Mère de test",
+        birth_date=date(2026, 10, 27),
+        male_count=1,
+        female_count=4,
+        mating_number="2026032501",
+    )
+
+    result = litter_grouping_service.regroup(db, NOW)
+
+    assert birth.litter_group_id == mating.litter_group_id
+    assert result.born_group_ids == [mating.litter_group_id]
+
+
+def test_two_matings_of_a_breeder_stay_apart(db: Session) -> None:
+    breeder = seeded_breeder(db)
+    first_mating = add_listing(
+        db,
+        breeder,
+        ListingSource.CENTRALE_CANINE,
+        "mating-1",
+        ListingKind.LITTER_EXPECTED,
+        "Première mère",
+        mating_date=date(2026, 8, 25),
+        mating_number="2026032501",
+    )
+    second_mating = add_listing(
+        db,
+        breeder,
+        ListingSource.CENTRALE_CANINE,
+        "mating-2",
+        ListingKind.LITTER_EXPECTED,
+        "Seconde mère",
+        mating_date=date(2026, 8, 26),
+        mating_number="2026032502",
+    )
+
+    litter_grouping_service.regroup(db, NOW)
+
+    assert first_mating.litter_group_id != second_mating.litter_group_id

@@ -77,6 +77,53 @@ def mark_published_an_hour_ago(pages: Sequence[dict[str, Any]], litter_id: str) 
     litter_in(pages, litter_id)["n_created"] = [int(time.time()) - 3600]
 
 
+def declare_birth_under_new_id(
+    pages: Sequence[dict[str, Any]],
+    litter_id: str,
+    new_litter_id: str,
+    birth_timestamp: int,
+    male_count: int,
+    female_count: int,
+) -> None:
+    """
+    Replace a recorded mating by its birth declared under a new identifier, as the Centrale Canine may do: same
+    breeder, parents and mating number, with a litter number, the sexes and ``n_is_borned`` true.
+
+    Args:
+        pages: Recorded pages.
+        litter_id: ``n_id`` of the mating.
+        new_litter_id: ``n_id`` the birth is declared under.
+        birth_timestamp: Birth date, as the page writes it.
+        male_count: Males born.
+        female_count: Females born.
+
+    Raises:
+        KeyError: When no page holds the mating.
+    """
+    for page in pages:
+        for selection_group in page["litters"]["node"].values():
+            mating = selection_group.pop(f"n{litter_id}", None)
+            if mating is None:
+                continue
+            mating_number = mating["n_servicing_number"][0]
+            birth = dict(mating)
+            birth.update(
+                {
+                    "n_id": new_litter_id,
+                    "url": f"/portee/{new_litter_id}",
+                    "n_litter_number": f"LOF-{mating_number}-2026-14",
+                    "n_is_borned": True,
+                    "n_birth_date": [birth_timestamp],
+                    "n_male_number": [male_count],
+                    "n_female_number": [female_count],
+                    "n_litter_status": [2],
+                }
+            )
+            selection_group[f"n{new_litter_id}"] = birth
+            return
+    raise KeyError(litter_id)
+
+
 def turn_gold(pages: Sequence[dict[str, Any]], litter_id: str) -> None:
     """
     Make a recorded litter gold (variety ``158``, node 345). The recorded litters « à naître » are all

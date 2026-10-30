@@ -2,7 +2,8 @@
 Groups the listings into real litters (``litter_groups``) and keeps the group dates up to date.
 
 Rules of docs/03-modele-de-donnees.md, in order, for a listing without group, always within the same
-breeder and breed: the same litter number; for a puppy ad, a puppy ad of the same source born the same
+breeder and breed: the same litter number; the same mating number on the same source (the Centrale Canine
+may declare the birth under a new identifier); for a puppy ad, a puppy ad of the same source born the same
 day of the same mother (such a source lists each puppy apart); a listing of another source born, or
 mated, three days apart at most, thirty when both name the same mother; for an ad without birth date,
 the single litter seen in the last sixty days (flagged ``is_grouping_probable``). Two named mothers that differ never group, and two litter
@@ -115,6 +116,11 @@ class LitterGroupingService:
         if listing.litter_number:
             for other in grouped_listings_of_breeder:
                 if other.litter_number == listing.litter_number:
+                    return db.get(LitterGroup, other.litter_group_id)
+
+        if listing.mating_number:
+            for other in grouped_listings_of_breeder:
+                if other.source == listing.source and other.mating_number == listing.mating_number:
                     return db.get(LitterGroup, other.litter_group_id)
 
         if listing.kind == ListingKind.PUPPY_AD and listing.birth_date is not None:

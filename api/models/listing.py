@@ -30,6 +30,8 @@ class Listing(TimestampMixin, Base):
         kind: ``ListingKind`` value.
         lof_status: ``LofStatus`` value.
         litter_number: LOF litter number, empty for a mating.
+        mating_number: Mating declaration number on the source (Centrale Canine ``n_servicing_number``), kept by
+            the birth declaration.
         mating_date: Mating date.
         birth_date: Birth date.
         male_count: Number of males at birth (0 before the birth at the Centrale Canine).
@@ -73,6 +75,7 @@ class Listing(TimestampMixin, Base):
     )
     lof_status: Mapped[LofStatus] = mapped_column(str_enum_column(LofStatus), default=LofStatus.UNKNOWN, nullable=False)
     litter_number: Mapped[str | None] = mapped_column(String(60))
+    mating_number: Mapped[str | None] = mapped_column(String(40))
     mating_date: Mapped[date | None]
     birth_date: Mapped[date | None]
     male_count: Mapped[int | None]

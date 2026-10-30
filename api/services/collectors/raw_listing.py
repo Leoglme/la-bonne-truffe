@@ -60,6 +60,7 @@ class RawListing:
     lof_status: LofStatus
     external_url: str | None = None
     litter_number: str | None = None
+    mating_number: str | None = None
     mating_date: date | None = None
     birth_date: date | None = None
     male_count: int | None = None
