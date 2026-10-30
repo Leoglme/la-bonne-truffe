@@ -16,6 +16,13 @@
           {{ props.followUp.litter.name }}
         </span>
         <FollowUpSummaryLine :litter="props.followUp.litter" class="text-[13px] text-ink-muted md:text-[15px]" />
+        <span v-if="lastContactLabel" class="text-[13px] text-ink-muted md:text-[15px]">{{ lastContactLabel }}</span>
+        <span
+          v-if="goneSinceLabel"
+          class="mt-1 self-start rounded-full bg-coral-pastel px-2.5 py-1 text-xs font-extrabold text-coral-text md:px-3 md:py-1.5 md:text-[13px]"
+        >
+          {{ goneSinceLabel }}
+        </span>
         <span
           v-if="reminderChip"
           class="mt-1 self-start rounded-full px-2.5 py-1 text-xs font-extrabold whitespace-nowrap md:hidden"
@@ -48,6 +55,7 @@ import type { FollowUpReminderChip } from '~/types/FollowUp'
 import type { FollowUpLitterCardProps } from '~/types/FollowUpLitterCard'
 import { computed } from 'vue'
 import { FollowUpPresentation } from '~/utils/followUpPresentation'
+import { LitterPresentation } from '~/utils/litterPresentation'
 
 const props: FollowUpLitterCardProps = defineProps({
   followUp: { type: Object as PropType<FollowUpCard>, required: true },
@@ -56,5 +64,11 @@ const props: FollowUpLitterCardProps = defineProps({
 
 const reminderChip: ComputedRef<FollowUpReminderChip | null> = computed((): FollowUpReminderChip | null =>
   FollowUpPresentation.buildReminderChip(props.followUp, new Date()),
+)
+const lastContactLabel: ComputedRef<string | null> = computed((): string | null =>
+  FollowUpPresentation.buildLastContactLabel(props.followUp.last_contact_at),
+)
+const goneSinceLabel: ComputedRef<string | null> = computed((): string | null =>
+  LitterPresentation.buildGoneSinceLabel(props.followUp.litter),
 )
 </script>

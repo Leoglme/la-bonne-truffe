@@ -15,6 +15,14 @@
           <UiCustomIcon name="heart" :size-in-pixels="36" :stroke-width="2" class="shrink-0 text-coral" />
         </template>
       </UiEmptyStateCard>
+      <div
+        v-else-if="followUpsStore.isLoading && followUpsStore.cards.length === 0"
+        aria-busy="true"
+        aria-label="Chargement du suivi"
+        class="flex flex-col gap-3"
+      >
+        <USkeleton v-for="placeholder in 3" :key="placeholder" class="h-[88px] rounded-card-compact" />
+      </div>
 
       <template v-else-if="followUpsStore.cards.length > 0">
         <section v-for="section in visibleSections" :key="section.title" class="flex flex-col gap-3">

@@ -43,11 +43,13 @@ class LitterCard(BaseModel):
     puppies_available: int | None = Field(
         description="Puppies still offered across the active listings, null while no source tells"
     )
+    price_cents: int | None = Field(description="Lowest price of the active listings, null while no source gives one")
     birth_date: date | None
     expected_birth_date: date | None
     available_from: date | None
     photo_url: str | None
     first_seen_at: datetime
+    last_seen_at: datetime = Field(description="Last time a source still showed one of its listings")
     is_active: bool
     sources: list[ListingSource]
     follow_up_status: FollowUpStatus | None

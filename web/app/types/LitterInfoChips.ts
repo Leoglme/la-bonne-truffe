@@ -5,7 +5,7 @@ export type LitterInfoChipsProps = {
   isInSidePanel: boolean
 }
 
-export type BreedingQualityChip = 'affix' | GeneticScreening | 'breed_club_member'
+export type BreedingQualityChip = 'affix' | 'selected_breeding' | GeneticScreening | 'breed_club_member'
 
 export type LitterInfoChipLabels = {
   fullLabel: string

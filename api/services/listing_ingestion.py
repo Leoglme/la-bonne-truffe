@@ -288,6 +288,7 @@ class ListingIngestionService:
         breeder.department_code = cls._known_or_current(department_code, breeder.department_code)
         breeder.latitude = cls._known_or_current(raw_breeder.latitude, breeder.latitude)
         breeder.longitude = cls._known_or_current(raw_breeder.longitude, breeder.longitude)
+        breeder.website = cls._known_or_current(raw_breeder.website, breeder.website)
         breeder.scc_selection_group = cls._known_or_current(raw_breeder.selection_group, breeder.scc_selection_group)
         breeder.is_breed_club_member = cls._known_or_current(
             raw_breeder.is_breed_club_member, breeder.is_breed_club_member

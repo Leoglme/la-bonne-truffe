@@ -36,6 +36,7 @@
               class="pointer-events-none absolute end-4 top-1/2 size-5 -translate-y-1/2 text-ink-muted"
             />
           </div>
+          <span v-if="lastContactLabel" class="text-sm text-ink-muted">{{ lastContactLabel }}</span>
         </div>
 
         <div class="flex flex-col gap-2">
@@ -186,6 +187,7 @@ import type { FollowUpStatus, LitterDetail, LitterFollowUp } from '~/types/api'
 import { computed, ref, useId, watch } from 'vue'
 import { FOLLOW_UP_STATUS_OPTIONS } from '~/constants/followUpOptions'
 import { ChoiceValues } from '~/utils/choiceValues'
+import { FollowUpPresentation } from '~/utils/followUpPresentation'
 import { FrenchDate } from '~/utils/frenchDate'
 
 const route: RouteLocationNormalizedLoaded = useRoute()
@@ -210,6 +212,9 @@ const selectedStatus: ComputedRef<FollowUpStatus | null> = computed((): FollowUp
   }
   return status === 'new' ? 'to_contact' : status
 })
+const lastContactLabel: ComputedRef<string | null> = computed((): string | null =>
+  FollowUpPresentation.buildLastContactLabel(litter.value?.follow_up?.last_contact_at ?? null),
+)
 const reminderMoment: ComputedRef<Date | null> = computed((): Date | null => {
   const nextReminderAt: string | null | undefined = litter.value?.follow_up?.next_reminder_at
   return nextReminderAt ? FrenchDate.parseApiDate(nextReminderAt) : null

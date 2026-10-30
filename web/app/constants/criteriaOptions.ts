@@ -1,5 +1,5 @@
 import type { ColorPreferenceLevel, LofPreference, SexPreference } from '~/types/api'
-import type { CriteriaColorRow } from '~/types/Criteria'
+import type { CriteriaColorRow, CriteriaHourOption } from '~/types/Criteria'
 import type { UiChoiceButtonsOption } from '~/types/UiChoiceButtons'
 
 export const MAIN_COLOR_ROWS: CriteriaColorRow[] = [
@@ -43,3 +43,8 @@ export const NEARBY_REGIONS: string[] = ['Bretagne', 'Pays de la Loire', 'Norman
 export const COLOR_LEVELS: ColorPreferenceLevel[] = ['preferred', 'acceptable', 'ignored']
 export const LOF_PREFERENCES: LofPreference[] = ['required', 'preferred', 'any']
 export const SEX_PREFERENCES: SexPreference[] = ['male', 'female', 'any']
+
+/** Hours the evening digest can be sent at, in French time. */
+export const DIGEST_HOUR_OPTIONS: CriteriaHourOption[] = [17, 18, 19, 20, 21, 22, 23].map(
+  (hour: number): CriteriaHourOption => ({ label: `${hour} h`, value: hour }),
+)

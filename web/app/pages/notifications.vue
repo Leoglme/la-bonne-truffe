@@ -13,6 +13,14 @@
           <UiCustomIcon name="bell" :size-in-pixels="36" :stroke-width="2" class="shrink-0 text-coral" />
         </template>
       </UiEmptyStateCard>
+      <div
+        v-else-if="bellStore.isLoading && bellStore.notifications.length === 0"
+        aria-busy="true"
+        aria-label="Chargement des notifications"
+        class="flex flex-col gap-3"
+      >
+        <USkeleton v-for="placeholder in 3" :key="placeholder" class="h-[84px] rounded-card-compact" />
+      </div>
       <NuxtLink
         v-for="notification in bellStore.notifications"
         :key="notification.id"

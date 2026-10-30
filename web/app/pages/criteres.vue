@@ -5,7 +5,7 @@
         type="button"
         class="min-h-[52px] shrink-0 rounded-full border-0 px-[22px] text-[17px] font-extrabold"
         :class="criteriaStore.hasUnsavedChanges ? 'bg-coral text-white' : 'bg-chip text-ink-muted'"
-        :disabled="!criteriaStore.hasUnsavedChanges || criteriaStore.isSaving"
+        :disabled="!criteriaStore.hasUnsavedChanges || criteriaStore.isSaving || hasNoDepartment"
         @click="criteriaStore.save()"
       >
         {{ saveLabel }}
@@ -137,10 +137,27 @@
         </div>
         <div class="flex items-center justify-between gap-3">
           <span class="flex flex-col">
+            <span class="text-[17px] font-bold">Naissance d’une portée suivie</span>
+            <span class="text-sm text-ink-muted">Tout de suite, même pour une portée acceptable</span>
+          </span>
+          <USwitch v-model="draft.notify_birth_of_followed" aria-label="Notifier la naissance d’une portée suivie" />
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <span class="flex flex-col">
             <span class="text-[17px] font-bold">Récap du soir</span>
-            <span class="text-sm text-ink-muted">Les acceptables et tes suivis, à {{ draft.digest_hour }}&nbsp;h</span>
+            <span class="text-sm text-ink-muted">Les acceptables et tes suivis, une fois par jour</span>
           </span>
           <USwitch v-model="draft.notify_acceptable_in_digest" aria-label="Recevoir le récap du soir" />
+        </div>
+        <div v-if="draft.notify_acceptable_in_digest" class="flex items-center justify-between gap-3">
+          <span class="text-[17px] font-bold">Heure du récap</span>
+          <USelect
+            v-model="draft.digest_hour"
+            :items="DIGEST_HOUR_OPTIONS"
+            size="xl"
+            aria-label="Heure du récap du soir"
+            class="w-28"
+          />
         </div>
       </UiSectionCard>
     </div>
@@ -155,6 +172,7 @@ import { computed, onMounted, ref } from 'vue'
 import { COAT_COLOR_LABELS } from '~/constants/coatColorLabels'
 import {
   COLOR_LEVEL_OPTIONS,
+  DIGEST_HOUR_OPTIONS,
   LOF_OPTIONS,
   MAIN_COLOR_ROWS,
   NEARBY_REGIONS,

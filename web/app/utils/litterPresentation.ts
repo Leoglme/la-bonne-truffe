@@ -8,6 +8,11 @@ import { FrenchDate } from '~/utils/frenchDate'
 import { FrenchText } from '~/utils/frenchText'
 
 const UNKNOWN_PLACE_LABEL: string = 'Lieu à confirmer'
+const EURO_FORMAT: Intl.NumberFormat = new Intl.NumberFormat('fr-FR', {
+  style: 'currency',
+  currency: 'EUR',
+  maximumFractionDigits: 0,
+})
 
 /** How a litter reads on screen: colours, sexes, place, coat of the illustration; an unknown fact stays unknown. */
 export class LitterPresentation {
@@ -123,6 +128,32 @@ export class LitterPresentation {
       return true
     }
     return card.puppies_available < card.male_count + card.female_count
+  }
+
+  /**
+   * Write the price of a litter, when a source gives one.
+   *
+   * @param card - The litter.
+   * @returns « 1 400 € », or null while unknown.
+   */
+  static buildPriceLabel(card: LitterCard): string | null {
+    if (card.price_cents === null) {
+      return null
+    }
+    return EURO_FORMAT.format(card.price_cents / 100)
+  }
+
+  /**
+   * Say since when a litter is gone from its sources.
+   *
+   * @param card - The litter.
+   * @returns « Plus en ligne depuis le 12 oct. », or null while the litter is still online.
+   */
+  static buildGoneSinceLabel(card: LitterCard): string | null {
+    if (card.is_active) {
+      return null
+    }
+    return `Plus en ligne depuis le ${FrenchDate.formatDayAndShortMonth(FrenchDate.parseApiDate(card.last_seen_at))}`
   }
 
   /**

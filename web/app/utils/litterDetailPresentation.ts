@@ -1,4 +1,4 @@
-import type { LitterCard, LitterDetail, LitterSourceListing } from '~/types/api'
+import type { LitterBreeder, LitterCard, LitterDetail, LitterSourceListing, MatchFlag } from '~/types/api'
 import type {
   LitterDayFact,
   LitterDayFactKey,
@@ -8,11 +8,18 @@ import type {
 } from '~/types/Litter'
 import type { DevicePosition, GeographicPoint, MapDestination } from '~/types/Location'
 import type { UiPhotoViewerPhoto } from '~/types/UiPhotoViewer'
-import { LISTING_KIND_LABELS, LISTING_SOURCE_LABELS, LISTING_SOURCE_LINK_LABELS } from '~/constants/litterLabels'
+import {
+  LISTING_KIND_LABELS,
+  LISTING_SOURCE_LABELS,
+  LISTING_SOURCE_LINK_LABELS,
+  MATCH_FLAG_LABELS,
+} from '~/constants/litterLabels'
 import { FrenchDate } from '~/utils/frenchDate'
 import { LitterPresentation } from '~/utils/litterPresentation'
 
 const UNKNOWN_FACT_LABEL: string = 'À confirmer'
+const GONE_LISTING_LABEL: string = 'plus en ligne'
+const SIREN_DIGIT_GROUP: RegExp = /(\d{3})(?=\d)/g
 
 /** How the detail screen and the desktop panel word a litter. */
 export class LitterDetailPresentation {
@@ -113,21 +120,28 @@ export class LitterDetailPresentation {
     const puppyAds: LitterSourceListing[] = this.listPuppyAds(litter)
     return litter.listings.map((listing: LitterSourceListing, index: number): LitterListingLine => {
       const key: string = `${listing.source}-${index}`
+      const goneLabel: string | null = listing.is_active ? null : GONE_LISTING_LABEL
       if (listing.kind !== 'puppy_ad') {
         return {
           key,
           href: listing.external_url,
           label: 'Vu sur',
-          description: this.buildSourceLine(listing),
+          description: this.joinKnownParts([this.buildSourceLine(listing), goneLabel]),
           thumbnailUrl: null,
+          isGone: !listing.is_active,
         }
       }
       return {
         key,
         href: listing.external_url,
         label: this.buildPuppyLabel(puppyAds.indexOf(listing), puppyAds.length),
-        description: this.joinKnownParts([this.buildPuppyDescription(listing), LISTING_SOURCE_LABELS[listing.source]]),
+        description: this.joinKnownParts([
+          this.buildPuppyDescription(listing),
+          LISTING_SOURCE_LABELS[listing.source],
+          goneLabel,
+        ]),
         thumbnailUrl: listing.photos[0] ?? null,
+        isGone: !listing.is_active,
       }
     })
   }
@@ -156,6 +170,46 @@ export class LitterDetailPresentation {
         ]),
       }
     })
+  }
+
+  /**
+   * List what the breeder has to confirm: the unknown facts that kept the litter below « préférée ».
+   *
+   * @param litter - The litter.
+   * @returns « À confirmer avec l’éleveur : le LOF, les sexes », or null when nothing is unknown.
+   */
+  static buildFactsToConfirmLine(litter: LitterDetail): string | null {
+    const facts: string[] = litter.flags
+      .map((flag: MatchFlag): string | null => MATCH_FLAG_LABELS[flag])
+      .filter((fact: string | null): fact is string => fact !== null)
+    return facts.length > 0 ? `À confirmer avec l’éleveur : ${facts.join(', ')}` : null
+  }
+
+  /**
+   * Name the breeder: its affix, and the name the source gives when it differs.
+   *
+   * @param breeder - The breeder.
+   * @returns « Ar Ti Marellek », « Ar Ti Marellek · Élevage Dupont », or null when nothing names it.
+   */
+  static buildBreederName(breeder: LitterBreeder): string | null {
+    const affix: string | null = breeder.affix || null
+    const displayName: string | null = breeder.display_name || null
+    if (affix !== null && displayName !== null && affix.toLowerCase() !== displayName.toLowerCase()) {
+      return `${affix} · ${displayName}`
+    }
+    return affix ?? displayName
+  }
+
+  /**
+   * Build the line under the breeder's name: its town and its SIREN.
+   *
+   * @param breeder - The breeder.
+   * @returns « Saint-Aubin-du-Cormier · SIREN 123 456 789 », or null when neither is known.
+   */
+  static buildBreederDetailsLine(breeder: LitterBreeder): string | null {
+    const siren: string | null = breeder.siren ? `SIREN ${breeder.siren.replace(SIREN_DIGIT_GROUP, '$1 ')}` : null
+    const line: string = this.joinKnownParts([breeder.city, siren])
+    return line === '' ? null : line
   }
 
   /**

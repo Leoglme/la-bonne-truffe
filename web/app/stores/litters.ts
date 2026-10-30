@@ -65,6 +65,14 @@ export const useLittersStore = defineStore('litters', () => {
   }
 
   /**
+   * Record a look at the home list after a resume, as a new launch: the « Nouveau » badges move to what came since.
+   */
+  async function recordResumeVisit(): Promise<void> {
+    hasRecordedVisit = false
+    await recordVisit()
+  }
+
+  /**
    * Record the look at the home list once per launch of the app, and keep the previous one to tell the new litters.
    */
   async function recordVisit(): Promise<void> {
@@ -181,6 +189,7 @@ export const useLittersStore = defineStore('litters', () => {
     preferredCards,
     bornLastNightCards,
     load,
+    recordResumeVisit,
     recordVisit,
     select,
     follow,

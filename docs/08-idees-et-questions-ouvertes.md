@@ -13,7 +13,7 @@ Tranchée le 29/10/2026 : **les annonces « Type Cocker Spaniel Anglais » de Ch
 ## Idées V1.5 (après que ça tourne)
 
 - **Temps de route** réel (« à 1 h de chez toi ») à la place de la distance à vol d'oiseau, et une position pour les élevages que seules Chiens de France ou Chiots de France donnent (code postal à géocoder).
-- **Coordonnées de l'éleveur** : afficher le SIREN et le lien vers la page de l'élevage sur la Centrale Canine (le téléphone et le bouton d'appel y sont déjà).
+- **Page de l'élevage sur la Centrale Canine** (`u_breeder_site`) : le SIREN, la ville et le site de l'éleveur (Chiens de France, Chiots de France) sont affichés depuis le 30/10/2026 ; reste le lien vers sa page SCC.
 - **Lien Leboncoin préconstruit** (recherche sauvegardée) et **lien chien.com** par race, pour un coup d'œil manuel depuis l'app.
 
 ## Idées V2 (si l'outil marche pour Léo)

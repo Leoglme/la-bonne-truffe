@@ -117,7 +117,7 @@ Il n'y a ni couleur ni téléphone sur la page (le contact passe par un formulai
 
 **Relevé réel du 28/10/2026** : 12 annonces dans les deux régions du profil (7 chiots, 5 portées à venir), 14 requêtes. 7 annonces ont rejoint une portée de la Centrale Canine : par le numéro de portée, ou par la date de saillie et le nom de la mère.
 
-**Comment le collecteur lit cette source** (`api/services/collectors/chiens_de_france.py`) : une liste par race et par région des départements du profil, puis la page de chaque annonce des départements du profil ; une annonce retirée entre la liste et sa page (404) est sautée. Une requête par seconde, par le `curl` du système comme les autres sources. L'éleveur est nommé par le sous-domaine de son site (`<nom>.chiens-de-france.com`), retrouvé par son SIREN quand le SIRET est donné.
+**Comment le collecteur lit cette source** (`api/services/collectors/chiens_de_france.py`) : une liste par race et par région des départements du profil, puis la page de chaque annonce des départements du profil ; une annonce retirée entre la liste et sa page (404) est sautée. Une requête par seconde, par le `curl` du système comme les autres sources. L'éleveur est nommé par le sous-domaine de son site (`<nom>.chiens-de-france.com`), retrouvé par son SIREN quand le SIRET est donné ; l'accueil de ce site est gardé comme site de l'éleveur (`breeders.website`), affiché dans le détail.
 
 ## 3. Chiots de France
 

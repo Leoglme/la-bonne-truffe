@@ -1099,6 +1099,11 @@ export interface components {
              * @description Puppies still offered across the active listings, null while no source tells
              */
             puppies_available: number | null;
+            /**
+             * Price Cents
+             * @description Lowest price of the active listings, null while no source gives one
+             */
+            price_cents: number | null;
             /** Birth Date */
             birth_date: string | null;
             /** Expected Birth Date */
@@ -1112,6 +1117,12 @@ export interface components {
              * Format: date-time
              */
             first_seen_at: string;
+            /**
+             * Last Seen At
+             * Format: date-time
+             * @description Last time a source still showed one of its listings
+             */
+            last_seen_at: string;
             /** Is Active */
             is_active: boolean;
             /** Sources */
@@ -1174,6 +1185,11 @@ export interface components {
              * @description Puppies still offered across the active listings, null while no source tells
              */
             puppies_available: number | null;
+            /**
+             * Price Cents
+             * @description Lowest price of the active listings, null while no source gives one
+             */
+            price_cents: number | null;
             /** Birth Date */
             birth_date: string | null;
             /** Expected Birth Date */
@@ -1187,6 +1203,12 @@ export interface components {
              * Format: date-time
              */
             first_seen_at: string;
+            /**
+             * Last Seen At
+             * Format: date-time
+             * @description Last time a source still showed one of its listings
+             */
+            last_seen_at: string;
             /** Is Active */
             is_active: boolean;
             /** Sources */

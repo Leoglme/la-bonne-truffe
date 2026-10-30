@@ -7,11 +7,14 @@
       target="_blank"
       rel="noopener"
       class="flex min-h-14 items-center gap-3 rounded-2xl bg-card px-3.5 py-3 text-ink no-underline shadow-card hover:text-ink md:gap-4 md:rounded-[20px] md:px-[18px]"
+      :class="line.isGone ? 'opacity-60' : ''"
     >
       <img
         v-if="line.thumbnailUrl"
         :src="line.thumbnailUrl"
         alt=""
+        loading="lazy"
+        decoding="async"
         class="size-12 shrink-0 rounded-xl object-cover md:size-14 md:rounded-2xl"
       />
       <span class="flex min-w-0 grow flex-col">

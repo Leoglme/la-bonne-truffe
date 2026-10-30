@@ -51,6 +51,18 @@
               </span>
             </template>
           </UiEmptyStateCard>
+          <div
+            v-else-if="littersStore.isLoading && littersStore.cards.length === 0"
+            aria-busy="true"
+            aria-label="Chargement des portées"
+            class="flex flex-col gap-3.5 md:grid md:grid-cols-2 md:gap-5 xl:grid-cols-3"
+          >
+            <USkeleton
+              v-for="placeholder in 3"
+              :key="placeholder"
+              class="h-[142px] rounded-card-compact md:h-[300px] md:rounded-card"
+            />
+          </div>
 
           <div class="flex flex-col gap-3.5 md:hidden">
             <template v-for="litter in littersStore.visibleCards" :key="litter.id">

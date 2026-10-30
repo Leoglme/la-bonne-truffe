@@ -1,4 +1,4 @@
-import type { ListingKind, ListingSource, LofStatus, MatchTier } from '~/types/api'
+import type { ListingKind, ListingSource, LofStatus, MatchFlag, MatchTier } from '~/types/api'
 import type { BreedingQualityChip, LitterInfoChipLabels } from '~/types/LitterInfoChips'
 
 export const TIER_LABELS: Record<MatchTier, string> = {
@@ -40,7 +40,17 @@ export const LOF_STATUS_LABELS: Record<LofStatus, string> = {
 
 export const BREEDING_QUALITY_CHIP_LABELS: Record<BreedingQualityChip, LitterInfoChipLabels> = {
   affix: { fullLabel: 'Élevage avec affixe', shortLabel: 'Avec affixe' },
+  selected_breeding: { fullLabel: 'Élevage sélectionné', shortLabel: 'Sélectionné' },
   parents_tested: { fullLabel: 'Parents testés APR et NF', shortLabel: 'Parents testés APR et NF' },
   puppies_unaffected: { fullLabel: 'Chiots indemnes d’APR et de NF', shortLabel: 'Chiots indemnes APR et NF' },
   breed_club_member: { fullLabel: 'Membre du Spaniel Club Français', shortLabel: 'Spaniel Club Français' },
+}
+
+/** How « À confirmer avec l’éleveur » names each unknown fact; the colour has its own section. */
+export const MATCH_FLAG_LABELS: Record<MatchFlag, string | null> = {
+  color_to_confirm: null,
+  sex_unknown: 'les sexes',
+  lof_unknown: 'le LOF',
+  price_unknown: 'le prix',
+  department_unknown: 'le département',
 }

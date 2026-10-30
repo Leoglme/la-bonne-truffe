@@ -48,6 +48,7 @@ def test_puppy_page_gives_one_puppy_its_litter_code_and_its_breeder() -> None:
         siren="000000001",
         zip_code="35140",
         city="Saint-Aubin-du-Cormier",
+        website="https://elevage-a.chiens-de-france.com",
     )
 
 

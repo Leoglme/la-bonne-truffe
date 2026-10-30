@@ -45,3 +45,8 @@ export type UsePullToRefreshReturn = {
   onTouchMove: (event: TouchEvent) => void
   onTouchEnd: () => void
 }
+
+export type UseAppRefreshReturn = {
+  refreshAfterNews: () => Promise<void>
+  refreshAfterResume: () => Promise<void>
+}

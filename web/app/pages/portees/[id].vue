@@ -27,13 +27,14 @@
           :illustration-size-in-pixels="200"
           illustration-class="mb-6"
         />
-        <NuxtLink
-          to="/"
-          aria-label="Retour aux portées"
-          class="absolute top-4 left-5 inline-flex size-11 items-center justify-center rounded-full bg-card text-ink shadow-floating-over-photo hover:text-ink md:top-9 md:left-8 md:size-[52px] md:shadow-floating"
+        <button
+          type="button"
+          aria-label="Retour"
+          class="absolute top-4 left-5 inline-flex size-11 items-center justify-center rounded-full border-0 bg-card text-ink shadow-floating-over-photo md:top-9 md:left-8 md:size-[52px] md:shadow-floating"
+          @click="goBack"
         >
           <UIcon name="i-lucide-chevron-left" class="size-5 md:size-[22px]" />
-        </NuxtLink>
+        </button>
         <button
           v-if="litter"
           type="button"
@@ -82,6 +83,7 @@
           ref="contentScroller"
           class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 pt-[22px] pb-4 md:gap-6 md:px-8 md:pt-8 md:pb-6"
         >
+          <LitterGoneBanner v-if="litter" :litter="litter" />
           <div class="flex shrink-0 items-start justify-between gap-3 md:gap-4">
             <div class="flex min-w-0 flex-col gap-0.5 md:gap-1">
               <span v-if="photoBadge" class="text-xs font-extrabold tracking-[0.04em] text-coral-text md:hidden">{{
@@ -107,7 +109,7 @@
               class="aspect-square overflow-hidden rounded-2xl border-0 bg-chip p-0 md:size-[118px] md:rounded-[20px]"
               @click="openPhotoViewer(photoIndex + 1)"
             >
-              <img :src="photo" alt="" class="size-full object-cover" />
+              <img :src="photo" alt="" loading="lazy" decoding="async" class="size-full object-cover" />
             </button>
             <button
               v-if="hiddenPhotoCount > 0"
@@ -121,6 +123,7 @@
           </div>
           <LitterReasonsCard :litter="litter" class="shrink-0" />
           <LitterParentsList :litter="litter" class="shrink-0" />
+          <LitterBreederCard :litter="litter" class="shrink-0" />
           <LitterListingsList :litter="litter" class="shrink-0" />
         </div>
 
@@ -164,6 +167,17 @@
           </UButton>
         </div>
       </div>
+    </div>
+
+    <div
+      v-if="!loadError && !litter"
+      aria-busy="true"
+      aria-label="Chargement de la portée"
+      class="relative -mt-7 flex min-h-0 flex-1 flex-col gap-4 rounded-t-[28px] bg-cream px-5 pt-[22px] md:mt-0 md:gap-6 md:rounded-t-[36px] md:px-8 md:pt-8"
+    >
+      <USkeleton class="h-8 w-2/3 rounded-full" />
+      <USkeleton class="h-20 w-full rounded-2xl" />
+      <USkeleton class="h-20 w-full rounded-2xl" />
     </div>
 
     <UiPhotoViewer
@@ -236,6 +250,27 @@ const viewerPhotos: ComputedRef<UiPhotoViewerPhoto[]> = computed((): UiPhotoView
   litter.value ? LitterDetailPresentation.buildViewerPhotos(litter.value) : [],
 )
 const pageTitle: ComputedRef<string> = computed((): string => `${litter.value?.name ?? 'Portée'} · La Bonne Truffe`)
+
+/**
+ * Read the path of the screen the detail was opened from.
+ *
+ * @returns The path, or null when the app started on the detail.
+ */
+function readPreviousPath(): string | null {
+  const previousPath: unknown = router.options.history.state['back']
+  return typeof previousPath === 'string' ? previousPath : null
+}
+
+/**
+ * Go back to the screen the litter was opened from, or to the home list when the app started here.
+ */
+function goBack(): void {
+  if (readPreviousPath() !== null) {
+    router.back()
+    return
+  }
+  navigateTo('/')
+}
 
 /**
  * Load a litter into the screen, and say why when it cannot be read.
@@ -324,8 +359,8 @@ function openPhotoViewer(photoIndex: number): void {
  * @returns Where the swipe takes its order of litters from.
  */
 function resolveBrowsingOrigin(): LitterBrowsingOrigin {
-  const previousPath: unknown = router.options.history.state['back']
-  return typeof previousPath === 'string' && previousPath.startsWith(FOLLOW_UPS_PATH) ? 'follow-ups' : 'home'
+  const previousPath: string | null = readPreviousPath()
+  return previousPath !== null && previousPath.startsWith(FOLLOW_UPS_PATH) ? 'follow-ups' : 'home'
 }
 
 useHead({ title: pageTitle })

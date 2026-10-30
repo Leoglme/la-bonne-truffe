@@ -45,7 +45,7 @@ export const useCriteriaStore = defineStore('criteria', () => {
   }
 
   /**
-   * Load the first profile of the user and the departments.
+   * Load the first profile and the departments; criteria edited and not saved yet are kept.
    */
   async function load(): Promise<void> {
     loadError.value = null
@@ -54,9 +54,12 @@ export const useCriteriaStore = defineStore('criteria', () => {
         ProfilesService.list(),
         ProfilesService.listDepartments(),
       ])
+      const isDraftKept: boolean = hasUnsavedChanges.value
       departments.value = loadedDepartments
       savedProfile.value = profiles[0] ?? null
-      draft.value = savedProfile.value ? buildProfileUpdate(savedProfile.value) : null
+      if (!isDraftKept) {
+        draft.value = savedProfile.value ? buildProfileUpdate(savedProfile.value) : null
+      }
     } catch (error: unknown) {
       loadError.value = error instanceof Error ? error.message : 'Chargement impossible'
     }

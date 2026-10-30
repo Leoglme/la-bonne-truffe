@@ -112,7 +112,8 @@ class HtmlAdParser:
     ) -> RawBreeder | None:
         """
         The breeder of an ad. Both sources link it to its site hosted by Chiens de France, whose name
-        identifies it (``elevage-a.chiens-de-france.com``); without a site, its affix or its SIREN does.
+        identifies it (``elevage-a.chiens-de-france.com``) and whose home page is kept as its website;
+        without a site, its affix or its SIREN does.
 
         Args:
             site_link: The link to the breeder's site, where the page shows the breeder.
@@ -130,4 +131,11 @@ class HtmlAdParser:
         source_id = site_name or BreederContactParser.affix_key(affix) or siren
         if source_id is None:
             return None
-        return RawBreeder(source_id=source_id, affix=affix, siren=siren, zip_code=postal_code, city=town)
+        return RawBreeder(
+            source_id=source_id,
+            affix=affix,
+            siren=siren,
+            zip_code=postal_code,
+            city=town,
+            website=f"https://{host}" if host else None,
+        )

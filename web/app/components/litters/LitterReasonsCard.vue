@@ -33,6 +33,13 @@
         {{ reason.text }}
       </li>
     </ul>
+    <p
+      v-if="factsToConfirmLine"
+      class="m-0 text-ink-muted"
+      :class="props.isInSidePanel ? 'text-sm' : 'mt-1 text-sm md:text-base'"
+    >
+      {{ factsToConfirmLine }}
+    </p>
   </div>
 </template>
 
@@ -41,6 +48,7 @@ import type { ComputedRef, PropType } from 'vue'
 import type { LitterDetail, LitterReason } from '~/types/api'
 import type { LitterReasonsCardProps } from '~/types/LitterReasonsCard'
 import { computed } from 'vue'
+import { LitterDetailPresentation } from '~/utils/litterDetailPresentation'
 
 const props: LitterReasonsCardProps = defineProps({
   litter: { type: Object as PropType<LitterDetail>, required: true },
@@ -55,5 +63,8 @@ const shownReasons: ComputedRef<LitterReason[]> = computed((): LitterReason[] =>
   [...props.litter.reasons]
     .sort((first: LitterReason, second: LitterReason): number => second.points - first.points)
     .slice(0, props.isInSidePanel ? SIDE_PANEL_REASON_LINE_LIMIT : REASON_LINE_LIMIT),
+)
+const factsToConfirmLine: ComputedRef<string | null> = computed((): string | null =>
+  LitterDetailPresentation.buildFactsToConfirmLine(props.litter),
 )
 </script>

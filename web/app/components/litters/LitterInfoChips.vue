@@ -31,6 +31,9 @@
     >
       {{ puppiesAvailableLabel }}
     </span>
+    <span v-if="priceLabel" class="rounded-full bg-chip text-ink-secondary" :class="chipSizeClass">
+      {{ priceLabel }}
+    </span>
     <span
       v-for="breedingQualityChip in breedingQualityChips"
       :key="breedingQualityChip"
@@ -72,10 +75,16 @@ const chipSizeClass: ComputedRef<string> = computed((): string =>
 const puppiesAvailableLabel: ComputedRef<string | null> = computed((): string | null =>
   LitterPresentation.buildPuppiesAvailableLabel(props.litter),
 )
+const priceLabel: ComputedRef<string | null> = computed((): string | null =>
+  LitterPresentation.buildPriceLabel(props.litter),
+)
 const breedingQualityChips: ComputedRef<BreedingQualityChip[]> = computed((): BreedingQualityChip[] => {
   const chips: BreedingQualityChip[] = []
   if (props.litter.breeder?.has_affix) {
     chips.push('affix')
+  }
+  if (props.litter.breeder?.is_selected_breeding) {
+    chips.push('selected_breeding')
   }
   if (props.litter.genetic_screening) {
     chips.push(props.litter.genetic_screening)

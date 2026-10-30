@@ -72,6 +72,21 @@ export default defineAppConfig({
         },
       },
     },
+    select: {
+      slots: {
+        base: 'min-h-[52px] rounded-2xl font-bold shadow-card focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-coral',
+        content: 'rounded-2xl bg-card shadow-floating',
+        item: 'font-bold',
+      },
+      variants: {
+        size: {
+          xl: { base: 'px-[18px] text-base' },
+        },
+        variant: {
+          outline: 'bg-card text-ink ring-2 ring-card',
+        },
+      },
+    },
     input: {
       slots: {
         base: 'rounded-2xl font-bold shadow-card placeholder:font-semibold placeholder:text-ink-muted focus-visible:outline-offset-0 md:rounded-tile-compact',

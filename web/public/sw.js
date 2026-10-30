@@ -23,7 +23,16 @@ self.addEventListener('push', (event) => {
     data: { url: data.url || '/' },
     tag: data.tag || undefined,
   }
-  event.waitUntil(self.registration.showNotification(title, options))
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, options),
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        for (const client of clientList) {
+          client.postMessage({ type: 'notification-received' })
+        }
+      }),
+    ]),
+  )
 })
 
 self.addEventListener('notificationclick', (event) => {

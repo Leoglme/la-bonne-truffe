@@ -5,3 +5,8 @@ export type CriteriaColorRow = {
   color: CoatColor
   coat: CockerCoat
 }
+
+export type CriteriaHourOption = {
+  label: string
+  value: number
+}

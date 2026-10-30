@@ -35,4 +35,5 @@ export type LitterListingLine = {
   label: string
   description: string
   thumbnailUrl: string | null
+  isGone: boolean
 }

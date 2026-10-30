@@ -19,16 +19,32 @@ const BORN_GOLD_LITTER: LitterCard = {
   male_count: 2,
   female_count: 3,
   puppies_available: null,
+  price_cents: null,
   birth_date: '2026-10-27',
   expected_birth_date: null,
   available_from: '2026-12-22',
   photo_url: null,
   first_seen_at: '2026-10-28T09:00:00',
+  last_seen_at: '2026-10-30T10:00:00',
   is_active: true,
   sources: ['centrale_canine'],
   follow_up_status: null,
   genetic_screening: null,
 }
+
+describe('LitterPresentation price and sighting', (): void => {
+  it('writes the price in euros, when a source gives one', (): void => {
+    expect(LitterPresentation.buildPriceLabel(BORN_GOLD_LITTER)).toBeNull()
+    expect(LitterPresentation.buildPriceLabel({ ...BORN_GOLD_LITTER, price_cents: 140_000 })).toBe('1\u202f400\u00a0€')
+  })
+
+  it('says since when a litter is gone from its sources', (): void => {
+    expect(LitterPresentation.buildGoneSinceLabel(BORN_GOLD_LITTER)).toBeNull()
+    expect(LitterPresentation.buildGoneSinceLabel({ ...BORN_GOLD_LITTER, is_active: false })).toBe(
+      'Plus en ligne depuis le 30 oct.',
+    )
+  })
+})
 
 describe('LitterPresentation puppies available', (): void => {
   it('writes the puppies still offered, when a source tells', (): void => {

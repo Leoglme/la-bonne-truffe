@@ -59,6 +59,7 @@ def test_ad_page_gives_a_born_litter_with_its_available_puppies_and_breeder() ->
         siren="000000001",
         zip_code="35140",
         city="Saint-Aubin-du-Cormier",
+        website="https://elevage-a.chiens-de-france.com",
     )
 
 

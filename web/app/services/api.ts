@@ -1,6 +1,7 @@
-import type { ApiErrorBody } from '~/types/ApiClient'
+import type { ApiErrorBody, ApiValidationError } from '~/types/ApiClient'
 import { TokenRejectedError } from '~/services/authService'
 
+const REQUEST_BODY_LOCATION: string = 'body'
 const TOKEN_REJECTED_STATUS: number = 401
 
 /** HTTP client every service goes through: bearer token, JSON encoding, and error unwrapping. */
@@ -105,16 +106,43 @@ export class ApiClient {
    * Extract the most precise message a failed response offers.
    *
    * @param response - The failed response.
-   * @returns The API `detail` field, falling back to the status text.
+   * @returns The API `detail` field, the first validation error of a refused payload, or the status text.
    */
   private static async readErrorMessage(response: Response): Promise<string> {
     const fallback: string = `Erreur de l'API : ${response.status} ${response.statusText}`
     const body: string = await response.text().catch((): string => '')
     try {
       const parsed: ApiErrorBody = JSON.parse(body)
-      return typeof parsed.detail === 'string' ? parsed.detail : fallback
+      if (typeof parsed.detail === 'string') {
+        return parsed.detail
+      }
+      return this.readFirstValidationError(parsed.detail) ?? fallback
     } catch {
       return fallback
     }
+  }
+
+  /**
+   * Word the first validation error of a refused payload, as FastAPI lists them.
+   *
+   * @param detail - The `detail` field of the response.
+   * @returns « department_codes : List should have at least 1 item… », or null when the field is not that list.
+   */
+  private static readFirstValidationError(detail: unknown): string | null {
+    const firstError: unknown = Array.isArray(detail) ? detail[0] : null
+    if (typeof firstError !== 'object' || firstError === null) {
+      return null
+    }
+    const validationError: ApiValidationError = firstError
+    if (typeof validationError.msg !== 'string') {
+      return null
+    }
+    const fieldPath: string = Array.isArray(validationError.loc)
+      ? validationError.loc
+          .filter((part: unknown): part is string => typeof part === 'string')
+          .filter((part: string): boolean => part !== REQUEST_BODY_LOCATION)
+          .join('.')
+      : ''
+    return fieldPath ? `${fieldPath} : ${validationError.msg}` : validationError.msg
   }
 }

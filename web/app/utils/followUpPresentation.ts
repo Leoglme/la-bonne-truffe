@@ -49,6 +49,19 @@ export class FollowUpPresentation {
   }
 
   /**
+   * Say when the breeder was last contacted.
+   *
+   * @param lastContactAt - Last contact, from the API, null before the first one.
+   * @returns « Contacté le 24 oct. », or null.
+   */
+  static buildLastContactLabel(lastContactAt: string | null): string | null {
+    if (lastContactAt === null) {
+      return null
+    }
+    return `Contacté le ${FrenchDate.formatDayAndShortMonth(FrenchDate.parseApiDate(lastContactAt))}`
+  }
+
+  /**
    * Build the expected birth of a followed litter to come, for the line under its name.
    *
    * @param litter - The followed litter.
