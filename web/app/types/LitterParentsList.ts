@@ -4,8 +4,14 @@ export type LitterParentsListProps = {
   litter: LitterDetail
 }
 
+export type LitterParentRole = 'sire' | 'dam'
+
+export type ParentRatingLabels = Record<LitterParentRole, string>
+
 export type LitterParentLine = {
-  role: string
+  role: LitterParentRole
+  roleLabel: string
   name: string
-  rating: string | null
+  rating: number | null
+  ratingLabel: string | null
 }

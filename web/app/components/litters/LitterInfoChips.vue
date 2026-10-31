@@ -80,9 +80,6 @@ const priceLabel: ComputedRef<string | null> = computed((): string | null =>
 )
 const breedingQualityChips: ComputedRef<BreedingQualityChip[]> = computed((): BreedingQualityChip[] => {
   const chips: BreedingQualityChip[] = []
-  if (props.litter.breeder?.has_affix) {
-    chips.push('affix')
-  }
   if (props.litter.breeder?.is_selected_breeding) {
     chips.push('selected_breeding')
   }

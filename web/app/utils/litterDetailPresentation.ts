@@ -6,6 +6,7 @@ import type {
   LitterListingLine,
   LitterPrimaryAction,
 } from '~/types/Litter'
+import type { LitterParentRole } from '~/types/LitterParentsList'
 import type { DevicePosition, GeographicPoint, MapDestination } from '~/types/Location'
 import type { UiPhotoViewerPhoto } from '~/types/UiPhotoViewer'
 import {
@@ -14,6 +15,7 @@ import {
   LISTING_SOURCE_LINK_LABELS,
   MATCH_FLAG_LABELS,
 } from '~/constants/litterLabels'
+import { MAX_PARENT_RATING, PARENT_RATING_LABELS } from '~/constants/parentRatings'
 import { FrenchDate } from '~/utils/frenchDate'
 import { LitterPresentation } from '~/utils/litterPresentation'
 
@@ -324,5 +326,16 @@ export class LitterDetailPresentation {
     }
     const shortDay: string = FrenchDate.formatDayAndShortMonth(FrenchDate.parseDay(isoDay))
     return { key, label, value: `vers le ${shortDay}`, compactValue: shortDay }
+  }
+
+  /**
+   * Name the Centrale Canine rating of a parent, agreed with its sex.
+   *
+   * @param rating - Rating from 1 to 6.
+   * @param role - Father or mother.
+   * @returns « Recommandée » for a mother rated 4; a level outside the grid keeps its number.
+   */
+  static buildParentRatingLabel(rating: number, role: LitterParentRole): string {
+    return PARENT_RATING_LABELS[rating]?.[role] ?? `Niveau ${rating} sur ${MAX_PARENT_RATING}`
   }
 }

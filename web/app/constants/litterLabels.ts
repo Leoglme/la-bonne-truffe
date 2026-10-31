@@ -39,12 +39,14 @@ export const LOF_STATUS_LABELS: Record<LofStatus, string> = {
 }
 
 export const BREEDING_QUALITY_CHIP_LABELS: Record<BreedingQualityChip, LitterInfoChipLabels> = {
-  affix: { fullLabel: 'Élevage avec affixe', shortLabel: 'Avec affixe' },
   selected_breeding: { fullLabel: 'Élevage sélectionné', shortLabel: 'Sélectionné' },
   parents_tested: { fullLabel: 'Parents testés APR et NF', shortLabel: 'Parents testés APR et NF' },
   puppies_unaffected: { fullLabel: 'Chiots indemnes d’APR et de NF', shortLabel: 'Chiots indemnes APR et NF' },
   breed_club_member: { fullLabel: 'Membre du Spaniel Club Français', shortLabel: 'Spaniel Club Français' },
 }
+
+/** What the breeder card says of a breeder whose kennel name is registered (an affix). */
+export const BREEDER_AFFIX_LINE: string = 'Nom d’élevage déposé à la Centrale Canine'
 
 /** How « À confirmer avec l’éleveur » names each unknown fact; the colour has its own section. */
 export const MATCH_FLAG_LABELS: Record<MatchFlag, string | null> = {

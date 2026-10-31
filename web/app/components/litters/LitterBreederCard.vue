@@ -11,6 +11,9 @@
     <h2 v-if="!props.isInSidePanel" class="m-0 font-display text-[17px] font-semibold md:text-xl">Éleveur</h2>
     <span class="text-[15px] font-bold md:text-[17px]">{{ breederName }}</span>
     <span v-if="detailsLine" class="text-sm text-ink-muted md:text-[15px]">{{ detailsLine }}</span>
+    <span v-if="props.litter.breeder?.has_affix" class="text-sm text-ink-muted md:text-[15px]">
+      {{ BREEDER_AFFIX_LINE }}
+    </span>
     <a
       v-if="props.litter.breeder?.website"
       :href="props.litter.breeder.website"
@@ -29,6 +32,7 @@ import type { ComputedRef, PropType } from 'vue'
 import type { LitterDetail } from '~/types/api'
 import type { LitterBreederCardProps } from '~/types/LitterBreederCard'
 import { computed } from 'vue'
+import { BREEDER_AFFIX_LINE } from '~/constants/litterLabels'
 import { LitterDetailPresentation } from '~/utils/litterDetailPresentation'
 
 const props: LitterBreederCardProps = defineProps({
