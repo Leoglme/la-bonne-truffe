@@ -37,6 +37,7 @@ from services.collectors.scc_breeders import (
     SccBreederDirectoryPlan,
 )
 from services.collectors.scc_dogs import SccDogCollection, SccDogCollectionPlan, SccDogCollector
+from services.collectors.scc_sites import SccSiteCollection, SccSiteCollectionPlan, SccSiteCollector
 from services.collectors.whoof import WhoofCollector
 from services.dog_collection_planner import DogCollectionPlanner
 from services.dog_ingestion import dog_ingestion_service
@@ -45,6 +46,7 @@ from services.litter_grouping import GroupingResult, litter_grouping_service
 from services.matching.match_refresh import match_refresh_service
 from services.notifier import notifier_service
 from services.scc_reference_sync import scc_reference_sync
+from services.scc_site_ingestion import scc_site_ingestion_service
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +71,17 @@ class SccDogRunReport:
     source_run: SourceRun
     plan: SccDogCollectionPlan
     collection: SccDogCollection = field(default_factory=SccDogCollection)
+    summary: IngestionSummary = field(default_factory=IngestionSummary)
+    grouping: GroupingResult = field(default_factory=GroupingResult)
+
+
+@dataclass
+class SccSitesRunReport:
+    """Everything a run of the Centrale Canine sites of the breedings did."""
+
+    source_run: SourceRun
+    plan: SccSiteCollectionPlan
+    collection: SccSiteCollection = field(default_factory=SccSiteCollection)
     summary: IngestionSummary = field(default_factory=IngestionSummary)
     grouping: GroupingResult = field(default_factory=GroupingResult)
 
@@ -107,7 +120,12 @@ class BreederSitesRunReport:
 
 
 RunReport = (
-    CentraleCanineRunReport | HtmlRunReport | SccBreederDirectoryRunReport | SccDogRunReport | BreederSitesRunReport
+    CentraleCanineRunReport
+    | HtmlRunReport
+    | SccBreederDirectoryRunReport
+    | SccSitesRunReport
+    | SccDogRunReport
+    | BreederSitesRunReport
 )
 
 
@@ -147,6 +165,8 @@ class CollectionRunner:
             return self.run_scc_breeders(db, SccBreederDirectoryCollector())
         if source == ListingSource.SCC_DOGS:
             return self.run_scc_dogs(db, SccDogCollector())
+        if source == ListingSource.SCC_SITES:
+            return self.run_scc_sites(db, SccSiteCollector())
         if source == ListingSource.CHIENS_DE_FRANCE_SITES:
             return self.run_breeder_sites(db, ChiensDeFranceSiteCollector())
         raise ValueError(f"Aucun collecteur pour {source}")
@@ -251,6 +271,39 @@ class CollectionRunner:
                 seen_count=dog_summary.seen_count,
                 new_breeder_or_dog_count=len(dog_summary.new_dog_ids),
                 changed_breeder_or_dog_count=len(dog_summary.changed_group_ids),
+            )
+
+        report.summary, report.grouping = self._finish_run(db, source_run, collect_and_store)
+        return report
+
+    def run_scc_sites(self, db: Session, collector: SccSiteCollector) -> SccSitesRunReport:
+        """
+        Read the Centrale Canine site of the breedings whose turn has come, and store their photos.
+
+        Args:
+            db: Database session.
+            collector: Collector to read with (a real one, or one on a fake transport in the tests).
+
+        Returns:
+            The run report; ``listings_seen`` counts the sites read and ``listings_changed`` the breeders whose
+            photos changed.
+        """
+        source_run = self._open_run(db, ListingSource.SCC_SITES)
+        plan = CollectionPlanner.build_scc_sites_plan(db, naive_utc_now())
+        report = SccSitesRunReport(source_run=source_run, plan=plan)
+
+        def collect_and_store() -> IngestionSummary:
+            """
+            Read the planned sites and store their photos.
+
+            Returns:
+                The ingestion summary.
+            """
+            report.collection = collector.collect(plan)
+            site_summary = scc_site_ingestion_service.ingest(db, report.collection.sites, naive_utc_now())
+            return IngestionSummary(
+                seen_count=site_summary.seen_count,
+                changed_breeder_or_dog_count=len(site_summary.updated_breeder_ids),
             )
 
         report.summary, report.grouping = self._finish_run(db, source_run, collect_and_store)

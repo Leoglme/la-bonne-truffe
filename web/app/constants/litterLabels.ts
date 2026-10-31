@@ -23,6 +23,7 @@ export const LISTING_SOURCE_LABELS: Record<ListingSource, string> = {
   whoof: 'Whoof',
   coeur_de_cocker: 'Cœur de Cocker',
   scc_breeders: 'Annuaire des éleveurs (Centrale Canine)',
+  scc_sites: 'Sites d’élevage (Centrale Canine)',
   scc_dogs: 'Fiches des chiens (Centrale Canine)',
   chiens_de_france_sites: 'Sites d’élevage (Chiens de France)',
 }
@@ -34,6 +35,7 @@ export const LISTING_SOURCE_LINK_LABELS: Record<ListingSource, string> = {
   whoof: 'Voir sur Whoof',
   coeur_de_cocker: 'Voir sur Cœur de Cocker',
   scc_breeders: 'Voir sur la Centrale Canine',
+  scc_sites: 'Voir le site de l’élevage',
   scc_dogs: 'Voir sur la Centrale Canine',
   chiens_de_france_sites: 'Voir le site de l’élevage',
 }

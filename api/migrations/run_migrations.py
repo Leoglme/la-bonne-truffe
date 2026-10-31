@@ -46,6 +46,7 @@ MIGRATION_MODULES: list[tuple[str, str]] = [
     ("add_dogs_table", "migrations.add_dogs_table"),
     ("add_litter_group_parent_dogs", "migrations.add_litter_group_parent_dogs"),
     ("add_breeder_follow_tables", "migrations.add_breeder_follow_tables"),
+    ("add_breeder_scc_site_columns", "migrations.add_breeder_scc_site_columns"),
 ]
 
 _NON_MIGRATION_MODULES: set[str] = {"__init__", "run_migrations"}

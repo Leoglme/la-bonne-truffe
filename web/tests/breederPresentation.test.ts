@@ -97,6 +97,7 @@ const BREEDER_DETAIL: BreederDetail = {
     { color: 'noir_et_feu', litters_count: 3 },
   ],
   reproducers: [],
+  photos: [],
   follow: {
     status: 'waiting',
     notify_new_mating: true,

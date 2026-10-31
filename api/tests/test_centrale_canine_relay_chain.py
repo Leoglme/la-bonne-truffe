@@ -21,9 +21,12 @@ from services.push_service import PushResult, PushService
 from tests.centrale_canine_pages import EMPTY_PAGE, RECORDED_DEPARTMENT_TERM_ID, load_recorded_pages
 from tests.scc_breeder_pages import BREEDER_F_ID, answer_directory_request
 from tests.scc_dog_pages import GOLD_FATHER_DOG_ID, GOLD_PUPPY_IDS, answer_dog_request
+from tests.scc_site_pages import answer_site_request
 
 RELAY_URL = "/api/v1/sources/centrale_canine/relay"
-CHAINED_SOURCES = frozenset({ListingSource.CENTRALE_CANINE, ListingSource.SCC_BREEDERS, ListingSource.SCC_DOGS})
+CHAINED_SOURCES = frozenset(
+    {ListingSource.CENTRALE_CANINE, ListingSource.SCC_BREEDERS, ListingSource.SCC_SITES, ListingSource.SCC_DOGS}
+)
 MAXIMUM_ROUNDS = 12
 
 
@@ -42,7 +45,7 @@ def chained_relay_headers(db: Session, monkeypatch: pytest.MonkeyPatch) -> dict[
 def answer_like_the_desktop_app(page_requests: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
     Answer each page request as the curl of the desktop app would: the recorded litter pages for
-    Ille-et-Vilaine, the directory and club pages of the tests, the litter and dog pages of the tests.
+    Ille-et-Vilaine, the directory and club pages, the site pages, the litter and dog pages of the tests.
 
     Args:
         page_requests: Pages the API asked for.
@@ -61,8 +64,12 @@ def answer_like_the_desktop_app(page_requests: list[dict[str, Any]]) -> list[dic
             responses.append({"url": page_request["url"], "status_code": 200, "body": json.dumps(page)})
             continue
         request = httpx.Request("GET", url)
-        is_directory = "/eleveurs/" in url.path or url.path.startswith(CLUB_API_PATH)
-        response = answer_directory_request(request) if is_directory else answer_dog_request(request)
+        if "/eleveurs/" in url.path or url.path.startswith(CLUB_API_PATH):
+            response = answer_directory_request(request)
+        elif url.path.endswith(("/api/homepage", "/api/dogs")):
+            response = answer_site_request(request)
+        else:
+            response = answer_dog_request(request)
         responses.append({"url": page_request["url"], "status_code": response.status_code, "body": response.text})
     return responses
 
@@ -105,15 +112,17 @@ def test_the_relay_reads_the_litters_then_the_directory_then_the_dogs_under_one_
     statuses = {status["source"]: status for status in last_answer["source_statuses"]}
     assert last_answer["state"] == "run_finished"
     assert last_answer["source"] == "scc_dogs"
-    assert list(dict.fromkeys(sources)) == ["centrale_canine", "scc_breeders", "scc_dogs"]
+    assert list(dict.fromkeys(sources)) == ["centrale_canine", "scc_breeders", "scc_sites", "scc_dogs"]
     assert "/chiots-de-la-race/0?" in first_urls[0]
     assert "/eleveurs/0?department=" in first_urls[sources.index("scc_breeders")]
     assert "/api/litter/" in first_urls[sources.index("scc_dogs")]
     assert statuses["centrale_canine"]["last_status"] == "ok"
     assert (statuses["scc_breeders"]["last_status"], statuses["scc_breeders"]["listings_seen"]) == ("ok", 3)
+    assert (statuses["scc_sites"]["last_status"], statuses["scc_sites"]["listings_seen"]) == ("ok", 3)
     assert statuses["scc_dogs"]["last_status"] == "ok"
     assert all(statuses[source]["is_collected_by_desktop_app"] for source in ("scc_breeders", "scc_dogs"))
     assert db.query(Breeder).filter(Breeder.scc_breeder_id == BREEDER_F_ID).count() == 1
+    assert db.query(Breeder).filter(Breeder.scc_site_cover_url.is_not(None)).count() == 1
     assert db.query(Dog).filter(Dog.external_id.in_([GOLD_FATHER_DOG_ID, *GOLD_PUPPY_IDS])).count() == 4
 
 
@@ -129,7 +138,7 @@ def test_nothing_is_due_right_after_a_full_relay_unless_asked(
     assert (requested_answer["state"], requested_answer["source"]) == ("pages_needed", "centrale_canine")
 
 
-def test_a_relay_asked_by_the_user_reads_the_directory_again_even_when_recent(
+def test_a_relay_asked_by_the_user_reads_the_directory_again_but_lets_the_sites_rest(
     client: TestClient, db: Session, chained_relay_headers: dict[str, str]
 ) -> None:
     relay_until_done(client, chained_relay_headers)

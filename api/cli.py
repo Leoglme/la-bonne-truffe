@@ -210,7 +210,10 @@ class CommandLine:
             print(f"Relevé en échec : {source_run.error_message}")
             return
         if not isinstance(report, CentraleCanineRunReport | HtmlRunReport | BreederSitesRunReport):
-            subject = "éleveur(s)" if source_run.source == ListingSource.SCC_BREEDERS else "chien(s)"
+            subject = {
+                ListingSource.SCC_BREEDERS: "éleveur(s)",
+                ListingSource.SCC_SITES: "site(s) d'élevage",
+            }.get(source_run.source, "chien(s)")
             print(
                 f"Relevé terminé : {source_run.listings_seen} {subject} vu(s), "
                 f"{source_run.listings_new} nouveau(x), {source_run.listings_changed} mis à jour."

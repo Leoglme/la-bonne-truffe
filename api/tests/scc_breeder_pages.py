@@ -4,6 +4,7 @@ from typing import Any
 
 import httpx
 
+from core.text import without_accents
 from services.collectors.scc_breeders import CLUB_API_PATH, SccBreederDirectoryCollector
 
 RECORDED_DEPARTMENT_TERM_ID = "t_41"
@@ -69,7 +70,7 @@ def directory_user(
         "u_breeder_number": f"35{breeder_id[-4:]}",
         "u_breeder_phone": phone,
         "u_breeder_siren": siren,
-        "u_breeder_site": affix.lower().replace(" ", "-").replace("'", ""),
+        "u_breeder_site": without_accents(affix).lower().replace(" ", "-").replace("'", ""),
         "u_breeder_status": True,
         "u_breeder_town": town,
         "u_breeder_zip_code": zip_code,

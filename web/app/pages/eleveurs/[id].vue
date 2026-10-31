@@ -50,6 +50,7 @@
           </div>
           <BreederChips :chips="chips" class="shrink-0" />
           <BreederStats :breeder="breeder" class="shrink-0" />
+          <BreederPhotoGallery :photos="breeder.photos" class="shrink-0" />
           <BreederLittersList :breeder="breeder" class="shrink-0" />
           <BreederColorShares :breeder="breeder" class="shrink-0" />
           <BreederDogsList :breeder="breeder" class="shrink-0" />

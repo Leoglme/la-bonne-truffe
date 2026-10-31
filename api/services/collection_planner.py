@@ -10,6 +10,7 @@ from enums.listing_source import ListingSource
 from models.breed import Breed
 from models.breed_variety import BreedVariety
 from models.breeder import Breeder
+from models.breeder_follow import BreederFollow
 from models.department import Department
 from models.dog import Dog
 from models.search_profile import SearchProfile
@@ -31,9 +32,12 @@ from services.collectors.scc_breeders import (
     SccBreederDirectoryPlan,
     SccDirectoryBreedTarget,
 )
+from services.collectors.scc_sites import SccSiteCollectionPlan, SccSiteTarget
 
 # A reproducer's page on a breeder's site is read again after this many days.
 SITE_DOG_REFRESH_DAYS = 30
+SCC_SITE_REFRESH_DAYS = 30
+SCC_SITES_PER_RUN = 80
 
 
 class CollectionPlanner:
@@ -111,6 +115,35 @@ class CollectionPlanner:
             ),
             departments=litters_plan.departments,
         )
+
+    @staticmethod
+    def build_scc_sites_plan(db: Session, now: datetime) -> SccSiteCollectionPlan:
+        """
+        Plan a run of the Centrale Canine sites: the breeders of the departments of the active profiles, and
+        the followed ones, whose site has a slug and was not read for a month; the followed first.
+
+        Args:
+            db: Database session.
+            now: Current time, naive UTC.
+
+        Returns:
+            The plan, empty when every site was read recently.
+        """
+        department_codes: set[str] = set()
+        for profile in db.query(SearchProfile).filter(SearchProfile.is_active.is_(True)):
+            department_codes.update(profile.department_codes)
+        followed_ids = {breeder_id for (breeder_id,) in db.query(BreederFollow.breeder_id)}
+        read_before = now - timedelta(days=SCC_SITE_REFRESH_DAYS)
+        targets: list[tuple[int, SccSiteTarget]] = []
+        for breeder in db.query(Breeder).filter(Breeder.scc_site_slug.is_not(None)).order_by(Breeder.id):
+            is_wanted = breeder.id in followed_ids or breeder.department_code in department_codes
+            is_rested = breeder.scc_site_seen_at is None or breeder.scc_site_seen_at <= read_before
+            if not is_wanted or not is_rested or not breeder.scc_site_slug:
+                continue
+            priority = 0 if breeder.id in followed_ids else 1
+            targets.append((priority, SccSiteTarget(breeder_id=breeder.id, site_slug=breeder.scc_site_slug)))
+        targets.sort(key=lambda entry: (entry[0], entry[1].breeder_id))
+        return SccSiteCollectionPlan(sites=tuple(target for _priority, target in targets[:SCC_SITES_PER_RUN]))
 
     @staticmethod
     def build_centrale_canine_plan(db: Session) -> CentraleCanineCollectionPlan:

@@ -16,6 +16,7 @@ def test_every_collected_source_has_its_hourly_job() -> None:
         "collect_coeur_de_cocker",
         "collect_chiens_de_france_sites",
         "collect_scc_breeders",
+        "collect_scc_sites",
         "send_evening_digests",
         "send_follow_up_reminders",
         "purge_old_listing_data",

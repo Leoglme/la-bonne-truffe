@@ -15,5 +15,6 @@ class ListingSource(StrEnum):
     WHOOF = "whoof"
     COEUR_DE_COCKER = "coeur_de_cocker"
     SCC_BREEDERS = "scc_breeders"
+    SCC_SITES = "scc_sites"
     SCC_DOGS = "scc_dogs"
     CHIENS_DE_FRANCE_SITES = "chiens_de_france_sites"

@@ -485,7 +485,8 @@ class LitterQueryService:
             birth_date=group.birth_date,
             expected_birth_date=group.expected_birth_date,
             available_from=group.available_from,
-            photo_url=next((photo for listing in listings for photo in listing.photos), None),
+            photo_url=next((photo for listing in listings for photo in listing.photos), None)
+            or cls._breeding_photo(breeder),
             first_seen_at=group.first_seen_at,
             last_seen_at=max(listing.last_seen_at for listing in listings),
             is_active=group.is_active,
@@ -495,6 +496,21 @@ class LitterQueryService:
                 snapshot.breed_slug, snapshot.sire_rating, snapshot.dam_rating
             ),
         )
+
+    @staticmethod
+    def _breeding_photo(breeder: Breeder | None) -> str | None:
+        """
+        The photo a litter shows while none of its ads has one: the cover of its breeding, from its sites.
+
+        Args:
+            breeder: The breeder of the litter, None when unknown.
+
+        Returns:
+            The cover of the Chiens de France site, else of the Centrale Canine site, else None.
+        """
+        if breeder is None:
+            return None
+        return breeder.cover_photo_url or breeder.scc_site_cover_url
 
     @staticmethod
     def _parent(

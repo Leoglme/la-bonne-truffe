@@ -1250,7 +1250,7 @@ export interface components {
             logo_url: string | null;
             /**
              * Photo Url
-             * @description The first photo known of the breeding: its site, else a litter
+             * @description The first photo known of the breeding: its sites, else a litter
              */
             photo_url: string | null;
             /** Is Selected Breeding */
@@ -1363,7 +1363,7 @@ export interface components {
             logo_url: string | null;
             /**
              * Photo Url
-             * @description The first photo known of the breeding: its site, else a litter
+             * @description The first photo known of the breeding: its sites, else a litter
              */
             photo_url: string | null;
             /** Is Selected Breeding */
@@ -1437,6 +1437,11 @@ export interface components {
             color_shares: components["schemas"]["BreederColorShare"][];
             /** Reproducers */
             reproducers: components["schemas"]["BreederDog"][];
+            /**
+             * Photos
+             * @description Photos of the breeding on its Centrale Canine site
+             */
+            photos: string[];
             follow: components["schemas"]["BreederFollowResponse"] | null;
         };
         /**
@@ -1630,7 +1635,7 @@ export interface components {
             responses?: components["schemas"]["RelayedPageResponse"][];
             /**
              * Is Requested By User
-             * @description « Relever maintenant »: run even when the last run is recent
+             * @description « Relever maintenant »: every relayed source runs, even when its last run is recent
              * @default false
              */
             is_requested_by_user: boolean;
@@ -1796,7 +1801,7 @@ export interface components {
          *     instead of litters (docs/05, « Nouveaux relevés »): each has its own runs and its own status.
          * @enum {string}
          */
-        ListingSource: "centrale_canine" | "chiens_de_france" | "chiots_de_france" | "whoof" | "coeur_de_cocker" | "scc_breeders" | "scc_dogs" | "chiens_de_france_sites";
+        ListingSource: "centrale_canine" | "chiens_de_france" | "chiots_de_france" | "whoof" | "coeur_de_cocker" | "scc_breeders" | "scc_sites" | "scc_dogs" | "chiens_de_france_sites";
         /**
          * LitterBreeder
          * @description What is known of the breeder; every field may be unknown.

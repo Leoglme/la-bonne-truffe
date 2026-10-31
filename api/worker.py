@@ -42,6 +42,7 @@ COLLECTION_MINUTES: dict[ListingSource, int] = {
 DAILY_COLLECTION_TIMES: dict[ListingSource, tuple[int, int]] = {
     ListingSource.CHIENS_DE_FRANCE_SITES: (6, 40),
     ListingSource.SCC_BREEDERS: (7, 10),
+    ListingSource.SCC_SITES: (7, 30),
 }
 
 # The relayed sources whose silence is worth an alert: those relayed every hour.

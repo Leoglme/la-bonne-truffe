@@ -46,6 +46,7 @@ SOURCE_NAMES: dict[ListingSource, str] = {
     ListingSource.WHOOF: "Whoof",
     ListingSource.COEUR_DE_COCKER: "Cœur de Cocker",
     ListingSource.SCC_BREEDERS: "L’annuaire de la Centrale Canine",
+    ListingSource.SCC_SITES: "Les sites d’élevage de la Centrale Canine",
     ListingSource.SCC_DOGS: "Les fiches chiens de la Centrale Canine",
     ListingSource.CHIENS_DE_FRANCE_SITES: "Les sites d’éleveurs Chiens de France",
 }

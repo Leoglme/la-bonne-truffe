@@ -13,7 +13,7 @@ COLLECTED_SOURCES: frozenset[ListingSource] = frozenset(ListingSource) - setting
 
 # The Centrale Canine sources: when the server skips them, the Windows app of a computer that is on relays them.
 CENTRALE_CANINE_SOURCES: frozenset[ListingSource] = frozenset(
-    {ListingSource.CENTRALE_CANINE, ListingSource.SCC_BREEDERS, ListingSource.SCC_DOGS}
+    {ListingSource.CENTRALE_CANINE, ListingSource.SCC_BREEDERS, ListingSource.SCC_SITES, ListingSource.SCC_DOGS}
 )
 DESKTOP_RELAYED_SOURCES: frozenset[ListingSource] = CENTRALE_CANINE_SOURCES & settings.collect_skipped_sources
 

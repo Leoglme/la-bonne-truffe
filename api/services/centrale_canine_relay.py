@@ -31,6 +31,7 @@ from services.collectors.centrale_canine import CentraleCanineCollector, Central
 from services.collectors.relayed_pages_transport import RelayedPagesTransport, RelayPlanningTransport
 from services.collectors.scc_breeders import SccBreederDirectoryCollector
 from services.collectors.scc_dogs import SccDogCollector
+from services.collectors.scc_sites import SccSiteCollector
 from services.dog_collection_planner import DogCollectionPlanner
 from services.source_status_service import SourceStatusService
 
@@ -40,11 +41,13 @@ RELAY_LEASE_DURATION = timedelta(minutes=10)
 RELAYED_SOURCE_ORDER: tuple[ListingSource, ...] = (
     ListingSource.CENTRALE_CANINE,
     ListingSource.SCC_BREEDERS,
+    ListingSource.SCC_SITES,
     ListingSource.SCC_DOGS,
 )
 INTERVALS_BETWEEN_RUNS: dict[ListingSource, timedelta] = {
     ListingSource.CENTRALE_CANINE: timedelta(minutes=55),
     ListingSource.SCC_BREEDERS: timedelta(hours=20),
+    ListingSource.SCC_SITES: timedelta(hours=20),
     ListingSource.SCC_DOGS: timedelta(minutes=55),
 }
 
@@ -195,6 +198,8 @@ class CentraleCanineRelay:
                 self._directory_collector_on(planning_transport).collect(
                     CollectionPlanner.build_scc_breeder_directory_plan(db)
                 )
+            elif source == ListingSource.SCC_SITES:
+                self._site_collector_on(planning_transport).collect(CollectionPlanner.build_scc_sites_plan(db, now))
             elif source == ListingSource.SCC_DOGS:
                 self._dog_collector_on(planning_transport).collect(DogCollectionPlanner.build(db, now))
             else:
@@ -215,6 +220,8 @@ class CentraleCanineRelay:
         transport = RelayedPagesTransport(list(lease.responses_by_url.values()))
         if lease.source == ListingSource.SCC_BREEDERS:
             collection_runner.run_scc_breeders(db, self._directory_collector_on(transport))
+        elif lease.source == ListingSource.SCC_SITES:
+            collection_runner.run_scc_sites(db, self._site_collector_on(transport))
         elif lease.source == ListingSource.SCC_DOGS:
             collection_runner.run_scc_dogs(db, self._dog_collector_on(transport))
         else:
@@ -267,7 +274,7 @@ class CentraleCanineRelay:
     def _has_something_to_read(db: Session, source: ListingSource, now: datetime) -> bool:
         """
         Whether a run of the source would read anything: the dog pages only when a litter needs one, the
-        directory only when a department has its identifier.
+        sites only when one is due, the directory only when a department has its identifier.
 
         Args:
             db: Database session.
@@ -279,6 +286,8 @@ class CentraleCanineRelay:
         """
         if source == ListingSource.SCC_DOGS:
             return bool(DogCollectionPlanner.build(db, now).litters)
+        if source == ListingSource.SCC_SITES:
+            return bool(CollectionPlanner.build_scc_sites_plan(db, now).sites)
         if source == ListingSource.SCC_BREEDERS:
             plan = CollectionPlanner.build_scc_breeder_directory_plan(db)
             return bool(plan.breeds and plan.departments)
@@ -336,6 +345,19 @@ class CentraleCanineRelay:
             The collector.
         """
         return SccDogCollector(http_client=httpx.Client(transport=transport), sleep=lambda _seconds: None)
+
+    @staticmethod
+    def _site_collector_on(transport: httpx.BaseTransport) -> SccSiteCollector:
+        """
+        A site collector on the given transport, without the polite pause.
+
+        Args:
+            transport: Transport serving the relayed pages.
+
+        Returns:
+            The collector.
+        """
+        return SccSiteCollector(http_client=httpx.Client(transport=transport), sleep=lambda _seconds: None)
 
 
 centrale_canine_relay = CentraleCanineRelay()

@@ -97,7 +97,7 @@ class BreederCard(BaseModel):
     latitude: float | None
     longitude: float | None
     logo_url: str | None
-    photo_url: str | None = Field(description="The first photo known of the breeding: its site, else a litter")
+    photo_url: str | None = Field(description="The first photo known of the breeding: its sites, else a litter")
     is_selected_breeding: bool
     is_breed_club_member: bool
     has_siren: bool
@@ -149,6 +149,7 @@ class BreederDetail(BreederCard):
     litters: list[LitterCard] = Field(description="Every litter known, the current ones first")
     color_shares: list[BreederColorShare]
     reproducers: list[BreederDog]
+    photos: list[str] = Field(description="Photos of the breeding on its Centrale Canine site")
     follow: BreederFollowResponse | None
 
 

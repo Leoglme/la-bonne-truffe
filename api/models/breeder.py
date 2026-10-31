@@ -45,6 +45,9 @@ class Breeder(TimestampMixin, Base):
         breeding_females_count: « 18 femelles reproductrices au sein de l'élevage », as Chiens de France writes it.
         litters_last_year_count: « 14 portées au cours de l'année écoulée », as Chiens de France writes it.
         cover_photo_url: First photo found on the breeder's site.
+        scc_site_cover_url: Cover photo of the breeder's site at the Centrale Canine (``h_image_uri``).
+        scc_site_photos: Gallery images of that site, absolute URLs.
+        scc_site_seen_at: Last time that site was read; it rests a month between two readings.
         links: Links Léo added by hand, each ``{"label", "url"}`` (Facebook, Instagram, a site).
         is_manual: Created by hand from the app, before any source listed the breeder.
         created_by_user_id: User who created the breeder by hand.
@@ -83,6 +86,9 @@ class Breeder(TimestampMixin, Base):
     breeding_females_count: Mapped[int | None]
     litters_last_year_count: Mapped[int | None]
     cover_photo_url: Mapped[str | None] = mapped_column(String(500))
+    scc_site_cover_url: Mapped[str | None] = mapped_column(String(500))
+    scc_site_photos: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    scc_site_seen_at: Mapped[datetime | None]
     links: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list, nullable=False)
     is_manual: Mapped[bool] = mapped_column(default=False, nullable=False)
     created_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
