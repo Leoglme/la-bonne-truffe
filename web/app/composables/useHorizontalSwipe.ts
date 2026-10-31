@@ -6,9 +6,10 @@ import type {
   UseHorizontalSwipeReturn,
 } from '~/types/Composables'
 import { computed, nextTick, ref } from 'vue'
+import { WebPush } from '~/utils/webPush'
 
 const AXIS_LOCK_DISTANCE_IN_PIXELS: number = 10
-const SCREEN_EDGE_WIDTH_IN_PIXELS: number = 20
+const BROWSER_BACK_EDGE_WIDTH_IN_PIXELS: number = 20
 const COMMIT_DISTANCE_SCREEN_RATIO: number = 0.25
 const FLICK_MINIMUM_DISTANCE_IN_PIXELS: number = 40
 const FLICK_MINIMUM_SPEED_IN_PIXELS_PER_MILLISECOND: number = 0.5
@@ -68,17 +69,16 @@ export function useHorizontalSwipe(options: HorizontalSwipeOptions): UseHorizont
   }))
 
   /**
-   * Start following a one-finger touch, unless it starts on a screen edge, where the browser swipes back.
+   * Start following a one-finger touch, unless it starts on the left edge of a browser tab, where the browser swipes back.
    *
    * @param event - The touch start.
    */
   function onTouchStart(event: TouchEvent): void {
     const touch: Touch | undefined = event.touches[0]
-    const isOnScreenEdge: boolean =
-      touch !== undefined &&
-      (touch.clientX < SCREEN_EDGE_WIDTH_IN_PIXELS || touch.clientX > window.innerWidth - SCREEN_EDGE_WIDTH_IN_PIXELS)
+    const isOnBrowserBackEdge: boolean =
+      touch !== undefined && touch.clientX < BROWSER_BACK_EDGE_WIDTH_IN_PIXELS && !WebPush.isStandalonePwa()
 
-    if (isSliding || event.touches.length !== 1 || touch === undefined || isOnScreenEdge) {
+    if (isSliding || event.touches.length !== 1 || touch === undefined || isOnBrowserBackEdge) {
       gestureAxis = 'ignored'
       return
     }

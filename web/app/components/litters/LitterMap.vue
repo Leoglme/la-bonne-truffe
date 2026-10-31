@@ -1,14 +1,5 @@
 <template>
-  <div
-    ref="mapElement"
-    role="region"
-    aria-label="Carte des portées"
-    class="isolate size-full"
-    @touchstart.stop
-    @touchmove.stop
-    @touchend.stop
-    @touchcancel.stop
-  />
+  <div ref="mapElement" role="region" aria-label="Carte des portées" class="isolate size-full" @touchstart.stop />
 </template>
 
 <script lang="ts" setup>
