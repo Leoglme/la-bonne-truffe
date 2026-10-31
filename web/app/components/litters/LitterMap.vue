@@ -45,6 +45,7 @@ const emit: LitterMapEmits = defineEmits<{
 const pinAppContext: AppContext | null = getCurrentInstance()?.appContext ?? null
 
 const DEPARTMENTS_ATTRIBUTION: string = 'Contours : IGN Admin Express 2018'
+const DRIVING_TIMES_ATTRIBUTION: string = 'Trajets : OSRM · © OpenStreetMap'
 const DEPARTMENT_BORDER_WIDTH_IN_PIXELS: number = 1.4
 const MIN_ZOOM: number = 5
 const MAX_ZOOM: number = 12
@@ -359,6 +360,7 @@ onMounted(async (): Promise<void> => {
     maxBoundsViscosity: 1,
   })
   map.attributionControl.setPrefix(false)
+  map.attributionControl.addAttribution(DRIVING_TIMES_ATTRIBUTION)
   map.on('click', (): void => emit('update:selectedLitterIds', []))
   map.on('zoomend', (): void => {
     drawClusters()

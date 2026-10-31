@@ -9,6 +9,8 @@ import { FrenchDate } from '~/utils/frenchDate'
 import { FrenchText } from '~/utils/frenchText'
 
 const UNKNOWN_PLACE_LABEL: string = 'Lieu à confirmer'
+const MINUTES_PER_HOUR: number = 60
+const NON_BREAKING_SPACE: string = '\u00a0'
 const EURO_FORMAT: Intl.NumberFormat = new Intl.NumberFormat('fr-FR', {
   style: 'currency',
   currency: 'EUR',
@@ -224,17 +226,43 @@ export class LitterPresentation {
   }
 
   /**
+   * Write how long the drive to the breeding takes.
+   *
+   * @param minutes - Minutes of driving.
+   * @returns « 35 min », « 1 h » or « 1 h 05 ».
+   */
+  static buildDrivingTimeLabel(minutes: number): string {
+    if (minutes < MINUTES_PER_HOUR) {
+      return `${minutes}${NON_BREAKING_SPACE}min`
+    }
+    const hours: number = Math.floor(minutes / MINUTES_PER_HOUR)
+    const remainingMinutes: number = minutes % MINUTES_PER_HOUR
+    const hoursLabel: string = `${hours}${NON_BREAKING_SPACE}h`
+    return remainingMinutes === 0
+      ? hoursLabel
+      : `${hoursLabel}${NON_BREAKING_SPACE}${String(remainingMinutes).padStart(2, '0')}`
+  }
+
+  /**
    * Build the place line of a card: the place, how far it is, then what matters next.
    *
    * @param card - The litter.
    * @param position - Position of the device, null while unknown.
-   * @returns « Redon · à 32 km », « Ploërmel · naissance vers le 7 nov. », « Ancenis · non LOF ».
+   * @param drivingMinutes - Minutes of driving to the breeding, null when unknown or not wanted on this card.
+   * @returns « Redon · à 32 km · 35 min », « Ploërmel · naissance vers le 7 nov. », « Ancenis · non LOF ».
    */
-  static buildPlaceLine(card: LitterCard, position: DevicePosition | null): string {
+  static buildPlaceLine(
+    card: LitterCard,
+    position: DevicePosition | null,
+    drivingMinutes: number | null = null,
+  ): string {
     const parts: string[] = [this.buildPlace(card)]
     const distanceLabel: string | null = this.buildDistanceLabel(card, position)
     if (distanceLabel !== null) {
       parts.push(distanceLabel)
+    }
+    if (distanceLabel !== null && drivingMinutes !== null) {
+      parts.push(this.buildDrivingTimeLabel(drivingMinutes))
     }
     if (card.kind === 'litter_expected' && card.expected_birth_date) {
       const expectedBirthDay: Date = FrenchDate.parseDay(card.expected_birth_date)

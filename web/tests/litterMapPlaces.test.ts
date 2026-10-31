@@ -138,4 +138,24 @@ describe('LitterMapPlaces.buildPinLabel', (): void => {
     expect(LitterMapPlaces.buildPinLabel([buildCard(1, { name: 'De Kerlann' })])).toBe('De Kerlann, –')
     expect(LitterMapPlaces.buildPinLabel([buildCard(1, {}), buildCard(2, {})])).toBe('2 portées')
   })
+
+  it('says when every litter of a pin is still to be born', (): void => {
+    const expectedLitters: LitterCard[] = [
+      buildCard(1, { kind: 'litter_expected' }),
+      buildCard(2, { kind: 'litter_expected' }),
+    ]
+
+    expect(LitterMapPlaces.buildPinLabel(expectedLitters)).toBe('2 portées à naître')
+    expect(LitterMapPlaces.buildClusterCaption(expectedLitters)).toBe('À naître')
+    expect(LitterMapPlaces.buildClusterCaption([buildCard(1, { kind: 'litter_expected' }), buildCard(2, {})])).toBe(
+      'portées',
+    )
+  })
+})
+
+describe('LitterMapPlaces.readBreedingPoint', (): void => {
+  it('reads the position of the breeding, or nothing while it is unknown', (): void => {
+    expect(LitterMapPlaces.readBreedingPoint(buildCard(1, REDON))).toEqual({ latitude: 47.65, longitude: -2.08 })
+    expect(LitterMapPlaces.readBreedingPoint(buildCard(2, {}))).toBeNull()
+  })
 })

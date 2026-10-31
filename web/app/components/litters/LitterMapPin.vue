@@ -18,7 +18,7 @@
       >
         {{ props.litters.length }}
       </span>
-      <span class="text-ink-secondary">portées</span>
+      <span class="text-ink-secondary">{{ LitterMapPlaces.buildClusterCaption(props.litters) }}</span>
     </template>
   </span>
 </template>

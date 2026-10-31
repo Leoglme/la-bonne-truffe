@@ -5,6 +5,8 @@ import { CrowFliesDistance } from '~/utils/crowFliesDistance'
 
 const POSITION_DECIMALS: number = 5
 const UNKNOWN_SCORE_LABEL: string = '–'
+const EXPECTED_CLUSTER_CAPTION: string = 'À naître'
+const CLUSTER_CAPTION: string = 'portées'
 
 /** Room a pin takes on screen: two pins closer than this would overlap, so they share one pin. */
 export const MAP_PIN_BOX_WIDTH_IN_PIXELS: number = 104
@@ -23,22 +25,45 @@ export class LitterMapPlaces {
   static groupByPosition(litters: LitterCard[]): LitterMapPlace[] {
     const places: Map<string, LitterMapPlace> = new Map()
     for (const litter of litters) {
-      if (litter.breeder_latitude === null || litter.breeder_longitude === null) {
+      const point: GeographicPoint | null = this.readBreedingPoint(litter)
+
+      if (point === null) {
         continue
       }
-      const positionKey: string = `${litter.breeder_latitude.toFixed(POSITION_DECIMALS)},${litter.breeder_longitude.toFixed(POSITION_DECIMALS)}`
+      const positionKey: string = this.buildPositionKey(point)
       const place: LitterMapPlace | undefined = places.get(positionKey)
 
       if (place !== undefined) {
         place.litters.push(litter)
         continue
       }
-      places.set(positionKey, {
-        point: { latitude: litter.breeder_latitude, longitude: litter.breeder_longitude },
-        litters: [litter],
-      })
+      places.set(positionKey, { point, litters: [litter] })
     }
     return [...places.values()]
+  }
+
+  /**
+   * Write a position as a key, to tell positions apart.
+   *
+   * @param point - The position.
+   * @param decimals - Decimals kept: five tell two addresses apart, three round to about a hundred metres.
+   * @returns « 47.65000,-2.08000 ».
+   */
+  static buildPositionKey(point: GeographicPoint, decimals: number = POSITION_DECIMALS): string {
+    return `${point.latitude.toFixed(decimals)},${point.longitude.toFixed(decimals)}`
+  }
+
+  /**
+   * Read where the breeding of a litter is.
+   *
+   * @param litter - The litter.
+   * @returns Its position, or null while the sources do not give it.
+   */
+  static readBreedingPoint(litter: LitterCard): GeographicPoint | null {
+    if (litter.breeder_latitude === null || litter.breeder_longitude === null) {
+      return null
+    }
+    return { latitude: litter.breeder_latitude, longitude: litter.breeder_longitude }
   }
 
   /**
@@ -119,15 +144,25 @@ export class LitterMapPlaces {
    * What a pin says, for its accessible name: the litter and its score, or how many litters it gathers.
    *
    * @param litters - Litters of the pin.
-   * @returns « Des Bords de Vilaine, 96 % » or « 3 portées ».
+   * @returns « Des Bords de Vilaine, 96 % », « 3 portées » or « 2 portées à naître ».
    */
   static buildPinLabel(litters: LitterCard[]): string {
     const firstLitter: LitterCard | undefined = litters[0]
 
     if (litters.length > 1 || firstLitter === undefined) {
-      return `${litters.length} portées`
+      return this.isEveryLitterExpected(litters) ? `${litters.length} portées à naître` : `${litters.length} portées`
     }
     return `${firstLitter.name}, ${this.buildScoreLabel(firstLitter)}`
+  }
+
+  /**
+   * The word a pin gathering several litters writes after their count.
+   *
+   * @param litters - Litters of the pin.
+   * @returns « À naître » when none of them is born yet, else « portées ».
+   */
+  static buildClusterCaption(litters: LitterCard[]): string {
+    return this.isEveryLitterExpected(litters) ? EXPECTED_CLUSTER_CAPTION : CLUSTER_CAPTION
   }
 
   /**
@@ -138,5 +173,15 @@ export class LitterMapPlaces {
    */
   static buildScoreLabel(litter: LitterCard): string {
     return litter.score === null ? UNKNOWN_SCORE_LABEL : `${litter.score} %`
+  }
+
+  /**
+   * Whether every litter of a pin is still to be born.
+   *
+   * @param litters - Litters of the pin.
+   * @returns True when all of them are expected litters.
+   */
+  private static isEveryLitterExpected(litters: LitterCard[]): boolean {
+    return litters.length > 0 && litters.every((litter: LitterCard): boolean => litter.kind === 'litter_expected')
   }
 }

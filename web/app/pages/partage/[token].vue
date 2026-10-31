@@ -41,7 +41,7 @@
 
       <LitterKeyFacts :litter="sharedLitter.litter" />
       <LitterInfoChips :litter="sharedLitter.litter" />
-      <LitterParentsList :litter="sharedLitter.litter" />
+      <LitterParentsList :litter="sharedLitter.litter" is-title-shown-on-phone />
       <LitterBreederCard :litter="sharedLitter.litter" is-phone-shown />
       <LitterListingsList :litter="sharedLitter.litter" />
 

@@ -22,7 +22,7 @@
         </span>
       </span>
       <span class="text-[13px] text-ink-muted">
-        {{ LitterPresentation.buildPlaceLine(props.litter, locationStore.position) }}
+        {{ LitterPresentation.buildPlaceLine(props.litter, locationStore.position, props.drivingMinutes) }}
       </span>
       <span class="mt-0.5 flex items-center gap-1.5 text-[13px] font-bold text-ink-secondary">
         <span class="rounded-full bg-chip px-[9px] py-[3px]">
@@ -43,6 +43,7 @@ import { LitterPresentation } from '~/utils/litterPresentation'
 const props: LitterRowCardProps = defineProps({
   litter: { type: Object as PropType<LitterCard>, required: true },
   isNew: { type: Boolean, default: false },
+  drivingMinutes: { type: Number as PropType<number | null>, default: null },
 })
 
 const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()

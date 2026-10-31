@@ -37,6 +37,7 @@
         :key="litter.id"
         :litter="litter"
         :is-new="LitterPresentation.isNew(litter, littersStore.previousVisitAt)"
+        :driving-minutes="findDrivingMinutes(litter)"
         class="shadow-straddling-photo"
       />
     </div>
@@ -52,7 +53,8 @@
 <script lang="ts" setup>
 import type { ComputedRef, Ref } from 'vue'
 import type { LitterCard } from '~/types/api'
-import { computed, onMounted, ref } from 'vue'
+import type { DevicePosition, GeographicPoint } from '~/types/Location'
+import { computed, onMounted, ref, watch } from 'vue'
 import { LitterMapPlaces } from '~/utils/litterMapPlaces'
 import { LitterPresentation } from '~/utils/litterPresentation'
 
@@ -60,6 +62,7 @@ useHead({ title: 'Carte · La Bonne Truffe' })
 
 const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
 const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
+const drivingTimesStore: ReturnType<typeof useDrivingTimesStore> = useDrivingTimesStore()
 
 const selectedLitterIds: Ref<number[]> = ref([])
 
@@ -68,6 +71,36 @@ const selectedLitters: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
 )
 const hasLocatedLitter: ComputedRef<boolean> = computed(
   (): boolean => LitterMapPlaces.groupByPosition(littersStore.visibleCards).length > 0,
+)
+
+/**
+ * The drive time from home to the breeding of a litter, once the router answered.
+ *
+ * @param litter - A litter shown under the map.
+ * @returns The minutes, or null.
+ */
+function findDrivingMinutes(litter: LitterCard): number | null {
+  return drivingTimesStore.minutesBetween(locationStore.position, LitterMapPlaces.readBreedingPoint(litter))
+}
+
+/**
+ * Ask the drive times to the breedings of the litters shown under the map, once the home is known.
+ */
+async function loadDrivingTimes(): Promise<void> {
+  const home: DevicePosition | null = locationStore.position
+
+  if (home === null) {
+    return
+  }
+  const breedings: GeographicPoint[] = selectedLitters.value
+    .map((litter: LitterCard): GeographicPoint | null => LitterMapPlaces.readBreedingPoint(litter))
+    .filter((breeding: GeographicPoint | null): breeding is GeographicPoint => breeding !== null)
+  await drivingTimesStore.load(home, breedings)
+}
+
+watch(
+  (): [LitterCard[], DevicePosition | null] => [selectedLitters.value, locationStore.position],
+  (): Promise<void> => loadDrivingTimes(),
 )
 
 onMounted(async (): Promise<void> => {

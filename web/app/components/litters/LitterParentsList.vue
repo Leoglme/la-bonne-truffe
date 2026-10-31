@@ -1,6 +1,11 @@
 <template>
   <div v-if="parents.length > 0" class="flex flex-col gap-2 md:gap-2.5">
-    <h2 class="m-0 mb-0.5 hidden font-display text-xl font-semibold md:block">Les parents</h2>
+    <h2
+      class="m-0 mb-0.5 font-display text-xl font-semibold"
+      :class="props.isTitleShownOnPhone ? 'block' : 'hidden md:block'"
+    >
+      Les parents
+    </h2>
     <div
       v-for="parent in parents"
       :key="parent.role"
@@ -27,6 +32,7 @@ import { LitterDetailPresentation } from '~/utils/litterDetailPresentation'
 
 const props: LitterParentsListProps = defineProps({
   litter: { type: Object as PropType<LitterDetail>, required: true },
+  isTitleShownOnPhone: { type: Boolean, default: false },
 })
 
 const parents: ComputedRef<LitterParentLine[]> = computed((): LitterParentLine[] => {

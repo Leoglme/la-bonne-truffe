@@ -1,4 +1,5 @@
 import type { LitterCard } from '../app/types/api'
+import type { DevicePosition } from '../app/types/Location'
 import { describe, expect, it } from 'vitest'
 import { LitterPresentation } from '../app/utils/litterPresentation'
 
@@ -96,5 +97,27 @@ describe('LitterPresentation puppies available', (): void => {
         puppies_available: 3,
       }),
     ).toBe(true)
+  })
+})
+
+describe('LitterPresentation driving time', (): void => {
+  const HOME: DevicePosition = { latitude: 48.117, longitude: -1.678, recordedAt: '2026-10-31T10:00:00Z' }
+  const NEARBY_LITTER: LitterCard = {
+    ...BORN_GOLD_LITTER,
+    place: 'Bain-de-Bretagne',
+    breeder_latitude: 47.841,
+    breeder_longitude: -1.674,
+  }
+
+  it('writes the drive in minutes, then in hours, never split across lines', (): void => {
+    expect(LitterPresentation.buildDrivingTimeLabel(37)).toBe('37\u00a0min')
+    expect(LitterPresentation.buildDrivingTimeLabel(60)).toBe('1\u00a0h')
+    expect(LitterPresentation.buildDrivingTimeLabel(65)).toBe('1\u00a0h\u00a005')
+  })
+
+  it('adds the drive after the distance, only when the distance is known', (): void => {
+    expect(LitterPresentation.buildPlaceLine(NEARBY_LITTER, HOME, 37)).toBe('Bain-de-Bretagne · à 31 km · 37\u00a0min')
+    expect(LitterPresentation.buildPlaceLine(NEARBY_LITTER, HOME)).toBe('Bain-de-Bretagne · à 31 km')
+    expect(LitterPresentation.buildPlaceLine(NEARBY_LITTER, null, 37)).toBe('Bain-de-Bretagne')
   })
 })
