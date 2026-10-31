@@ -4,7 +4,7 @@
     title="Trier les portées"
     description="L’ordre reste le même jusqu’à ce que tu le changes."
     :ui="{
-      content: 'min-h-[78dvh] rounded-t-3xl bg-card md:mx-auto md:min-h-0 md:w-full md:max-w-md',
+      content: 'min-h-[78dvh] rounded-t-3xl bg-cream md:mx-auto md:min-h-0 md:w-full md:max-w-md',
       container: 'flex flex-1 flex-col gap-6 px-5 pt-3 pb-8 md:px-8',
       body: 'flex flex-1 flex-col',
       title: 'font-display text-2xl font-semibold text-ink',
@@ -21,7 +21,7 @@
             type="button"
             role="radio"
             :aria-checked="option.key === littersStore.selectedSortKey"
-            class="flex min-h-[68px] items-center justify-between gap-3 rounded-2xl border-0 bg-cream px-4 text-start text-ink"
+            class="flex min-h-[68px] items-center justify-between gap-3 rounded-tile-compact border-0 bg-card px-4 text-start text-ink shadow-card"
             :class="option.key === littersStore.selectedSortKey ? 'outline-2 outline-coral' : ''"
             @click="chooseSort(option.key)"
           >
@@ -40,15 +40,13 @@
             </span>
           </button>
         </div>
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="lg"
-          class="mt-auto w-full justify-center"
+        <button
+          type="button"
+          class="mt-auto min-h-12 self-center border-0 bg-transparent px-2 text-[15px] font-extrabold text-ink-secondary"
           @click="emit('update:open', false)"
         >
           Fermer
-        </UButton>
+        </button>
       </div>
     </template>
   </UDrawer>
