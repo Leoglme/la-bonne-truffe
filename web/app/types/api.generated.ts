@@ -757,6 +757,213 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/breeders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Breeders
+         * @description Return the breeders of the Éleveurs tab.
+         *
+         *     Args:
+         *         filter: Which breeders (« Suivis », « Gold », « Spaniel Club », « Une portée en cours »).
+         *         sort: The most promising first, or by name.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The cards.
+         */
+        get: operations["list_breeders_api_v1_breeders_get"];
+        put?: never;
+        /**
+         * Create Breeder
+         * @description Add a breeder by hand (found on Facebook, on a sign, by word of mouth), and follow it when asked.
+         *
+         *     Args:
+         *         payload: Name, place, links, phone, note.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The detail of the breeder, which may be one already known.
+         */
+        post: operations["create_breeder_api_v1_breeders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeders/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Breeders
+         * @description Return the suggestions for what the user typed: breeders, then litters.
+         *
+         *     Args:
+         *         q: The query; accents, spaces and case do not matter.
+         *         limit: Breeders and litters kept at most, each.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The suggestions.
+         */
+        get: operations["search_breeders_api_v1_breeders_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeders/{breeder_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Breeder
+         * @description Return the detail of a breeder.
+         *
+         *     Args:
+         *         breeder_id: The breeder.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The detail.
+         */
+        get: operations["read_breeder_api_v1_breeders__breeder_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Breeder
+         * @description Change the links, the phone, the site or the notes of a breeder.
+         *
+         *     Args:
+         *         breeder_id: The breeder.
+         *         payload: What changes.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The updated detail.
+         */
+        patch: operations["update_breeder_api_v1_breeders__breeder_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/breeders/{breeder_id}/follow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Breeder Follow
+         * @description Follow a breeder, or change its alerts, its status and its reminder.
+         *
+         *     Args:
+         *         breeder_id: The breeder.
+         *         payload: Settings, status, reminder.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The updated detail.
+         */
+        put: operations["set_breeder_follow_api_v1_breeders__breeder_id__follow_put"];
+        post?: never;
+        /**
+         * Remove Breeder Follow
+         * @description Stop following a breeder: its settings, status, reminder and notes are deleted.
+         *
+         *     Args:
+         *         breeder_id: The breeder.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The detail, without follow.
+         */
+        delete: operations["remove_breeder_follow_api_v1_breeders__breeder_id__follow_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeders/{breeder_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Breeder Note
+         * @description Add a dated note to a followed breeder.
+         *
+         *     Args:
+         *         breeder_id: The breeder.
+         *         payload: The note.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The note.
+         */
+        post: operations["add_breeder_note_api_v1_breeders__breeder_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeders/{breeder_id}/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Breeder Note
+         * @description Delete a note of a followed breeder.
+         *
+         *     Args:
+         *         breeder_id: The breeder.
+         *         note_id: The note.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         */
+        delete: operations["remove_breeder_note_api_v1_breeders__breeder_id__notes__note_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/litters/{litter_id}/shares": {
         parameters: {
             query?: never;
@@ -1009,6 +1216,389 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * BreederCard
+         * @description A breeder as the Éleveurs list shows it.
+         */
+        BreederCard: {
+            /** Id */
+            id: number;
+            /**
+             * Name
+             * @description The affix, else the name of the breeding, as the cards name it
+             */
+            name: string;
+            /**
+             * Person Name
+             * @description Name of the person or the company, when it differs from the affix
+             */
+            person_name: string | null;
+            /** Affix */
+            affix: string | null;
+            /** City */
+            city: string | null;
+            /** Zip Code */
+            zip_code: string | null;
+            /** Department Code */
+            department_code: string | null;
+            /** Department Name */
+            department_name: string | null;
+            /** Latitude */
+            latitude: number | null;
+            /** Longitude */
+            longitude: number | null;
+            /** Logo Url */
+            logo_url: string | null;
+            /**
+             * Photo Url
+             * @description The first photo known of the breeding: its site, else a litter
+             */
+            photo_url: string | null;
+            /** Is Selected Breeding */
+            is_selected_breeding: boolean;
+            /** Is Breed Club Member */
+            is_breed_club_member: boolean;
+            /** Has Siren */
+            has_siren: boolean;
+            /** Has Chiens De France Site */
+            has_chiens_de_france_site: boolean;
+            /** Is Manual */
+            is_manual: boolean;
+            /**
+             * Sources
+             * @description Where the breeder is listed
+             */
+            sources: components["schemas"]["ListingSource"][];
+            /**
+             * Gold Litters Count
+             * @description Litters known gold, certain or confirmed
+             */
+            gold_litters_count: number;
+            /**
+             * Litters Count
+             * @description Litters known, every colour
+             */
+            litters_count: number;
+            /**
+             * Last Litter Date
+             * @description Birth, or expected birth, or mating of the latest litter known
+             */
+            last_litter_date: string | null;
+            /**
+             * Litters Last Year Count
+             * @description As Chiens de France writes it, when it does
+             */
+            litters_last_year_count: number | null;
+            /** Breeding Females Count */
+            breeding_females_count: number | null;
+            /** @description The litter to talk about now, when there is one */
+            current_litter: components["schemas"]["LitterCard"] | null;
+            /** Is Followed */
+            is_followed: boolean;
+            follow_status: components["schemas"]["BreederFollowStatus"] | null;
+        };
+        /**
+         * BreederColorShare
+         * @description How many known litters of a breeder were of one colour.
+         */
+        BreederColorShare: {
+            color: components["schemas"]["CoatColor"];
+            /** Litters Count */
+            litters_count: number;
+        };
+        /**
+         * BreederCreate
+         * @description A breeder Léo adds by hand.
+         */
+        BreederCreate: {
+            /** Display Name */
+            display_name: string;
+            /** City */
+            city?: string | null;
+            /** Zip Code */
+            zip_code?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Links */
+            links?: components["schemas"]["BreederLink"][];
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Follow
+             * @default true
+             */
+            follow: boolean;
+        };
+        /**
+         * BreederDetail
+         * @description A breeder as the detail screen shows it.
+         */
+        BreederDetail: {
+            /** Id */
+            id: number;
+            /**
+             * Name
+             * @description The affix, else the name of the breeding, as the cards name it
+             */
+            name: string;
+            /**
+             * Person Name
+             * @description Name of the person or the company, when it differs from the affix
+             */
+            person_name: string | null;
+            /** Affix */
+            affix: string | null;
+            /** City */
+            city: string | null;
+            /** Zip Code */
+            zip_code: string | null;
+            /** Department Code */
+            department_code: string | null;
+            /** Department Name */
+            department_name: string | null;
+            /** Latitude */
+            latitude: number | null;
+            /** Longitude */
+            longitude: number | null;
+            /** Logo Url */
+            logo_url: string | null;
+            /**
+             * Photo Url
+             * @description The first photo known of the breeding: its site, else a litter
+             */
+            photo_url: string | null;
+            /** Is Selected Breeding */
+            is_selected_breeding: boolean;
+            /** Is Breed Club Member */
+            is_breed_club_member: boolean;
+            /** Has Siren */
+            has_siren: boolean;
+            /** Has Chiens De France Site */
+            has_chiens_de_france_site: boolean;
+            /** Is Manual */
+            is_manual: boolean;
+            /**
+             * Sources
+             * @description Where the breeder is listed
+             */
+            sources: components["schemas"]["ListingSource"][];
+            /**
+             * Gold Litters Count
+             * @description Litters known gold, certain or confirmed
+             */
+            gold_litters_count: number;
+            /**
+             * Litters Count
+             * @description Litters known, every colour
+             */
+            litters_count: number;
+            /**
+             * Last Litter Date
+             * @description Birth, or expected birth, or mating of the latest litter known
+             */
+            last_litter_date: string | null;
+            /**
+             * Litters Last Year Count
+             * @description As Chiens de France writes it, when it does
+             */
+            litters_last_year_count: number | null;
+            /** Breeding Females Count */
+            breeding_females_count: number | null;
+            /** @description The litter to talk about now, when there is one */
+            current_litter: components["schemas"]["LitterCard"] | null;
+            /** Is Followed */
+            is_followed: boolean;
+            follow_status: components["schemas"]["BreederFollowStatus"] | null;
+            /** Phone E164 */
+            phone_e164: string | null;
+            /** Siren */
+            siren: string | null;
+            /** Website */
+            website: string | null;
+            /** Chiens De France Site Url */
+            chiens_de_france_site_url: string | null;
+            /** Scc Breeder Id */
+            scc_breeder_id: string | null;
+            /** Links */
+            links: components["schemas"]["BreederLink"][];
+            /** Notes */
+            notes: string | null;
+            /** Chiens De France Registered On */
+            chiens_de_france_registered_on: string | null;
+            /** Scc Last Litter At */
+            scc_last_litter_at: string | null;
+            /** Scc Directory Seen At */
+            scc_directory_seen_at: string | null;
+            /**
+             * Litters
+             * @description Every litter known, the current ones first
+             */
+            litters: components["schemas"]["LitterCard"][];
+            /** Color Shares */
+            color_shares: components["schemas"]["BreederColorShare"][];
+            /** Reproducers */
+            reproducers: components["schemas"]["BreederDog"][];
+            follow: components["schemas"]["BreederFollowResponse"] | null;
+        };
+        /**
+         * BreederDog
+         * @description A reproducer or a parent the breeder shows, as the detail lists it.
+         */
+        BreederDog: {
+            /** Id */
+            id: number;
+            role: components["schemas"]["DogRole"];
+            /** Name */
+            name: string | null;
+            /** Full Name */
+            full_name: string | null;
+            sex: components["schemas"]["DogSex"];
+            /** Birth Date */
+            birth_date: string | null;
+            color: components["schemas"]["CoatColor"];
+            /** Color Code */
+            color_code: string | null;
+            /** Rating */
+            rating: number | null;
+            /** Health Codes */
+            health_codes: string[];
+            /** E Locus */
+            e_locus: string | null;
+            /** Photos */
+            photos: string[];
+            /** External Url */
+            external_url: string | null;
+            /** Availability Text */
+            availability_text: string | null;
+        };
+        /**
+         * BreederFilter
+         * @description Which breeders the list shows.
+         * @enum {string}
+         */
+        BreederFilter: "all" | "followed" | "gold" | "club" | "active_litter";
+        /**
+         * BreederFollowNoteCreate
+         * @description A note to add to a followed breeder.
+         */
+        BreederFollowNoteCreate: {
+            /** Text */
+            text: string;
+        };
+        /**
+         * BreederFollowNoteResponse
+         * @description A dated note of a followed breeder.
+         */
+        BreederFollowNoteResponse: {
+            /** Id */
+            id: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Text */
+            text: string;
+        };
+        /**
+         * BreederFollowResponse
+         * @description What the user asked of a followed breeder, and where the exchange stands.
+         */
+        BreederFollowResponse: {
+            status: components["schemas"]["BreederFollowStatus"];
+            /** Notify New Mating */
+            notify_new_mating: boolean;
+            /** Notify Birth */
+            notify_birth: boolean;
+            /** Notify New Photos */
+            notify_new_photos: boolean;
+            /** Notify Ignored Colors */
+            notify_ignored_colors: boolean;
+            /** Next Reminder At */
+            next_reminder_at: string | null;
+            /** Last Contact At */
+            last_contact_at: string | null;
+            /** Notes */
+            notes: components["schemas"]["BreederFollowNoteResponse"][];
+        };
+        /**
+         * BreederFollowStatus
+         * @description Where the user stands with a followed breeder: to contact, contacted, on the waiting list, deposit paid.
+         * @enum {string}
+         */
+        BreederFollowStatus: "to_contact" | "contacted" | "waiting" | "deposit";
+        /**
+         * BreederFollowUpdate
+         * @description Follow a breeder, or change the alerts and the status.
+         */
+        BreederFollowUpdate: {
+            /** @default to_contact */
+            status: components["schemas"]["BreederFollowStatus"];
+            /**
+             * Notify New Mating
+             * @default true
+             */
+            notify_new_mating: boolean;
+            /**
+             * Notify Birth
+             * @default true
+             */
+            notify_birth: boolean;
+            /**
+             * Notify New Photos
+             * @default true
+             */
+            notify_new_photos: boolean;
+            /**
+             * Notify Ignored Colors
+             * @default false
+             */
+            notify_ignored_colors: boolean;
+            /** Next Reminder At */
+            next_reminder_at?: string | null;
+            /** Last Contact At */
+            last_contact_at?: string | null;
+        };
+        /**
+         * BreederLink
+         * @description A link Léo added by hand (Facebook, Instagram, a site).
+         */
+        BreederLink: {
+            /** Label */
+            label: string;
+            /** Url */
+            url: string;
+        };
+        /**
+         * BreederSearchResults
+         * @description The suggestions of the search: breeders, then litters.
+         */
+        BreederSearchResults: {
+            /** Breeders */
+            breeders: components["schemas"]["BreederCard"][];
+            /** Litters */
+            litters: components["schemas"]["LitterCard"][];
+        };
+        /**
+         * BreederSort
+         * @description Order of the Éleveurs list.
+         * @enum {string}
+         */
+        BreederSort: "promising" | "name";
+        /**
+         * BreederUpdate
+         * @description What Léo may change on a breeder: its links, its phone, its site, his notes.
+         */
+        BreederUpdate: {
+            /** Links */
+            links?: components["schemas"]["BreederLink"][] | null;
+            /** Phone */
+            phone?: string | null;
+            /** Website */
+            website?: string | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /**
          * CentraleCanineRelayAnswer
          * @description What the desktop app does next.
          */
@@ -1020,10 +1610,12 @@ export interface components {
             page_requests: components["schemas"]["RelayPageRequest"][];
             /** Source Statuses */
             source_statuses: components["schemas"]["SourceStatus"][];
+            /** @description The Centrale Canine source being relayed: the litters, the directory or the dogs */
+            source?: components["schemas"]["ListingSource"] | null;
         };
         /**
          * CentraleCanineRelayRequest
-         * @description A call of the desktop app, with every page it read since the relay started.
+         * @description A call of the desktop app, with the pages it read since its previous call (the API keeps the earlier ones).
          */
         CentraleCanineRelayRequest: {
             /**
@@ -1031,7 +1623,10 @@ export interface components {
              * @description Token of the relay this app holds; none to start one
              */
             relay_token?: string | null;
-            /** Responses */
+            /**
+             * Responses
+             * @description Pages read since the previous call; pages sent again are harmless
+             */
             responses?: components["schemas"]["RelayedPageResponse"][];
             /**
              * Is Requested By User
@@ -1054,10 +1649,13 @@ export interface components {
         CoatColor: "gold" | "noir" | "noir_et_feu" | "marron" | "marron_et_feu" | "bleu_rouan" | "orange_rouan" | "marron_rouan" | "tricolore" | "particolore" | "zibeline" | "inconnue";
         /**
          * ColorConfidence
-         * @description How sure a listing's colour is: certain, ambiguous source bundle, or confirmed by hand.
+         * @description How sure a colour is: certain, ambiguous source bundle, confirmed by hand, or inferred from the parents.
+         *
+         *     An inferred colour counts as certain for the tier and the score (docs/04, « Les couleurs données par les
+         *     chiens »): two gold parents only give gold puppies.
          * @enum {string}
          */
-        ColorConfidence: "certain" | "ambiguous" | "confirmed";
+        ColorConfidence: "certain" | "ambiguous" | "confirmed" | "inferred";
         /**
          * ColorConfirmation
          * @description Colours confirmed by hand after a call; an empty list removes the confirmation.
@@ -1094,6 +1692,18 @@ export interface components {
             /** Region */
             region: string;
         };
+        /**
+         * DogRole
+         * @description Why a dog is known: a parent of a litter, a reproducer shown by a breeder, or a puppy of a litter.
+         * @enum {string}
+         */
+        DogRole: "parent" | "reproducer" | "puppy";
+        /**
+         * DogSex
+         * @description Sex of a dog, unknown while no source tells.
+         * @enum {string}
+         */
+        DogSex: "male" | "female" | "unknown";
         /**
          * FollowUpCard
          * @description A followed litter as the follow-up screen lists it.
@@ -1182,15 +1792,21 @@ export interface components {
         ListingKind: "litter_born" | "litter_expected" | "puppy_ad";
         /**
          * ListingSource
-         * @description Source an announcement or a declaration was read from.
+         * @description Source an announcement or a declaration was read from, and the readings that bring breeders and dogs
+         *     instead of litters (docs/05, « Nouveaux relevés »): each has its own runs and its own status.
          * @enum {string}
          */
-        ListingSource: "centrale_canine" | "chiens_de_france" | "chiots_de_france" | "whoof" | "coeur_de_cocker";
+        ListingSource: "centrale_canine" | "chiens_de_france" | "chiots_de_france" | "whoof" | "coeur_de_cocker" | "scc_breeders" | "scc_dogs" | "chiens_de_france_sites";
         /**
          * LitterBreeder
          * @description What is known of the breeder; every field may be unknown.
          */
         LitterBreeder: {
+            /**
+             * Id
+             * @description The breeder, to open its page in the Éleveurs tab
+             */
+            id?: number | null;
             /** Display Name */
             display_name: string | null;
             /** Affix */
@@ -1402,6 +2018,26 @@ export interface components {
             /** Listings */
             listings: components["schemas"]["LitterSourceListing"][];
             follow_up: components["schemas"]["LitterFollowUp"] | null;
+            /**
+             * Puppies
+             * @description The registered puppies, read one by one
+             */
+            puppies?: components["schemas"]["LitterPuppy"][];
+            /**
+             * Expected Colors
+             * @description The colours the parents imply, and why
+             */
+            expected_colors?: components["schemas"]["LitterExpectedColor"][];
+        };
+        /**
+         * LitterExpectedColor
+         * @description A colour the parents of a litter imply, and why.
+         */
+        LitterExpectedColor: {
+            color: components["schemas"]["CoatColor"];
+            confidence: components["schemas"]["ColorConfidence"];
+            /** Reason */
+            reason: string;
         };
         /**
          * LitterFollowUp
@@ -1418,13 +2054,46 @@ export interface components {
         };
         /**
          * LitterParent
-         * @description Father or mother of a litter.
+         * @description Father or mother of a litter, with what its Centrale Canine page adds once read.
          */
         LitterParent: {
             /** Name */
             name: string;
             /** Rating */
             rating: number | null;
+            /** @description Colour read on its Centrale Canine page */
+            color?: components["schemas"]["CoatColor"] | null;
+            /** Color Code */
+            color_code?: string | null;
+            /**
+             * E Locus
+             * @description E locus genotype, when tested (« e/e »)
+             */
+            e_locus?: string | null;
+            /** Health Codes */
+            health_codes?: string[];
+            /** Scc Url */
+            scc_url?: string | null;
+        };
+        /**
+         * LitterPuppy
+         * @description A registered puppy of a litter, read at the Centrale Canine.
+         */
+        LitterPuppy: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string | null;
+            sex: components["schemas"]["DogSex"];
+            color: components["schemas"]["CoatColor"];
+            /** Color Code */
+            color_code: string | null;
+            /** Identifier */
+            identifier: string | null;
+            /** Lof Number */
+            lof_number: string | null;
+            /** External Url */
+            external_url: string | null;
         };
         /**
          * LitterReason
@@ -1533,7 +2202,7 @@ export interface components {
          * @description Event a sent notification reports (see docs/04-correspondance-et-notifications.md).
          * @enum {string}
          */
-        NotificationKind: "new_preferred" | "born" | "upgraded" | "evening_digest" | "source_down" | "source_silent" | "signup_request" | "follow_up_reminder";
+        NotificationKind: "new_preferred" | "born" | "upgraded" | "evening_digest" | "source_down" | "source_silent" | "signup_request" | "follow_up_reminder" | "breeder_new_mating" | "breeder_birth" | "breeder_follow_reminder";
         /**
          * NotificationListResponse
          * @description A page of the notification history plus the unread count that lights the bell.
@@ -2913,6 +3582,300 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["FollowUpCard"][];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_breeders_api_v1_breeders_get: {
+        parameters: {
+            query?: {
+                filter?: components["schemas"]["BreederFilter"];
+                sort?: components["schemas"]["BreederSort"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreederCard"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_breeder_api_v1_breeders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreederCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreederDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_breeders_api_v1_breeders_search_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreederSearchResults"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_breeder_api_v1_breeders__breeder_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breeder_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreederDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_breeder_api_v1_breeders__breeder_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breeder_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreederUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreederDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_breeder_follow_api_v1_breeders__breeder_id__follow_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breeder_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreederFollowUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreederDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_breeder_follow_api_v1_breeders__breeder_id__follow_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breeder_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreederDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_breeder_note_api_v1_breeders__breeder_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breeder_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreederFollowNoteCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreederFollowNoteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_breeder_note_api_v1_breeders__breeder_id__notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breeder_id: number;
+                note_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

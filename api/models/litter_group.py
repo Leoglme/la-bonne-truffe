@@ -30,6 +30,12 @@ class LitterGroup(TimestampMixin, Base):
         puppies_available: Puppies the litter still offers across its active listings, null while no source tells.
         first_seen_at: First time a source showed this litter.
         last_seen_at: Last time a source showed this litter.
+        sire_dog_id: The father, once his Centrale Canine page is read (``dogs.id``; no database constraint, the
+            two tables point at each other).
+        dam_dog_id: The mother, once her Centrale Canine page is read.
+        expected_colors: Colours deduced from the parents, each ``{"color", "confidence", "reason"}`` (docs/04).
+        puppies_detail_fetched_at: Last time the puppies were looked for one by one at the Centrale Canine.
+        puppies_detail_next_try_at: Next time to look for them, while they are not registered yet.
     """
 
     __tablename__ = "litter_groups"
@@ -49,6 +55,11 @@ class LitterGroup(TimestampMixin, Base):
     puppies_available: Mapped[int | None]
     first_seen_at: Mapped[datetime] = mapped_column(default=naive_utc_now, nullable=False)
     last_seen_at: Mapped[datetime] = mapped_column(default=naive_utc_now, nullable=False)
+    sire_dog_id: Mapped[int | None]
+    dam_dog_id: Mapped[int | None]
+    expected_colors: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list, nullable=False)
+    puppies_detail_fetched_at: Mapped[datetime | None]
+    puppies_detail_next_try_at: Mapped[datetime | None]
 
     def __repr__(self) -> str:
         return f"<LitterGroup id={self.id} breeder_id={self.breeder_id}>"

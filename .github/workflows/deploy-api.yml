@@ -166,7 +166,7 @@ jobs:
             VAPID_PRIVATE_KEY_B64=${{ secrets.VAPID_PRIVATE_KEY_B64 }}
             VAPID_SUBJECT=mailto:contact@dibodev.fr
             COLLECT_USER_AGENT_CONTACT=contact@dibodev.fr
-            COLLECT_SKIPPED_SOURCES=centrale_canine
+            COLLECT_SKIPPED_SOURCES=centrale_canine,scc_breeders,scc_dogs
             EOF
             chmod 600 .env
 

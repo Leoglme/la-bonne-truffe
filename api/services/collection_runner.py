@@ -11,6 +11,9 @@ from enums.listing_source import ListingSource
 from enums.source_run_status import SourceRunStatus
 from models.breed import Breed
 from models.source_run import SourceRun
+from services.breeder_alert_service import BreederRunFacts, breeder_alert_service
+from services.breeder_directory_ingestion import breeder_directory_ingestion_service
+from services.breeder_site_ingestion import breeder_site_ingestion_service
 from services.collection_planner import CollectionPlanner
 from services.collectors.centrale_canine import (
     CentraleCanineCollection,
@@ -19,11 +22,24 @@ from services.collectors.centrale_canine import (
     CentraleCanineError,
 )
 from services.collectors.chiens_de_france import ChiensDeFranceCollector
+from services.collectors.chiens_de_france_sites import (
+    ChiensDeFranceSiteCollector,
+    SiteCollection,
+    SiteCollectionPlan,
+)
 from services.collectors.chiots_de_france import ChiotsDeFranceCollector
 from services.collectors.coeur_de_cocker import CoeurDeCockerCollector
 from services.collectors.html_source import HtmlCollection, HtmlCollectionPlan, HtmlSourceCollector
 from services.collectors.polite_http_client import SourceReadError
+from services.collectors.scc_breeders import (
+    SccBreederDirectoryCollection,
+    SccBreederDirectoryCollector,
+    SccBreederDirectoryPlan,
+)
+from services.collectors.scc_dogs import SccDogCollection, SccDogCollectionPlan, SccDogCollector
 from services.collectors.whoof import WhoofCollector
+from services.dog_collection_planner import DogCollectionPlanner
+from services.dog_ingestion import dog_ingestion_service
 from services.listing_ingestion import IngestionSummary, listing_ingestion_service
 from services.litter_grouping import GroupingResult, litter_grouping_service
 from services.matching.match_refresh import match_refresh_service
@@ -33,6 +49,28 @@ from services.scc_reference_sync import scc_reference_sync
 logger = logging.getLogger(__name__)
 
 NOTHING_TO_COLLECT_MESSAGE = "Rien à relever : aucun profil actif avec une race et un département connus"
+
+
+@dataclass
+class SccBreederDirectoryRunReport:
+    """Everything a run of the Centrale Canine breeder directory did."""
+
+    source_run: SourceRun
+    plan: SccBreederDirectoryPlan
+    collection: SccBreederDirectoryCollection = field(default_factory=SccBreederDirectoryCollection)
+    summary: IngestionSummary = field(default_factory=IngestionSummary)
+    grouping: GroupingResult = field(default_factory=GroupingResult)
+
+
+@dataclass
+class SccDogRunReport:
+    """Everything a run of the Centrale Canine dog pages did."""
+
+    source_run: SourceRun
+    plan: SccDogCollectionPlan
+    collection: SccDogCollection = field(default_factory=SccDogCollection)
+    summary: IngestionSummary = field(default_factory=IngestionSummary)
+    grouping: GroupingResult = field(default_factory=GroupingResult)
 
 
 @dataclass
@@ -57,6 +95,22 @@ class HtmlRunReport:
     grouping: GroupingResult = field(default_factory=GroupingResult)
 
 
+@dataclass
+class BreederSitesRunReport:
+    """Everything a run of the breeder sites on Chiens de France did."""
+
+    source_run: SourceRun
+    plan: SiteCollectionPlan
+    collection: SiteCollection = field(default_factory=SiteCollection)
+    summary: IngestionSummary = field(default_factory=IngestionSummary)
+    grouping: GroupingResult = field(default_factory=GroupingResult)
+
+
+RunReport = (
+    CentraleCanineRunReport | HtmlRunReport | SccBreederDirectoryRunReport | SccDogRunReport | BreederSitesRunReport
+)
+
+
 class CollectionRunner:
     """
     Plans, collects and stores a run, then groups the litters, scores them and notifies.
@@ -65,7 +119,7 @@ class CollectionRunner:
     row send the « source en panne » alert.
     """
 
-    def run_source(self, db: Session, source: ListingSource) -> CentraleCanineRunReport | HtmlRunReport:
+    def run_source(self, db: Session, source: ListingSource) -> RunReport:
         """
         Run a source with its real collector.
 
@@ -89,7 +143,118 @@ class CollectionRunner:
             return self.run_html_source(db, source, WhoofCollector())
         if source == ListingSource.COEUR_DE_COCKER:
             return self.run_html_source(db, source, CoeurDeCockerCollector())
+        if source == ListingSource.SCC_BREEDERS:
+            return self.run_scc_breeders(db, SccBreederDirectoryCollector())
+        if source == ListingSource.SCC_DOGS:
+            return self.run_scc_dogs(db, SccDogCollector())
+        if source == ListingSource.CHIENS_DE_FRANCE_SITES:
+            return self.run_breeder_sites(db, ChiensDeFranceSiteCollector())
         raise ValueError(f"Aucun collecteur pour {source}")
+
+    def run_breeder_sites(self, db: Session, collector: ChiensDeFranceSiteCollector) -> BreederSitesRunReport:
+        """
+        Read the site of every breeder known on Chiens de France: future litters, puppies for sale with their
+        photos, reproducers; then regroup, score and notify.
+
+        Args:
+            db: Database session.
+            collector: Collector to read with (a real one, or one on a fake transport in the tests).
+
+        Returns:
+            The run report; a site that fails is listed in ``collection.failed_sites`` without failing the run.
+        """
+        source_run = self._open_run(db, ListingSource.CHIENS_DE_FRANCE_SITES)
+        plan = CollectionPlanner.build_breeder_sites_plan(db, naive_utc_now())
+        report = BreederSitesRunReport(source_run=source_run, plan=plan)
+
+        def collect_and_store() -> IngestionSummary:
+            """
+            Read the planned sites and store what they bring.
+
+            Returns:
+                The ingestion summary.
+            """
+            report.collection = collector.collect(plan)
+            return breeder_site_ingestion_service.ingest(db, plan, report.collection, naive_utc_now())
+
+        report.summary, report.grouping = self._finish_run(db, source_run, collect_and_store)
+        return report
+
+    def run_scc_breeders(self, db: Session, collector: SccBreederDirectoryCollector) -> SccBreederDirectoryRunReport:
+        """
+        Read the breeder directory of the Centrale Canine and the club of the breed, and store the breeders.
+
+        Args:
+            db: Database session.
+            collector: Collector to read with (a real one, or one on a fake transport in the tests).
+
+        Returns:
+            The run report; ``listings_seen`` counts the breeders seen and ``listings_new`` the breeders created.
+        """
+        source_run = self._open_run(db, ListingSource.SCC_BREEDERS)
+        plan = CollectionPlanner.build_scc_breeder_directory_plan(db)
+        report = SccBreederDirectoryRunReport(source_run=source_run, plan=plan)
+
+        def collect_and_store() -> IngestionSummary:
+            """
+            Read the planned pages and store their breeders.
+
+            Returns:
+                The ingestion summary.
+
+            Raises:
+                CentraleCanineError: When there is nothing to read or the source refuses.
+            """
+            if not plan.breeds or not plan.departments:
+                raise CentraleCanineError(NOTHING_TO_COLLECT_MESSAGE)
+            report.collection = collector.collect(plan)
+            directory_summary = breeder_directory_ingestion_service.ingest(
+                db, report.collection.profiles, naive_utc_now()
+            )
+            return IngestionSummary(
+                seen_count=directory_summary.seen_count,
+                new_breeder_or_dog_count=len(directory_summary.new_breeder_ids),
+                changed_breeder_or_dog_count=len(directory_summary.updated_breeder_ids),
+            )
+
+        report.summary, report.grouping = self._finish_run(db, source_run, collect_and_store)
+        return report
+
+    def run_scc_dogs(self, db: Session, collector: SccDogCollector) -> SccDogRunReport:
+        """
+        Read the Centrale Canine pages of the litters that need them (parents, registered puppies), store the
+        dogs, then re-evaluate the litters whose colours the dogs settle.
+
+        Args:
+            db: Database session.
+            collector: Collector to read with (a real one, or one on a fake transport in the tests).
+
+        Returns:
+            The run report; ``listings_seen`` counts the dogs read and ``listings_new`` the dogs created.
+        """
+        source_run = self._open_run(db, ListingSource.SCC_DOGS)
+        plan = DogCollectionPlanner.build(db, naive_utc_now())
+        report = SccDogRunReport(source_run=source_run, plan=plan)
+
+        def collect_and_store() -> IngestionSummary:
+            """
+            Read the planned pages and store their dogs.
+
+            Returns:
+                The ingestion summary.
+            """
+            report.collection = collector.collect(plan)
+            dog_summary = dog_ingestion_service.ingest(
+                db, report.collection.dogs, report.collection.litter_details, naive_utc_now()
+            )
+            return IngestionSummary(
+                seen_count=dog_summary.seen_count,
+                new_breeder_or_dog_count=len(dog_summary.new_dog_ids),
+                changed_breeder_or_dog_count=len(dog_summary.changed_group_ids),
+            )
+
+        report.summary, report.grouping = self._finish_run(db, source_run, collect_and_store)
+        return report
 
     def plan_centrale_canine(self, db: Session, collector: CentraleCanineCollector) -> CentraleCanineCollectionPlan:
         """
@@ -236,6 +401,18 @@ class CollectionRunner:
                 should_notify=should_notify,
                 fewer_puppies_group_ids=set(grouping.fewer_puppies_group_ids),
             )
+            breeder_alert_service.raise_events(
+                db,
+                BreederRunFacts(
+                    new_group_ids=set(grouping.new_group_ids),
+                    born_group_ids=set(grouping.born_group_ids),
+                    new_listing_ids=list(summary.new_listing_ids),
+                    changed_listing_ids=list(summary.changed_listing_ids),
+                    run_started_at=source_run.started_at,
+                ),
+                now,
+                should_notify=should_notify,
+            )
             source_run.status = SourceRunStatus.OK
         except Exception as error:
             # A failing source must never stop the others: the error goes to the run line.
@@ -249,8 +426,8 @@ class CollectionRunner:
                 logger.exception("%s run crashed", source_run.source)
         finally:
             source_run.listings_seen = summary.seen_count
-            source_run.listings_new = len(summary.new_listing_ids)
-            source_run.listings_changed = len(summary.changed_listing_ids)
+            source_run.listings_new = len(summary.new_listing_ids) + summary.new_breeder_or_dog_count
+            source_run.listings_changed = len(summary.changed_listing_ids) + summary.changed_breeder_or_dog_count
             source_run.finished_at = naive_utc_now()
             db.commit()
 

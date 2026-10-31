@@ -2,13 +2,13 @@ import type { LitterCard, LitterColor } from '~/types/api'
 import type { CockerCoat } from '~/types/CockerCoat'
 import type { DevicePosition } from '~/types/Location'
 import { COAT_COLOR_LABELS } from '~/constants/coatColorLabels'
+import { UNKNOWN_PLACE_LABEL } from '~/constants/litterLabels'
 import { COCKER_COAT_PALETTES, ILLUSTRATED_COATS } from '~/constants/cockerCoatPalettes'
 import { CrowFliesDistance } from '~/utils/crowFliesDistance'
 import { FollowUpPresentation } from '~/utils/followUpPresentation'
 import { FrenchDate } from '~/utils/frenchDate'
 import { FrenchText } from '~/utils/frenchText'
 
-const UNKNOWN_PLACE_LABEL: string = 'Lieu à confirmer'
 const MINUTES_PER_HOUR: number = 60
 const NON_BREAKING_SPACE: string = '\u00a0'
 const EURO_FORMAT: Intl.NumberFormat = new Intl.NumberFormat('fr-FR', {

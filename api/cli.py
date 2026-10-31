@@ -19,7 +19,13 @@ from migrations.run_migrations import MigrationRunner
 from models.breed import Breed
 from seeders.run_seeders import SeederRunner
 from services.auth_service import AuthService
-from services.collection_runner import CentraleCanineRunReport, HtmlRunReport, collection_runner
+from services.collection_runner import (
+    BreederSitesRunReport,
+    CentraleCanineRunReport,
+    HtmlRunReport,
+    RunReport,
+    collection_runner,
+)
 from services.collectors.centrale_canine import CentraleCanineCollector, CentraleCanineError
 from services.collectors.raw_listing import RawListing
 from services.notification_texts import SOURCE_NAMES
@@ -186,7 +192,7 @@ class CommandLine:
             db.close()
 
     @staticmethod
-    def _print_run_report(report: CentraleCanineRunReport | HtmlRunReport) -> None:
+    def _print_run_report(report: RunReport) -> None:
         """
         Print the outcome of a run and one line per litter found.
 
@@ -202,6 +208,13 @@ class CommandLine:
             )
         if source_run.status != SourceRunStatus.OK:
             print(f"Relevé en échec : {source_run.error_message}")
+            return
+        if not isinstance(report, CentraleCanineRunReport | HtmlRunReport | BreederSitesRunReport):
+            subject = "éleveur(s)" if source_run.source == ListingSource.SCC_BREEDERS else "chien(s)"
+            print(
+                f"Relevé terminé : {source_run.listings_seen} {subject} vu(s), "
+                f"{source_run.listings_new} nouveau(x), {source_run.listings_changed} mis à jour."
+            )
             return
         print(
             f"Relevé terminé : {source_run.listings_seen} portée(s) vue(s), "
@@ -247,7 +260,7 @@ class CommandLine:
             status = f"à naître, saillie du {listing.mating_date or '?'}"
         breeder_name: str | None = None
         if listing.breeder is not None:
-            breeder_name = listing.breeder.affix or listing.breeder.display_name
+            breeder_name = listing.breeder.card_name
 
         return (
             f"[{listing.department_code}] {listing.city or '?'} · {breeder_name or 'éleveur ?'} · "
@@ -257,7 +270,7 @@ class CommandLine:
         )
 
     @staticmethod
-    def _save_raw_pages(report: CentraleCanineRunReport | HtmlRunReport, directory: Path) -> None:
+    def _save_raw_pages(report: RunReport, directory: Path) -> None:
         """
         Write each received page as is, to record real fixtures: JSON for the Centrale Canine, HTML for
         the other sources, named after their address.
@@ -267,17 +280,25 @@ class CommandLine:
             directory: Destination folder, created if needed.
         """
         directory.mkdir(parents=True, exist_ok=True)
+        source_value = report.source_run.source.value
         if isinstance(report, CentraleCanineRunReport):
             for raw_page in report.collection.raw_pages:
                 file_name = f"{raw_page.scc_slug}_{raw_page.department_code}_page_{raw_page.page_number}.json"
                 (directory / file_name).write_text(
                     json.dumps(raw_page.payload, ensure_ascii=False, indent=2), encoding="utf-8"
                 )
-        else:
-            source_value = report.source_run.source.value
+        elif isinstance(report, HtmlRunReport | BreederSitesRunReport):
             for html_page in report.collection.raw_pages:
                 page_path = urlparse(html_page.url).path.strip("/").replace("/", "_")
                 (directory / f"{source_value}_{page_path}.html").write_text(html_page.html, encoding="utf-8")
+        else:
+            for json_page in report.collection.raw_pages:
+                parsed_url = urlparse(json_page.url)
+                page_path = parsed_url.path.strip("/").replace("/", "_")
+                query_part = f"_{parsed_url.query.replace('&', '_').replace('=', '-')}" if parsed_url.query else ""
+                (directory / f"{source_value}_{page_path}{query_part}.json").write_text(
+                    json.dumps(json_page.payload, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
         print(f"{len(report.collection.raw_pages)} page(s) enregistrée(s) dans {directory}")
 
     def run(self, arguments: list[str]) -> int:

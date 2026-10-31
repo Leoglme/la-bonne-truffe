@@ -22,6 +22,9 @@ export const LISTING_SOURCE_LABELS: Record<ListingSource, string> = {
   chiots_de_france: 'Chiots de France',
   whoof: 'Whoof',
   coeur_de_cocker: 'Cœur de Cocker',
+  scc_breeders: 'Annuaire des éleveurs (Centrale Canine)',
+  scc_dogs: 'Fiches des chiens (Centrale Canine)',
+  chiens_de_france_sites: 'Sites d’élevage (Chiens de France)',
 }
 
 export const LISTING_SOURCE_LINK_LABELS: Record<ListingSource, string> = {
@@ -30,6 +33,9 @@ export const LISTING_SOURCE_LINK_LABELS: Record<ListingSource, string> = {
   chiots_de_france: 'Voir sur Chiots de France',
   whoof: 'Voir sur Whoof',
   coeur_de_cocker: 'Voir sur Cœur de Cocker',
+  scc_breeders: 'Voir sur la Centrale Canine',
+  scc_dogs: 'Voir sur la Centrale Canine',
+  chiens_de_france_sites: 'Voir le site de l’élevage',
 }
 
 export const LOF_STATUS_LABELS: Record<LofStatus, string> = {
@@ -44,6 +50,9 @@ export const BREEDING_QUALITY_CHIP_LABELS: Record<BreedingQualityChip, LitterInf
   puppies_unaffected: { fullLabel: 'Chiots indemnes d’APR et de NF', shortLabel: 'Chiots indemnes APR et NF' },
   breed_club_member: { fullLabel: 'Membre du Spaniel Club Français', shortLabel: 'Spaniel Club Français' },
 }
+
+/** The place of a litter or a breeder while no source gives it. */
+export const UNKNOWN_PLACE_LABEL: string = 'Lieu à confirmer'
 
 /** What the breeder card says of a breeder whose kennel name is registered (an affix). */
 export const BREEDER_AFFIX_LINE: string = 'Nom d’élevage déposé à la Centrale Canine'

@@ -64,6 +64,59 @@ LITTER_PHOTO_PATH_PART = "/portees/"
 THUMBNAIL_PREFIX = "TN200_"
 
 
+def affix_of(text: str | None) -> str | None:
+    """
+    The affix as a Chiens de France page writes it, or None for a breeder « Sans affixe ».
+
+    Args:
+        text: The breeder name shown.
+
+    Returns:
+        The affix, readable, or None.
+    """
+    if not text or text.lower().startswith("sans affixe"):
+        return None
+    return BreederContactParser.readable_name(text)
+
+
+def french_date_of(text: str | None) -> date | None:
+    """
+    Read a French date written ``28.08.2026`` or ``29/08/2026``.
+
+    Args:
+        text: The text holding the date.
+
+    Returns:
+        The date, or None when absent or impossible.
+    """
+    match = FRENCH_DATE_PATTERN.search(text or "")
+    if match is None:
+        return None
+    day, month, year = (int(part) for part in match.groups())
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return None
+
+
+def litter_photos_of(tree: LexborHTMLParser) -> tuple[str, ...]:
+    """
+    The full-size photos of a litter page, without their thumbnails.
+
+    Args:
+        tree: The parsed page.
+
+    Returns:
+        Photo URLs, in page order, each once.
+    """
+    photos: dict[str, None] = {}
+    for image in tree.css("img[src]"):
+        source = image.attributes.get("src") or ""
+        if LITTER_PHOTO_PATH_PART in source and THUMBNAIL_PREFIX not in source:
+            photos[source] = None
+    return tuple(photos)
+
+
 @dataclass(frozen=True)
 class ListedAd:
     """An ad found on a regional listing: a puppy for sale or a litter to come."""
@@ -248,7 +301,7 @@ class ChiensDeFranceCollector:
         price_text = HtmlAdParser.text_of(tree.css_first("div.fiche-prix div.prix"))
         town, postal_code = cls._town_and_postal_code(tree)
         parents = cls._parents(tree)
-        affix = cls._affix(summary_facts.get("Eleveur"))
+        affix = affix_of(summary_facts.get("Eleveur"))
         litter_code = detail_facts.get("Code portée")
         return RawListing(
             source=ListingSource.CHIENS_DE_FRANCE,
@@ -258,7 +311,7 @@ class ChiensDeFranceCollector:
             lof_status=LofStatus.LOF,
             external_url=listed_ad.url,
             litter_number=WHITESPACE_PATTERN.sub("", litter_code) if litter_code else None,
-            birth_date=cls._french_date(cls._birth_date_text(tree)),
+            birth_date=french_date_of(cls._birth_date_text(tree)),
             male_count=int(is_male) if has_known_sex else None,
             female_count=int(is_female) if has_known_sex else None,
             puppies_available=cls._puppies_available(price_text),
@@ -268,7 +321,7 @@ class ChiensDeFranceCollector:
             city=town,
             sire_name=parents.get("Père"),
             dam_name=parents.get("Mère"),
-            photos=cls._litter_photos(tree),
+            photos=litter_photos_of(tree),
             breeder=HtmlAdParser.breeder_of_site(
                 tree.css_first("div.fiche-recap a[href]"), affix, detail_facts.get("Siret"), postal_code, town
             ),
@@ -297,7 +350,7 @@ class ChiensDeFranceCollector:
         parents = cls._litter_to_come_parents(tree)
         breeder_site_link = tree.css_first("a.fichesite")
         breeder_site_text = HtmlAdParser.text_of(breeder_site_link)
-        affix = cls._affix(breeder_site_text.removeprefix(BREEDER_SITE_PREFIX) if breeder_site_text else None)
+        affix = affix_of(breeder_site_text.removeprefix(BREEDER_SITE_PREFIX) if breeder_site_text else None)
         return RawListing(
             source=ListingSource.CHIENS_DE_FRANCE,
             external_id=listed_ad.external_id,
@@ -305,7 +358,7 @@ class ChiensDeFranceCollector:
             kind=ListingKind.LITTER_EXPECTED,
             lof_status=LofStatus.LOF,
             external_url=listed_ad.url,
-            mating_date=cls._french_date(facts.get("Date de saillie")),
+            mating_date=french_date_of(facts.get("Date de saillie")),
             department_code=listed_ad.department_code,
             zip_code=postal_code,
             city=town,
@@ -413,26 +466,6 @@ class ChiensDeFranceCollector:
                 return text
         return None
 
-    @staticmethod
-    def _french_date(text: str | None) -> date | None:
-        """
-        Read a French date written ``28.08.2026`` or ``29/08/2026``.
-
-        Args:
-            text: The text holding the date.
-
-        Returns:
-            The date, or None when absent or impossible.
-        """
-        match = FRENCH_DATE_PATTERN.search(text or "")
-        if match is None:
-            return None
-        day, month, year = (int(part) for part in match.groups())
-        try:
-            return date(year, month, day)
-        except ValueError:
-            return None
-
     @classmethod
     def _published_at(cls, text: str | None) -> datetime | None:
         """
@@ -444,7 +477,7 @@ class ChiensDeFranceCollector:
         Returns:
             The publication time, or None.
         """
-        published_on = cls._french_date(text.split("Inscrit")[0] if text else None)
+        published_on = french_date_of(text.split("Inscrit")[0] if text else None)
         if published_on is None:
             return None
         return datetime(published_on.year, published_on.month, published_on.day)
@@ -533,36 +566,3 @@ class ChiensDeFranceCollector:
             if role in ("Père", "Mère") and role not in parents:
                 parents[role] = HtmlAdParser.text_of(name_node)
         return parents
-
-    @staticmethod
-    def _affix(text: str | None) -> str | None:
-        """
-        The affix as the page writes it, or None for a breeder « Sans affixe ».
-
-        Args:
-            text: The breeder name shown.
-
-        Returns:
-            The affix, readable, or None.
-        """
-        if not text or text.lower().startswith("sans affixe"):
-            return None
-        return BreederContactParser.readable_name(text)
-
-    @staticmethod
-    def _litter_photos(tree: LexborHTMLParser) -> tuple[str, ...]:
-        """
-        The full-size photos of the litter, without their thumbnails.
-
-        Args:
-            tree: The parsed page.
-
-        Returns:
-            Photo URLs, in page order, each once.
-        """
-        photos: dict[str, None] = {}
-        for image in tree.css("img[src]"):
-            source = image.attributes.get("src") or ""
-            if LITTER_PHOTO_PATH_PART in source and THUMBNAIL_PREFIX not in source:
-                photos[source] = None
-        return tuple(photos)

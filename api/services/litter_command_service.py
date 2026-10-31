@@ -1,11 +1,11 @@
 """Changes the user makes on a litter: confirmed colours, follow-up status, notes, and looks at the home list."""
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from core.clock import naive_utc_now
+from core.clock import naive_utc_now, naive_utc_of
 from models.follow_up import FollowUp, FollowUpNote
 from models.user import User
 from schemas.litter import ColorConfirmation, FollowUpNoteCreate, FollowUpUpdate, SexConfirmation
@@ -68,12 +68,12 @@ class LitterCommandService:
         if follow_up is None:
             follow_up = FollowUp(user_id=user_id, litter_group_id=litter_group_id)
             db.add(follow_up)
-        next_reminder_at = cls._as_naive_utc(payload.next_reminder_at)
+        next_reminder_at = naive_utc_of(payload.next_reminder_at)
         if next_reminder_at != follow_up.next_reminder_at:
             follow_up.reminder_sent_at = None
         follow_up.status = payload.status
         follow_up.next_reminder_at = next_reminder_at
-        follow_up.last_contact_at = cls._as_naive_utc(payload.last_contact_at)
+        follow_up.last_contact_at = naive_utc_of(payload.last_contact_at)
         db.commit()
         return follow_up
 
@@ -176,18 +176,3 @@ class LitterCommandService:
             .filter(FollowUp.user_id == user_id, FollowUp.litter_group_id == litter_group_id)
             .one_or_none()
         )
-
-    @staticmethod
-    def _as_naive_utc(moment: datetime | None) -> datetime | None:
-        """
-        A time sent by the dashboard, in the storage convention (naive UTC).
-
-        Args:
-            moment: Aware time, or naive already read as UTC.
-
-        Returns:
-            The naive UTC time, or None.
-        """
-        if moment is None or moment.tzinfo is None:
-            return moment
-        return moment.astimezone(UTC).replace(tzinfo=None)

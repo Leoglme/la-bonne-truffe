@@ -49,3 +49,19 @@ La **Centrale Canine** (Société Centrale Canine, qui tient le LOF) publie un *
 ## Questions encore ouvertes
 
 - Celles qui restent sont dans `08-idees-et-questions-ouvertes.md`.
+
+## Jalon 6 : les éleveurs et les chiots un par un (décidé le 31/10/2026)
+
+Léo veut arriver **avant** les annonces : les bonnes portées gold se réservent sur liste d'attente, souvent avant la saillie. L'objet manquant est l'éleveur. Il veut aussi plus de données sur chaque portée (photos, sexe et couleur de chaque chiot) et lever le doute sur la couleur, son critère n° 1. Maquette validée : `06-maquette-et-design.md`, canevas « Éleveurs », proposition A.
+
+| Sujet | Décision | Pourquoi |
+|---|---|---|
+| Où vivent les éleveurs | Un **onglet Éleveurs** (troisième onglet, entre Suivi et Critères, sur iPad et iPhone ; entrée de la barre latérale sur desktop) : liste classée du plus prometteur au moins prometteur, recherche avec suggestions, fiche, suivi, ajout à la main | Proposition A retenue par Léo le 31/10/2026 |
+| D'où viennent les éleveurs | L'**annuaire de la Centrale Canine** pour les départements du profil (relu chaque jour) et l'**annuaire du Spaniel Club Français** (toute la France, relu chaque jour avec l'annuaire), en plus des éleveurs déjà créés par les portées | Validé par Léo ; un éleveur sans portée en cours devient visible, et donc contactable en amont |
+| Les chiots un par un | Pour chaque portée de la Centrale Canine : la fiche de la portée (`api/litter`), puis la fiche de chaque parent et de chaque chiot inscrit (`api/dog`) : sexe, nom, couleur exacte, cotation, santé, locus E | Demandé par Léo : « les chiots un par un, le sexe, la couleur » |
+| La couleur par les parents | Deux parents gold (ou `LocE-e/e` tous les deux) ⇒ la portée est **gold, certaine**, même à naître. Un seul parent gold ⇒ gold **possible** (ambigu). Les couleurs des chiots inscrits priment sur tout, sauf une couleur confirmée à la main | C'est la génétique du locus E ; ça lève l'ambiguïté du paquet 159 et donne la couleur des portées à naître |
+| Les photos | Les sites d'éleveurs hébergés par Chiens de France (`<slug>.chiens-de-france.com`) : pages des chiots en vente (chaque chiot avec son statut et ses photos), futures portées, lices, mâles et étalons (couleur, photo, puce, cotation). La Centrale Canine n'a pas de photo | Vérifié le 31/10/2026 ; c'est la seule source de photos pour les portées que seule la SCC liste, et la seule qui annonce une portée avant la saillie déclarée |
+| Suivre un éleveur | Un cœur en haut à droite de la fiche ouvre le tiroir Suivre : saillie déclarée, naissance, nouvelles photos ou annonce, même pour une couleur ignorée ; statut dans le carnet (à contacter, contacté, sur liste d'attente, acompte versé), notes, rappel. Les alertes d'éleveur partent **même hors des départements** du profil | Un éleveur suivi l'est pour ses portées, où qu'il soit ; le cœur reste à sa place de toujours (jamais dans la barre du bas) |
+| Ajout à la main | Un éleveur trouvé ailleurs (Facebook, panneau, bouche-à-oreille) se crée avec un nom, une ville, un lien, un téléphone, une note ; l'app propose d'abord les élevages connus qui ressemblent au nom, et rattache les portées futures à la fiche par le téléphone, le SIREN ou l'affixe et le département | Le cas vécu : « je trouve un éleveur sur Facebook, je tape son nom, ça le trouve » |
+| La recherche | Un écran poussé sur iPad et iPhone, un champ à suggestions sur desktop ; sans accents, espaces ni majuscules, sur l'affixe, le nom, la ville, le code postal, le SIREN, le téléphone ; les portées en second bloc | Validé sur maquette |
+| Données personnelles | On ne garde d'un chien que ce qui décrit le chien (identité, couleur, santé, cotation, parents) et d'un éleveur que ce que l'app gardait déjà. Jamais l'e-mail ni le mobile du propriétaire que la fiche chien expose | RGPD ; l'app est perso mais le dépôt est public |

@@ -71,7 +71,7 @@ Dans le code, ces valeurs sont des tokens Tailwind v4 déclarés dans le bloc `@
 - Rayons : cartes 24 à 28 px, tuiles 18 à 22 px, boutons et chips en pilule (999 px), pastille de score ronde.
 - Marges latérales : 32 px sur iPad, 20 px sur iPhone, 36 à 40 px sur desktop. Espacement entre cartes 14 à 20 px.
 - Cibles tactiles ≥ 44 px partout (boutons, chips de filtre, onglets, interrupteurs 58 × 34).
-- Barre d'onglets en bas (iPad et iPhone) : Portées (patte), Suivi (cœur), Critères (curseurs), Réglages (engrenage). Actif en corail et gras. Pas de barre sur l'écran de détail, qui est un écran poussé avec bouton retour.
+- Barre d'onglets en bas (iPad et iPhone) : Portées (patte), Suivi (cœur), Éleveurs (maison, depuis le 31/10/2026), Critères (curseurs), Réglages (engrenage). Actif en corail et gras. Pas de barre sur l'écran de détail, qui est un écran poussé avec bouton retour.
 - Desktop : barre latérale blanche 236 px avec les mêmes entrées plus Sources, grille trois colonnes, volet de détail à droite 400 px.
 
 ### Icônes
@@ -143,3 +143,19 @@ Cinq photos Unsplash (licence Unsplash : utilisation libre, attribution appréci
 | `cocker-gold-herbe.jpg` | https://unsplash.com/fr/photos/un-chien-cocker-spaniel-est-assis-sur-lherbe-ah1X0SpRlUc | décor de l'inscription, réduite à 800 px de large |
 
 Dans l'application, les photos des portées viennent des annonces ; sans photo, l'illustration de cocker colorée selon la robe.
+
+## Les éleveurs (canevas « La Bonne Truffe · Éleveurs », validé le 31/10/2026)
+
+Maquette : https://claude.ai/artifact/643WfARUJfuo6c3qS6actc. Sources dans `design/mockup/eleveurs/` (même format `.dc.html`, photos par `/_blob/…` de l'artifact, à remplacer par celles des annonces). Léo a validé l'ensemble des écrans et retenu la **proposition A** : un onglet **Éleveurs** dans la barre, cinquième entrée entre Suivi et Critères sur iPad et iPhone, et une entrée Éleveurs dans la barre latérale du desktop. La proposition B (recherche depuis l'accueil, éleveurs suivis dans le Suivi) est écartée et reste sur le canevas pour mémoire.
+
+| Fichier | Format | Contenu |
+|---|---|---|
+| `Main.dc.html` | iPad portrait | L'onglet : titre, champ de recherche, filtres (Tous, Suivis, Gold, Spaniel Club, Une portée en cours), ligne de tri « Les plus prometteurs d'abord », liste d'élevages (tuile initiales ou photo, nom, ville et temps de route, le fait du moment en corail ou neutre, chips), cœur plein sur les suivis, bouton carte |
+| `Recherche.dc.html` | iPad portrait, interactive | Écran poussé : retour, champ en focus corail, suggestions en deux blocs (Élevages puis Portées) filtrées sans accents, espaces ni majuscules sur l'affixe, le nom, la ville, le code postal, le SIREN ; « Pas dans la liste ? Ajouter « … » à la main » ; sans saisie, les recherches récentes et l'encart « Trouvé un éleveur sur Facebook ? » |
+| `FicheEleveur.dc.html` | iPad portrait | Photo en tête (site de l'éleveur), retour, **Partager puis le cœur en haut à droite**, tuile et nom, personne, ville, temps de route, chips (sélectionné, Spaniel Club, SIREN vérifié, sur Chiens de France depuis…), trois repères (portées gold, dernière portée, rythme), « Ses portées » (à naître avec « gold attendu : les deux parents sont gold », née, passées), « Ses couleurs » (barre gold / noir et feu), « Ses reproducteurs » (lice, étalon, santé, note), « Vu sur » (Centrale Canine, Chiens de France, Facebook ajouté par Léo), « Mon suivi » (statut, note, rappel). En bas, **« Appeler » seul** |
+| `SuivreEleveur.dc.html` | iPad portrait | Le tiroir Suivre : saillie déclarée, naissance, nouvelles photos ou annonce, même pour une couleur ignorée ; « Dans mon carnet » (À contacter, Contacté, Sur liste d'attente, Acompte versé) ; « Suivre cet élevage » puis « Annuler » empilés |
+| `AjouterEleveur.dc.html` | iPad portrait | Ajout à la main : tuile gold « Ajouté à la main », titre, champs blancs sur le crème (nom, ville ou code postal, lien, téléphone, note), encart « deux élevages de la Centrale Canine ressemblent à ce nom » pour relier au lieu de doublonner, « Ajouter et suivre » puis « Ajouter sans suivre » |
+| `iPhoneRecherche.dc.html`, `iPhoneFiche.dc.html` | iPhone 390 × 844 | Mêmes écrans en une colonne ; sur la fiche, Partager et le cœur en haut à droite, « Appeler » seul en bas |
+| `DesktopEleveurs.dc.html`, `DesktopRecherche.dc.html` | 1440 × 900 | Barre latérale avec l'entrée Éleveurs, grille de trois colonnes de cartes d'élevage (cœur en haut à droite de la carte), volet de détail de 400 px à droite (fermer à gauche, Partager et cœur à droite de la photo, « Appeler » en bas) ; la recherche ouvre ses suggestions sous le champ, à droite du titre |
+
+Règles retenues : le cœur « suivre » est **toujours en haut à droite** (de la photo sur iPad et iPhone, du volet sur desktop, de la carte dans la grille), jamais à côté de l'action du bas ; la barre du bas ne porte que l'action principale ; la recherche est un écran poussé sur iPad et iPhone, un champ avec suggestions sur desktop ; les listes d'élevages vont du plus prometteur au moins prometteur (une portée à naître ou née d'abord, puis la cadence des portées gold).

@@ -103,9 +103,10 @@ class ScoreCalculator:
         levels = {reading.color: criteria.level_of(reading.color) for reading in snapshot.colors}
         if snapshot.has_certain_colors:
             is_confirmed = any(reading.confidence == ColorConfidence.CONFIRMED for reading in snapshot.colors)
+            is_inferred = any(reading.confidence == ColorConfidence.INFERRED for reading in snapshot.colors)
             for color, level in levels.items():
                 if level == ColorPreferenceLevel.PREFERRED:
-                    suffix = ", confirmée" if is_confirmed else ""
+                    suffix = ", confirmée" if is_confirmed else (" : les deux parents sont gold" if is_inferred else "")
                     return ScoreReason(f"{cls.color_label(color).capitalize()}, ta couleur préférée{suffix}", 40)
             for color, level in levels.items():
                 if level == ColorPreferenceLevel.ACCEPTABLE:

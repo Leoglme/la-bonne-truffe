@@ -7,12 +7,15 @@ from sqlalchemy.orm import Session
 from core.clock import french_date_of
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
+from enums.dog_role import DogRole
+from enums.dog_sex import DogSex
 from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
 from enums.lof_status import LofStatus
 from models.breed import Breed
 from models.breeder import Breeder
 from models.department import Department
+from models.dog import Dog
 from models.listing import Listing
 from models.litter_group import LitterGroup
 from services.collectors.raw_listing import ColorReading
@@ -36,12 +39,16 @@ class LitterSnapshotBuilder:
         """
         listings = db.query(Listing).filter(Listing.litter_group_id == group.id).order_by(Listing.id).all()
         department_code = cls.department_code_of(listings)
+        puppies = (
+            db.query(Dog).filter(Dog.litter_group_id == group.id, Dog.role == DogRole.PUPPY).order_by(Dog.id).all()
+        )
         return cls.build_from_listings(
             group,
             listings,
             breed=db.get(Breed, group.breed_id),
             breeder=db.get(Breeder, group.breeder_id) if group.breeder_id is not None else None,
             department=db.get(Department, department_code) if department_code is not None else None,
+            puppies=puppies,
         )
 
     @classmethod
@@ -52,10 +59,11 @@ class LitterSnapshotBuilder:
         breed: Breed | None,
         breeder: Breeder | None,
         department: Department | None,
+        puppies: list[Dog] | None = None,
     ) -> LitterSnapshot | None:
         """
         Merge the listings of a group: a born listing wins over a declaration, LOF over unknown, a
-        confirmed colour over everything.
+        confirmed colour over everything, then the registered puppies, then what the parents imply.
 
         Args:
             group: The group.
@@ -63,6 +71,7 @@ class LitterSnapshotBuilder:
             breed: Breed of the group, when known.
             breeder: Breeder of the group, when known.
             department: Department ``department_code_of`` the listings gives, when known.
+            puppies: The registered puppies of the group read at the Centrale Canine, when any.
 
         Returns:
             The snapshot, or None when the group has no listing.
@@ -71,7 +80,8 @@ class LitterSnapshotBuilder:
         if not active_listings:
             return None
         department_code = cls.department_code_of(listings)
-        male_count, female_count = cls._sex_counts(group, active_listings)
+        registered_puppies = puppies or []
+        male_count, female_count = cls._sex_counts(group, active_listings, registered_puppies)
 
         return LitterSnapshot(
             group_id=group.id,
@@ -80,7 +90,7 @@ class LitterSnapshotBuilder:
             kind=cls._merged_kind(active_listings),
             department_code=department_code,
             department_name=department.name if department is not None else None,
-            colors=cls._merged_colors(group, active_listings),
+            colors=cls._merged_colors(group, active_listings, registered_puppies),
             lof_status=cls._merged_lof_status(active_listings),
             male_count=male_count,
             female_count=female_count,
@@ -197,29 +207,59 @@ class LitterSnapshotBuilder:
             return ListingKind.LITTER_EXPECTED
         return ListingKind.PUPPY_AD
 
-    @staticmethod
-    def _merged_colors(group: LitterGroup, listings: list[Listing]) -> tuple[ColorReading, ...]:
+    @classmethod
+    def _merged_colors(
+        cls, group: LitterGroup, listings: list[Listing], puppies: list[Dog]
+    ) -> tuple[ColorReading, ...]:
         """
-        Confirmed colours win; otherwise the certain colours of every source; otherwise the bundle.
+        Confirmed colours win; then the colours of the registered puppies; then a colour the parents make
+        certain; then the certain colours of every source; then what the parents make possible; then the bundle.
 
         Args:
-            group: The group, holding the colours confirmed by hand.
+            group: The group, holding the colours confirmed by hand and those its parents imply.
             listings: Active listings of the group.
+            puppies: The registered puppies of the group.
 
         Returns:
             The colours, empty when unknown.
         """
         if group.confirmed_colors:
             return tuple(ColorReading(CoatColor(color), ColorConfidence.CONFIRMED) for color in group.confirmed_colors)
+        puppy_readings = [
+            ColorReading(puppy.color, ColorConfidence.CERTAIN) for puppy in puppies if puppy.color != CoatColor.INCONNUE
+        ]
+        if puppy_readings:
+            return cls._unique_colors(puppy_readings)
+        expected = [
+            ColorReading(CoatColor(entry["color"]), ColorConfidence(entry["confidence"]))
+            for entry in group.expected_colors
+        ]
+        inferred = [reading for reading in expected if reading.confidence == ColorConfidence.INFERRED]
+        if inferred:
+            return cls._unique_colors(inferred)
         readings = [
             ColorReading(CoatColor(entry["color"]), ColorConfidence(entry["confidence"]))
             for listing in listings
             for entry in listing.colors
         ]
         certain = [reading for reading in readings if reading.confidence != ColorConfidence.AMBIGUOUS]
-        chosen = certain or readings
+        if certain:
+            return cls._unique_colors(certain)
+        return cls._unique_colors(expected or readings)
+
+    @staticmethod
+    def _unique_colors(readings: list[ColorReading]) -> tuple[ColorReading, ...]:
+        """
+        Each colour once, the first reading of it kept.
+
+        Args:
+            readings: Readings in order of trust.
+
+        Returns:
+            The readings without a colour twice.
+        """
         unique: dict[CoatColor, ColorReading] = {}
-        for reading in chosen:
+        for reading in readings:
             unique.setdefault(reading.color, reading)
         return tuple(unique.values())
 
@@ -242,17 +282,21 @@ class LitterSnapshotBuilder:
         return LofStatus.UNKNOWN
 
     @classmethod
-    def _sex_counts(cls, group: LitterGroup, listings: list[Listing]) -> tuple[int | None, int | None]:
+    def _sex_counts(
+        cls, group: LitterGroup, listings: list[Listing], puppies: list[Dog]
+    ) -> tuple[int | None, int | None]:
         """
         Males and females of a litter, from the most trusted source first.
 
         The counts confirmed by hand after a call win; else those the Centrale Canine declares for the born
-        litter; else the puppies still offered by a litter ad; else the puppies its puppy ads still offer, one
-        puppy per ad (a reserved, sold or adopted puppy no longer counts). A declared mating reports none.
+        litter; else the registered puppies read one by one; else the puppies still offered by a litter ad; else
+        the puppies its puppy ads still offer, one puppy per ad (a reserved, sold or adopted puppy no longer
+        counts). A declared mating reports none.
 
         Args:
             group: The group, holding the counts confirmed by hand.
             listings: Active listings of the group.
+            puppies: The registered puppies of the group.
 
         Returns:
             The male and female counts, each None while unknown.
@@ -262,6 +306,17 @@ class LitterSnapshotBuilder:
         born_litters = cls.centrale_canine_first(
             [listing for listing in listings if listing.kind == ListingKind.LITTER_BORN]
         )
+        if born_litters:
+            male_count = cls._first_known([listing.male_count for listing in born_litters])
+            female_count = cls._first_known([listing.female_count for listing in born_litters])
+            if male_count is not None and female_count is not None:
+                return male_count, female_count
+        sexed_puppies = [puppy for puppy in puppies if puppy.sex != DogSex.UNKNOWN]
+        if sexed_puppies:
+            return (
+                sum(1 for puppy in sexed_puppies if puppy.sex == DogSex.MALE),
+                sum(1 for puppy in sexed_puppies if puppy.sex == DogSex.FEMALE),
+            )
         if born_litters:
             return (
                 cls._first_known([listing.male_count for listing in born_litters]),

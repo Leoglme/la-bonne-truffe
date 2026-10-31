@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from api.v1.routes import (
     auth,
+    breeders,
     health,
     litters,
     notifications,
@@ -21,6 +22,7 @@ router.include_router(notifications.router)
 router.include_router(references.router)
 router.include_router(profiles.router)
 router.include_router(litters.router)
+router.include_router(breeders.router)
 router.include_router(shares.router)
 router.include_router(puppy_arrival.router)
 router.include_router(sources.router)

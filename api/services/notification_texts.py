@@ -2,6 +2,7 @@
 
 from datetime import date
 
+from enums.breeder_event_kind import BreederEventKind
 from enums.listing_source import ListingSource
 from enums.match_event_kind import MatchEventKind
 from services.matching.criteria import LitterSnapshot
@@ -14,6 +15,13 @@ LITTER_EVENT_TITLES: dict[MatchEventKind, str] = {
     MatchEventKind.NEW_PREFERRED: "Portée préférée",
     MatchEventKind.BORN: "Portée née",
     MatchEventKind.UPGRADED: "Passée en préférée",
+}
+
+BREEDER_EVENT_TITLES: dict[BreederEventKind, str] = {
+    BreederEventKind.NEW_MATING: "Saillie déclarée",
+    BreederEventKind.BIRTH: "Portée née",
+    BreederEventKind.NEW_PHOTOS: "Nouvelles photos",
+    BreederEventKind.NEW_AD: "Nouvelle annonce",
 }
 
 FRENCH_MONTHS: tuple[str, ...] = (
@@ -37,6 +45,9 @@ SOURCE_NAMES: dict[ListingSource, str] = {
     ListingSource.CHIOTS_DE_FRANCE: "Chiots de France",
     ListingSource.WHOOF: "Whoof",
     ListingSource.COEUR_DE_COCKER: "Cœur de Cocker",
+    ListingSource.SCC_BREEDERS: "L’annuaire de la Centrale Canine",
+    ListingSource.SCC_DOGS: "Les fiches chiens de la Centrale Canine",
+    ListingSource.CHIENS_DE_FRANCE_SITES: "Les sites d’éleveurs Chiens de France",
 }
 
 
@@ -56,6 +67,84 @@ class NotificationTexts:
             « Portée née · De Kerlann ».
         """
         return f"{LITTER_EVENT_TITLES[event]} · {snapshot.name}"
+
+    @staticmethod
+    def breeder_event_title(event: BreederEventKind, breeder_name: str) -> str:
+        """
+        Title of a notification about a followed breeder.
+
+        Args:
+            event: The event.
+            breeder_name: The breeder, as the app names it.
+
+        Returns:
+            « Saillie déclarée · Du Clos de l'Élevage A ».
+        """
+        return f"{BREEDER_EVENT_TITLES[event]} · {breeder_name}"
+
+    @classmethod
+    def breeder_event(cls, event: BreederEventKind, snapshot: LitterSnapshot, litter_event: MatchEventKind) -> str:
+        """
+        Body of a push about a followed breeder: the litter in one sentence, then why to hurry.
+
+        Args:
+            event: The event.
+            snapshot: The litter.
+            litter_event: The litter event the sentence is phrased after (born, or declared).
+
+        Returns:
+            « Née le 27 octobre (Morbihan) : une portée gold, 2 mâles et 3 femelles. Dispo vers le 22 décembre.
+            Appelle vite : les réservations se prennent dans l’ordre des appels. »
+        """
+        sentence = cls.litter_event(litter_event, snapshot)
+        if event == BreederEventKind.BIRTH:
+            return f"{sentence} Appelle vite : les réservations se prennent dans l’ordre des appels."
+        return f"{sentence} Quatre mois d’avance pour te placer sur sa liste."
+
+    @staticmethod
+    def breeder_follow_reminder_title(breeder_name: str | None) -> str:
+        """
+        Title of the push sent at the time of a reminder on a followed breeder.
+
+        Args:
+            breeder_name: The breeder, as the app names it, None when unknown.
+
+        Returns:
+            « Rappel · appeler Du Clos de l'Élevage A ».
+        """
+        return f"Rappel · appeler {breeder_name}" if breeder_name else "Rappel · appeler l’éleveur"
+
+    @staticmethod
+    def breeder_follow_reminder(breeder_name: str | None, city: str | None) -> str:
+        """
+        Body of the push sent at the time of a reminder on a followed breeder.
+
+        Args:
+            breeder_name: The breeder, as the app names it, None when unknown.
+            city: Its town, None when unknown.
+
+        Returns:
+            « C’est l’heure d’appeler Du Clos de l'Élevage A (Rennes). »
+        """
+        place = f" ({city})" if city else ""
+        return f"C’est l’heure d’appeler {breeder_name or 'l’éleveur'}{place}."
+
+    @staticmethod
+    def breeder_digest_line(event: BreederEventKind, breeder_name: str, litter_name: str) -> str:
+        """
+        One sentence of the evening digest about a followed breeder.
+
+        Args:
+            event: The event, new photos or a new ad.
+            breeder_name: The breeder, as the app names it.
+            litter_name: The litter, as its card names it.
+
+        Returns:
+            « Du Clos de l'Élevage A a ajouté des photos à sa portée. »
+        """
+        if event == BreederEventKind.NEW_PHOTOS:
+            return f"{breeder_name} a ajouté des photos à la portée {litter_name}."
+        return f"{breeder_name} a publié une annonce pour la portée {litter_name}."
 
     @staticmethod
     def evening_digest_title(acceptable_count: int) -> str:

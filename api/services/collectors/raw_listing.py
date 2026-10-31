@@ -45,6 +45,11 @@ class RawBreeder:
     selection_group: int | None = None
     is_breed_club_member: bool | None = None
 
+    @property
+    def card_name(self) -> str | None:
+        """The affix, else the name of the breeding: how the CLI names the breeder of a listing."""
+        return self.affix or self.display_name
+
 
 @dataclass(frozen=True)
 class RawListing:

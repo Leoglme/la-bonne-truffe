@@ -75,6 +75,96 @@ class CentraleCanineCollectionPlan:
 
 
 @dataclass(frozen=True)
+class SccJsonPage:
+    """One JSON page of the directory, of a litter or of a dog, exactly as received, for ``--save-raw``."""
+
+    url: str
+    payload: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class SccBreederContact:
+    """What a ``breeders`` or ``users`` entry says of a breeder's identity and place, readable."""
+
+    display_name: str | None
+    affix: str | None
+    siren: str | None
+    phone_e164: str | None
+    zip_code: str | None
+    city: str | None
+    latitude: float | None
+    longitude: float | None
+
+
+def read_scc_breeder_contact(entry: dict[str, Any]) -> SccBreederContact:
+    """
+    Read the identity and the place of a breeder as every Centrale Canine page writes them.
+
+    Args:
+        entry: A ``breeders`` entry of the litters, or a ``users`` entry of the directory.
+
+    Returns:
+        The contact, each field None when the page leaves it empty.
+    """
+    coordinates = SccValueParser.to_coordinates(entry.get("u_location"))
+    return SccBreederContact(
+        display_name=BreederContactParser.readable_name(SccValueParser.to_text(entry.get("u_farming_name"))),
+        affix=BreederContactParser.readable_name(SccValueParser.to_text(entry.get("u_farming_affix"))),
+        siren=BreederContactParser.siren(SccValueParser.to_text(entry.get("u_breeder_siren"))),
+        phone_e164=BreederContactParser.phone_e164(SccValueParser.to_text(entry.get("u_breeder_phone"))),
+        zip_code=BreederContactParser.postal_code(SccValueParser.to_text(entry.get("u_breeder_zip_code"))),
+        city=BreederContactParser.readable_name(SccValueParser.to_text(entry.get("u_breeder_town"))),
+        latitude=coordinates[0] if coordinates is not None else None,
+        longitude=coordinates[1] if coordinates is not None else None,
+    )
+
+
+def scc_absolute_url(path_or_url: str | None) -> str | None:
+    """
+    Make a site-relative path of the Centrale Canine absolute.
+
+    Args:
+        path_or_url: ``/portee/123``, ``/chien/balti-9144020`` or an absolute URL.
+
+    Returns:
+        The absolute URL, or None when empty.
+    """
+    if not path_or_url:
+        return None
+    if path_or_url.startswith(("http://", "https://")):
+        return path_or_url
+    return f"{SCC_BASE_URL}/{path_or_url.lstrip('/')}"
+
+
+def fetch_json_page(polite_client: PoliteHttpClient, url: str, params: dict[str, str]) -> dict[str, Any]:
+    """
+    Read one JSON page of the Centrale Canine.
+
+    Args:
+        polite_client: The client, which paces the requests.
+        url: Address to read.
+        params: Query parameters.
+
+    Returns:
+        The decoded JSON object.
+
+    Raises:
+        CentraleCanineError: When the page cannot be read or is not a JSON object.
+    """
+    try:
+        response = polite_client.get(url, "application/json", params)
+    except SourceReadError as error:
+        raise CentraleCanineError(str(error)) from error
+    try:
+        payload = response.json()
+    except ValueError as error:
+        raise CentraleCanineError(f"Réponse non JSON pour {response.url}") from error
+    if not isinstance(payload, dict):
+        raise CentraleCanineError(f"Réponse JSON inattendue pour {response.url} : objet attendu")
+    return payload
+
+
+@dataclass(frozen=True)
 class SccRawPage:
     """One JSON page exactly as received, kept for ``cli.py collect --save-raw``."""
 
@@ -377,7 +467,7 @@ class CentraleCanineCollector:
             kind=ListingKind.LITTER_BORN if is_born else ListingKind.LITTER_EXPECTED,
             # Every litter declared to the Centrale Canine goes to the LOF.
             lof_status=LofStatus.LOF,
-            external_url=CentraleCanineCollector._absolute_url(relative_url),
+            external_url=scc_absolute_url(relative_url),
             litter_number=SccValueParser.to_text(litter.get("n_litter_number")),
             mating_number=SccValueParser.to_text(litter.get("n_servicing_number")),
             mating_date=SccValueParser.to_french_date(litter.get("n_servicing_date")),
@@ -395,7 +485,7 @@ class CentraleCanineCollector:
             dam_name=SccValueParser.to_text(litter.get("n_mother_name")),
             dam_rating=SccValueParser.to_int(litter.get("n_mother_notation")),
             litter_rating=SccValueParser.to_float(litter.get("n_average_notation")),
-            photos=tuple(url for url in (CentraleCanineCollector._absolute_url(image_uri),) if url),
+            photos=tuple(url for url in (scc_absolute_url(image_uri),) if url),
             breeder=breeder,
             published_at=SccValueParser.to_datetime(litter.get("n_created")),
             raw_json=litter,
@@ -421,38 +511,17 @@ class CentraleCanineCollector:
         if breeder_details is None:
             return RawBreeder(source_id=source_id, selection_group=selection_group)
 
-        coordinates = SccValueParser.to_coordinates(breeder_details.get("u_location"))
+        contact = read_scc_breeder_contact(breeder_details)
         return RawBreeder(
             source_id=source_id,
-            display_name=BreederContactParser.readable_name(
-                SccValueParser.to_text(breeder_details.get("u_farming_name"))
-            ),
-            affix=BreederContactParser.readable_name(SccValueParser.to_text(breeder_details.get("u_farming_affix"))),
-            siren=BreederContactParser.siren(SccValueParser.to_text(breeder_details.get("u_breeder_siren"))),
-            phone_e164=BreederContactParser.phone_e164(SccValueParser.to_text(breeder_details.get("u_breeder_phone"))),
-            zip_code=BreederContactParser.postal_code(
-                SccValueParser.to_text(breeder_details.get("u_breeder_zip_code"))
-            ),
-            city=BreederContactParser.readable_name(SccValueParser.to_text(breeder_details.get("u_breeder_town"))),
-            latitude=coordinates[0] if coordinates is not None else None,
-            longitude=coordinates[1] if coordinates is not None else None,
+            display_name=contact.display_name,
+            affix=contact.affix,
+            siren=contact.siren,
+            phone_e164=contact.phone_e164,
+            zip_code=contact.zip_code,
+            city=contact.city,
+            latitude=contact.latitude,
+            longitude=contact.longitude,
             selection_group=selection_group,
             is_breed_club_member=SccValueParser.to_bool(breeder_details.get("is_member")),
         )
-
-    @staticmethod
-    def _absolute_url(path_or_url: str | None) -> str | None:
-        """
-        Make a site-relative path absolute.
-
-        Args:
-            path_or_url: ``/portee/123`` or an absolute URL.
-
-        Returns:
-            The absolute URL, or None when empty.
-        """
-        if not path_or_url:
-            return None
-        if path_or_url.startswith(("http://", "https://")):
-            return path_or_url
-        return f"{SCC_BASE_URL}/{path_or_url.lstrip('/')}"

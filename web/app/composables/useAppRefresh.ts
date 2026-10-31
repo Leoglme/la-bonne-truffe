@@ -10,10 +10,11 @@ export function useAppRefresh(): UseAppRefreshReturn {
   const followUpsStore: ReturnType<typeof useFollowUpsStore> = useFollowUpsStore()
   const sourcesStore: ReturnType<typeof useSourcesStore> = useSourcesStore()
   const puppyArrivalStore: ReturnType<typeof usePuppyArrivalStore> = usePuppyArrivalStore()
+  const breedersStore: ReturnType<typeof useBreedersStore> = useBreedersStore()
 
   /**
-   * Reload the litters, the bell, the follow-ups, the sources, the puppy found and the litter shown; a signed-out
-   * device reloads nothing.
+   * Reload the litters, the bell, the follow-ups, the sources, the puppy found, the breeders and the litter shown;
+   * a signed-out device reloads nothing.
    */
   async function refreshAfterNews(): Promise<void> {
     if (!userStore.token) {
@@ -28,6 +29,7 @@ export function useAppRefresh(): UseAppRefreshReturn {
       followUpsStore.load(),
       sourcesStore.load(),
       puppyArrivalStore.load(),
+      breedersStore.load(),
       shownLitterId === null ? Promise.resolve() : littersStore.select(shownLitterId).catch((): void => undefined),
     ])
   }

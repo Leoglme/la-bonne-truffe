@@ -15,6 +15,9 @@ export const NOTIFICATION_CHIPS: Record<NotificationKind, NotificationChip> = {
   source_down: { label: 'Source', tone: 'neutral' },
   source_silent: { label: 'Source', tone: 'neutral' },
   signup_request: { label: 'Inscription', tone: 'lilac' },
+  breeder_new_mating: { label: 'Saillie', tone: 'coral' },
+  breeder_birth: { label: 'Née', tone: 'coral' },
+  breeder_follow_reminder: { label: 'Rappel', tone: 'dark' },
 }
 
 export const NOTIFICATION_CHIP_CLASSES: Record<NotificationChipTone, string> = {
@@ -30,6 +33,7 @@ export const NOTIFICATION_ICON_TILES: Partial<Record<NotificationKind, Notificat
   source_down: { iconName: 'i-lucide-rss', tileClass: 'bg-coral-pastel text-coral-text' },
   source_silent: { iconName: 'i-lucide-rss', tileClass: 'bg-coral-pastel text-coral-text' },
   signup_request: { iconName: 'i-lucide-user-plus', tileClass: 'bg-lilac-pastel text-ink' },
+  breeder_follow_reminder: { iconName: 'i-lucide-phone', tileClass: 'bg-ink text-cream' },
 }
 
 export const NOTIFICATION_DAY_SECTIONS: NotificationDayDefinition[] = [

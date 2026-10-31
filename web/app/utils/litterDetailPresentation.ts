@@ -1,13 +1,8 @@
 import type { LitterBreeder, LitterCard, LitterDetail, LitterSourceListing, MatchFlag } from '~/types/api'
-import type {
-  LitterDayFact,
-  LitterDayFactKey,
-  LitterKeyFact,
-  LitterListingLine,
-  LitterPrimaryAction,
-} from '~/types/Litter'
+import type { LitterDayFact, LitterDayFactKey, LitterKeyFact, LitterListingLine } from '~/types/Litter'
 import type { LitterParentRole } from '~/types/LitterParentsList'
 import type { DevicePosition, GeographicPoint, MapDestination } from '~/types/Location'
+import type { PrimaryAction } from '~/types/PrimaryAction'
 import type { UiPhotoViewerPhoto } from '~/types/UiPhotoViewer'
 import {
   LISTING_KIND_LABELS,
@@ -196,7 +191,7 @@ export class LitterDetailPresentation {
    * Name the breeder: its affix, and the name the source gives when it differs.
    *
    * @param breeder - The breeder.
-   * @returns « Ar Ti Marellek », « Ar Ti Marellek · Élevage Dupont », or null when nothing names it.
+   * @returns « Du Clos de l'Élevage A », « Du Clos de l'Élevage A · Élevage Dupont », or null when nothing names it.
    */
   static buildBreederName(breeder: LitterBreeder): string | null {
     const affix: string | null = breeder.affix || null
@@ -239,7 +234,7 @@ export class LitterDetailPresentation {
    * @param litter - The litter.
    * @returns The link and its label, or null when nothing is known.
    */
-  static resolvePrimaryAction(litter: LitterDetail): LitterPrimaryAction | null {
+  static resolvePrimaryAction(litter: LitterDetail): PrimaryAction | null {
     const phone: string | null = litter.breeder?.phone_e164 ?? null
     if (phone !== null) {
       return { href: `tel:${phone}`, label: 'Appeler l’éleveur', isCall: true }

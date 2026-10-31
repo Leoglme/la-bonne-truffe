@@ -189,8 +189,9 @@
 import type { ComputedRef, Ref } from 'vue'
 import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
 import type { LitterDetail } from '~/types/api'
-import type { HorizontalSwipeDirection, UseHorizontalSwipeReturn } from '~/types/Composables'
-import type { LitterBrowsingOrigin, LitterPrimaryAction } from '~/types/Litter'
+import type { HorizontalSwipeDirection, UseBackNavigationReturn, UseHorizontalSwipeReturn } from '~/types/Composables'
+import type { LitterBrowsingOrigin } from '~/types/Litter'
+import type { PrimaryAction } from '~/types/PrimaryAction'
 import type { UiPhotoViewerPhoto } from '~/types/UiPhotoViewer'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { LitterDetailPresentation } from '~/utils/litterDetailPresentation'
@@ -205,6 +206,7 @@ const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
 const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
 const { swipeStyle, onTouchStart, onTouchMove, onTouchEnd, onTouchCancel }: UseHorizontalSwipeReturn =
   useHorizontalSwipe({ canSwipeTo, showNeighbor })
+const { readPreviousPath, goBack }: UseBackNavigationReturn = useBackNavigation('/')
 
 const GALLERY_VISIBLE_PHOTO_COUNT: number = 3
 const FOLLOW_UPS_PATH: string = '/suivi'
@@ -227,7 +229,7 @@ const tileClass: ComputedRef<string> = computed((): string =>
 const photoBadge: ComputedRef<string | null> = computed((): string | null =>
   litter.value ? LitterDetailPresentation.buildPhotoBadge(litter.value, new Date()) : null,
 )
-const primaryAction: ComputedRef<LitterPrimaryAction | null> = computed((): LitterPrimaryAction | null =>
+const primaryAction: ComputedRef<PrimaryAction | null> = computed((): PrimaryAction | null =>
   litter.value ? LitterDetailPresentation.resolvePrimaryAction(litter.value) : null,
 )
 const otherPhotos: ComputedRef<string[]> = computed((): string[] => (litter.value?.photos ?? []).slice(1))
@@ -241,27 +243,6 @@ const viewerPhotos: ComputedRef<UiPhotoViewerPhoto[]> = computed((): UiPhotoView
   litter.value ? LitterDetailPresentation.buildViewerPhotos(litter.value) : [],
 )
 const pageTitle: ComputedRef<string> = computed((): string => `${litter.value?.name ?? 'Portée'} · La Bonne Truffe`)
-
-/**
- * Read the path of the screen the detail was opened from.
- *
- * @returns The path, or null when the app started on the detail.
- */
-function readPreviousPath(): string | null {
-  const previousPath: unknown = router.options.history.state['back']
-  return typeof previousPath === 'string' ? previousPath : null
-}
-
-/**
- * Go back to the screen the litter was opened from, or to the home list when the app started here.
- */
-function goBack(): void {
-  if (readPreviousPath() !== null) {
-    router.back()
-    return
-  }
-  navigateTo('/')
-}
 
 /**
  * Load a litter into the screen, and say why when it cannot be read.

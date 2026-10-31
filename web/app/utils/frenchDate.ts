@@ -63,6 +63,26 @@ export class FrenchDate {
   }
 
   /**
+   * Write the day of an API date-time with its month in full.
+   *
+   * @param isoDateTime - Date-time from the API, such as `2026-10-28T08:00:00`.
+   * @returns « 28 octobre ».
+   */
+  static formatApiDayAndLongMonth(isoDateTime: string): string {
+    return this.formatDayAndLongMonth(this.parseApiDate(isoDateTime))
+  }
+
+  /**
+   * Write the day of an API date-time with its month abbreviated.
+   *
+   * @param isoDateTime - Date-time from the API, such as `2026-10-28T08:00:00`.
+   * @returns « 28 oct. ».
+   */
+  static formatApiDayAndShortMonth(isoDateTime: string): string {
+    return this.formatDayAndShortMonth(this.parseApiDate(isoDateTime))
+  }
+
+  /**
    * Write the weekday of a date.
    *
    * @param day - The day.

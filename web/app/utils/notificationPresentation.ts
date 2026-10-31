@@ -5,7 +5,13 @@ import { NOTIFICATION_DAY_SECTIONS } from '~/constants/notificationKinds'
 import { FrenchDate } from '~/utils/frenchDate'
 import { LitterPresentation } from '~/utils/litterPresentation'
 
-const LITTER_EVENT_KINDS: NotificationKind[] = ['born', 'new_preferred', 'upgraded']
+const LITTER_EVENT_KINDS: NotificationKind[] = [
+  'born',
+  'new_preferred',
+  'upgraded',
+  'breeder_new_mating',
+  'breeder_birth',
+]
 
 /** How the bell words a notification: its day, its time, and the facts of its litter. */
 export class NotificationPresentation {
@@ -45,7 +51,7 @@ export class NotificationPresentation {
    * Whether a notification tells about one litter whose facts the card can show.
    *
    * @param kind - Kind of the notification.
-   * @returns True for a birth, a preferred litter or an upgrade.
+   * @returns True for a birth, a preferred litter, an upgrade, or a mating or a birth at a followed breeder.
    */
   static isLitterEvent(kind: NotificationKind): boolean {
     return LITTER_EVENT_KINDS.includes(kind)

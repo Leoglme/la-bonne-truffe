@@ -1,5 +1,17 @@
 export type CustomIconName =
-  'paw' | 'paw-filled' | 'heart' | 'heart-filled' | 'sliders' | 'gear' | 'rss' | 'bell' | 'pin' | 'phone' | 'truffle'
+  | 'paw'
+  | 'paw-filled'
+  | 'heart'
+  | 'heart-filled'
+  | 'house'
+  | 'house-filled'
+  | 'sliders'
+  | 'gear'
+  | 'rss'
+  | 'bell'
+  | 'pin'
+  | 'phone'
+  | 'truffle'
 
 export type CustomIconPath = {
   element: 'path'

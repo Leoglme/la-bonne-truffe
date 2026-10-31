@@ -3,6 +3,7 @@
 from pydantic import BaseModel, Field
 
 from enums.centrale_canine_relay_state import CentraleCanineRelayState
+from enums.listing_source import ListingSource
 from schemas.source_status import SourceStatus
 
 
@@ -29,10 +30,12 @@ class RelayPageRequest(BaseModel):
 
 
 class CentraleCanineRelayRequest(BaseModel):
-    """A call of the desktop app, with every page it read since the relay started."""
+    """A call of the desktop app, with the pages it read since its previous call (the API keeps the earlier ones)."""
 
     relay_token: str | None = Field(default=None, description="Token of the relay this app holds; none to start one")
-    responses: list[RelayedPageResponse] = Field(default_factory=list)
+    responses: list[RelayedPageResponse] = Field(
+        default_factory=list, description="Pages read since the previous call; pages sent again are harmless"
+    )
     is_requested_by_user: bool = Field(
         default=False, description="« Relever maintenant »: run even when the last run is recent"
     )
@@ -45,3 +48,6 @@ class CentraleCanineRelayAnswer(BaseModel):
     relay_token: str | None
     page_requests: list[RelayPageRequest]
     source_statuses: list[SourceStatus]
+    source: ListingSource | None = Field(
+        default=None, description="The Centrale Canine source being relayed: the litters, the directory or the dogs"
+    )

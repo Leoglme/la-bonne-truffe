@@ -19,6 +19,7 @@
       <MainTabBar v-if="!isPushedScreen" />
     </div>
     <FollowUpDrawer />
+    <BreederFollowDrawer />
   </div>
 </template>
 

@@ -14,3 +14,6 @@ class NotificationKind(StrEnum):
     SOURCE_SILENT = "source_silent"
     SIGNUP_REQUEST = "signup_request"
     FOLLOW_UP_REMINDER = "follow_up_reminder"
+    BREEDER_NEW_MATING = "breeder_new_mating"
+    BREEDER_BIRTH = "breeder_birth"
+    BREEDER_FOLLOW_REMINDER = "breeder_follow_reminder"

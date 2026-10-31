@@ -120,14 +120,13 @@ import type { ComputedRef } from 'vue'
 import type { LitterCard } from '~/types/api'
 import { computed, onMounted } from 'vue'
 import { LitterPresentation } from '~/utils/litterPresentation'
+import { MainNavigation } from '~/utils/mainNavigation'
 
 useHead({ title: 'Portées · La Bonne Truffe' })
 
 const userStore: ReturnType<typeof useUserStore> = useUserStore()
 const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
 const puppyArrivalStore: ReturnType<typeof usePuppyArrivalStore> = usePuppyArrivalStore()
-
-const SIDE_PANEL_MEDIA_QUERY: string = '(min-width: 1280px)'
 
 const greeting: ComputedRef<string> = computed((): string =>
   userStore.firstName ? `Bonjour ${userStore.firstName}` : 'Bonjour',
@@ -150,22 +149,13 @@ const firstAlreadySeenLitterId: ComputedRef<number | null> = computed((): number
 )
 
 /**
- * Whether the screen is wide enough for the side panel that shows the selected litter.
- *
- * @returns True on a wide desktop.
- */
-function isSidePanelShown(): boolean {
-  return window.matchMedia(SIDE_PANEL_MEDIA_QUERY).matches
-}
-
-/**
  * On a wide desktop, show the litter in the side panel instead of leaving the list.
  *
  * @param clickEvent - The click on the card.
  * @param litterId - The litter.
  */
 async function openInSidePanel(clickEvent: MouseEvent, litterId: number): Promise<void> {
-  if (!isSidePanelShown()) {
+  if (!MainNavigation.isSidePanelShown()) {
     return
   }
   clickEvent.preventDefault()

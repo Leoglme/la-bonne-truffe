@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
+from enums.dog_sex import DogSex
 from enums.follow_up_status import FollowUpStatus
 from enums.genetic_screening import GeneticScreening
 from enums.listing_kind import ListingKind
@@ -70,15 +71,21 @@ class LitterReason(BaseModel):
 
 
 class LitterParent(BaseModel):
-    """Father or mother of a litter."""
+    """Father or mother of a litter, with what its Centrale Canine page adds once read."""
 
     name: str
     rating: int | None
+    color: CoatColor | None = Field(default=None, description="Colour read on its Centrale Canine page")
+    color_code: str | None = None
+    e_locus: str | None = Field(default=None, description="E locus genotype, when tested (« e/e »)")
+    health_codes: list[str] = Field(default_factory=list)
+    scc_url: str | None = None
 
 
 class LitterBreeder(BaseModel):
     """What is known of the breeder; every field may be unknown."""
 
+    id: int | None = Field(default=None, description="The breeder, to open its page in the Éleveurs tab")
     display_name: str | None
     affix: str | None
     city: str | None
@@ -124,6 +131,27 @@ class LitterFollowUp(BaseModel):
     notes: list[FollowUpNoteResponse]
 
 
+class LitterExpectedColor(BaseModel):
+    """A colour the parents of a litter imply, and why."""
+
+    color: CoatColor
+    confidence: ColorConfidence
+    reason: str
+
+
+class LitterPuppy(BaseModel):
+    """A registered puppy of a litter, read at the Centrale Canine."""
+
+    id: int
+    name: str | None
+    sex: DogSex
+    color: CoatColor
+    color_code: str | None
+    identifier: str | None
+    lof_number: str | None
+    external_url: str | None
+
+
 class LitterDetail(LitterCard):
     """A litter as the detail screen shows it."""
 
@@ -137,6 +165,10 @@ class LitterDetail(LitterCard):
     photos: list[str]
     listings: list[LitterSourceListing]
     follow_up: LitterFollowUp | None
+    puppies: list[LitterPuppy] = Field(default_factory=list, description="The registered puppies, read one by one")
+    expected_colors: list[LitterExpectedColor] = Field(
+        default_factory=list, description="The colours the parents imply, and why"
+    )
 
 
 class ColorConfirmation(BaseModel):

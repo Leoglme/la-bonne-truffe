@@ -46,127 +46,26 @@
           @dismissed="isFoundPuppyCardDismissed = true"
         />
 
-        <div class="flex flex-col gap-2">
-          <label :for="reminderFieldId" class="text-[13px] font-extrabold tracking-[0.04em] text-ink-label uppercase">
-            Rappel
-          </label>
-          <div class="relative">
-            <input
-              :id="reminderFieldId"
-              type="datetime-local"
-              :value="reminderInputValue"
-              :disabled="followUpsStore.isSaving"
-              class="peer absolute inset-0 z-10 size-full cursor-pointer opacity-0 disabled:cursor-default"
-              @click="openReminderPicker"
-              @change="changeReminder"
-            />
-            <span
-              class="flex min-h-[52px] items-center gap-3 rounded-2xl border-2 border-line-strong bg-card ps-4 pe-14 text-[17px] font-bold peer-focus-visible:outline-3 peer-focus-visible:outline-offset-3 peer-focus-visible:outline-coral peer-disabled:opacity-60"
-              :class="reminderLabel ? 'text-ink' : 'text-ink-muted'"
-            >
-              <UIcon name="i-lucide-bell-ring" class="size-5 shrink-0 text-coral" />
-              {{ reminderLabel ?? 'Choisir le jour et l’heure' }}
-            </span>
-            <button
-              v-if="reminderLabel"
-              type="button"
-              aria-label="Retirer le rappel"
-              :disabled="followUpsStore.isSaving"
-              class="absolute end-1 top-1/2 z-20 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full border-0 bg-transparent text-ink-muted"
-              @click="clearReminder"
-            >
-              <UIcon name="i-lucide-x" class="size-5" />
-            </button>
-          </div>
-          <span class="text-sm text-ink-muted">Une notification te prévient à cette heure-là.</span>
-        </div>
+        <FollowUpReminderField
+          :model-value="litter.follow_up.next_reminder_at ?? null"
+          :is-disabled="followUpsStore.isSaving"
+          @update:model-value="saveReminder"
+        />
 
-        <div class="flex flex-col gap-2">
-          <label :for="noteFieldId" class="text-[13px] font-extrabold tracking-[0.04em] text-ink-label uppercase">
-            Nouvelle note
-          </label>
-          <textarea
-            :id="noteFieldId"
-            v-model="noteText"
-            rows="3"
-            placeholder="Appel du jour, liste d’attente, photos reçues…"
-            class="rounded-2xl border-2 border-line-strong bg-card px-4 py-3 text-[17px] text-ink"
-          />
-          <UButton
-            size="xl"
-            class="mt-1 w-full justify-center md:w-auto md:self-start"
-            :disabled="noteText.trim() === ''"
-            loading-auto
-            @click="addNote"
-          >
-            Ajouter la note
-          </UButton>
-        </div>
+        <FollowUpNotesSection
+          :key="litter.id"
+          :notes="litter.follow_up.notes"
+          :add-note="addNote"
+          :remove-note="removeNote"
+        />
 
-        <ul v-if="litter.follow_up.notes.length > 0" class="m-0 flex list-none flex-col gap-2.5 p-0">
-          <li
-            v-for="note in litter.follow_up.notes"
-            :key="note.id"
-            class="rounded-[14px] bg-cream py-2.5 ps-3.5 pe-1.5 text-[15px] leading-[1.45] text-ink-secondary"
-          >
-            <div class="flex items-start gap-2">
-              <span class="min-w-0 grow">
-                <span class="block text-[13px] font-extrabold text-ink-label">{{
-                  formatNoteDay(note.created_at)
-                }}</span>
-                {{ note.text }}
-              </span>
-              <button
-                v-if="noteIdAwaitingDeletion !== note.id"
-                type="button"
-                :aria-label="`Supprimer la note du ${formatNoteDay(note.created_at)}`"
-                class="-mt-1 inline-flex size-11 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-ink-muted"
-                @click="noteIdAwaitingDeletion = note.id"
-              >
-                <UIcon name="i-lucide-trash-2" class="size-5" />
-              </button>
-            </div>
-            <div v-if="noteIdAwaitingDeletion === note.id" class="mt-2.5 flex flex-col gap-2.5 pe-2">
-              <span class="font-bold text-ink">Supprimer cette note ?</span>
-              <div class="flex gap-2">
-                <UButton
-                  color="neutral"
-                  variant="outline"
-                  class="flex-1 justify-center md:flex-none"
-                  @click="noteIdAwaitingDeletion = null"
-                >
-                  Annuler
-                </UButton>
-                <UButton
-                  loading-auto
-                  class="min-h-12 flex-1 justify-center px-5 text-[15px] md:flex-none"
-                  @click="removeNote(note.id)"
-                >
-                  Supprimer
-                </UButton>
-              </div>
-            </div>
-          </li>
-        </ul>
-
-        <div class="border-t border-line pt-4">
-          <button
-            v-if="!isStopFollowingConfirmShown"
-            type="button"
-            class="min-h-11 border-0 bg-transparent px-1 text-[15px] font-extrabold text-coral-text"
-            @click="isStopFollowingConfirmShown = true"
-          >
-            Ne plus suivre cette portée
-          </button>
-          <UiInlineConfirmation
-            v-else
-            :question="`Ne plus suivre ${litter.name} ?`"
-            consequence="Son statut, son rappel et tes notes seront effacés."
-            confirm-label="Ne plus suivre"
-            :confirm-action="stopFollowing"
-            @cancelled="isStopFollowingConfirmShown = false"
-          />
-        </div>
+        <FollowUpStopButton
+          :key="`stop-${litter.id}`"
+          label="Ne plus suivre cette portée"
+          :question="`Ne plus suivre ${litter.name} ?`"
+          consequence="Son statut, son rappel et tes notes seront effacés."
+          :stop-action="stopFollowing"
+        />
       </div>
     </template>
   </UDrawer>
@@ -180,21 +79,13 @@ import { computed, ref, useId, watch } from 'vue'
 import { FOLLOW_UP_STATUS_OPTIONS } from '~/constants/followUpOptions'
 import { ChoiceValues } from '~/utils/choiceValues'
 import { FollowUpPresentation } from '~/utils/followUpPresentation'
-import { FrenchDate } from '~/utils/frenchDate'
 
 const route: RouteLocationNormalizedLoaded = useRoute()
 const followUpsStore: ReturnType<typeof useFollowUpsStore> = useFollowUpsStore()
 const puppyArrivalStore: ReturnType<typeof usePuppyArrivalStore> = usePuppyArrivalStore()
 
-const FINE_POINTER_MEDIA_QUERY: string = '(pointer: fine)'
-
 const statusFieldId: string = useId()
-const reminderFieldId: string = useId()
-const noteFieldId: string = useId()
 
-const noteText: Ref<string> = ref('')
-const noteIdAwaitingDeletion: Ref<number | null> = ref(null)
-const isStopFollowingConfirmShown: Ref<boolean> = ref(false)
 const isFoundPuppyCardDismissed: Ref<boolean> = ref(false)
 const actionError: Ref<string | null> = ref(null)
 
@@ -212,16 +103,6 @@ const isFoundPuppyCardShown: ComputedRef<boolean> = computed(
 )
 const lastContactLabel: ComputedRef<string | null> = computed((): string | null =>
   FollowUpPresentation.buildLastContactLabel(litter.value?.follow_up?.last_contact_at ?? null),
-)
-const reminderMoment: ComputedRef<Date | null> = computed((): Date | null => {
-  const nextReminderAt: string | null | undefined = litter.value?.follow_up?.next_reminder_at
-  return nextReminderAt ? FrenchDate.parseApiDate(nextReminderAt) : null
-})
-const reminderInputValue: ComputedRef<string> = computed((): string =>
-  reminderMoment.value ? FrenchDate.formatInputDayAndTime(reminderMoment.value) : '',
-)
-const reminderLabel: ComputedRef<string | null> = computed((): string | null =>
-  reminderMoment.value ? FrenchDate.formatDayAndTime(reminderMoment.value) : null,
 )
 
 /**
@@ -271,43 +152,7 @@ async function changeStatus(event: Event): Promise<void> {
 }
 
 /**
- * Open the date and time picker on a click with a mouse; a tap opens the native picker by itself.
- *
- * @param event - Click on the reminder field.
- */
-function openReminderPicker(event: MouseEvent): void {
-  const input: EventTarget | null = event.currentTarget
-  if (
-    input instanceof HTMLInputElement &&
-    'showPicker' in input &&
-    window.matchMedia(FINE_POINTER_MEDIA_QUERY).matches
-  ) {
-    input.showPicker()
-  }
-}
-
-/**
- * Save the reminder picked, a local day and time, or remove it when the picker was cleared.
- *
- * @param event - Change of the date and time input.
- */
-async function changeReminder(event: Event): Promise<void> {
-  const input: EventTarget | null = event.target
-  if (!(input instanceof HTMLInputElement)) {
-    return
-  }
-  await saveReminder(input.value === '' ? null : new Date(input.value).toISOString())
-}
-
-/**
- * Remove the reminder.
- */
-async function clearReminder(): Promise<void> {
-  await saveReminder(null)
-}
-
-/**
- * Save the reminder, keeping the status.
+ * Save the reminder picked, keeping the status, or remove it.
  *
  * @param nextReminderAt - The reminder time, as an ISO string, or null to remove it.
  */
@@ -326,29 +171,21 @@ async function saveReminder(nextReminderAt: string | null): Promise<void> {
 }
 
 /**
- * Add the typed note.
+ * Add a note to the follow-up.
+ *
+ * @param text - The note.
  */
-async function addNote(): Promise<void> {
-  const text: string = noteText.value.trim()
-  if (text === '') {
-    return
-  }
-  await tryChange(async (): Promise<void> => {
-    await followUpsStore.addNote(text)
-    noteText.value = ''
-  })
+async function addNote(text: string): Promise<void> {
+  await tryChange((): Promise<void> => followUpsStore.addNote(text))
 }
 
 /**
- * Delete a note once its deletion is confirmed.
+ * Delete a note of the follow-up.
  *
  * @param noteId - The note.
  */
 async function removeNote(noteId: number): Promise<void> {
-  await tryChange(async (): Promise<void> => {
-    await followUpsStore.removeNote(noteId)
-    noteIdAwaitingDeletion.value = null
-  })
+  await tryChange((): Promise<void> => followUpsStore.removeNote(noteId))
 }
 
 /**
@@ -356,16 +193,6 @@ async function removeNote(noteId: number): Promise<void> {
  */
 async function stopFollowing(): Promise<void> {
   await tryChange((): Promise<void> => followUpsStore.stopFollowing())
-}
-
-/**
- * Write the day of a note.
- *
- * @param createdAt - Time of the note, from the API.
- * @returns « 24 octobre ».
- */
-function formatNoteDay(createdAt: string): string {
-  return FrenchDate.formatDayAndLongMonth(FrenchDate.parseApiDate(createdAt))
 }
 
 watch(
@@ -376,9 +203,6 @@ watch(
 watch(
   (): number | undefined => litter.value?.id,
   (): void => {
-    noteText.value = ''
-    noteIdAwaitingDeletion.value = null
-    isStopFollowingConfirmShown.value = false
     isFoundPuppyCardDismissed.value = false
     actionError.value = null
   },

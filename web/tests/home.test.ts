@@ -26,6 +26,10 @@ describe('dashboard', async (): Promise<void> => {
     '/mot-de-passe-oublie',
     '/nouveau-mot-de-passe',
     '/portees/1',
+    '/eleveurs',
+    '/eleveurs/recherche',
+    '/eleveurs/nouveau',
+    '/eleveurs/1',
   ])('renders %s', async (path: string): Promise<void> => {
     const html: string = await $fetch<string>(path)
 

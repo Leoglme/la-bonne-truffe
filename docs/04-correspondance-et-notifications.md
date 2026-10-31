@@ -55,7 +55,7 @@ Les notifications suivent des **événements**, pas des lignes. Chaque couple (g
 | `availability_change` | `puppies_available` baisse sur une portée suivie | Récap du soir |
 | `source_down` | Une source échoue trois relevés de suite | Push, une fois par panne |
 | `signup_request` | Quelqu'un tente de s'inscrire pendant que l'inscription est fermée (`05`) | Push au compte du `.env`, une fois par adresse |
-| `follow_up_reminder` | L'heure du rappel d'une portée suivie est passée (`next_reminder_at`), sauf si elle est écartée ou si la portée a disparu de ses sources (le rappel est alors noté comme passé, sans push) | Push dans les cinq minutes, une fois par rappel ; un rappel déplacé repart : « C'est l'heure d'appeler Ar Ti Marellek. » |
+| `follow_up_reminder` | L'heure du rappel d'une portée suivie est passée (`next_reminder_at`), sauf si elle est écartée ou si la portée a disparu de ses sources (le rappel est alors noté comme passé, sans push) | Push dans les cinq minutes, une fois par rappel ; un rappel déplacé repart : « C'est l'heure d'appeler De Kerlann. » |
 | `source_silent` | Une source relayée par l'app Windows (`11`) n'a aucun relevé réussi depuis trois heures de journée, entre 8 h et 23 h (heure française) : aucun PC allumé avec l'app, ou l'app déconnectée. Un PC éteint la nuit n'est pas une panne ; le silence d'une journée est signalé au plus tôt à 11 h | Push, une fois par silence ; un relevé réussi clôt le silence, le suivant est de nouveau signalé |
 
 Une disparition (`is_active` → faux) ne notifie pas, elle grise la carte. Le récap du soir n'est envoyé que s'il contient quelque chose. Il part à `digest_hour` avec ce qui a été mis de côté avant cette heure ; si le worker était arrêté à ce moment-là, l'heure pleine suivante le rattrape, une seule fois ; ce qui arrive après `digest_hour` attend le lendemain.
@@ -114,3 +114,25 @@ Code : `api/services/matching/` (`tiers.py`, `scoring.py`, `matching_service.py`
 - **Chiots encore disponibles** (`availability_change`, ajouté le 29/10/2026) : chaque regroupement recalcule `litter_groups.puppies_available` depuis les annonces actives : le plus petit nombre donné par une annonce de portée (Chiots de France), sinon un chiot par annonce de chiot encore à vendre (Chiens de France ; une annonce réservée, vendue ou retirée ne compte plus). La Centrale Canine ne donne pas ce nombre. Quand il baisse sur une portée du suivi, une ligne part dans le récap du soir, à chaque baisse, jusqu'à « plus aucun chiot disponible » ; le récap donne le nombre au moment de l'envoi. Couper le récap du soir coupe aussi ces lignes. Une portée à zéro chiot est exclue (voir les filtres durs) ; les mâles et femelles d'une portée connue par des annonces de chiots ne comptent que les chiots encore à vendre, et la carte porte `puppies_available` (« 2 chiots dispo »).
 - **Annonces de chiots** (30/10/2026) : une portée connue seulement par des annonces de chiots (Whoof, Chiens de France, Cœur de Cocker) est née : son push le dit (« Nouvelle portée, née le… »), avec ses sexes et sa date de disponibilité, comme une déclaration de naissance ; seule une saillie déclarée est « à naître ».
 - Le texte des notifications met le département entre parenthèses quand la ville n'est pas connue : « Née le 27 octobre (Ille-et-Vilaine) : une portée gold, 2 mâles et 3 femelles. Dispo vers le 22 décembre. »
+
+## Les couleurs données par les chiens (jalon 6, 31/10/2026)
+
+Dans le premier et le deuxième temps, la couleur d'un groupe vient, dans l'ordre : d'une couleur **confirmée** à la main ; sinon des **chiots inscrits** (`dogs` de `role = puppy`, couleur canonique `certain`, une couleur par chiot, plusieurs couleurs possibles dans une portée) ; sinon des couleurs **déduites des parents** (`expected_colors`, confiance `inferred`, traitée comme `certain`) ; sinon des annonces (variété SCC, texte libre), comme avant.
+
+Raisons affichées : « Gold : les deux parents sont gold », « Gold possible : un parent gold, l'autre noir et feu » ; la raison du score dit « Gold, ta couleur préférée : les deux parents sont gold » tant que la couleur vient des parents. Les sexes des chiots inscrits ne servent que si la déclaration de naissance ne les donne pas ; les sexes confirmés à la main priment toujours.
+
+Les chiots inscrits donnent aussi, par chiot, le nom, la puce et le numéro LOF ; la fiche d'une portée les liste avec leur couleur, et le détail d'un chiot vendu sur Chiens de France son statut (« réservé », « vendu », « disponible »), qui recalcule `puppies_available`.
+
+## Les alertes d'éleveur (jalon 6)
+
+Pour chaque `breeder_follow`, sur les portées de cet éleveur, **quels que soient le département et le palier** :
+
+| Événement | Quand | Canal | Réglage du suivi |
+|---|---|---|---|
+| `breeder_new_mating` | Une saillie déclarée apparaît chez l'éleveur (portée à naître, Centrale Canine ou futures portées du site) | Push immédiat : « Saillie déclarée · Du Clos de l'Élevage A », puis la portée en une phrase (celle de `new_preferred`) et « Quatre mois d'avance pour te placer sur sa liste. » | `notify_new_mating` |
+| `breeder_birth` | Une portée de l'éleveur naît, ou une portée née apparaît | Push immédiat : « Portée née · Du Clos de l'Élevage A », puis la portée en une phrase (celle de `born`) et « Appelle vite : les réservations se prennent dans l'ordre des appels. » | `notify_birth` |
+| `breeder_new_photos` | De nouvelles photos arrivent sur une portée en cours de l'éleveur (site Chiens de France, annonce) | Récap du soir : « Du Clos de l'Élevage A a ajouté des photos à la portée De Kerlann. » | `notify_new_photos` |
+| `breeder_new_ad` | Une annonce de l'éleveur apparaît sur une autre source (Chiens de France, Chiots de France, Whoof) pour une portée déjà connue | Récap du soir | `notify_new_photos` |
+| `breeder_follow_reminder` | L'heure du rappel du suivi d'éleveur est passée | Push, comme `follow_up_reminder` : « Rappel · appeler Du Clos de l'Élevage A », « C'est l'heure d'appeler Du Clos de l'Élevage A (Rennes). » | toujours |
+
+Une portée dont toutes les couleurs sont **ignorées** par le profil ne déclenche rien, sauf si `notify_ignored_colors` est vrai. Quand une portée déclenche à la fois une alerte de portée (`new_preferred`, `born`) et une alerte d'éleveur dans le même relevé, **une seule notification** part, celle de la portée ; l'alerte d'éleveur est notée comme envoyée. Les alertes d'éleveur respectent la pause « chiot trouvé » comme les autres, sauf le rappel.

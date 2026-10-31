@@ -109,3 +109,40 @@ Détail, secrets et premier déploiement dans `11-deploiement.md`.
 - Adresses : https://la-bonne-truffe.dibodev.fr pour le dashboard, https://api.la-bonne-truffe.dibodev.fr pour l'API.
 - GitHub Actions : `deploy-api.yml` et `deploy-web.yml` contrôlent (ruff, mypy et pytest ; Prettier, ESLint et vue-tsc) puis déploient à chaque push sur `main` ; `desktop-release.yml` publie l'installeur Windows signé en release GitHub, où l'updater de l'app le trouve.
 - Variables d'environnement, écrites dans le `.env` du VPS par `deploy-api.yml` : `SECRET_KEY`, `ADMIN_PASSWORD`, `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY_B64` depuis les secrets GitHub ; `ADMIN_EMAIL`, `VAPID_SUBJECT` (mailto), `COLLECT_USER_AGENT_CONTACT`, `COLLECT_SKIPPED_SOURCES`, `DATABASE_URL`, `WEB_BASE_URL` et `CORS_ORIGINS` en clair dans le workflow.
+
+## Jalon 6 : les éleveurs et les chiens (31/10/2026)
+
+### Nouveaux relevés
+
+| Source (`listing_source`) | Quoi | Quand | Par qui |
+|---|---|---|---|
+| `scc_breeders` | L'annuaire des éleveurs de la race pour chaque département du profil (`api/breed/<race>/eleveurs/<page>?department=<t_ID>&variety=all`), puis l'annuaire du Spaniel Club (`spaniel-club-francais/api/breeders/<page>?filter=<club_breed_id>`, toute la France) | Une fois par jour, dans le relais de la première heure venue ; le club avec | Relayé par l'app Windows (Cloudflare), comme les portées |
+| `scc_dogs` | Pour chaque groupe de portée de la Centrale Canine : la fiche de la portée (`api/litter/<n_litter_id>`), les fiches des deux parents, puis celles des chiots inscrits (`api/dog/<id>`). Parents lus une fois puis tous les 90 jours ; chiots cherchés chaque semaine à partir de 3 semaines après la naissance, jusqu'à 6 mois | Chaque heure, au plus 60 pages par relais, les portées suivies, préférées et acceptables d'abord | Relayé par l'app Windows |
+| `chiens_de_france_sites` | Pour chaque éleveur avec `chiens_de_france_site_url` : `/<race>/saillies` (futures portées → `litter_expected`, `external_id` = `saillie-<id>`, source `chiens_de_france` comme le site principal), `/<race>/chiots` puis chaque `/<race>/chiots-a-vendre/<id>` (statut et photos de chaque chiot, source `chiens_de_france`, `external_id` = `chiot-<id>`), `/<race>/chiens/femelles`, `/males`, `/etalons` puis chaque `/<race>/chien/<id>` (reproducteurs : couleur, photo, puce, cotation ; relus tous les 30 jours) | Chaque jour à 6 h 40 | Le worker du VPS, `curl` du système, User-Agent honnête, une requête par seconde |
+
+Le relais de l'app Windows devient une **séquence** : `POST /sources/centrale_canine/relay` enchaîne, sous le même jeton, les portées (`centrale_canine`), puis l'annuaire (`scc_breeders`) s'il est dû, puis les fiches (`scc_dogs`) ; l'app ne voit que des pages à lire et des états `pages_needed` / `run_finished`, comme avant. Les pages déjà lues sont gardées côté API le temps du relais, l'app n'a plus à les renvoyer. `COLLECT_SKIPPED_SOURCES` liste les trois sur le VPS.
+
+Un éleveur de l'annuaire est créé ou retrouvé par les règles de dédoublonnage de `03` (SIREN, identifiant SCC, téléphone, affixe et département), enrichi des champs `scc_*`, et marqué `scc_directory_seen_at`. Un éleveur ajouté à la main est retrouvé de la même façon par les annonces qui arrivent ensuite.
+
+### Services
+
+- `BreederQueryService` : la liste (filtres `followed`, `gold`, `club`, `active_litter`, tri « prometteur » : une portée en cours d'abord, puis le nombre de portées gold, puis la date de la dernière portée, puis élevage sélectionné, puis membre du club, puis le nom), la recherche (`search_text` normalisé, chaque mot de la requête doit s'y trouver ; les portées en second bloc par le nom de l'éleveur ou la ville), la fiche (stats : portées gold connues, dernière portée, portées sur douze mois, répartition des couleurs ; portées en cours, à naître, passées ; reproducteurs ; sources ; suivi).
+- `BreederCommandService` : création à la main, modification des liens, suivi (créer, modifier, arrêter), notes, rappel.
+- `DogColorInference` : pure et testée : couleur canonique d'un code LOF Select, génotype du locus E, `expected_colors` d'un couple de parents.
+- `BreederAlertService` : détecte les événements d'éleveur (`04`) après chaque relevé et les pousse ou les garde pour le récap ; `breeder_follow_events` pour l'idempotence.
+
+### Endpoints ajoutés
+
+| Méthode et route | Rôle |
+|---|---|
+| `GET /breeders` | La liste : `filter` (`all` \| `followed` \| `gold` \| `club` \| `active_litter`), `sort` (`promising` \| `name`) ; chaque carte : nom, personne, ville, département, position, logo ou photo, chips, le fait du moment, suivi ou non |
+| `GET /breeders/search?q=` | Les suggestions : éleveurs puis portées, avec le texte normalisé |
+| `GET /breeders/{id}` | La fiche complète |
+| `POST /breeders` | Ajout à la main (`display_name`, `city` ou `zip_code`, `links`, `phone`, `note`, `follow`) ; renvoie la fiche |
+| `PATCH /breeders/{id}` | Liens, téléphone, site et notes d'un éleveur (ajoutés par Léo) |
+| `PUT /breeders/{id}/follow`, `DELETE /breeders/{id}/follow` | Suivre (réglages des alertes, statut, rappel) ; arrêter |
+| `POST /breeders/{id}/notes`, `DELETE /breeders/{id}/notes/{note_id}` | Notes du suivi d'éleveur |
+
+### Côté web
+
+Onglet **Éleveurs** (`/eleveurs`, troisième onglet de la barre entre Suivi et Critères, icône maison) : la liste (cartes en ligne sur téléphone, grille de deux puis trois colonnes dès la tablette), ses chips « Tous · Suivis · Gold · Spaniel Club · Une portée en cours » et son tri (les plus prometteurs, ou par nom, côté client), le champ qui mène à `/eleveurs/recherche` (écran poussé, sur tous les formats : suggestions « Élevages » puis « Portées » au fil de la frappe, recherches récentes du device, carte « Ajouter à la main »), `/eleveurs/[id]` (écran poussé ; sur desktop large, un clic sur une carte ouvre le volet de droite `BreederDetailPanel`, avec un lien vers la fiche complète), `/eleveurs/nouveau` (ajout à la main, pré-rempli depuis la recherche, avec les élevages connus au nom proche). Le cœur en haut à droite de la fiche et du volet ouvre le tiroir `BreederFollowDrawer` (`UDrawer`) : les quatre alertes, le statut du carnet, le rappel, puis les notes et « Ne plus suivre » une fois suivi. Stores `breeders` (liste, filtre, tri, recherche, éleveur ouvert) et `breederFollow` (le tiroir). Le détail d'une portée mène à la fiche de son éleveur. Les notifications d'éleveur arrivent dans la cloche avec les chips « Saillie », « Née » et « Rappel ». Pas encore faits : la carte des éleveurs, le partage d'une fiche. Maquette : `06`, canevas « Éleveurs ».

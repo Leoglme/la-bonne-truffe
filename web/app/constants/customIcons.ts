@@ -31,6 +31,23 @@ export const CUSTOM_ICONS: Record<CustomIconName, CustomIconDefinition> = {
     ],
   },
   heart: { isFilled: false, shapes: [{ element: 'path', d: HEART_PATH }] },
+  house: {
+    isFilled: false,
+    shapes: [
+      { element: 'path', d: 'M3.5 11.2 12 4l8.5 7.2' },
+      { element: 'path', d: 'M5.8 9.6V20h12.4V9.6' },
+      { element: 'path', d: 'M10 20v-5.2h4V20' },
+    ],
+  },
+  'house-filled': {
+    isFilled: true,
+    shapes: [
+      {
+        element: 'path',
+        d: 'M12 3.1 2.6 11a1 1 0 0 0 .65 1.76H5V20a1 1 0 0 0 1 1h4.2v-6.2h3.6V21H18a1 1 0 0 0 1-1v-7.24h1.75A1 1 0 0 0 21.4 11z',
+      },
+    ],
+  },
   'heart-filled': { isFilled: true, shapes: [{ element: 'path', d: HEART_PATH }] },
   sliders: {
     isFilled: false,

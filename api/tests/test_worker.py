@@ -9,10 +9,13 @@ def test_every_collected_source_has_its_hourly_job() -> None:
 
     assert {job.id for job in scheduler.get_jobs()} == {
         "collect_centrale_canine",
+        "collect_scc_dogs",
         "collect_chiens_de_france",
         "collect_chiots_de_france",
         "collect_whoof",
         "collect_coeur_de_cocker",
+        "collect_chiens_de_france_sites",
+        "collect_scc_breeders",
         "send_evening_digests",
         "send_follow_up_reminders",
         "purge_old_listing_data",

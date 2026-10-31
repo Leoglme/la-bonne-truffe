@@ -10,12 +10,14 @@ from sqlalchemy.orm import Session
 
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
+from enums.dog_role import DogRole
 from enums.listing_kind import ListingKind
 from enums.match_flag import MatchFlag
 from enums.match_tier import MatchTier
 from models.breed import Breed
 from models.breeder import Breeder
 from models.department import Department
+from models.dog import Dog
 from models.follow_up import FollowUp, FollowUpNote
 from models.listing import Listing
 from models.listing_match import ListingMatch
@@ -28,8 +30,10 @@ from schemas.litter import (
     LitterCard,
     LitterColor,
     LitterDetail,
+    LitterExpectedColor,
     LitterFollowUp,
     LitterParent,
+    LitterPuppy,
     LitterReason,
     LitterSourceListing,
 )
@@ -57,11 +61,13 @@ class LitterCardFacts:
     breeders_by_id: dict[int, Breeder] = field(default_factory=dict)
     departments_by_code: dict[str, Department] = field(default_factory=dict)
     follow_ups_by_group: dict[int, FollowUp] = field(default_factory=dict)
+    puppies_by_group: dict[int, list[Dog]] = field(default_factory=dict)
 
     @classmethod
     def load(cls, db: Session, user_id: int, groups: list[LitterGroup]) -> Self:
         """
-        Load the listings, breeds, breeders, departments and the user's follow-ups of some groups.
+        Load the listings, breeds, breeders, departments, registered puppies and the user's follow-ups of some
+        groups.
 
         Args:
             db: Database session.
@@ -104,6 +110,11 @@ class LitterCardFacts:
                 FollowUp.user_id == user_id, FollowUp.litter_group_id.in_(group_ids)
             )
         }
+        for puppy in (
+            db.query(Dog).filter(Dog.litter_group_id.in_(group_ids), Dog.role == DogRole.PUPPY).order_by(Dog.id)
+        ):
+            if puppy.litter_group_id is not None:
+                facts.puppies_by_group.setdefault(puppy.litter_group_id, []).append(puppy)
         return facts
 
 
@@ -175,6 +186,8 @@ class LitterQueryService:
         follow_up = facts.follow_ups_by_group.get(group.id)
         photos = list(dict.fromkeys(photo for listing in listings for photo in listing.photos))
 
+        sire = cls._parent(listings, lambda listing: listing.sire_name, lambda listing: listing.sire_rating)
+        dam = cls._parent(listings, lambda listing: listing.dam_name, lambda listing: listing.dam_rating)
         return LitterDetail(
             **card.model_dump(),
             reasons=[LitterReason(text=str(reason["text"]), points=int(reason["points"])) for reason in match.reasons]
@@ -183,10 +196,31 @@ class LitterQueryService:
             flags=[MatchFlag(flag) for flag in match.flags] if match is not None else [],
             litter_number=next((listing.litter_number for listing in listings if listing.litter_number), None),
             mating_date=group.mating_date,
-            sire=cls._parent(listings, lambda listing: listing.sire_name, lambda listing: listing.sire_rating),
-            dam=cls._parent(listings, lambda listing: listing.dam_name, lambda listing: listing.dam_rating),
+            sire=cls._parent_with_dog(sire, db.get(Dog, group.sire_dog_id) if group.sire_dog_id else None),
+            dam=cls._parent_with_dog(dam, db.get(Dog, group.dam_dog_id) if group.dam_dog_id else None),
             breeder=cls._breeder(breeder) if breeder is not None else None,
             photos=photos,
+            puppies=[
+                LitterPuppy(
+                    id=puppy.id,
+                    name=puppy.name,
+                    sex=puppy.sex,
+                    color=puppy.color,
+                    color_code=puppy.color_code,
+                    identifier=puppy.identifier,
+                    lof_number=puppy.lof_number,
+                    external_url=puppy.external_url,
+                )
+                for puppy in facts.puppies_by_group.get(group.id, [])
+            ],
+            expected_colors=[
+                LitterExpectedColor(
+                    color=CoatColor(entry["color"]),
+                    confidence=ColorConfidence(entry["confidence"]),
+                    reason=str(entry.get("reason", "")),
+                )
+                for entry in group.expected_colors
+            ],
             listings=[
                 LitterSourceListing(
                     source=listing.source,
@@ -306,6 +340,35 @@ class LitterQueryService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portée introuvable")
         return group
 
+    @classmethod
+    def matches_by_group(cls, db: Session, user_id: int) -> dict[int, ListingMatch]:
+        """
+        Matches of the user's first active profile, by group, for the other query services.
+
+        Args:
+            db: Database session.
+            user_id: The user.
+
+        Returns:
+            Group id → match.
+        """
+        return cls._matches_by_group(db, user_id)
+
+    @classmethod
+    def build_card(cls, group: LitterGroup, match: ListingMatch | None, facts: LitterCardFacts) -> LitterCard | None:
+        """
+        The card of a group, for the other query services.
+
+        Args:
+            group: The litter.
+            match: Its match for the active profile, if evaluated.
+            facts: The facts already loaded for it.
+
+        Returns:
+            The card, or None for a group without listing.
+        """
+        return cls._card(group, match, facts)
+
     @staticmethod
     def _matches_by_group(db: Session, user_id: int) -> dict[int, ListingMatch]:
         """
@@ -394,6 +457,7 @@ class LitterQueryService:
             breed=facts.breeds_by_id.get(group.breed_id),
             breeder=breeder,
             department=facts.departments_by_code.get(department_code) if department_code is not None else None,
+            puppies=facts.puppies_by_group.get(group.id, []),
         )
         if snapshot is None:
             return None
@@ -460,6 +524,33 @@ class LitterQueryService:
         return LitterParent(name=name, rating=rating)
 
     @staticmethod
+    def _parent_with_dog(parent: LitterParent | None, dog: Dog | None) -> LitterParent | None:
+        """
+        A parent completed with its Centrale Canine page: colour, E locus, health tests, page.
+
+        Args:
+            parent: The parent as the listings name it, if any.
+            dog: Its dog row, once its page is read.
+
+        Returns:
+            The parent, from the dog alone when no listing names it.
+        """
+        if dog is None:
+            return parent
+        name = parent.name if parent is not None else (dog.full_name or dog.name or "")
+        if not name:
+            return parent
+        return LitterParent(
+            name=name,
+            rating=parent.rating if parent is not None and parent.rating is not None else dog.rating,
+            color=dog.color if dog.color != CoatColor.INCONNUE else None,
+            color_code=dog.color_code,
+            e_locus=dog.e_locus,
+            health_codes=list(dog.health_codes),
+            scc_url=dog.external_url,
+        )
+
+    @staticmethod
     def _breeder(breeder: Breeder) -> LitterBreeder:
         """
         The breeder payload.
@@ -472,6 +563,7 @@ class LitterQueryService:
         """
         group = breeder.scc_selection_group
         return LitterBreeder(
+            id=breeder.id,
             display_name=breeder.display_name,
             affix=breeder.affix,
             city=breeder.city,

@@ -1,6 +1,8 @@
-"""Breeder model: the anchor of the deduplication between sources."""
+"""Breeder model: the anchor of the deduplication between sources, and the object of the Éleveurs tab."""
 
-from sqlalchemy import Float, ForeignKey, String, Text
+from datetime import date, datetime
+
+from sqlalchemy import JSON, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database import Base
@@ -30,6 +32,23 @@ class Breeder(TimestampMixin, Base):
         is_breed_club_member: Member of the club of the breed (the Spaniel Club Français for the cocker), as the
             Centrale Canine shows it; null until a Centrale Canine page lists the breeder.
         notes: Free notes.
+        scc_user_id: User identifier of the breeder in the Centrale Canine directory (``u_id``).
+        scc_breeder_number: Breeder number at the Centrale Canine (``u_breeder_number``).
+        scc_site_slug: Slug of the breeder's mini-site at the Centrale Canine (``u_breeder_site``).
+        logo_url: Logo the breeder uploaded at the Centrale Canine.
+        scc_variety_ids: Variety identifiers the breeder produces, every breed mixed (``u_variety``).
+        scc_last_litter_at: Last litter the Centrale Canine directory dates (``u_last_litter_date``).
+        is_scc_selected: Selected breeding, as the directory flags it (``is_selected``).
+        scc_directory_seen_at: Last time the directory of the Centrale Canine listed the breeder.
+        chiens_de_france_site_url: Site of the breeder hosted by Chiens de France (``https://<slug>.chiens-de-france.com``).
+        chiens_de_france_registered_on: « Inscrit sur chiens-de-france.com depuis le … ».
+        breeding_females_count: « 18 femelles reproductrices au sein de l'élevage », as Chiens de France writes it.
+        litters_last_year_count: « 14 portées au cours de l'année écoulée », as Chiens de France writes it.
+        cover_photo_url: First photo found on the breeder's site.
+        links: Links Léo added by hand, each ``{"label", "url"}`` (Facebook, Instagram, a site).
+        is_manual: Created by hand from the app, before any source listed the breeder.
+        created_by_user_id: User who created the breeder by hand.
+        search_text: Normalized text the breeder search looks into (docs/05, ``BreederQueryService``).
     """
 
     __tablename__ = "breeders"
@@ -51,6 +70,28 @@ class Breeder(TimestampMixin, Base):
     scc_selection_group: Mapped[int | None]
     is_breed_club_member: Mapped[bool | None]
     notes: Mapped[str | None] = mapped_column(Text)
+    scc_user_id: Mapped[str | None] = mapped_column(String(40), unique=True)
+    scc_breeder_number: Mapped[str | None] = mapped_column(String(40))
+    scc_site_slug: Mapped[str | None] = mapped_column(String(120))
+    logo_url: Mapped[str | None] = mapped_column(String(500))
+    scc_variety_ids: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    scc_last_litter_at: Mapped[datetime | None]
+    is_scc_selected: Mapped[bool | None]
+    scc_directory_seen_at: Mapped[datetime | None]
+    chiens_de_france_site_url: Mapped[str | None] = mapped_column(String(500))
+    chiens_de_france_registered_on: Mapped[date | None]
+    breeding_females_count: Mapped[int | None]
+    litters_last_year_count: Mapped[int | None]
+    cover_photo_url: Mapped[str | None] = mapped_column(String(500))
+    links: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list, nullable=False)
+    is_manual: Mapped[bool] = mapped_column(default=False, nullable=False)
+    created_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    search_text: Mapped[str | None] = mapped_column(Text)
+
+    @property
+    def card_name(self) -> str | None:
+        """The affix, else the name of the breeding: how the cards, the pushes and the CLI name the breeder."""
+        return self.affix or self.display_name
 
     def __repr__(self) -> str:
         return f"<Breeder id={self.id} display_name={self.display_name}>"

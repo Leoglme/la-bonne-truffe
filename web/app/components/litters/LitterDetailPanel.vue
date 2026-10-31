@@ -78,7 +78,7 @@
 <script lang="ts" setup>
 import type { ComputedRef, PropType, Ref } from 'vue'
 import type { LitterDetail } from '~/types/api'
-import type { LitterPrimaryAction } from '~/types/Litter'
+import type { PrimaryAction } from '~/types/PrimaryAction'
 import type { LitterDetailPanelEmits, LitterDetailPanelProps } from '~/types/LitterDetailPanel'
 import { computed, ref } from 'vue'
 import { LitterDetailPresentation } from '~/utils/litterDetailPresentation'
@@ -99,7 +99,7 @@ const isShareDrawerOpen: Ref<boolean> = ref(false)
 const photoBadge: ComputedRef<string | null> = computed((): string | null =>
   LitterDetailPresentation.buildPhotoBadge(props.litter, new Date()),
 )
-const primaryAction: ComputedRef<LitterPrimaryAction | null> = computed((): LitterPrimaryAction | null =>
+const primaryAction: ComputedRef<PrimaryAction | null> = computed((): PrimaryAction | null =>
   LitterDetailPresentation.resolvePrimaryAction(props.litter),
 )
 </script>

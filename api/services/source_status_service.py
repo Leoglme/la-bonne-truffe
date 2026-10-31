@@ -10,9 +10,12 @@ from schemas.source_status import SourceStatus
 from services.notification_texts import SOURCE_NAMES
 
 COLLECTED_SOURCES: frozenset[ListingSource] = frozenset(ListingSource) - settings.collect_skipped_sources
-DESKTOP_RELAYED_SOURCES: frozenset[ListingSource] = (
-    frozenset({ListingSource.CENTRALE_CANINE}) & settings.collect_skipped_sources
+
+# The Centrale Canine sources: when the server skips them, the Windows app of a computer that is on relays them.
+CENTRALE_CANINE_SOURCES: frozenset[ListingSource] = frozenset(
+    {ListingSource.CENTRALE_CANINE, ListingSource.SCC_BREEDERS, ListingSource.SCC_DOGS}
 )
+DESKTOP_RELAYED_SOURCES: frozenset[ListingSource] = CENTRALE_CANINE_SOURCES & settings.collect_skipped_sources
 
 
 class SourceStatusService:

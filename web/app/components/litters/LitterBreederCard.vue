@@ -14,6 +14,14 @@
     <span v-if="props.litter.breeder?.has_affix" class="text-sm text-ink-muted md:text-[15px]">
       {{ BREEDER_AFFIX_LINE }}
     </span>
+    <NuxtLink
+      v-if="props.litter.breeder?.id"
+      :to="`/eleveurs/${props.litter.breeder.id}`"
+      class="inline-flex min-h-11 items-center gap-1.5 self-start text-[15px] font-extrabold text-coral-text no-underline"
+    >
+      Voir la fiche de l’élevage
+      <UIcon name="i-lucide-chevron-right" class="size-4" />
+    </NuxtLink>
     <a
       v-if="props.isPhoneShown && props.litter.breeder?.phone_e164"
       :href="`tel:${props.litter.breeder.phone_e164}`"

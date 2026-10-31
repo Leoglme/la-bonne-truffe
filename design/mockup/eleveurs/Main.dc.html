@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>La Bonne Truffe · Éleveurs</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap">
+<style>
+body{margin:0;font-family:Nunito,system-ui,sans-serif;color:#2B2420;background:#FBF6EE}
+a{color:#C94A28}a:hover{color:#A33A1C}
+button{font:inherit;cursor:pointer;color:inherit}
+button:focus-visible,a:focus-visible{outline:3px solid #E2552F;outline-offset:3px}
+</style>
+</helmet>
+<div style="position: relative; width: 820px; height: 1180px; box-sizing: border-box; display: flex; flex-direction: column; background: #FBF6EE; overflow: hidden; font-size: 16px; line-height: 1.5">
+
+  <header style="padding: 36px 32px 0 32px; display: flex; justify-content: space-between; align-items: center">
+    <a href="Main.dc.html" aria-label="La Bonne Truffe, accueil" style="display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #2B2420">
+      <span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 9px; background: #E2552F; display: inline-flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M4 9c0-3.5 3.6-6 8-6s8 2.5 8 6c0 4.5-4.5 9-8 11C8.5 18 4 13.5 4 9z" fill="#FFF3E6"></path><ellipse cx="9.2" cy="9.2" rx="1.6" ry="2.1" fill="#E2552F"></ellipse><ellipse cx="14.8" cy="9.2" rx="1.6" ry="2.1" fill="#E2552F"></ellipse></svg></span>
+      <span style="font-family: Fredoka, sans-serif; font-weight: 600; font-size: 22px">La Bonne Truffe</span>
+    </a>
+    <div style="display: flex; align-items: center; gap: 12px">
+      <button type="button" aria-label="Notifications" style="width: 52px; height: 52px; border-radius: 50%; border: none; background: #FFFFFF; box-shadow: 0 2px 10px rgba(66,43,30,0.08); display: inline-flex; align-items: center; justify-content: center">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2B2420" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+      </button>
+      <span aria-label="Léo" style="width: 52px; height: 52px; border-radius: 50%; background: #EADFD3; display: inline-flex; align-items: center; justify-content: center; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 20px">L</span>
+    </div>
+  </header>
+
+  <div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 28px 32px 32px 32px; display: flex; flex-direction: column; gap: 22px">
+
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <h1 style="margin: 0; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 40px; line-height: 1.1">Éleveurs</h1>
+      <p style="margin: 0; font-size: 18px; color: #7A6657">38 élevages de cocker anglais dans tes départements. Tu en suis 3.</p>
+    </div>
+
+    <a href="Recherche.dc.html" aria-label="Rechercher un éleveur" style="display: flex; align-items: center; gap: 14px; min-height: 58px; padding: 0 22px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06); text-decoration: none; color: #9A897B; font-size: 17px; font-weight: 600">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2B2420" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <span>Un éleveur, un affixe, une ville…</span>
+    </a>
+
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div role="group" aria-label="Filtrer les éleveurs" style="display: flex; gap: 8px; flex-wrap: wrap">
+        <button type="button" aria-pressed="true" style="min-height: 44px; padding: 0 20px; border-radius: 999px; border: none; background: #2B2420; color: #FFFFFF; font-size: 15px; font-weight: 800">Tous</button>
+        <button type="button" aria-pressed="false" style="min-height: 44px; padding: 0 20px; border-radius: 999px; border: none; background: #FFFFFF; color: #5E4B3F; font-size: 15px; font-weight: 700; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">Suivis</button>
+        <button type="button" aria-pressed="false" style="min-height: 44px; padding: 0 20px; border-radius: 999px; border: none; background: #FFFFFF; color: #5E4B3F; font-size: 15px; font-weight: 700; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">Gold</button>
+        <button type="button" aria-pressed="false" style="min-height: 44px; padding: 0 20px; border-radius: 999px; border: none; background: #FFFFFF; color: #5E4B3F; font-size: 15px; font-weight: 700; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">Spaniel Club</button>
+        <button type="button" aria-pressed="false" style="min-height: 44px; padding: 0 20px; border-radius: 999px; border: none; background: #FFFFFF; color: #5E4B3F; font-size: 15px; font-weight: 700; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">Une portée en cours</button>
+      </div>
+      <button type="button" style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 4px; border: none; background: transparent; color: #7A6657; font-size: 14px; font-weight: 700">
+        Les plus prometteurs d'abord
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+      </button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px">
+
+      <a href="FicheEleveur.dc.html" style="display: flex; align-items: center; gap: 16px; padding: 16px 18px 16px 16px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06); text-decoration: none; color: #2B2420">
+        <span aria-hidden="true" style="width: 72px; height: 72px; flex-shrink: 0; border-radius: 20px; background: #FBE7CC; color: #8A5A14; display: inline-flex; align-items: center; justify-content: center; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 24px">LB</span>
+        <span style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1; min-width: 0">
+          <span style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
+            <span style="font-family: Fredoka, sans-serif; font-weight: 600; font-size: 21px; line-height: 1.2">Des Landes de Brocéliande</span>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#E2552F" stroke="#E2552F" stroke-width="2" stroke-linejoin="round" role="img" aria-label="Éleveur suivi"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+          </span>
+          <span style="font-size: 15px; color: #7A6657">Ploërmel, Morbihan · 1 h 10 de route</span>
+          <span style="font-size: 15px; font-weight: 800; color: #C94A28">À naître · une portée gold vers le 7 novembre</span>
+          <span style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px">
+            <span style="padding: 4px 10px; border-radius: 999px; background: #F3EBDF; font-size: 13px; font-weight: 800; color: #5E4B3F">Élevage sélectionné</span>
+            <span style="padding: 4px 10px; border-radius: 999px; background: #F3EBDF; font-size: 13px; font-weight: 800; color: #5E4B3F">Spaniel Club</span>
+            <span style="padding: 4px 10px; border-radius: 999px; background: #FBE7CC; font-size: 13px; font-weight: 800; color: #8A5A14">Gold surtout</span>
+          </span>
+        </span>
+      </a>
+
+      <a href="FicheEleveur.dc.html" style="display: flex; align-items: center; gap: 16px; padding: 16px 18px 16px 16px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06); text-decoration: none; color: #2B2420">
+        <img src="/_blob/b0e812beb786346c807b71c6c42dbb4e" alt="" style="width: 72px; height: 72px; flex-shrink: 0; border-radius: 20px; object-fit: cover; object-position: center 30%">
+        <span style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1; min-width: 0">
+          <span style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
+            <span style="font-family: Fredoka, sans-serif; font-weight: 600; font-size: 21px; line-height: 1.2">Des Bords de Vilaine</span>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#E2552F" stroke="#E2552F" stroke-width="2" stroke-linejoin="round" role="img" aria-label="Éleveur suivi"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+          </span>
+          <span style="font-size: 15px; color: #7A6657">Redon, Ille-et-Vilaine · 1 h de route</span>
+          <span style="font-size: 15px; font-weight: 800; color: #C94A28">Née cette nuit · gold, 2 ♂ et 3 ♀</span>
+          <span style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px">
+            <span style="padding: 4px 10px; border-radius: 999px; background: #F3EBDF; font-size: 13px; font-weight: 800; color: #5E4B3F">Site Chiens de France</span>
+            <span style="padding: 4px 10px; border-radius: 999px; background: #FBE7CC; font-size: 13px; font-weight: 800; color: #8A5A14">Gold surtout</span>
+          </span>
+        </span>
+      </a>
+
+      <a href="FicheEleveur.dc.html" style="display: flex; align-items: center; gap: 16px; padding: 16px 18px 16px 16px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06); text-decoration: none; color: #2B2420">
+        <span aria-hidden="true" style="width: 72px; height: 72px; flex-shrink: 0; border-radius: 20px; background: #FBE7CC; color: #8A5A14; display: inline-flex; align-items: center; justify-content: center; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 24px">MG</span>
+        <span style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1; min-width: 0">
+          <span style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
+            <span style="font-family: Fredoka, sans-serif; font-weight: 600; font-size: 21px; line-height: 1.2">Ar Mor Glaz</span>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A897B" stroke-width="2" stroke-linejoin="round" role="img" aria-label="Pas encore suivi"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+          </span>
+          <span style="font-size: 15px; color: #7A6657">Saint-Brieuc, Côtes-d'Armor · 1 h 20 de route</span>
+          <span style="font-size: 15px; font-weight: 700; color: #5E4B3F">3 portées gold par an · la prochaine attendue au printemps</span>
+          <span style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px">
+            <span style="padding: 4px 10px; border-radius: 999px; background: #FFE3D3; font-size: 13px; font-weight: 800; color: #C94A28">À contacter en amont</span>
+            <span style="padding: 4px 10px; border-radius: 999px; background: #F3EBDF; font-size: 13px; font-weight: 800; color: #5E4B3F">Spaniel Club</span>
+          </span>
+        </span>
+      </a>
+
+      <a href="FicheEleveur.dc.html" style="display: flex; align-items: center; gap: 16px; padding: 16px 18px 16px 16px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06); text-decoration: none; color: #2B2420">
+        <img src="/_blob/23ef2b009ed830c7106c568d31eb01ca" alt="" style="width: 72px; height: 72px; flex-shrink: 0; border-radius: 20px; object-fit: cover">
+        <span style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1; min-width: 0">
+          <span style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
+            <span style="font-family: Fredoka, sans-serif; font-weight: 600; font-size: 21px; line-height: 1.2">Du Clos des Ajoncs</span>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#E2552F" stroke="#E2552F" stroke-width="2" stroke-linejoin="round" role="img" aria-label="Éleveur suivi"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+          </span>
+          <span style="font-size: 15px; color: #7A6657">Dol-de-Bretagne, Ille-et-Vilaine · 55 min de route</span>
+          <span style="font-size: 15px; font-weight: 700; color: #5E4B3F">Née le 14 septembre · plus que 1 chiot gold</span>
+          <span style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px">
+            <span style="padding: 4px 10px; border-radius: 999px; background: #F3EBDF; font-size: 13px; font-weight: 800; color: #5E4B3F">Spaniel Club</span>
+            <span style="padding: 4px 10px; border-radius: 999px; background: #DCEBD4; font-size: 13px; font-weight: 800; color: #3E6630">Parents testés APR et NF</span>
+          </span>
+        </span>
+      </a>
+
+      <a href="FicheEleveur.dc.html" style="display: flex; align-items: center; gap: 16px; padding: 16px 18px 16px 16px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06); text-decoration: none; color: #2B2420">
+        <span aria-hidden="true" style="width: 72px; height: 72px; flex-shrink: 0; border-radius: 20px; background: #E9E3F2; color: #5E4B3F; display: inline-flex; align-items: center; justify-content: center; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 24px">KL</span>
+        <span style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1; min-width: 0">
+          <span style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
+            <span style="font-family: Fredoka, sans-serif; font-weight: 600; font-size: 21px; line-height: 1.2">De Kerlann</span>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A897B" stroke-width="2" stroke-linejoin="round" role="img" aria-label="Pas encore suivi"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+          </span>
+          <span style="font-size: 15px; color: #7A6657">Quimper, Finistère · 2 h 15 de route</span>
+          <span style="font-size: 15px; font-weight: 700; color: #5E4B3F">Noir et feu surtout · dernière portée en juin</span>
+          <span style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px">
+            <span style="padding: 4px 10px; border-radius: 999px; background: #E9E3F2; font-size: 13px; font-weight: 800; color: #5E4B3F">Noir et feu surtout</span>
+          </span>
+        </span>
+      </a>
+
+      <a href="FicheEleveur.dc.html" style="display: flex; align-items: center; gap: 16px; padding: 16px 18px 16px 16px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06); text-decoration: none; color: #2B2420">
+        <span aria-hidden="true" style="width: 72px; height: 72px; flex-shrink: 0; border-radius: 20px; background: #EAE2DA; color: #5E4B3F; display: inline-flex; align-items: center; justify-content: center; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 24px">VR</span>
+        <span style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1; min-width: 0">
+          <span style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
+            <span style="font-family: Fredoka, sans-serif; font-weight: 600; font-size: 21px; line-height: 1.2">Du Val de Rance</span>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A897B" stroke-width="2" stroke-linejoin="round" role="img" aria-label="Pas encore suivi"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+          </span>
+          <span style="font-size: 15px; color: #7A6657">Dinan, Côtes-d'Armor · 1 h de route</span>
+          <span style="font-size: 15px; font-weight: 700; color: #7A6657">Aucune portée depuis 2024</span>
+        </span>
+      </a>
+
+    </div>
+  </div>
+
+  <a href="Main.dc.html" aria-label="Voir les éleveurs sur la carte" style="position: absolute; right: 32px; bottom: 122px; width: 60px; height: 60px; border-radius: 50%; background: #2B2420; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(66,43,30,0.2)">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"></path><path d="M9 3v15"></path><path d="M15 6v15"></path></svg>
+  </a>
+
+  <nav aria-label="Navigation principale" style="flex-shrink: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 10px 16px 26px 16px; background: #FFFFFF; border-top: 1px solid #F0E6D8">
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 60px; justify-content: center; text-decoration: none; color: #9A897B; font-size: 13px; font-weight: 700">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="5.5" r="2.4"></circle><circle cx="15.5" cy="5.5" r="2.4"></circle><circle cx="4.3" cy="11" r="2.3"></circle><circle cx="19.7" cy="11" r="2.3"></circle><path d="M12 11c-3.6 0-6.6 3.2-6.6 6.4A3.3 3.3 0 0 0 8.7 20.7c1.1 0 2.2-.7 3.3-.7s2.2.7 3.3.7a3.3 3.3 0 0 0 3.3-3.3C18.6 14.2 15.6 11 12 11z"></path></svg>
+      <span>Portées</span>
+    </a>
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 60px; justify-content: center; text-decoration: none; color: #9A897B; font-size: 13px; font-weight: 700">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+      <span>Suivi</span>
+    </a>
+    <a href="Main.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 60px; justify-content: center; text-decoration: none; color: #E2552F; font-size: 13px; font-weight: 800">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 3l9 8"></path><path d="M5 10v11h14V10"></path><path d="M10 21v-6h4v6"></path></svg>
+      <span>Éleveurs</span>
+    </a>
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 60px; justify-content: center; text-decoration: none; color: #9A897B; font-size: 13px; font-weight: 700">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line><circle cx="9" cy="7" r="2.2" fill="#FFFFFF"></circle><circle cx="15" cy="12" r="2.2" fill="#FFFFFF"></circle><circle cx="7" cy="17" r="2.2" fill="#FFFFFF"></circle></svg>
+      <span>Critères</span>
+    </a>
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 60px; justify-content: center; text-decoration: none; color: #9A897B; font-size: 13px; font-weight: 700">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>
+      <span>Réglages</span>
+    </a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":820,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

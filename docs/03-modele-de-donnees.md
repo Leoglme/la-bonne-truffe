@@ -100,3 +100,29 @@ Normalisation de l'affixe : minuscules, sans accents, sans « de », « du », �
 - Gestation : 63 jours. `expected_birth_date = mating_date + 63 j` quand la naissance n'est pas déclarée.
 - Cession légale : 56 jours après la naissance. `available_from = birth_date + 56 j`, ou `expected_birth_date + 56 j` (affiché « vers le … »).
 - `is_active` passe à faux quand une annonce disparaît de sa source pendant deux relevés de suite, ou quand une portée née a plus de six mois.
+
+## Jalon 6 : les éleveurs, les chiens et le suivi d'éleveur (31/10/2026)
+
+### `breeders`, colonnes ajoutées
+`scc_user_id` (l'`u_id` de l'annuaire, unique nullable), `scc_breeder_number`, `scc_site_slug` (`u_breeder_site`), `logo_url` (`u_user_picture_uri` rendue absolue), `scc_variety_ids` (JSON : variétés produites, toutes races mêlées), `scc_last_litter_at` (`u_last_litter_date`), `is_scc_selected` (`is_selected` de l'annuaire ; `scc_selection_group` reste celui des portées), `scc_directory_seen_at` (dernier passage dans l'annuaire), `chiens_de_france_site_url` (le sous-domaine, lu sur une annonce ou une saillie), `chiens_de_france_registered_on` (« Inscrit sur chiens-de-france.com depuis le … »), `breeding_females_count` et `litters_last_year_count` (« 18 femelles reproductrices … 14 portées au cours de l'année écoulée »), `cover_photo_url` (première photo trouvée sur son site), `links` (JSON : liens ajoutés à la main, `{label, url}`), `is_manual` (créé à la main par Léo), `created_by_user_id` (nullable), `search_text` (concaténation normalisée pour la recherche : affixe, nom, ville, code postal, SIREN, téléphone en chiffres, liens).
+
+### `dogs` (nouvelle)
+Un chien connu d'une source, parent, reproducteur ou chiot.
+`id`, `breeder_id` (nullable : l'élevage qui le présente ou qui l'a fait naître), `source` (`centrale_canine` | `chiens_de_france`), `external_id` (identifiant LOF Select `ws.chien.id`, ou l'`<id>` de `/chien/<id>` sur le site de l'éleveur ; unique par source), `external_url`, `role` (`parent` | `reproducer` | `puppy`), `litter_group_id` (nullable : la portée dont il est le chiot), `name`, `affix`, `full_name`, `sex` (`male` | `female` | `unknown`), `birth_date`, `lof_number`, `identifier` (puce ou tatouage), `color_code` (le code brut de la source, `F.Or.`, « Noire et blanche »), `color` (couleur canonique ou `inconnue`), `rating` (cotation 0 à 6), `health_codes` (JSON : `["FN-1.1", "PRCD-1.1", "LocE-e/e"]`), `e_locus` (`e/e` | `E/e` | `E/E` | null, extrait de `LocE-…`), `has_dna_profile`, `sire_external_id` et `dam_external_id` (identifiants LOF Select des parents, nullable), `photos` (JSON), `availability_text` (« Disponible pour saillie », « En vente »), `fetched_at`, `created_at`, `updated_at`.
+
+### `litter_groups`, colonnes ajoutées
+`sire_dog_id` et `dam_dog_id` (identifiants de lignes `dogs`, nullables, sans contrainte en base : les deux tables se référencent), `expected_colors` (JSON : `[{color, confidence, reason}]` déduites des parents), `puppies_detail_fetched_at` (dernière lecture des chiots un par un), `puppies_detail_next_try_at` (prochaine tentative tant que les chiots ne sont pas inscrits). Les chiots inscrits sont les lignes `dogs` de `role = puppy` liées au groupe.
+
+### `breeder_follows` et `breeder_follow_notes` (nouvelles)
+`breeder_follows` : `id`, `user_id`, `breeder_id` (unique par utilisateur), `status` (`to_contact` | `contacted` | `waiting` | `deposit`), `notify_new_mating`, `notify_birth`, `notify_new_photos`, `notify_ignored_colors` (booléens, vrai, vrai, vrai, faux par défaut), `next_reminder_at`, `reminder_sent_at`, `last_contact_at`, `created_at`, `updated_at`.
+`breeder_follow_notes` : `id`, `follow_id`, `created_at`, `text`.
+
+### `breeder_follow_events` (nouvelle)
+L'idempotence des alertes d'éleveur : `id`, `follow_id`, `litter_group_id` (nullable), `kind` (`breeder_new_mating` | `breeder_birth` | `breeder_new_photos` | `breeder_new_ad`), `created_at`, `sent_at` (null tant que l'événement attend le récap du soir ; les pushs et les événements non envoyés sont datés tout de suite). Une ligne par couple (suivi, portée, type) ; `breeder_new_photos` se répète quand de nouvelles photos arrivent (une ligne par lot, datée).
+
+### Les couleurs, complément
+Une quatrième confiance : **`inferred`**, déduite des parents (`expected_colors`). Elle vaut `certain` pour le palier et le score tant qu'aucune source ne donne la couleur des chiots ; une couleur de chiot inscrit (`certain`) ou confirmée à la main (`confirmed`) la remplace.
+
+Correspondance des codes LOF Select (`ws.chien.couleur`, à compléter au fil des fiches ; le code brut est gardé dans `color_code`) : `F.Or.`, `F.Cl.`, `F.Fo.`, `F.`, `Rou.`, `Gol.` → `gold` ; `Noi.` seul → `noir` ; `Noi. Mar.Fau.`, `Noi. Fau.` → `noir_et_feu` ; `Mar.` seul → `marron` ; `Mar. Fau.` → `marron_et_feu` ; `Ble. Rou.` → `bleu_rouan` ; `Ora. Rou.` → `orange_rouan` ; `Mar. Rou.` → `marron_rouan` ; `Tri.` → `tricolore` ; `Pan.Bla.`, `Bla.` avec une autre couleur → `particolore` ; `Zib.` → `zibeline` ; sinon `inconnue`. Les libellés en clair de Chiens de France (« Noire et blanche », « Golden ») passent par le dictionnaire de mots-clés existant.
+
+Règle du locus E : `e/e` × `e/e` → gold certain ; `e/e` × `E/e` → gold possible (ambigu : gold et la couleur de l'autre parent) ; `e/e` × `E/E` → pas de gold ; sans génotype, un parent gold vaut `e/e`, un parent d'une autre couleur vaut « inconnu » (gold possible si l'autre parent est gold).

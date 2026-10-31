@@ -1,14 +1,14 @@
 <template>
   <nav
     aria-label="Navigation principale"
-    class="grid shrink-0 grid-cols-4 border-t border-line bg-card px-3 pt-2 pb-6 md:px-6 md:pt-2.5 md:pb-[26px] lg:hidden"
+    class="grid shrink-0 grid-cols-5 border-t border-line bg-card px-3 pt-2 pb-6 md:px-6 md:pt-2.5 md:pb-[26px] lg:hidden"
   >
     <NuxtLink
       v-for="entry in tabEntries"
       :key="entry.path"
       :to="entry.path"
       :aria-current="MainNavigation.isEntryActive(entry, route.path) ? 'page' : undefined"
-      class="flex min-h-[52px] flex-col items-center justify-center gap-[3px] text-[11px] no-underline md:min-h-[60px] md:gap-1 md:text-[13px]"
+      class="flex min-h-[52px] flex-col items-center justify-center gap-[3px] text-[10.5px] no-underline md:min-h-[60px] md:gap-1 md:text-[13px]"
       :class="
         MainNavigation.isEntryActive(entry, route.path)
           ? 'font-extrabold text-coral hover:text-coral'

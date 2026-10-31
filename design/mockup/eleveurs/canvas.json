@@ -1,0 +1,28 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-31T13:10:00Z" },
+  "title": "La Bonne Truffe · Éleveurs",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 820, "h": 1180, "title": "iPad · L'onglet Éleveurs", "radius": 36 },
+    "Recherche.dc.html": { "x": 900, "y": 0, "w": 820, "h": 1180, "title": "iPad · Recherche et suggestions", "is_interactive": true, "radius": 36 },
+    "FicheEleveur.dc.html": { "x": 1800, "y": 0, "w": 820, "h": 1180, "title": "iPad · La fiche d'un éleveur", "radius": 36 },
+    "SuivreEleveur.dc.html": { "x": 2700, "y": 0, "w": 820, "h": 1180, "title": "iPad · Suivre : le tiroir", "radius": 36 },
+    "AjouterEleveur.dc.html": { "x": 3600, "y": 0, "w": 820, "h": 1180, "title": "iPad · Ajouter un éleveur à la main", "radius": 36 },
+    "AccueilRecherche.dc.html": { "x": 0, "y": 1600, "w": 820, "h": 1180, "title": "Écartée · La recherche depuis l'accueil", "radius": 36 },
+    "SuiviEleveurs.dc.html": { "x": 900, "y": 1600, "w": 820, "h": 1180, "title": "Écartée · Les éleveurs suivis dans le Suivi", "radius": 36 },
+    "iPhoneRecherche.dc.html": { "x": 0, "y": 3200, "w": 390, "h": 844, "title": "iPhone · Recherche", "radius": 44 },
+    "iPhoneFiche.dc.html": { "x": 470, "y": 3200, "w": 390, "h": 844, "title": "iPhone · La fiche d'un éleveur", "radius": 44 },
+    "DesktopEleveurs.dc.html": { "x": 0, "y": 4460, "w": 1440, "h": 900, "title": "Desktop · Éleveurs et volet de détail (Tauri / web)", "radius": 12 },
+    "DesktopRecherche.dc.html": { "x": 1520, "y": 4460, "w": 1440, "h": 900, "title": "Desktop · Recherche et suggestions", "radius": 12 }
+  },
+  "order": ["Main.dc.html", "Recherche.dc.html", "FicheEleveur.dc.html", "SuivreEleveur.dc.html", "AjouterEleveur.dc.html", "AccueilRecherche.dc.html", "SuiviEleveurs.dc.html", "iPhoneRecherche.dc.html", "iPhoneFiche.dc.html", "DesktopEleveurs.dc.html", "DesktopRecherche.dc.html"],
+  "notes": {
+    "a": { "x": 0, "y": -300, "text": "Validé le 31/10/2026 · l'onglet Éleveurs · iPad 11″ en portrait (820 × 1180) · le cœur « suivre » reste en haut à droite", "kind": "title1", "maxW": 4420 },
+    "b": { "x": 0, "y": 1300, "text": "Proposition B, écartée le 31/10/2026 · gardée pour mémoire", "kind": "title1", "maxW": 1720 },
+    "c": { "x": 0, "y": 2900, "text": "Sur iPhone (390 × 844) · la recherche et la fiche en une colonne", "kind": "title1", "maxW": 860 },
+    "d": { "x": 0, "y": 4160, "text": "Sur desktop (1440 × 900) · barre latérale, grille de trois colonnes, volet de détail à droite", "kind": "title1", "maxW": 2960 }
+  },
+  "designSystems": []
+}

@@ -90,7 +90,7 @@ Si `nginx -t` signale une erreur, ne pas recharger : nginx continue de servir l'
 
 ## La collecte
 
-Le worker du VPS relève Chiens de France, Chiots de France, Whoof et Cœur de Cocker avec le `curl` de Debian et le User-Agent honnête (`02-sources.md`). Whoof et Cœur de Cocker, ajoutés le 29/10/2026, n'ont été essayés que depuis un PC : leur pastille dans Sources dira au premier relevé si le VPS passe. Il ne relève pas la Centrale Canine : `deploy-api.yml` écrit `COLLECT_SKIPPED_SOURCES=centrale_canine` dans le `.env`, parce que Cloudflare refuse les adresses de serveur et le `curl` de Linux (`02-sources.md`).
+Le worker du VPS relève Chiens de France, Chiots de France, Whoof et Cœur de Cocker avec le `curl` de Debian et le User-Agent honnête (`02-sources.md`). Whoof et Cœur de Cocker, ajoutés le 29/10/2026, n'ont été essayés que depuis un PC : leur pastille dans Sources dira au premier relevé si le VPS passe. Il ne relève pas la Centrale Canine : `deploy-api.yml` écrit `COLLECT_SKIPPED_SOURCES=centrale_canine,scc_breeders,scc_dogs` dans le `.env`, parce que Cloudflare refuse les adresses de serveur et le `curl` de Linux (`02-sources.md`) : les portées, l’annuaire des éleveurs et les fiches des chiens passent par le relais de l’app Windows (`05-architecture.md`).
 
 La Centrale Canine est relayée par l'app Windows des PC où elle est installée et connectée :
 - l'app démarre avec Windows, cachée dans la zone de notification, et vérifie toutes les 5 minutes si le relevé de l'heure est dû ;

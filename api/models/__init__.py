@@ -5,8 +5,10 @@ Every SQLAlchemy model, imported here so that importing ``models`` registers all
 from models.breed import Breed
 from models.breed_variety import BreedVariety
 from models.breeder import Breeder
+from models.breeder_follow import BreederFollow, BreederFollowEvent, BreederFollowNote
 from models.department import Department
 from models.digest_entry import DigestEntry
+from models.dog import Dog
 from models.follow_up import FollowUp, FollowUpNote
 from models.listing import Listing
 from models.listing_change import ListingChange
@@ -25,8 +27,12 @@ __all__ = [
     "Breed",
     "BreedVariety",
     "Breeder",
+    "BreederFollow",
+    "BreederFollowEvent",
+    "BreederFollowNote",
     "Department",
     "DigestEntry",
+    "Dog",
     "FollowUp",
     "FollowUpNote",
     "Listing",

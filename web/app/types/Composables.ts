@@ -50,3 +50,8 @@ export type UseAppRefreshReturn = {
   refreshAfterNews: () => Promise<void>
   refreshAfterResume: () => Promise<void>
 }
+
+export type UseBackNavigationReturn = {
+  readPreviousPath: () => string | null
+  goBack: () => void
+}

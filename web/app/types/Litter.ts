@@ -29,12 +29,6 @@ export type LitterPuppiesFact = {
 
 export type LitterKeyFact = LitterDayFact | LitterPuppiesFact
 
-export type LitterPrimaryAction = {
-  href: string
-  label: string
-  isCall: boolean
-}
-
 export type LitterBrowsingOrigin = 'home' | 'follow-ups'
 
 export type LitterListingLine = {

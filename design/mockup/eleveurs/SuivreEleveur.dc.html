@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>La Bonne Truffe · Suivre un éleveur</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap">
+<style>
+body{margin:0;font-family:Nunito,system-ui,sans-serif;color:#2B2420;background:#FBE7CC}
+a{color:#C94A28}a:hover{color:#A33A1C}
+button{font:inherit;cursor:pointer;color:inherit}
+button:focus-visible,a:focus-visible{outline:3px solid #E2552F;outline-offset:3px}
+</style>
+</helmet>
+<div style="position: relative; width: 820px; height: 1180px; box-sizing: border-box; display: flex; flex-direction: column; background: #FBE7CC; overflow: hidden; font-size: 16px; line-height: 1.5">
+
+  <div style="position: relative; height: 300px; flex-shrink: 0; background: #FBE7CC; overflow: hidden">
+    <img src="/_blob/fea2eb2e833e561a21b18a059074eb9e" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 40%">
+    <a href="FicheEleveur.dc.html" aria-label="Retour à la fiche" style="position: absolute; top: 36px; left: 32px; width: 52px; height: 52px; border-radius: 50%; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; color: #2B2420; box-shadow: 0 2px 10px rgba(66,43,30,0.08)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <span aria-hidden="true" style="position: absolute; top: 36px; right: 96px; width: 52px; height: 52px; border-radius: 50%; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; color: #2B2420; box-shadow: 0 2px 10px rgba(66,43,30,0.08)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"></path><path d="M16 6l-4-4-4 4"></path><path d="M12 2v13"></path></svg>
+    </span>
+    <span aria-hidden="true" style="position: absolute; top: 36px; right: 32px; width: 52px; height: 52px; border-radius: 50%; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; color: #E2552F; box-shadow: 0 2px 10px rgba(66,43,30,0.08)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+    </span>
+  </div>
+
+  <div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; background: #FBF6EE; border-radius: 36px 36px 0 0; margin-top: -36px; overflow: hidden">
+    <div style="padding: 32px 32px 24px 32px; display: flex; flex-direction: column; gap: 24px">
+      <div style="display: flex; align-items: center; gap: 18px">
+        <span aria-hidden="true" style="width: 72px; height: 72px; flex-shrink: 0; border-radius: 22px; background: #FBE7CC; color: #8A5A14; display: inline-flex; align-items: center; justify-content: center; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 26px">LB</span>
+        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+          <h1 style="margin: 0; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 32px; line-height: 1.1">Des Landes de Brocéliande</h1>
+          <span style="font-size: 17px; color: #7A6657">Marie Le Goff · Ploërmel, Morbihan · 1 h 10 de route</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px">
+        <span style="display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 999px; background: #F3EBDF; font-size: 15px; font-weight: 800; color: #5E4B3F">Élevage sélectionné</span>
+        <span style="display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 999px; background: #F3EBDF; font-size: 15px; font-weight: 800; color: #5E4B3F">Membre du Spaniel Club Français</span>
+        <span style="display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 999px; background: #DCEBD4; font-size: 15px; font-weight: 800; color: #3E6630">SIREN vérifié</span>
+      </div>
+    </div>
+  </div>
+
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(43,36,32,0.45)"></div>
+
+  <div role="dialog" aria-labelledby="drawer-title" style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 20px; padding: 14px 32px 30px 32px; border-radius: 36px 36px 0 0; background: #FBF6EE; box-shadow: 0 -8px 30px rgba(43,36,32,0.18)">
+    <span aria-hidden="true" style="align-self: center; width: 48px; height: 6px; border-radius: 999px; background: #EADFD3"></span>
+
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <h2 id="drawer-title" style="margin: 0; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 28px; line-height: 1.15">Suivre Des Landes de Brocéliande</h2>
+      <p style="margin: 0; font-size: 17px; color: #7A6657">Tu seras prévenu de ce qui se passe chez eux, même en dehors de tes départements.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">
+        <span style="display: flex; flex-direction: column; gap: 2px"><span id="opt-saillie" style="font-weight: 800; font-size: 17px">Nouvelle saillie déclarée</span><span style="font-size: 14px; color: #7A6657">Dès qu'elle paraît à la Centrale Canine, quatre mois avant le départ des chiots</span></span>
+        <button type="button" role="switch" aria-checked="true" aria-labelledby="opt-saillie" style="flex-shrink: 0; position: relative; width: 58px; height: 34px; border-radius: 999px; border: none; background: #E2552F; padding: 0"><span aria-hidden="true" style="position: absolute; top: 4px; left: 28px; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2)"></span></button>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">
+        <span style="display: flex; flex-direction: column; gap: 2px"><span id="opt-naissance" style="font-weight: 800; font-size: 17px">Naissance d'une portée</span><span style="font-size: 14px; color: #7A6657">Avec les mâles et les femelles, pour appeler dans l'heure</span></span>
+        <button type="button" role="switch" aria-checked="true" aria-labelledby="opt-naissance" style="flex-shrink: 0; position: relative; width: 58px; height: 34px; border-radius: 999px; border: none; background: #E2552F; padding: 0"><span aria-hidden="true" style="position: absolute; top: 4px; left: 28px; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2)"></span></button>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">
+        <span style="display: flex; flex-direction: column; gap: 2px"><span id="opt-photos" style="font-weight: 800; font-size: 17px">Nouvelles photos ou nouvelle annonce</span><span style="font-size: 14px; color: #7A6657">Sur son site Chiens de France, Chiots de France ou Whoof</span></span>
+        <button type="button" role="switch" aria-checked="true" aria-labelledby="opt-photos" style="flex-shrink: 0; position: relative; width: 58px; height: 34px; border-radius: 999px; border: none; background: #E2552F; padding: 0"><span aria-hidden="true" style="position: absolute; top: 4px; left: 28px; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2)"></span></button>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">
+        <span style="display: flex; flex-direction: column; gap: 2px"><span id="opt-couleur" style="font-weight: 800; font-size: 17px">Même pour une couleur que j'ignore</span><span style="font-size: 14px; color: #7A6657">Sinon, seulement le gold et le noir et feu</span></span>
+        <button type="button" role="switch" aria-checked="false" aria-labelledby="opt-couleur" style="flex-shrink: 0; position: relative; width: 58px; height: 34px; border-radius: 999px; border: none; background: #EADFD3; padding: 0"><span aria-hidden="true" style="position: absolute; top: 4px; left: 4px; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2)"></span></button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 13px; font-weight: 800; color: #9A897B; text-transform: uppercase; letter-spacing: 0.04em">Dans mon carnet</span>
+      <div role="group" aria-label="Statut de l'éleveur dans mon carnet" style="display: flex; gap: 8px; flex-wrap: wrap">
+        <button type="button" aria-pressed="true" style="min-height: 44px; padding: 0 18px; border-radius: 999px; border: none; background: #2B2420; color: #FFFFFF; font-size: 15px; font-weight: 800">À contacter</button>
+        <button type="button" aria-pressed="false" style="min-height: 44px; padding: 0 18px; border-radius: 999px; border: none; background: #FFFFFF; color: #5E4B3F; font-size: 15px; font-weight: 700; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">Contacté</button>
+        <button type="button" aria-pressed="false" style="min-height: 44px; padding: 0 18px; border-radius: 999px; border: none; background: #FFFFFF; color: #5E4B3F; font-size: 15px; font-weight: 700; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">Sur liste d'attente</button>
+        <button type="button" aria-pressed="false" style="min-height: 44px; padding: 0 18px; border-radius: 999px; border: none; background: #FFFFFF; color: #5E4B3F; font-size: 15px; font-weight: 700; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">Acompte versé</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <a href="FicheEleveur.dc.html" style="min-height: 60px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 999px; background: #E2552F; color: #FFFFFF; font-size: 19px; font-weight: 800; text-decoration: none">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+        Suivre cet élevage
+      </a>
+      <a href="FicheEleveur.dc.html" style="min-height: 56px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; border: 2px solid #2B2420; color: #2B2420; font-size: 18px; font-weight: 800; text-decoration: none">Annuler</a>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":820,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -31,11 +31,21 @@ HOUSEKEEPING_MINUTE = 30
 
 COLLECTION_MINUTES: dict[ListingSource, int] = {
     ListingSource.CENTRALE_CANINE: 5,
+    ListingSource.SCC_DOGS: 12,
     ListingSource.CHIENS_DE_FRANCE: 20,
     ListingSource.CHIOTS_DE_FRANCE: 35,
     ListingSource.WHOOF: 45,
     ListingSource.COEUR_DE_COCKER: 50,
 }
+
+# French hour and minute of the sources read once a day (docs/05, « Nouveaux relevés »).
+DAILY_COLLECTION_TIMES: dict[ListingSource, tuple[int, int]] = {
+    ListingSource.CHIENS_DE_FRANCE_SITES: (6, 40),
+    ListingSource.SCC_BREEDERS: (7, 10),
+}
+
+# The relayed sources whose silence is worth an alert: those relayed every hour.
+SILENCE_WATCHED_SOURCES: frozenset[ListingSource] = frozenset({ListingSource.CENTRALE_CANINE})
 
 
 class CollectionWorker:
@@ -76,9 +86,15 @@ class CollectionWorker:
             if source not in self.collected_sources:
                 continue
             scheduler.add_job(self.collect_source, "cron", minute=minute, args=[source], id=f"collect_{source.value}")
+        for source, (hour, daily_minute) in DAILY_COLLECTION_TIMES.items():
+            if source not in self.collected_sources:
+                continue
+            scheduler.add_job(
+                self.collect_source, "cron", hour=hour, minute=daily_minute, args=[source], id=f"collect_{source.value}"
+            )
         scheduler.add_job(self.send_evening_digests, "cron", minute=0, id="send_evening_digests")
         scheduler.add_job(self.send_follow_up_reminders, "cron", minute="*/5", id="send_follow_up_reminders")
-        if self.relayed_sources:
+        if self.relayed_sources & SILENCE_WATCHED_SOURCES:
             scheduler.add_job(self.alert_silent_sources, "cron", minute=SILENCE_CHECK_MINUTE, id="alert_silent_sources")
         scheduler.add_job(
             self.purge_old_listing_data,
@@ -125,6 +141,7 @@ class CollectionWorker:
         db = SessionLocal()
         try:
             sent_count = notifier_service.send_due_follow_up_reminders(db, naive_utc_now())
+            sent_count += notifier_service.send_due_breeder_follow_reminders(db, naive_utc_now())
             if sent_count:
                 logger.info("%d follow-up reminder(s) sent", sent_count)
         finally:
@@ -134,7 +151,7 @@ class CollectionWorker:
         """Hourly check: tell Léo when a source the Windows app relays has had no successful run for hours."""
         db = SessionLocal()
         try:
-            for source in sorted(self.relayed_sources):
+            for source in sorted(self.relayed_sources & SILENCE_WATCHED_SOURCES):
                 notifier_service.alert_if_source_silent(db, source, naive_utc_now())
         finally:
             db.close()

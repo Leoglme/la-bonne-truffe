@@ -75,7 +75,9 @@ def test_detail_explains_the_score(client: TestClient, collected: dict[str, str]
 
     assert detail["tier"] == "preferred"
     assert detail["reasons"][0] == {"text": "Gold, ta couleur préférée", "points": 40}
-    assert detail["sire"] == {"name": "Père de test 23", "rating": 1}
+    assert (detail["sire"]["name"], detail["sire"]["rating"]) == ("Père de test 23", 1)
+    assert detail["puppies"] == []
+    assert detail["expected_colors"] == []
     assert detail["breeder"]["phone_e164"] == "+33600000004"
     assert detail["breeder"]["is_selected_breeding"] is False
     assert detail["breeder"]["is_breed_club_member"] is True

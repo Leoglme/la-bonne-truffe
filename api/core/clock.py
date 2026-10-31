@@ -6,6 +6,21 @@ from zoneinfo import ZoneInfo
 FRENCH_TIMEZONE = ZoneInfo("Europe/Paris")
 
 
+def naive_utc_of(moment: datetime | None) -> datetime | None:
+    """
+    A time sent by the dashboard, in the storage convention (naive UTC).
+
+    Args:
+        moment: Aware time, or naive already read as UTC.
+
+    Returns:
+        The naive UTC time, or None.
+    """
+    if moment is None or moment.tzinfo is None:
+        return moment
+    return moment.astimezone(UTC).replace(tzinfo=None)
+
+
 def naive_utc_now() -> datetime:
     """Current time as naive UTC, the storage convention."""
     return datetime.now(UTC).replace(tzinfo=None)

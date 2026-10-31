@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>La Bonne Truffe · Ajouter un éleveur</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap">
+<style>
+body{margin:0;font-family:Nunito,system-ui,sans-serif;color:#2B2420;background:#FBF6EE}
+a{color:#C94A28}a:hover{color:#A33A1C}
+button{font:inherit;cursor:pointer;color:inherit}
+input::placeholder,textarea::placeholder{color:#9A897B;opacity:1}
+button:focus-visible,a:focus-visible{outline:3px solid #E2552F;outline-offset:3px}
+</style>
+</helmet>
+<div style="width: 820px; height: 1180px; box-sizing: border-box; display: flex; flex-direction: column; background: #FBF6EE; overflow: hidden; font-size: 16px; line-height: 1.5">
+
+  <header style="padding: 36px 32px 0 32px; display: flex; align-items: center; gap: 14px">
+    <a href="Recherche.dc.html" aria-label="Retour à la recherche" style="flex-shrink: 0; width: 52px; height: 52px; border-radius: 50%; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; color: #2B2420; box-shadow: 0 2px 10px rgba(66,43,30,0.08)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <a href="Main.dc.html" aria-label="La Bonne Truffe, accueil" style="display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #2B2420">
+      <span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 9px; background: #E2552F; display: inline-flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M4 9c0-3.5 3.6-6 8-6s8 2.5 8 6c0 4.5-4.5 9-8 11C8.5 18 4 13.5 4 9z" fill="#FFF3E6"></path><ellipse cx="9.2" cy="9.2" rx="1.6" ry="2.1" fill="#E2552F"></ellipse><ellipse cx="14.8" cy="9.2" rx="1.6" ry="2.1" fill="#E2552F"></ellipse></svg></span>
+      <span style="font-family: Fredoka, sans-serif; font-weight: 600; font-size: 22px">La Bonne Truffe</span>
+    </a>
+  </header>
+
+  <form action="FicheEleveur.dc.html" style="flex-grow: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 24px 32px 32px 32px; display: flex; flex-direction: column; gap: 24px">
+
+    <div style="position: relative; height: 180px; border-radius: 28px; background: #FBE7CC; overflow: hidden; display: flex; align-items: center; justify-content: space-between; padding: 0 36px">
+      <span style="padding: 6px 16px; border-radius: 999px; background: #FFFFFF; font-size: 14px; font-weight: 800; color: #C94A28; letter-spacing: 0.02em">AJOUTÉ À LA MAIN</span>
+      <svg width="150" height="150" viewBox="0 0 160 160" role="img" aria-label="Chiot cocker gold" style="flex-shrink: 0; margin-bottom: -28px"><path d="M38 62 C18 70 14 112 30 128 C44 142 58 126 56 100 Z" fill="#CF8F3A"></path><path d="M122 62 C142 70 146 112 130 128 C116 142 102 126 104 100 Z" fill="#CF8F3A"></path><circle cx="80" cy="78" r="44" fill="#E9B363"></circle><path d="M60 42 C68 26 92 26 100 42 L80 52 Z" fill="#CF8F3A"></path><ellipse cx="80" cy="97" rx="25" ry="18" fill="#F3CF95"></ellipse><circle cx="66" cy="74" r="4" fill="#2B2420"></circle><circle cx="94" cy="74" r="4" fill="#2B2420"></circle><ellipse cx="80" cy="92" rx="7" ry="5" fill="#2B2420"></ellipse><circle cx="56" cy="90" r="5" fill="#F4B6A6" opacity="0.7"></circle><circle cx="104" cy="90" r="5" fill="#F4B6A6" opacity="0.7"></circle></svg>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <h1 style="margin: 0; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 40px; line-height: 1.1">Ajouter un éleveur</h1>
+      <p style="margin: 0; font-size: 18px; color: #7A6657">Trouvé sur Facebook, sur un panneau, par une amie ? Note ce que tu sais. L'app le rapprochera de la Centrale Canine et de Chiens de France dès qu'il déclare une portée.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 20px; border-radius: 20px; background: #FFFFFF; border: 2px solid #E2552F; box-shadow: 0 0 0 4px #FFE3D3">
+        <label for="nom" style="font-size: 13px; font-weight: 800; color: #9A897B; text-transform: uppercase; letter-spacing: 0.04em">Nom de l'élevage ou de la personne</label>
+        <input id="nom" type="text" value="Élevage des Joyaux du Lac" style="border: none; outline: none; background: transparent; font-family: Nunito, system-ui, sans-serif; font-size: 18px; font-weight: 700; color: #2B2420; padding: 0">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 20px; border-radius: 20px; background: #FFFFFF; border: 2px solid #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">
+        <label for="ville" style="font-size: 13px; font-weight: 800; color: #9A897B; text-transform: uppercase; letter-spacing: 0.04em">Ville ou code postal</label>
+        <input id="ville" type="text" value="Guer, Morbihan" style="border: none; outline: none; background: transparent; font-family: Nunito, system-ui, sans-serif; font-size: 18px; font-weight: 700; color: #2B2420; padding: 0">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 20px; border-radius: 20px; background: #FFFFFF; border: 2px solid #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">
+        <label for="lien" style="font-size: 13px; font-weight: 800; color: #9A897B; text-transform: uppercase; letter-spacing: 0.04em">Lien Facebook, Instagram ou site</label>
+        <input id="lien" type="url" value="https://www.facebook.com/elevagedesjoyauxdulac" style="border: none; outline: none; background: transparent; font-family: Nunito, system-ui, sans-serif; font-size: 18px; font-weight: 700; color: #2B2420; padding: 0">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 20px; border-radius: 20px; background: #FFFFFF; border: 2px solid #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">
+        <label for="telephone" style="font-size: 13px; font-weight: 800; color: #9A897B; text-transform: uppercase; letter-spacing: 0.04em">Téléphone</label>
+        <input id="telephone" type="tel" value="" placeholder="06 …" style="border: none; outline: none; background: transparent; font-family: Nunito, system-ui, sans-serif; font-size: 18px; font-weight: 700; color: #2B2420; padding: 0">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 20px; border-radius: 20px; background: #FFFFFF; border: 2px solid #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06)">
+        <label for="note" style="font-size: 13px; font-weight: 800; color: #9A897B; text-transform: uppercase; letter-spacing: 0.04em">Une note pour toi</label>
+        <textarea id="note" rows="2" style="border: none; outline: none; background: transparent; resize: none; font-family: Nunito, system-ui, sans-serif; font-size: 18px; font-weight: 700; color: #2B2420; padding: 0; line-height: 1.4">Vu dans le groupe « Cocker anglais Bretagne » : une portée gold prévue cet hiver, lice Nala.</textarea>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 14px; align-items: flex-start; padding: 16px 20px; border-radius: 20px; background: #F3EBDF; font-size: 15px; color: #5E4B3F">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C94A28" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <span>Deux élevages de la Centrale Canine ressemblent à ce nom : <strong>Du Lac au Duc</strong> (Ploërmel) et <strong>Des Joyaux de Brocéliande</strong> (Guer). Si c'est l'un d'eux, touche-le pour relier la fiche au lieu d'en créer une nouvelle.</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px">
+      <button type="submit" style="min-height: 60px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 999px; border: none; background: #E2552F; color: #FFFFFF; font-size: 19px; font-weight: 800">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+        Ajouter et suivre
+      </button>
+      <a href="FicheEleveur.dc.html" style="min-height: 56px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; border: 2px solid #2B2420; color: #2B2420; font-size: 18px; font-weight: 800; text-decoration: none">Ajouter sans suivre</a>
+    </div>
+  </form>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":820,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
