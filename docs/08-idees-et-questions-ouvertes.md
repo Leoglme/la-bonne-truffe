@@ -34,3 +34,7 @@ Le Truffier (« il déniche les portées comme un chien truffier »), À vue de 
 
 - « Déniche la bonne portée avant tout le monde. »
 - « La Bonne Truffe est à l'affût. On te prévient dès qu'une portée gold pointe sa truffe. » (notification de bienvenue)
+
+## Système éleveurs (maquette du 31/10/2026, à valider)
+
+Léo veut chercher un éleveur par son nom (vu sur Facebook, par exemple), ouvrir sa fiche, voir ses portées et le suivre pour être prévenu. Deux propositions en maquette sur https://claude.ai/artifact/643WfARUJfuo6c3qS6actc : **A**, un onglet Éleveurs (liste classée par chance d'une portée gold, recherche avec suggestions, fiche, tiroir Suivre, ajout à la main) ; **B**, la recherche depuis l'accueil (portées et éleveurs mêlés) et les éleveurs suivis dans le Suivi. Les données viennent de l'annuaire SCC, du Spaniel Club, des fiches chien et des sites d'éleveurs Chiens de France (`02`, § vérifié le 31/10/2026). Léo a validé le principe de l'annuaire SCC et de celui du club.
