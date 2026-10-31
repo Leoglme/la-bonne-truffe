@@ -9,6 +9,8 @@ const UNKNOWN_SCORE_LABEL: string = '–'
 /** Room a pin takes on screen: two pins closer than this would overlap, so they share one pin. */
 export const MAP_PIN_BOX_WIDTH_IN_PIXELS: number = 104
 export const MAP_PIN_BOX_HEIGHT_IN_PIXELS: number = 44
+const TOWN_LABEL_CLEARANCE_WIDTH_IN_PIXELS: number = 90
+const TOWN_LABEL_CLEARANCE_HEIGHT_IN_PIXELS: number = 34
 
 /** Where the litters sit on the map: one place per breeding address, and the places close on screen gathered. */
 export class LitterMapPlaces {
@@ -68,6 +70,21 @@ export class LitterMapPlaces {
     }
     return anchoredClusters.map(
       (anchoredCluster: AnchoredLitterMapCluster): LitterMapCluster => anchoredCluster.cluster,
+    )
+  }
+
+  /**
+   * Whether a town name has room on the map, away from every pin.
+   *
+   * @param townPoint - Where the name is written, on screen.
+   * @param pinPoints - Where the pins are, on screen.
+   * @returns False when a pin would hide the name.
+   */
+  static isTownLabelClearOfPins(townPoint: ScreenPoint, pinPoints: ScreenPoint[]): boolean {
+    return pinPoints.every(
+      (pinPoint: ScreenPoint): boolean =>
+        Math.abs(pinPoint.x - townPoint.x) >= TOWN_LABEL_CLEARANCE_WIDTH_IN_PIXELS ||
+        Math.abs(pinPoint.y - townPoint.y) >= TOWN_LABEL_CLEARANCE_HEIGHT_IN_PIXELS,
     )
   }
 

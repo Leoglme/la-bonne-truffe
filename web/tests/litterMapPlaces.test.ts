@@ -120,6 +120,18 @@ describe('LitterMapPlaces.pointsToOpenOn', (): void => {
   })
 })
 
+describe('LitterMapPlaces.isTownLabelClearOfPins', (): void => {
+  it('leaves out a town name a pin would hide', (): void => {
+    expect(LitterMapPlaces.isTownLabelClearOfPins({ x: 100, y: 100 }, [{ x: 120, y: 110 }])).toBe(false)
+    expect(
+      LitterMapPlaces.isTownLabelClearOfPins({ x: 100, y: 100 }, [
+        { x: 300, y: 100 },
+        { x: 100, y: 160 },
+      ]),
+    ).toBe(true)
+  })
+})
+
 describe('LitterMapPlaces.buildPinLabel', (): void => {
   it('names a lone litter with its score, and counts several', (): void => {
     expect(LitterMapPlaces.buildPinLabel([buildCard(1, { name: 'De Kerlann', score: 88 })])).toBe('De Kerlann, 88 %')

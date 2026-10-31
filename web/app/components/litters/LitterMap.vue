@@ -12,14 +12,24 @@
 </template>
 
 <script lang="ts" setup>
-import type { LatLngBounds, Map as LeafletMap, Marker } from 'leaflet'
+import type { FeatureCollection } from 'geojson'
+import type { LatLngBounds, LatLngBoundsLiteral, Map as LeafletMap, Marker } from 'leaflet'
 import type { AppContext, PropType, Ref, VNode } from 'vue'
 import type { LitterCard } from '~/types/api'
-import type { LitterMapCluster, LitterMapEmits, LitterMapPlace, LitterMapProps, ScreenPoint } from '~/types/LitterMap'
+import type {
+  LitterMapCluster,
+  LitterMapEmits,
+  LitterMapPlace,
+  LitterMapProps,
+  MapTown,
+  ScreenPoint,
+} from '~/types/LitterMap'
 import type { GeographicPoint } from '~/types/Location'
 import { getCurrentInstance, h, nextTick, onBeforeUnmount, onMounted, ref, render, watch } from 'vue'
 import LitterMapHomePin from '~/components/litters/LitterMapHomePin.vue'
 import LitterMapPin from '~/components/litters/LitterMapPin.vue'
+import { MAP_TOWNS } from '~/constants/mapTowns'
+import { DepartmentOutlinesService } from '~/services/departmentOutlinesService'
 import { LitterMapPlaces, MAP_PIN_BOX_WIDTH_IN_PIXELS } from '~/utils/litterMapPlaces'
 
 const props: LitterMapProps = defineProps({
@@ -34,11 +44,16 @@ const emit: LitterMapEmits = defineEmits<{
 
 const pinAppContext: AppContext | null = getCurrentInstance()?.appContext ?? null
 
-const TILE_URL: string = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-const TILE_ATTRIBUTION: string = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-const MAX_ZOOM: number = 18
-const MAX_FIT_ZOOM: number = 11
-const MAX_CLUSTER_ZOOM: number = 14
+const DEPARTMENTS_ATTRIBUTION: string = 'Contours : IGN Admin Express 2018'
+const DEPARTMENT_BORDER_WIDTH_IN_PIXELS: number = 1.4
+const MIN_ZOOM: number = 5
+const MAX_ZOOM: number = 12
+const MAX_FIT_ZOOM: number = 10
+const MAX_CLUSTER_ZOOM: number = 11.5
+const FRANCE_BOUNDS: LatLngBoundsLiteral = [
+  [40.5, -7.5],
+  [52, 11],
+]
 const ZOOM_SNAP: number = 0.25
 const FIT_PADDING_TOP_LEFT: [number, number] = [56, 104]
 const FIT_PADDING_BOTTOM_RIGHT: [number, number] = [56, 64]
@@ -49,6 +64,9 @@ const EMPTY_MAP_ZOOM: number = 7
 const CLOSEST_PLACES_AROUND_HOME: number = 6
 const MARKER_CLASS: string = 'group outline-none'
 const PIN_CONTAINER_CLASS: string = 'absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2'
+const TOWN_LABEL_CLASS: string =
+  'absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 text-[11px] leading-none font-bold whitespace-nowrap text-ink-label'
+const TOWN_LABEL_Z_OFFSET: number = -1000
 
 const mapElement: Ref<HTMLDivElement | null> = ref(null)
 
@@ -58,6 +76,7 @@ let clusterMarkers: Marker[] = []
 let clusterPinContainers: HTMLElement[] = []
 let homeMarker: Marker | null = null
 let homePinContainer: HTMLElement | null = null
+let townMarkers: Marker[] = []
 let openedLitterIdsKey: string | null = null
 
 /**
@@ -132,6 +151,71 @@ function drawClusters(): void {
       .on('click', (): void => openCluster(cluster))
       .addTo(leafletMap)
   })
+}
+
+/**
+ * Write the towns the current zoom has room for, leaving out those a pin would hide.
+ */
+function drawTowns(): void {
+  if (leaflet === null || map === null) {
+    return
+  }
+  const leafletLibrary: typeof import('leaflet') = leaflet
+  const leafletMap: LeafletMap = map
+  for (const marker of townMarkers) {
+    marker.remove()
+  }
+  const zoom: number = leafletMap.getZoom()
+  const project: (point: GeographicPoint) => ScreenPoint = (point: GeographicPoint): ScreenPoint =>
+    leafletMap.latLngToLayerPoint([point.latitude, point.longitude])
+  const pinPoints: ScreenPoint[] = clusterMarkers.map((marker: Marker): ScreenPoint =>
+    leafletMap.latLngToLayerPoint(marker.getLatLng()),
+  )
+
+  if (props.homePosition !== null) {
+    pinPoints.push(project(props.homePosition))
+  }
+  const shownTowns: MapTown[] = MAP_TOWNS.filter(
+    (town: MapTown): boolean =>
+      zoom >= town.minimumZoom && LitterMapPlaces.isTownLabelClearOfPins(project(town.point), pinPoints),
+  )
+  townMarkers = shownTowns.map((town: MapTown): Marker => {
+    const label: HTMLSpanElement = document.createElement('span')
+    label.className = TOWN_LABEL_CLASS
+    label.textContent = town.name
+    return leafletLibrary
+      .marker([town.point.latitude, town.point.longitude], {
+        icon: leafletLibrary.divIcon({ className: '', html: label, iconSize: [0, 0] }),
+        interactive: false,
+        keyboard: false,
+        zIndexOffset: TOWN_LABEL_Z_OFFSET,
+      })
+      .addTo(leafletMap)
+  })
+}
+
+/**
+ * Draw the departments in the colours of the app, under the towns and the pins.
+ *
+ * @param outlines - Their outlines, null when they could not be read.
+ */
+function drawDepartments(outlines: FeatureCollection | null): void {
+  if (leaflet === null || map === null || outlines === null) {
+    return
+  }
+  const styles: CSSStyleDeclaration = getComputedStyle(map.getContainer())
+  leaflet
+    .geoJSON(outlines, {
+      style: {
+        color: styles.getPropertyValue('--color-card').trim(),
+        weight: DEPARTMENT_BORDER_WIDTH_IN_PIXELS,
+        fillColor: styles.getPropertyValue('--color-map-land').trim(),
+        fillOpacity: 1,
+      },
+      interactive: false,
+      attribution: DEPARTMENTS_ATTRIBUTION,
+    })
+    .addTo(map)
 }
 
 /**
@@ -245,12 +329,14 @@ watch(
       fitToOpeningView()
     }
     drawClusters()
+    drawTowns()
   },
 )
 watch(
   (): GeographicPoint | null => props.homePosition,
   (homePosition: GeographicPoint | null, previousHomePosition: GeographicPoint | null): void => {
     drawHome()
+    drawTowns()
     if (homePosition !== null && previousHomePosition === null) {
       fitToOpeningView()
     }
@@ -258,20 +344,33 @@ watch(
 )
 
 onMounted(async (): Promise<void> => {
+  const departmentOutlinesRequest: Promise<FeatureCollection | null> = DepartmentOutlinesService.load()
   leaflet = await import('leaflet')
   if (mapElement.value === null) {
     return
   }
-  map = leaflet.map(mapElement.value, { zoomControl: false, zoomSnap: ZOOM_SNAP })
+  map = leaflet.map(mapElement.value, {
+    preferCanvas: true,
+    zoomControl: false,
+    zoomSnap: ZOOM_SNAP,
+    minZoom: MIN_ZOOM,
+    maxZoom: MAX_ZOOM,
+    maxBounds: FRANCE_BOUNDS,
+    maxBoundsViscosity: 1,
+  })
   map.attributionControl.setPrefix(false)
-  leaflet.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: MAX_ZOOM, detectRetina: true }).addTo(map)
   map.on('click', (): void => emit('update:selectedLitterIds', []))
-  map.on('zoomend', (): void => drawClusters())
+  map.on('zoomend', (): void => {
+    drawClusters()
+    drawTowns()
+  })
   await nextTick()
   map.invalidateSize()
   fitToOpeningView()
   drawClusters()
+  drawTowns()
   drawHome()
+  drawDepartments(await departmentOutlinesRequest)
 })
 
 onBeforeUnmount((): void => {

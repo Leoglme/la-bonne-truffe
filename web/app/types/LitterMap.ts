@@ -1,6 +1,12 @@
 import type { LitterCard } from '~/types/api'
 import type { GeographicPoint } from '~/types/Location'
 
+export type MapTown = {
+  name: string
+  point: GeographicPoint
+  minimumZoom: number
+}
+
 export type ScreenPoint = {
   x: number
   y: number

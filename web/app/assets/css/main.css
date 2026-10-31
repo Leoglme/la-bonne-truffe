@@ -42,6 +42,8 @@
   --color-online: #4a6b3b;
   --color-male: #3f7fc7;
   --color-female: #e05d9b;
+  --color-map-land: #efe7da;
+  --color-map-sea: #dce8ec;
 
   --color-truffe-50: #fff4ee;
   --color-truffe-100: #ffe3d3;
@@ -141,12 +143,8 @@
 }
 
 .leaflet-container {
-  background: var(--color-cream);
+  background: var(--color-map-sea);
   font-family: var(--font-sans);
-}
-
-.leaflet-tile-pane {
-  filter: saturate(0.4) sepia(0.18) brightness(1.04) contrast(0.94);
 }
 
 .leaflet-container .leaflet-control-attribution {

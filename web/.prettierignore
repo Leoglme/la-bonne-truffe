@@ -7,3 +7,4 @@ src-tauri/target
 src-tauri/gen
 package-lock.json
 app/types/api.generated.ts
+app/assets/geo
