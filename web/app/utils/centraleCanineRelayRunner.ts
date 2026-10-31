@@ -1,14 +1,15 @@
 import type { CentraleCanineRelayAnswer, RelayedPageResponse, RelayPageRequest } from '~/types/api'
 import type { CentraleCanineRelayDependencies, CentraleCanineRelayPageReading } from '~/types/CentraleCanineRelay'
 
-const MAXIMUM_RELAY_ROUNDS: number = 6
+const MAXIMUM_RELAY_ROUNDS: number = 24
 const DELAY_BETWEEN_PAGES_MS: number = 1000
 const CLOUDFLARE_REFUSAL_STATUS: number = 403
 
 /** One relay of the Centrale Canine: the API names the pages, the computer reads them, the API runs. */
 export class CentraleCanineRelayRunner {
   /**
-   * Ask the API which pages to read, read them, and send them back until the API has run the collection.
+   * Ask the API which pages to read, read them, and send them back until the API has run every source of the
+   * relay; each call carries the pages read since the previous one, the API keeps the rest.
    *
    * @param dependencies - How to reach the API, read a page with curl or in the browser, and pause between two pages.
    * @param isRequestedByUser - « Relever maintenant »: run even when the last run is recent.
@@ -18,7 +19,6 @@ export class CentraleCanineRelayRunner {
     dependencies: CentraleCanineRelayDependencies,
     isRequestedByUser: boolean,
   ): Promise<CentraleCanineRelayAnswer> {
-    let relayedResponses: RelayedPageResponse[] = []
     let isCurlRefused: boolean = false
     let answer: CentraleCanineRelayAnswer = await dependencies.sendRelayRequest({
       relay_token: null,
@@ -33,10 +33,9 @@ export class CentraleCanineRelayRunner {
         isCurlRefused,
       )
       isCurlRefused = pageReading.isCurlRefused
-      relayedResponses = [...relayedResponses, ...pageReading.responses]
       answer = await dependencies.sendRelayRequest({
         relay_token: answer.relay_token,
-        responses: relayedResponses,
+        responses: pageReading.responses,
         is_requested_by_user: isRequestedByUser,
       })
     }

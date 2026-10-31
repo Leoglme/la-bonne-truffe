@@ -140,8 +140,18 @@ async function runNow(status: SourceStatus): Promise<void> {
 async function relayCentraleCanineNow(): Promise<void> {
   const answer: CentraleCanineRelayAnswer | null = await centraleCanineRelayStore.relay(true)
   if (answer === null || answer.state === 'busy') {
-    runError.value = 'La Centrale Canine est déjà en cours de relevé.'
+    runError.value = 'La Centrale Canine est déjà en cours de relevé, ici ou depuis un autre PC.'
+    return
   }
+  if (answer.state === 'not_due') {
+    toast.add({ title: 'Rien à relever pour l’instant.', color: 'neutral' })
+    return
+  }
+  if (answer.state === 'run_finished') {
+    toast.add({ title: 'Relevé terminé.', color: 'success' })
+    return
+  }
+  runError.value = 'Le relevé s’est arrêté avant la fin : il reprendra à la prochaine vérification.'
 }
 
 /**
@@ -149,7 +159,11 @@ async function relayCentraleCanineNow(): Promise<void> {
  */
 async function askAComputerToRelayCentraleCanine(): Promise<void> {
   await SourcesService.requestCentraleCanineRelay()
-  toast.add({ title: 'Relevé demandé : un PC allumé avec l’app le fera dans les 5 minutes.', color: 'success' })
+  toast.add({
+    title:
+      'Relevé demandé : un PC allumé avec l’app relèvera les portées, l’annuaire et les fiches dans les 5 minutes.',
+    color: 'success',
+  })
 }
 
 onMounted((): Promise<void> => sourcesStore.load())

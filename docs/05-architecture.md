@@ -65,7 +65,7 @@ la-bonne-truffe/
 | `GET /sources` | État de chaque source (dernier relevé, statut) |
 | `POST /sources/{source}/run` | Lancer un relevé à la main |
 | `POST /sources/centrale_canine/relay` | Relais de la Centrale Canine par l'app Windows : les pages à lire, puis le relevé |
-| `POST /sources/centrale_canine/relay-request` | Demander un relevé de la Centrale Canine depuis le web ou le téléphone : un PC allumé le fait à sa vérification suivante |
+| `POST /sources/centrale_canine/relay-request` | Demander un relevé de la Centrale Canine depuis le web ou le téléphone : un PC allumé enchaîne à sa vérification suivante les portées, l'annuaire et les fiches, quel que soit leur dernier relevé |
 | `GET /notifications`, `POST /notifications/read-all`, `GET /notifications/vapid-key`, `POST /notifications/subscribe`, `DELETE /notifications/subscribe`, `POST /notifications/test` | Cloche et Web Push |
 | `GET /health` | Santé de l'API et de la base (503 si la base ne répond pas) |
 | `GET /departments` | Référentiel des départements |

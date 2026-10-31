@@ -25,7 +25,7 @@ export class SourcesService {
   /**
    * Relay the Centrale Canine from the desktop app: send the pages read, get what to do next.
    *
-   * @param relayRequest - The relay token and every page read since the relay started.
+   * @param relayRequest - The relay token and the pages read since the previous call.
    * @returns What the desktop app does next.
    */
   static async relayCentraleCanine(relayRequest: CentraleCanineRelayRequest): Promise<CentraleCanineRelayAnswer> {

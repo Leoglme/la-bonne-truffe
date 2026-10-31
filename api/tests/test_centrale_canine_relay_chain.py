@@ -67,18 +67,21 @@ def answer_like_the_desktop_app(page_requests: list[dict[str, Any]]) -> list[dic
     return responses
 
 
-def relay_until_done(client: TestClient, headers: dict[str, str]) -> tuple[list[str], list[str], dict[str, Any]]:
+def relay_until_done(
+    client: TestClient, headers: dict[str, str], is_requested_by_user: bool = False
+) -> tuple[list[str], list[str], dict[str, Any]]:
     """
     Relay round after round until the API has nothing more to ask.
 
     Args:
         client: The API.
         headers: Bearer header.
+        is_requested_by_user: « Relever maintenant », which takes every source whatever its last run.
 
     Returns:
         The source of each round, the first URL asked in each round, and the last answer.
     """
-    answer = client.post(RELAY_URL, json={}, headers=headers).json()
+    answer = client.post(RELAY_URL, json={"is_requested_by_user": is_requested_by_user}, headers=headers).json()
     relay_token = answer["relay_token"]
     sources: list[str] = []
     first_urls: list[str] = []
@@ -124,3 +127,14 @@ def test_nothing_is_due_right_after_a_full_relay_unless_asked(
 
     assert scheduled_answer["state"] == "not_due"
     assert (requested_answer["state"], requested_answer["source"]) == ("pages_needed", "centrale_canine")
+
+
+def test_a_relay_asked_by_the_user_reads_the_directory_again_even_when_recent(
+    client: TestClient, db: Session, chained_relay_headers: dict[str, str]
+) -> None:
+    relay_until_done(client, chained_relay_headers)
+
+    sources, _first_urls, last_answer = relay_until_done(client, chained_relay_headers, is_requested_by_user=True)
+
+    assert last_answer["state"] == "run_finished"
+    assert list(dict.fromkeys(sources)) == ["centrale_canine", "scc_breeders", "scc_dogs"]

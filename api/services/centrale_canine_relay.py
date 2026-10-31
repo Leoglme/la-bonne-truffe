@@ -60,6 +60,7 @@ class RelayLease:
     token: str
     expires_at: datetime
     source: ListingSource
+    is_wanted: bool = False
     responses_by_url: dict[str, RelayedPageResponse] = field(default_factory=dict)
 
 
@@ -76,7 +77,7 @@ class CentraleCanineRelay:
         self._lock = threading.Lock()
 
     def request_run(self) -> None:
-        """Have the next desktop app that checks in run the litters, even when the last run is recent."""
+        """Have the next desktop app that checks in run every source, even when its last run is recent."""
         with self._lock:
             self.is_run_requested = True
 
@@ -113,7 +114,7 @@ class CentraleCanineRelay:
 
         Args:
             db: Database session.
-            is_requested_by_user: « Relever maintenant »: the litters run whatever the last run.
+            is_requested_by_user: « Relever maintenant »: every source runs, whatever its last run.
             now: Current time, naive UTC.
 
         Returns:
@@ -121,12 +122,17 @@ class CentraleCanineRelay:
         """
         if self.lease is not None and self.lease.expires_at > now:
             return self._answer(CentraleCanineRelayState.BUSY)
-        is_litters_run_wanted = is_requested_by_user or self.is_run_requested
-        first_source = self._next_due_source(db, None, now, is_litters_run_wanted)
+        is_wanted = is_requested_by_user or self.is_run_requested
+        first_source = self._next_due_source(db, None, now, is_wanted)
         if first_source is None:
             return self._answer(CentraleCanineRelayState.NOT_DUE)
         self.is_run_requested = False
-        lease = RelayLease(token=secrets.token_urlsafe(16), expires_at=now + RELAY_LEASE_DURATION, source=first_source)
+        lease = RelayLease(
+            token=secrets.token_urlsafe(16),
+            expires_at=now + RELAY_LEASE_DURATION,
+            source=first_source,
+            is_wanted=is_wanted,
+        )
         return self._advance(db, lease, now)
 
     def _advance(self, db: Session, lease: RelayLease, now: datetime) -> CentraleCanineRelayAnswer:
@@ -155,7 +161,7 @@ class CentraleCanineRelay:
                     source=lease.source,
                 )
             self._run(db, lease)
-            next_source = self._next_due_source(db, lease.source, now, is_litters_run_wanted=False)
+            next_source = self._next_due_source(db, lease.source, now, lease.is_wanted)
             if next_source is None:
                 self.lease = None
                 return CentraleCanineRelayAnswer(
@@ -215,16 +221,17 @@ class CentraleCanineRelay:
             collection_runner.run_centrale_canine(db, self._collector_on(transport))
 
     def _next_due_source(
-        self, db: Session, after: ListingSource | None, now: datetime, is_litters_run_wanted: bool
+        self, db: Session, after: ListingSource | None, now: datetime, is_wanted: bool
     ) -> ListingSource | None:
         """
-        The next relayed source due, in the order of ``RELAYED_SOURCE_ORDER``.
+        The next relayed source due, in the order of ``RELAYED_SOURCE_ORDER``: a relay Léo asked for takes
+        every source that has something to read, whatever its last run.
 
         Args:
             db: Database session.
             after: The source just run, None to start from the first one.
             now: Current time, naive UTC.
-            is_litters_run_wanted: Whether the litters run whatever its last run.
+            is_wanted: Whether the relay was asked for, from the app or from the phone.
 
         Returns:
             The source, or None when none is due.
@@ -234,9 +241,9 @@ class CentraleCanineRelay:
         for source in RELAYED_SOURCE_ORDER[start:]:
             if source not in relayed_sources:
                 continue
-            if source == ListingSource.CENTRALE_CANINE and is_litters_run_wanted:
-                return source
-            if self._is_run_due(db, source, now) and self._has_something_to_read(db, source, now):
+            if not is_wanted and not self._is_run_due(db, source, now):
+                continue
+            if self._has_something_to_read(db, source, now):
                 return source
         return None
 

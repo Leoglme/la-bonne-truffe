@@ -37,7 +37,7 @@ class CentraleCanineRelayRequest(BaseModel):
         default_factory=list, description="Pages read since the previous call; pages sent again are harmless"
     )
     is_requested_by_user: bool = Field(
-        default=False, description="« Relever maintenant »: run even when the last run is recent"
+        default=False, description="« Relever maintenant »: every relayed source runs, even when its last run is recent"
     )
 
 

@@ -118,7 +118,7 @@ describe('CentraleCanineRelayRunner', (): void => {
       recordedRelay.sentRequests.map((relayRequest: CentraleCanineRelayRequest): number | undefined => {
         return relayRequest.responses?.length
       }),
-    ).toEqual([0, 2, 3])
+    ).toEqual([0, 2, 1])
     expect(recordedRelay.sentRequests[2]?.relay_token).toBe('relay-token')
   })
 
@@ -141,7 +141,7 @@ describe('CentraleCanineRelayRunner', (): void => {
       'page-0-morbihan',
       'page-1-ille-et-vilaine',
     ])
-    expect(statusCodesSentIn(recordedRelay.sentRequests[2])).toEqual([200, 200, 200])
+    expect(statusCodesSentIn(recordedRelay.sentRequests[2])).toEqual([200])
   })
 
   it('stops at the first page neither curl nor the browser could read, and sends it at once', async (): Promise<void> => {
