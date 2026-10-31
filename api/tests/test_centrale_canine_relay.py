@@ -1,6 +1,7 @@
 """Relay of the Centrale Canine by the desktop app, its curl played by the recorded pages."""
 
 import json
+from datetime import datetime, timedelta
 from typing import Any
 
 import httpx
@@ -13,9 +14,10 @@ from enums.listing_source import ListingSource
 from enums.source_run_status import SourceRunStatus
 from models.source_run import SourceRun
 from models.user import User
+from schemas.centrale_canine_relay import CentraleCanineRelayRequest
 from seeders.run_seeders import SeederRunner
 from services.auth_service import AuthService
-from services.centrale_canine_relay import CentraleCanineRelay
+from services.centrale_canine_relay import CentraleCanineRelay, RelayLeaseLostError
 from services.collectors.centrale_canine import ALL_DEPARTMENTS_FILTER, SCC_BROWSER_USER_AGENT
 from services.collectors.relayed_pages_transport import RelayedPagesTransport
 from services.push_service import PushResult, PushService
@@ -134,6 +136,39 @@ def test_a_second_computer_waits_while_the_first_one_relays(client: TestClient, 
 
     assert first_computer_answer["state"] == "pages_needed"
     assert second_computer_answer["state"] == "busy"
+
+
+def test_a_relay_silent_for_two_minutes_is_taken_over_by_the_next_call(
+    db: Session, relay_headers: dict[str, str]
+) -> None:
+    relay = CentraleCanineRelay()
+    started_at = datetime(2026, 11, 1, 9, 0)
+
+    first = relay.answer(db, CentraleCanineRelayRequest(is_requested_by_user=True), started_at)
+    still_busy = relay.answer(
+        db, CentraleCanineRelayRequest(is_requested_by_user=True), started_at + timedelta(seconds=90)
+    )
+    taken_over = relay.answer(
+        db, CentraleCanineRelayRequest(is_requested_by_user=True), started_at + timedelta(minutes=3)
+    )
+
+    assert (first.state, still_busy.state, taken_over.state) == ("pages_needed", "busy", "pages_needed")
+    assert taken_over.relay_token != first.relay_token
+    with pytest.raises(RelayLeaseLostError):
+        relay.answer(db, CentraleCanineRelayRequest(relay_token=first.relay_token), started_at + timedelta(minutes=4))
+
+
+def test_a_request_made_while_another_computer_relays_is_kept_for_the_next_check(
+    db: Session, relay_headers: dict[str, str]
+) -> None:
+    relay = CentraleCanineRelay()
+    started_at = datetime(2026, 11, 1, 9, 0)
+    relay.answer(db, CentraleCanineRelayRequest(), started_at)
+
+    busy = relay.answer(db, CentraleCanineRelayRequest(is_requested_by_user=True), started_at + timedelta(seconds=30))
+
+    assert busy.state == "busy"
+    assert relay.is_run_requested is True
 
 
 def test_a_page_refused_on_the_computer_ends_in_a_failed_run(client: TestClient, relay_headers: dict[str, str]) -> None:

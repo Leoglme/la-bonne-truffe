@@ -5,15 +5,19 @@ import type {
   CentraleCanineRelayProgress,
 } from '~/types/CentraleCanineRelay'
 
-const MAXIMUM_RELAY_ROUNDS: number = 24
+const MAXIMUM_RELAY_ROUNDS: number = 60
 const DELAY_BETWEEN_PAGES_MS: number = 1000
 const CLOUDFLARE_REFUSAL_STATUS: number = 403
+const SEND_PAGES_AFTER_MS: number = 40_000
+const BUSY_RETRY_DELAY_MS: number = 15_000
+const MAXIMUM_BUSY_WAIT_MS: number = 10 * 60_000
 
 /** One relay of the Centrale Canine: the API names the pages, the computer reads them, the API runs. */
 export class CentraleCanineRelayRunner {
   /**
    * Ask the API which pages to read, read them, and send them back until the API has run every source of the
-   * relay; each call carries the pages read since the previous one, the API keeps the rest.
+   * relay. The pages read are sent at least every forty seconds, so that the API knows the relay is alive and
+   * the screen shows it move; a relay asked by the user waits for another computer to finish its own.
    *
    * @param dependencies - How to reach the API, read a page with curl or in the browser, and pause between two pages.
    * @param isRequestedByUser - « Relever maintenant »: every source runs, even when its last run is recent.
@@ -24,17 +28,14 @@ export class CentraleCanineRelayRunner {
     isRequestedByUser: boolean,
   ): Promise<CentraleCanineRelayAnswer> {
     let isCurlRefused: boolean = false
-    let answer: CentraleCanineRelayAnswer = await dependencies.sendRelayRequest({
-      relay_token: null,
-      responses: [],
-      is_requested_by_user: isRequestedByUser,
-    })
+    let answer: CentraleCanineRelayAnswer = await this.start(dependencies, isRequestedByUser)
 
     for (let round: number = 1; answer.state === 'pages_needed' && round <= MAXIMUM_RELAY_ROUNDS; round++) {
       const progress: CentraleCanineRelayProgress = {
         source: answer.source ?? null,
         pagesReadCount: 0,
         pagesPlannedCount: answer.page_requests.length,
+        isWaitingForAnotherComputer: false,
       }
       dependencies.reportProgress?.(progress)
       const pageReading: CentraleCanineRelayPageReading = await this.readPages(
@@ -54,7 +55,47 @@ export class CentraleCanineRelayRunner {
   }
 
   /**
-   * Read the pages one per second, in the browser once Cloudflare refused curl, and stop at the first page not read.
+   * Open the relay; when another computer holds it and the user asked, try again every fifteen seconds for
+   * up to ten minutes, telling the screen about the wait.
+   *
+   * @param dependencies - How to reach the API and pause.
+   * @param isRequestedByUser - Whether the user asked, which is worth waiting for.
+   * @returns The first answer that is not « busy », or the last « busy » once the wait is over.
+   */
+  private static async start(
+    dependencies: CentraleCanineRelayDependencies,
+    isRequestedByUser: boolean,
+  ): Promise<CentraleCanineRelayAnswer> {
+    const startedAt: number = this.readClock(dependencies)
+    let answer: CentraleCanineRelayAnswer = await dependencies.sendRelayRequest({
+      relay_token: null,
+      responses: [],
+      is_requested_by_user: isRequestedByUser,
+    })
+    while (
+      answer.state === 'busy' &&
+      isRequestedByUser &&
+      this.readClock(dependencies) - startedAt < MAXIMUM_BUSY_WAIT_MS
+    ) {
+      dependencies.reportProgress?.({
+        source: null,
+        pagesReadCount: 0,
+        pagesPlannedCount: 0,
+        isWaitingForAnotherComputer: true,
+      })
+      await dependencies.pause(BUSY_RETRY_DELAY_MS)
+      answer = await dependencies.sendRelayRequest({
+        relay_token: null,
+        responses: [],
+        is_requested_by_user: isRequestedByUser,
+      })
+    }
+    return answer
+  }
+
+  /**
+   * Read the pages one per second, in the browser once Cloudflare refused curl, and stop at the first page not
+   * read or once forty seconds have passed: the pages read so far are sent, the API asks for the rest.
    *
    * @param dependencies - How to read a page and pause between two pages.
    * @param pageRequests - Pages the API asked for, in the order the collector reads them.
@@ -68,6 +109,7 @@ export class CentraleCanineRelayRunner {
     isCurlRefusedAtStart: boolean,
     progress: CentraleCanineRelayProgress,
   ): Promise<CentraleCanineRelayPageReading> {
+    const startedAt: number = this.readClock(dependencies)
     const responses: RelayedPageResponse[] = []
     let isCurlRefused: boolean = isCurlRefusedAtStart
     for (const pageRequest of pageRequests) {
@@ -79,7 +121,7 @@ export class CentraleCanineRelayRunner {
       }
       responses.push(response)
       dependencies.reportProgress?.({ ...progress, pagesReadCount: responses.length })
-      if (!this.isPageRead(response)) {
+      if (!this.isPageRead(response) || this.readClock(dependencies) - startedAt >= SEND_PAGES_AFTER_MS) {
         break
       }
     }
@@ -123,5 +165,15 @@ export class CentraleCanineRelayRunner {
   private static isPageRead(response: RelayedPageResponse): boolean {
     const statusCode: number | null | undefined = response.status_code
     return typeof statusCode === 'number' && statusCode >= 200 && statusCode < 300
+  }
+
+  /**
+   * The time, from the clock of the dependencies when the tests give one.
+   *
+   * @param dependencies - The dependencies.
+   * @returns Milliseconds.
+   */
+  private static readClock(dependencies: CentraleCanineRelayDependencies): number {
+    return dependencies.now?.() ?? Date.now()
   }
 }

@@ -219,9 +219,88 @@ describe('CentraleCanineRelayRunner', (): void => {
     await CentraleCanineRelayRunner.relay(dependencies, false)
 
     expect(progressReports).toEqual([
-      { source: 'scc_breeders', pagesReadCount: 0, pagesPlannedCount: 2 },
-      { source: 'scc_breeders', pagesReadCount: 1, pagesPlannedCount: 2 },
-      { source: 'scc_breeders', pagesReadCount: 2, pagesPlannedCount: 2 },
+      { source: 'scc_breeders', pagesReadCount: 0, pagesPlannedCount: 2, isWaitingForAnotherComputer: false },
+      { source: 'scc_breeders', pagesReadCount: 1, pagesPlannedCount: 2, isWaitingForAnotherComputer: false },
+      { source: 'scc_breeders', pagesReadCount: 2, pagesPlannedCount: 2, isWaitingForAnotherComputer: false },
     ])
+  })
+
+  it('waits for another computer to finish, then relays, when the user asked', async (): Promise<void> => {
+    const recordedRelay: RecordedRelay = emptyRecordedRelay()
+    const progressReports: CentraleCanineRelayProgress[] = []
+    const dependencies: CentraleCanineRelayDependencies = scriptedDependencies(
+      [apiAnswerOf('busy'), apiAnswerOf('busy'), apiAnswerOf('pages_needed', ['page-0']), apiAnswerOf('run_finished')],
+      { curl: {}, browser: {} },
+      recordedRelay,
+    )
+    dependencies.reportProgress = (progress: CentraleCanineRelayProgress): void => {
+      progressReports.push(progress)
+    }
+
+    const lastAnswer: CentraleCanineRelayAnswer = await CentraleCanineRelayRunner.relay(dependencies, true)
+
+    expect(lastAnswer.state).toBe('run_finished')
+    expect(recordedRelay.sentRequests).toHaveLength(4)
+    expect(recordedRelay.pauseCount).toBe(3)
+    expect(progressReports[0]?.isWaitingForAnotherComputer).toBe(true)
+  })
+
+  it('does not wait for another computer when the check is a routine one', async (): Promise<void> => {
+    const recordedRelay: RecordedRelay = emptyRecordedRelay()
+
+    const lastAnswer: CentraleCanineRelayAnswer = await CentraleCanineRelayRunner.relay(
+      scriptedDependencies([apiAnswerOf('busy')], { curl: {}, browser: {} }, recordedRelay),
+      false,
+    )
+
+    expect(lastAnswer.state).toBe('busy')
+    expect(recordedRelay.sentRequests).toHaveLength(1)
+  })
+
+  it('gives up waiting after ten minutes and leaves the request to the API', async (): Promise<void> => {
+    const recordedRelay: RecordedRelay = emptyRecordedRelay()
+    let clock: number = 0
+    const dependencies: CentraleCanineRelayDependencies = scriptedDependencies(
+      [apiAnswerOf('busy'), apiAnswerOf('busy'), apiAnswerOf('busy')],
+      { curl: {}, browser: {} },
+      recordedRelay,
+    )
+    dependencies.now = (): number => clock
+    dependencies.pause = async (): Promise<void> => {
+      clock += 5 * 60_000
+    }
+
+    const lastAnswer: CentraleCanineRelayAnswer = await CentraleCanineRelayRunner.relay(dependencies, true)
+
+    expect(lastAnswer.state).toBe('busy')
+    expect(recordedRelay.sentRequests).toHaveLength(3)
+  })
+
+  it('sends the pages read so far after forty seconds, and goes on with the rest', async (): Promise<void> => {
+    const recordedRelay: RecordedRelay = emptyRecordedRelay()
+    let clock: number = 0
+    const dependencies: CentraleCanineRelayDependencies = scriptedDependencies(
+      [
+        apiAnswerOf('pages_needed', ['page-0', 'page-1', 'page-2']),
+        apiAnswerOf('pages_needed', ['page-2']),
+        apiAnswerOf('run_finished'),
+      ],
+      { curl: {}, browser: {} },
+      recordedRelay,
+    )
+    dependencies.now = (): number => clock
+    dependencies.pause = async (): Promise<void> => {
+      clock += 25_000
+    }
+
+    const lastAnswer: CentraleCanineRelayAnswer = await CentraleCanineRelayRunner.relay(dependencies, false)
+
+    expect(lastAnswer.state).toBe('run_finished')
+    expect(recordedRelay.curlReadUrls).toEqual(['page-0', 'page-1', 'page-2'])
+    expect(
+      recordedRelay.sentRequests.map((relayRequest: CentraleCanineRelayRequest): number | undefined => {
+        return relayRequest.responses?.length
+      }),
+    ).toEqual([0, 2, 1])
   })
 })

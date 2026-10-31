@@ -37,6 +37,12 @@ from services.source_status_service import SourceStatusService
 
 RELAY_LEASE_DURATION = timedelta(minutes=10)
 
+# A relay whose computer has not called back for that long is dead (app closed, PC asleep): the next call takes over.
+ABANDONED_RELAY_DELAY = timedelta(minutes=2)
+
+# Pages asked per answer: the app calls back often, so that the relay stays alive and the progress shows.
+MAX_PAGE_REQUESTS_PER_ANSWER = 20
+
 # The order the sources are relayed in, and how long a run of each stays valid.
 RELAYED_SOURCE_ORDER: tuple[ListingSource, ...] = (
     ListingSource.CENTRALE_CANINE,
@@ -58,10 +64,11 @@ class RelayLeaseLostError(RuntimeError):
 
 @dataclass
 class RelayLease:
-    """The relay a computer holds: its token, until when, the source it is on, and the pages read so far."""
+    """The relay a computer holds: its token, until when, its last call, the source it is on, and the pages read."""
 
     token: str
     expires_at: datetime
+    touched_at: datetime
     source: ListingSource
     is_wanted: bool = False
     responses_by_url: dict[str, RelayedPageResponse] = field(default_factory=dict)
@@ -107,13 +114,16 @@ class CentraleCanineRelay:
             lease = self.lease
             if lease is None or lease.token != relay_request.relay_token or lease.expires_at <= now:
                 raise RelayLeaseLostError("Ce relevé a expiré, ou un autre PC l'a repris")
+            lease.touched_at = now
             for response in relay_request.responses:
                 lease.responses_by_url[response.url] = response
             return self._advance(db, lease, now)
 
     def _start(self, db: Session, is_requested_by_user: bool, now: datetime) -> CentraleCanineRelayAnswer:
         """
-        Give the relay to the calling app, unless another one holds it, or no source is due and nobody asked.
+        Give the relay to the calling app, unless another one holds it and still calls back, or no source is
+        due and nobody asked. A relay silent for ``ABANDONED_RELAY_DELAY`` is dead: the call takes it over. A
+        request made while another computer relays is kept for the next check of any computer.
 
         Args:
             db: Database session.
@@ -123,7 +133,13 @@ class CentraleCanineRelay:
         Returns:
             The first pages to read, or why there is nothing to do.
         """
-        if self.lease is not None and self.lease.expires_at > now:
+        lease = self.lease
+        is_another_relay_alive = (
+            lease is not None and lease.expires_at > now and now - lease.touched_at < ABANDONED_RELAY_DELAY
+        )
+        if is_another_relay_alive:
+            if is_requested_by_user:
+                self.is_run_requested = True
             return self._answer(CentraleCanineRelayState.BUSY)
         is_wanted = is_requested_by_user or self.is_run_requested
         first_source = self._next_due_source(db, None, now, is_wanted)
@@ -133,6 +149,7 @@ class CentraleCanineRelay:
         lease = RelayLease(
             token=secrets.token_urlsafe(16),
             expires_at=now + RELAY_LEASE_DURATION,
+            touched_at=now,
             source=first_source,
             is_wanted=is_wanted,
         )
@@ -159,7 +176,7 @@ class CentraleCanineRelay:
                 return CentraleCanineRelayAnswer(
                     state=CentraleCanineRelayState.PAGES_NEEDED,
                     relay_token=lease.token,
-                    page_requests=unread_page_requests,
+                    page_requests=unread_page_requests[:MAX_PAGE_REQUESTS_PER_ANSWER],
                     source_statuses=[],
                     source=lease.source,
                 )

@@ -84,6 +84,9 @@ const runErrorSource: Ref<ListingSource | null> = ref(null)
 
 const relayProgressLine: ComputedRef<string> = computed((): string => {
   const progress: CentraleCanineRelayProgress | null = centraleCanineRelayStore.relayProgress
+  if (progress?.isWaitingForAnotherComputer) {
+    return 'Un autre PC relève la Centrale Canine : ton relevé partira dès qu’il aura fini…'
+  }
   if (progress === null || progress.source === null) {
     return 'Relevé en cours depuis ce PC…'
   }
@@ -185,7 +188,8 @@ async function relayCentraleCanineNow(): Promise<void> {
     return
   }
   if (answer.state === 'busy') {
-    runError.value = 'Un autre PC relève la Centrale Canine en ce moment : réessaie dans quelques minutes.'
+    runError.value =
+      'Un autre PC relève la Centrale Canine depuis plus de dix minutes : ton relevé partira dès qu’il aura fini.'
     return
   }
   if (answer.state === 'not_due') {
