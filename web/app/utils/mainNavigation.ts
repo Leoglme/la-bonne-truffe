@@ -11,7 +11,7 @@ export class MainNavigation {
    */
   static isEntryActive(entry: MainNavigationEntry, currentPath: string): boolean {
     if (entry.path === '/') {
-      return currentPath === '/' || currentPath.startsWith('/portees')
+      return currentPath === '/' || currentPath === '/carte' || currentPath.startsWith('/portees')
     }
     return currentPath.startsWith(entry.path)
   }

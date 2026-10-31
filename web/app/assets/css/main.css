@@ -75,6 +75,7 @@
   --shadow-floating-over-photo: 0 2px 10px rgba(66, 43, 30, 0.12);
   --shadow-straddling-photo: 0 8px 24px rgba(43, 36, 32, 0.16);
   --shadow-switch-thumb: 0 1px 3px rgba(43, 36, 32, 0.3);
+  --shadow-map-pin: 0 4px 14px rgba(66, 43, 30, 0.2);
 }
 
 :root {
@@ -129,4 +130,23 @@
       animation-duration: 0.01ms !important;
     }
   }
+}
+
+.leaflet-container {
+  background: var(--color-cream);
+  font-family: var(--font-sans);
+}
+
+.leaflet-tile-pane {
+  filter: saturate(0.4) sepia(0.18) brightness(1.04) contrast(0.94);
+}
+
+.leaflet-container .leaflet-control-attribution {
+  background: rgb(255 255 255 / 0.7);
+  color: var(--color-ink-muted);
+  font-size: 11px;
+}
+
+.leaflet-container .leaflet-control-attribution a {
+  color: var(--color-ink-muted);
 }

@@ -46,7 +46,7 @@ export default defineNuxtConfig({
     },
   },
 
-  css: ['~/assets/css/main.css'],
+  css: ['leaflet/dist/leaflet.css', '~/assets/css/main.css'],
 
   ui: {
     // Fredoka and Nunito are self-hosted through @fontsource (see main.css), not by @nuxt/fonts.

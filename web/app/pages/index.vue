@@ -1,6 +1,6 @@
 <template>
   <div class="flex min-h-0 flex-1">
-    <section class="flex min-h-0 min-w-0 flex-1 flex-col" aria-label="Portées">
+    <section class="relative flex min-h-0 min-w-0 flex-1 flex-col" aria-label="Portées">
       <header class="flex shrink-0 items-center justify-between px-5 pt-4 md:px-8 md:pt-9 lg:hidden">
         <UiAppLogo />
         <div class="flex items-center gap-3">
@@ -93,6 +93,13 @@
           </div>
         </div>
       </div>
+      <NuxtLink
+        to="/carte"
+        aria-label="Voir les portées sur la carte"
+        class="absolute right-5 bottom-5 inline-flex size-14 items-center justify-center rounded-full bg-ink text-cream no-underline shadow-straddling-photo hover:text-cream md:right-8 md:bottom-8"
+      >
+        <UIcon name="i-lucide-map" class="size-6" />
+      </NuxtLink>
     </section>
 
     <LitterDetailPanel
