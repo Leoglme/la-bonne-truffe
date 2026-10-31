@@ -32,6 +32,7 @@ LEO = ProfileCriteria(
         CoatColor.NOIR_ET_FEU: ColorPreferenceLevel.ACCEPTABLE,
     },
     price_max_cents=None,
+    max_puppy_age_days=61,
 )
 
 GOLD_BORN_IN_35 = LitterSnapshot(
@@ -180,3 +181,19 @@ def test_freshness_fades_to_nothing_after_14_days() -> None:
     old = MatchingService.evaluate(replace(GOLD_BORN_IN_35, appeared_on=date(2026, 10, 1)), LEO, TODAY)
 
     assert all("Apparue" not in reason.text for reason in old.reasons)
+
+
+def test_puppies_past_the_age_limit_are_excluded_unless_an_ad_says_some_remain() -> None:
+    born_62_days_ago = replace(GOLD_BORN_IN_35, birth_date=date(2026, 8, 27), available_from=None)
+    born_60_days_ago = replace(GOLD_BORN_IN_35, birth_date=date(2026, 8, 29), available_from=None)
+    two_left = replace(born_62_days_ago, puppies_available=2)
+    no_limit = replace(LEO, max_puppy_age_days=None)
+    expected_62_days_ago = replace(
+        GOLD_BORN_IN_35, kind=ListingKind.LITTER_EXPECTED, birth_date=None, expected_birth_date=date(2026, 8, 27)
+    )
+
+    assert MatchingService.evaluate(born_62_days_ago, LEO, TODAY).tier == MatchTier.EXCLUDED
+    assert MatchingService.evaluate(expected_62_days_ago, LEO, TODAY).tier == MatchTier.EXCLUDED
+    assert MatchingService.evaluate(born_60_days_ago, LEO, TODAY).tier == MatchTier.PREFERRED
+    assert MatchingService.evaluate(two_left, LEO, TODAY).tier == MatchTier.PREFERRED
+    assert MatchingService.evaluate(born_62_days_ago, no_limit, TODAY).tier == MatchTier.PREFERRED

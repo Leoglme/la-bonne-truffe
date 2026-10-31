@@ -89,7 +89,7 @@ Toutes les routes sont préfixées par `/api/v1`.
 - CSS : classes utilitaires **Tailwind v4** sur les tokens de la maquette (jamais de couleur en dur dans un composant quand un token existe), composants **Nuxt UI** habillés dans `app/app.config.ts`, pas de style inline sauf valeur dynamique, `<style scoped>` toléré pour une animation. Une classe CSS écrite à la main suit BEM (`block`, `block__element`, `block--modifier`).
 - JSDoc en anglais sur chaque fonction, méthode et classe. Pas de types dans les tags.
 - Nommage explicite : pas d'abréviations, pas de `Data` / `Info` / `Item`, booléens avec sujet (`hasSelectedMaximumInterests`, `canSubmitForm`). Un composant réutilisable ne porte pas le domaine de sa première utilisation.
-- Toute petite gestion ou formulaire = un drawer sur une pile Pinia (`useDrawerStackStore`), jamais une page dédiée.
+- Toute petite gestion ou formulaire = un tiroir `UDrawer` (ouvert par `v-model:open`, ou par le store qui le pilote comme `FollowUpDrawer`), jamais une page dédiée.
 - Lint : prettier + eslint + vue-tsc, tout vert avant de dire « fini ».
 
 **Python**

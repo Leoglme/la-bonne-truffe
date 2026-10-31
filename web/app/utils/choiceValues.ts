@@ -1,8 +1,8 @@
 import type { ColorPreferenceLevel, FollowUpStatus, LofPreference, SexPreference } from '~/types/api'
-import { COLOR_LEVELS, LOF_PREFERENCES, SEX_PREFERENCES } from '~/constants/criteriaOptions'
+import { COLOR_LEVELS, LOF_PREFERENCES, NEVER_HIDE_PUPPIES_CHOICE, SEX_PREFERENCES } from '~/constants/criteriaOptions'
 import { FOLLOW_UP_STATUSES } from '~/constants/followUpOptions'
 
-/** Narrow the string that choice buttons emit back to the typed values of the API. */
+/** Narrow the string that choice buttons emit back to the typed values of the API, and the values back to a choice. */
 export class ChoiceValues {
   /**
    * Whether a value is a colour level.
@@ -42,5 +42,26 @@ export class ChoiceValues {
    */
   static isFollowUpStatus(value: string): value is FollowUpStatus {
     return FOLLOW_UP_STATUSES.some((status: FollowUpStatus): boolean => status === value)
+  }
+
+  /**
+   * Days behind a « Chiots déjà partis » choice.
+   *
+   * @param choice - Emitted value: the days, or « never ».
+   * @returns The days; null for « never » or a value that is not a whole number.
+   */
+  static maxPuppyAgeDaysOf(choice: string): number | null {
+    const days: number = Number(choice)
+    return choice === NEVER_HIDE_PUPPIES_CHOICE || !Number.isInteger(days) ? null : days
+  }
+
+  /**
+   * The choice that shows the age limit of a profile.
+   *
+   * @param days - Days of the profile, null for no limit.
+   * @returns The days as a string, « never » for null.
+   */
+  static maxPuppyAgeChoiceOf(days: number | null): string {
+    return days === null ? NEVER_HIDE_PUPPIES_CHOICE : String(days)
   }
 }

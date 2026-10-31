@@ -122,6 +122,18 @@
           </span>
           <USwitch v-model="draft.include_expected_litters" aria-label="Inclure les portées à naître" />
         </div>
+        <div class="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between md:gap-3">
+          <span class="flex flex-col md:min-w-40">
+            <span class="text-[17px] font-bold">Masquer les chiots de plus de</span>
+            <span class="text-sm text-ink-muted">Sûrement partis : ni affichés, ni notifiés.</span>
+          </span>
+          <UiChoiceButtons
+            :model-value="ChoiceValues.maxPuppyAgeChoiceOf(draft.max_puppy_age_days ?? null)"
+            :options="MAX_PUPPY_AGE_OPTIONS"
+            label="Masquer les chiots de plus de"
+            @update:model-value="setMaxPuppyAgeDays"
+          />
+        </div>
       </UiSectionCard>
 
       <UiSectionCard title="Notifications" class="gap-6">
@@ -176,6 +188,7 @@ import {
   DIGEST_HOUR_OPTIONS,
   LOF_OPTIONS,
   MAIN_COLOR_ROWS,
+  MAX_PUPPY_AGE_OPTIONS,
   NEARBY_REGIONS,
   OTHER_COLOR_ROWS,
   SEX_OPTIONS,
@@ -233,6 +246,17 @@ function setLofPreference(value: string): void {
 function setSexPreference(value: string): void {
   if (criteriaStore.draft !== null && ChoiceValues.isSexPreference(value)) {
     criteriaStore.draft.sex_preference = value
+  }
+}
+
+/**
+ * Keep the age limit of the puppies chosen with the buttons.
+ *
+ * @param value - Emitted value: the days, or « never ».
+ */
+function setMaxPuppyAgeDays(value: string): void {
+  if (criteriaStore.draft !== null) {
+    criteriaStore.draft.max_puppy_age_days = ChoiceValues.maxPuppyAgeDaysOf(value)
   }
 }
 

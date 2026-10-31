@@ -41,6 +41,7 @@ export const useCriteriaStore = defineStore('criteria', () => {
       notify_acceptable_in_digest: profile.notify_acceptable_in_digest,
       digest_hour: profile.digest_hour,
       notify_birth_of_followed: profile.notify_birth_of_followed,
+      max_puppy_age_days: profile.max_puppy_age_days ?? null,
     }
   }
 

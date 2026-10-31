@@ -5,6 +5,14 @@ export type LitterFilterOption = {
   label: string
 }
 
+export type LitterSortKey = 'score' | 'distance' | 'price' | 'departure_soonest' | 'departure_latest'
+
+export type LitterSortOption = {
+  key: LitterSortKey
+  label: string
+  description: string
+}
+
 export type LitterDayFactKey = 'birth' | 'departure'
 
 export type LitterDayFact = {

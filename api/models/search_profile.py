@@ -30,6 +30,8 @@ class SearchProfile(TimestampMixin, Base):
         notify_acceptable_in_digest: Send the acceptable litters in the evening digest.
         digest_hour: Local hour of the evening digest.
         notify_birth_of_followed: Push the birth of a followed litter whatever its tier.
+        max_puppy_age_days: Hide a litter born longer ago than this, in days, unless an ad says puppies remain;
+            null keeps every litter.
     """
 
     __tablename__ = "search_profiles"
@@ -53,6 +55,7 @@ class SearchProfile(TimestampMixin, Base):
     notify_acceptable_in_digest: Mapped[bool] = mapped_column(default=True, nullable=False)
     digest_hour: Mapped[int] = mapped_column(default=19, nullable=False)
     notify_birth_of_followed: Mapped[bool] = mapped_column(default=True, nullable=False)
+    max_puppy_age_days: Mapped[int | None]
 
     def __repr__(self) -> str:
         return f"<SearchProfile id={self.id} name={self.name}>"

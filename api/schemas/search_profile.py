@@ -24,6 +24,12 @@ class SearchProfileFields(BaseModel):
     notify_acceptable_in_digest: bool
     digest_hour: int = Field(..., ge=0, le=23)
     notify_birth_of_followed: bool
+    max_puppy_age_days: int | None = Field(
+        default=None,
+        ge=7,
+        le=365,
+        description="Hide a litter born more than this many days ago unless an ad says puppies remain; null keeps all",
+    )
 
 
 class SearchProfileUpdate(SearchProfileFields):

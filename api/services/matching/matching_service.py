@@ -38,7 +38,7 @@ class MatchingService:
         """
         reasons = ScoreCalculator.reasons_for(snapshot, criteria, today)
         return MatchVerdict(
-            tier=TierRules.tier_of(snapshot, criteria),
+            tier=TierRules.tier_of(snapshot, criteria, today),
             score=ScoreCalculator.score_of(reasons),
             reasons=tuple(reasons),
             flags=tuple(TierRules.flags_of(snapshot, criteria)),

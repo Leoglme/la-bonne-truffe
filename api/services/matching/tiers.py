@@ -1,5 +1,7 @@
 """First and second steps of docs/04: the hard filters, then the tier."""
 
+from datetime import date
+
 from enums.color_preference_level import ColorPreferenceLevel
 from enums.listing_kind import ListingKind
 from enums.lof_preference import LofPreference
@@ -14,18 +16,19 @@ class TierRules:
     """Decides the tier of a litter for a profile. An unknown fact never filters: it raises a flag."""
 
     @classmethod
-    def tier_of(cls, snapshot: LitterSnapshot, criteria: ProfileCriteria) -> MatchTier:
+    def tier_of(cls, snapshot: LitterSnapshot, criteria: ProfileCriteria, today: date) -> MatchTier:
         """
         Apply the hard filters, then pick the tier.
 
         Args:
             snapshot: The litter.
             criteria: The profile.
+            today: Day of the evaluation, in French time.
 
         Returns:
             ``excluded``, ``ignored``, ``acceptable`` or ``preferred``.
         """
-        if cls.is_excluded(snapshot, criteria):
+        if cls.is_excluded(snapshot, criteria, today):
             return MatchTier.EXCLUDED
         levels = [criteria.level_of(reading.color) for reading in snapshot.colors]
         if (
@@ -44,14 +47,15 @@ class TierRules:
         return MatchTier.ACCEPTABLE
 
     @classmethod
-    def is_excluded(cls, snapshot: LitterSnapshot, criteria: ProfileCriteria) -> bool:
+    def is_excluded(cls, snapshot: LitterSnapshot, criteria: ProfileCriteria, today: date) -> bool:
         """
         The hard filters of docs/04, first step. A litter whose every puppy is reserved, sold or adopted is
-        excluded too: there is nothing left to call about.
+        excluded too, as is one whose puppies are past the age they leave at: nothing left to call about.
 
         Args:
             snapshot: The litter.
             criteria: The profile.
+            today: Day of the evaluation, in French time.
 
         Returns:
             Whether the litter is excluded.
@@ -72,11 +76,35 @@ class TierRules:
             return True
         if snapshot.puppies_available == 0:
             return True
+        if cls._are_puppies_probably_gone(snapshot, criteria, today):
+            return True
         return (
             snapshot.price_cents is not None
             and criteria.price_max_cents is not None
             and snapshot.price_cents > criteria.price_max_cents
         )
+
+    @staticmethod
+    def _are_puppies_probably_gone(snapshot: LitterSnapshot, criteria: ProfileCriteria, today: date) -> bool:
+        """
+        Whether the puppies are older than the profile's limit while no active ad says some remain: a puppy
+        leaves the breeding at about two months, so such a litter is almost surely gone. A declared mating
+        whose expected birth is that old counts too: born and gone, or never declared.
+
+        Args:
+            snapshot: The litter.
+            criteria: The profile.
+            today: Day of the evaluation, in French time.
+
+        Returns:
+            True when the litter should leave the home screen.
+        """
+        birth_day = snapshot.birth_date or snapshot.expected_birth_date
+        if criteria.max_puppy_age_days is None or birth_day is None:
+            return False
+        if snapshot.puppies_available is not None and snapshot.puppies_available > 0:
+            return False
+        return (today - birth_day).days > criteria.max_puppy_age_days
 
     @staticmethod
     def flags_of(snapshot: LitterSnapshot, criteria: ProfileCriteria) -> list[MatchFlag]:

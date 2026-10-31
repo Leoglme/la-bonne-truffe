@@ -1,16 +1,23 @@
 import type { ComputedRef, Ref } from 'vue'
 import type { CoatColor, FollowUpCard, LitterCard, LitterDetail, LitterVisit } from '~/types/api'
-import type { LitterBrowsingOrigin, LitterFilterKey } from '~/types/Litter'
+import type { LitterBrowsingOrigin, LitterFilterKey, LitterSortKey } from '~/types/Litter'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { DEFAULT_LITTER_SORT_KEY, LITTER_SORT_KEYS } from '~/constants/litterSortOptions'
 import { LittersService } from '~/services/littersService'
 import { FrenchDate } from '~/utils/frenchDate'
 import { LitterPresentation } from '~/utils/litterPresentation'
+import { LitterSorting } from '~/utils/litterSorting'
 
-/** Pinia store of the litters: the home list, its filter, and the litter opened on the detail screen or the desktop panel. */
+const SORT_STORAGE_KEY: string = 'lbt-litter-sort'
+
+/** Pinia store of the litters: the home list, its filter and sort, and the litter opened on the detail screen or the desktop panel. */
 export const useLittersStore = defineStore('litters', () => {
+  const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
+
   const cards: Ref<LitterCard[]> = ref([])
   const selectedFilterKey: Ref<LitterFilterKey> = ref('all')
+  const selectedSortKey: Ref<LitterSortKey> = ref(DEFAULT_LITTER_SORT_KEY)
   const selectedLitter: Ref<LitterDetail | null> = ref(null)
   const isLoading: Ref<boolean> = ref(true)
   const loadError: Ref<string | null> = ref(null)
@@ -28,12 +35,16 @@ export const useLittersStore = defineStore('litters', () => {
     return cards.value
   })
 
+  const sortedCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
+    LitterSorting.sort(filteredCards.value, selectedSortKey.value, locationStore.position),
+  )
+
   const newCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
-    filteredCards.value.filter((card: LitterCard): boolean => LitterPresentation.isNew(card, previousVisitAt.value)),
+    sortedCards.value.filter((card: LitterCard): boolean => LitterPresentation.isNew(card, previousVisitAt.value)),
   )
 
   const alreadySeenCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
-    filteredCards.value.filter((card: LitterCard): boolean => !LitterPresentation.isNew(card, previousVisitAt.value)),
+    sortedCards.value.filter((card: LitterCard): boolean => !LitterPresentation.isNew(card, previousVisitAt.value)),
   )
 
   const visibleCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] => [
@@ -48,6 +59,44 @@ export const useLittersStore = defineStore('litters', () => {
   const bornLastNightCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
     preferredCards.value.filter((card: LitterCard): boolean => LitterPresentation.isBornLastNight(card, new Date())),
   )
+
+  /**
+   * The sort kept from the last visit, the score when none or when storage is unavailable.
+   *
+   * @returns A known sort key.
+   */
+  function readSavedSortKey(): LitterSortKey {
+    if (!import.meta.client) {
+      return DEFAULT_LITTER_SORT_KEY
+    }
+    try {
+      const savedKey: string | null = localStorage.getItem(SORT_STORAGE_KEY)
+      return LITTER_SORT_KEYS.find((key: LitterSortKey): boolean => key === savedKey) ?? DEFAULT_LITTER_SORT_KEY
+    } catch {
+      return DEFAULT_LITTER_SORT_KEY
+    }
+  }
+
+  /**
+   * Take back the sort of the last visit; the store is built on the server, where storage does not exist.
+   */
+  function restoreSavedSort(): void {
+    selectedSortKey.value = readSavedSortKey()
+  }
+
+  /**
+   * Sort the home list and remember the choice for the next visits.
+   *
+   * @param sortKey - The sort chosen in the drawer.
+   */
+  function selectSort(sortKey: LitterSortKey): void {
+    selectedSortKey.value = sortKey
+    try {
+      localStorage.setItem(SORT_STORAGE_KEY, sortKey)
+    } catch {
+      return
+    }
+  }
 
   /**
    * Load the litters of the home list.
@@ -96,6 +145,13 @@ export const useLittersStore = defineStore('litters', () => {
    */
   async function select(litterId: number): Promise<void> {
     selectedLitter.value = await LittersService.get(litterId)
+  }
+
+  /**
+   * Close the desktop panel: no litter is selected any more.
+   */
+  function clearSelection(): void {
+    selectedLitter.value = null
   }
 
   /**
@@ -200,6 +256,9 @@ export const useLittersStore = defineStore('litters', () => {
   return {
     cards,
     selectedFilterKey,
+    selectedSortKey,
+    restoreSavedSort,
+    selectSort,
     selectedLitter,
     isLoading,
     loadError,
@@ -213,6 +272,7 @@ export const useLittersStore = defineStore('litters', () => {
     recordResumeVisit,
     recordVisit,
     select,
+    clearSelection,
     follow,
     confirmColors,
     confirmSexes,

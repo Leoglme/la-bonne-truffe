@@ -13,9 +13,19 @@ from core.config import settings
 from core.database import Base, get_db
 from main import app
 from models.user import User
+from services import search_profile_service
 from services.auth_service import AuthService
 
 TEST_PASSWORD = "truffe-de-test"
+
+
+@pytest.fixture(autouse=True)
+def keep_old_litters_in_seeded_profiles(monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    The recorded pages are weeks old: a seeded profile keeps every litter whatever the age of its puppies, so the
+    suite does not rot as the clock moves. The age limit itself is tested on the matching service.
+    """
+    monkeypatch.setattr(search_profile_service, "DEFAULT_MAX_PUPPY_AGE_DAYS", None)
 
 
 @pytest.fixture

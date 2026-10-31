@@ -16,6 +16,7 @@ from seeders.breed_seeder import COCKER_SLUG
 from services.matching.match_refresh import match_refresh_service
 
 STARTING_PROFILE_NAME = "Cocker gold Bretagne"
+DEFAULT_MAX_PUPPY_AGE_DAYS = 61
 
 # From the closest to the farthest, driving from Rennes (validated by Léo).
 STARTING_DEPARTMENT_CODES: tuple[str, ...] = ("35", "56", "22", "29", "44", "53", "49", "72", "85")
@@ -56,6 +57,7 @@ class SearchProfileService:
             notify_acceptable_in_digest=True,
             digest_hour=19,
             notify_birth_of_followed=True,
+            max_puppy_age_days=DEFAULT_MAX_PUPPY_AGE_DAYS,
         )
         db.add(profile)
         db.flush()
@@ -122,6 +124,7 @@ class SearchProfileService:
         profile.notify_acceptable_in_digest = payload.notify_acceptable_in_digest
         profile.digest_hour = payload.digest_hour
         profile.notify_birth_of_followed = payload.notify_birth_of_followed
+        profile.max_puppy_age_days = payload.max_puppy_age_days
         db.commit()
         match_refresh_service.refresh(db, naive_utc_now(), should_notify=False)
         db.refresh(profile)

@@ -39,6 +39,15 @@ export const SEX_OPTIONS: UiChoiceButtonsOption[] = [
   { value: 'any', label: 'Peu importe' },
 ]
 
+export const NEVER_HIDE_PUPPIES_CHOICE: string = 'never'
+
+/** Values in days. */
+export const MAX_PUPPY_AGE_OPTIONS: UiChoiceButtonsOption[] = [
+  { value: '61', label: '2 mois' },
+  { value: '92', label: '3 mois' },
+  { value: NEVER_HIDE_PUPPIES_CHOICE, label: 'Jamais' },
+]
+
 /** Regions offered as chips, the closest to Rennes first. */
 export const NEARBY_REGIONS: string[] = ['Bretagne', 'Pays de la Loire', 'Normandie', 'Centre-Val de Loire']
 

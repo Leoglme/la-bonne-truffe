@@ -24,7 +24,10 @@
             </h1>
             <p class="m-0 text-[15px] text-ink-muted md:text-lg lg:text-[17px]">{{ greetingSubtitle }}</p>
           </div>
-          <LitterFilterChips class="hidden shrink-0 lg:flex" />
+          <div class="hidden shrink-0 flex-col items-end gap-1 lg:flex">
+            <LitterFilterChips />
+            <LitterSortButton />
+          </div>
         </div>
 
         <HomeBornLastNightCard v-if="bornLastNightLitter" :litter="bornLastNightLitter" />
@@ -34,6 +37,7 @@
             <h2 class="m-0 font-display text-xl font-semibold whitespace-nowrap md:text-2xl">Les portées</h2>
             <LitterFilterChips />
           </div>
+          <LitterSortButton class="-mt-2 lg:hidden" />
 
           <p v-if="littersStore.loadError" role="alert" class="m-0 text-[15px] font-bold text-coral-text">
             {{ littersStore.loadError }}
@@ -73,7 +77,10 @@
               />
             </template>
           </div>
-          <div class="hidden grid-cols-2 gap-5 md:grid xl:grid-cols-3">
+          <div
+            class="hidden grid-cols-2 gap-5 md:grid"
+            :class="littersStore.selectedLitter ? 'xl:grid-cols-2' : 'xl:grid-cols-3 2xl:grid-cols-4'"
+          >
             <template v-for="litter in littersStore.visibleCards" :key="litter.id">
               <UiUpToDateSeparator v-if="litter.id === firstAlreadySeenLitterId" class="col-span-full" />
               <LitterGridCard
@@ -92,6 +99,7 @@
       v-if="littersStore.selectedLitter"
       :litter="littersStore.selectedLitter"
       class="hidden xl:flex"
+      @close="littersStore.clearSelection()"
     />
   </div>
 </template>
@@ -153,11 +161,7 @@ async function openInSidePanel(clickEvent: MouseEvent, litterId: number): Promis
 }
 
 onMounted(async (): Promise<void> => {
+  littersStore.restoreSavedSort()
   await Promise.all([littersStore.recordVisit(), littersStore.load()])
-  const firstLitter: LitterCard | undefined = littersStore.visibleCards[0]
-
-  if (isSidePanelShown() && littersStore.selectedLitter === null && firstLitter !== undefined) {
-    await littersStore.select(firstLitter.id)
-  }
 })
 </script>

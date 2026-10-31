@@ -26,6 +26,7 @@ class ProfileCriteria:
     lof_preference: LofPreference
     color_levels: dict[CoatColor, ColorPreferenceLevel]
     price_max_cents: int | None
+    max_puppy_age_days: int | None
 
     @classmethod
     def from_profile(cls, profile: SearchProfile) -> "ProfileCriteria":
@@ -49,6 +50,7 @@ class ProfileCriteria:
                 CoatColor(color): ColorPreferenceLevel(level) for color, level in profile.color_preferences.items()
             },
             price_max_cents=profile.price_max_cents,
+            max_puppy_age_days=profile.max_puppy_age_days,
         )
 
     def level_of(self, color: CoatColor) -> ColorPreferenceLevel:

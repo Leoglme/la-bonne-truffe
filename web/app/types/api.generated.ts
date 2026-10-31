@@ -1666,6 +1666,11 @@ export interface components {
             digest_hour: number;
             /** Notify Birth Of Followed */
             notify_birth_of_followed: boolean;
+            /**
+             * Max Puppy Age Days
+             * @description Hide a litter born more than this many days ago unless an ad says puppies remain; null keeps all
+             */
+            max_puppy_age_days?: number | null;
             /** Id */
             id: number;
         };
@@ -1703,6 +1708,11 @@ export interface components {
             digest_hour: number;
             /** Notify Birth Of Followed */
             notify_birth_of_followed: boolean;
+            /**
+             * Max Puppy Age Days
+             * @description Hide a litter born more than this many days ago unless an ad says puppies remain; null keeps all
+             */
+            max_puppy_age_days?: number | null;
         };
         /**
          * SexConfirmation

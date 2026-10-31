@@ -12,7 +12,8 @@ Un groupe est exclu si :
 - le profil exige le LOF et le statut est `non_lof` ;
 - le profil veut un sexe et ce sexe est **connu absent** (compteur à 0 après la naissance, ou annonce qui dit « plus que des mâles ») ;
 - le prix est connu et dépasse le plafond ;
-- il ne reste aucun chiot disponible (`puppies_available` à 0 : chaque chiot réservé, vendu ou adopté sur ses annonces). La portée quitte l'accueil mais reste dans le suivi.
+- il ne reste aucun chiot disponible (`puppies_available` à 0 : chaque chiot réservé, vendu ou adopté sur ses annonces). La portée quitte l'accueil mais reste dans le suivi ;
+- ses chiots sont nés (ou, pour une saillie déclarée, étaient attendus) il y a plus de `max_puppy_age_days` jours (deux mois par défaut ; « 2 mois », « 3 mois » ou « Jamais » dans Critères) et aucune annonce active ne dit qu'il en reste : à cet âge, ils sont presque sûrement partis. La portée quitte l'accueil mais reste dans le suivi.
 
 Une information **inconnue ne filtre jamais** : elle fait descendre dans le palier et pose un drapeau (`color_to_confirm`, `sex_unknown`, `lof_unknown`, `price_unknown`).
 

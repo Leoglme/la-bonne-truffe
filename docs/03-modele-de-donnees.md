@@ -36,7 +36,7 @@ Historique des champs qui bougent, pour les événements (« les sexes sont appa
 
 ### `search_profiles`
 Les critères, modifiables dans l'app. Un profil actif pour Léo, mais plusieurs possibles.
-`id`, `user_id`, `name`, `is_active`, `breed_ids` (JSON), `department_codes` (JSON, **ordonné** du plus proche au plus loin), `include_expected_litters` (bool), `sex_preference` (`male` | `female` | `any`), `lof_preference` (`required` | `preferred` | `any`), `color_preferences` (JSON : `{ "gold": "preferred", "noir_et_feu": "acceptable", ... }`), `price_max_cents` (nullable), `notify_preferred_immediately` (bool), `notify_acceptable_in_digest` (bool), `digest_hour` (19), `notify_birth_of_followed` (bool).
+`id`, `user_id`, `name`, `is_active`, `breed_ids` (JSON), `department_codes` (JSON, **ordonné** du plus proche au plus loin), `include_expected_litters` (bool), `sex_preference` (`male` | `female` | `any`), `lof_preference` (`required` | `preferred` | `any`), `color_preferences` (JSON : `{ "gold": "preferred", "noir_et_feu": "acceptable", ... }`), `price_max_cents` (nullable), `notify_preferred_immediately` (bool), `notify_acceptable_in_digest` (bool), `digest_hour` (19), `notify_birth_of_followed` (bool), `max_puppy_age_days` (61 par défaut, nullable : les portées trop anciennes ne sont jamais masquées).
 
 ### `listing_matches`
 Le verdict d'un groupe de portée face à un profil. Recalculé à chaque relevé.
