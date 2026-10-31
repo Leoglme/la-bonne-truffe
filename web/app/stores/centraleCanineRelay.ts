@@ -5,6 +5,7 @@ import type {
   RelayedPageResponse,
   RelayPageRequest,
 } from '~/types/api'
+import type { CentraleCanineRelayProgress } from '~/types/CentraleCanineRelay'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { TokenRejectedError } from '~/services/authService'
@@ -19,21 +20,22 @@ const LOGIN_PATH: string = '/connexion'
 /** Pinia store of the Centrale Canine relay: the desktop app reads it in the background, when a run is due. */
 export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', () => {
   const lastRelayErrorMessage: Ref<string | null> = ref(null)
+  const isRelaying: Ref<boolean> = ref(false)
+  const relayProgress: Ref<CentraleCanineRelayProgress | null> = ref(null)
 
-  let isRelaying: boolean = false
   let nextCheckTimer: ReturnType<typeof setTimeout> | null = null
   let isWatching: boolean = false
 
   /**
    * Relay once, after the session check the hidden window never makes by itself; a refused session shows the login screen.
    *
-   * @param isRequestedByUser - « Relever maintenant »: run even when the last run is recent.
-   * @returns The last answer of the API, or null when nothing was sent.
+   * @param isRequestedByUser - « Relever maintenant »: every source runs, even when its last run is recent.
+   * @returns The last answer of the API, or null when nothing was sent: a relay already runs here, or no session.
    */
   async function relay(isRequestedByUser: boolean): Promise<CentraleCanineRelayAnswer | null> {
     const userStore: ReturnType<typeof useUserStore> = useUserStore()
 
-    if (isRelaying || !userStore.token) {
+    if (isRelaying.value || !userStore.token) {
       return null
     }
     const hasValidSession: boolean = await userStore.validateSession()
@@ -44,7 +46,8 @@ export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', ()
       }
       return null
     }
-    isRelaying = true
+    isRelaying.value = true
+    relayProgress.value = null
     try {
       const answer: CentraleCanineRelayAnswer = await CentraleCanineRelayRunner.relay(
         {
@@ -58,6 +61,9 @@ export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', ()
             new Promise((resolve: () => void): void => {
               setTimeout(resolve, milliseconds)
             }),
+          reportProgress: (progress: CentraleCanineRelayProgress): void => {
+            relayProgress.value = progress
+          },
         },
         isRequestedByUser,
       )
@@ -74,7 +80,8 @@ export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', ()
       }
       throw error
     } finally {
-      isRelaying = false
+      isRelaying.value = false
+      relayProgress.value = null
     }
   }
 
@@ -125,6 +132,8 @@ export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', ()
 
   return {
     lastRelayErrorMessage,
+    isRelaying,
+    relayProgress,
     relay,
     startWatching,
     stopWatching,

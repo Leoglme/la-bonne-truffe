@@ -127,7 +127,7 @@ describe('BreederPresentation.passesFilter', (): void => {
 
 describe('BreederPresentation.buildInitials', (): void => {
   it('takes the first letters of the significant words', (): void => {
-    expect(BreederPresentation.buildInitials('Des Landes de Test')).toBe('LB')
+    expect(BreederPresentation.buildInitials('Des Landes de Test')).toBe('LT')
     expect(BreederPresentation.buildInitials('Ar Mor Test')).toBe('AM')
     expect(BreederPresentation.buildInitials("Du Clos de l'Élevage A")).toBe('CÉ')
     expect(BreederPresentation.buildInitials('Kerlann')).toBe('K')
@@ -305,7 +305,7 @@ describe('BreederManualFormPresentation.buildPayload', (): void => {
           place: 'Guer, 56380',
           link: 'facebook.com/elevagedesjoyauxdulac',
           phone: '06 12 34 56 78',
-          notes: 'Vu sur Facebook',
+          note: 'Vu sur Facebook',
         },
         true,
       ),

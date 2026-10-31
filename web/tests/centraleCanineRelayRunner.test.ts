@@ -5,7 +5,7 @@ import type {
   RelayedPageResponse,
   RelayPageRequest,
 } from '../app/types/api'
-import type { CentraleCanineRelayDependencies } from '../app/types/CentraleCanineRelay'
+import type { CentraleCanineRelayDependencies, CentraleCanineRelayProgress } from '../app/types/CentraleCanineRelay'
 import { describe, expect, it } from 'vitest'
 import { CentraleCanineRelayRunner } from '../app/utils/centraleCanineRelayRunner'
 
@@ -176,5 +176,52 @@ describe('CentraleCanineRelayRunner', (): void => {
     expect(lastAnswer.state).toBe('not_due')
     expect(recordedRelay.curlReadUrls).toEqual([])
     expect(recordedRelay.sentRequests).toHaveLength(1)
+  })
+
+  it('sends a page the computer refuses to read as failed, so that the API ends the run', async (): Promise<void> => {
+    const recordedRelay: RecordedRelay = emptyRecordedRelay()
+    const dependencies: CentraleCanineRelayDependencies = scriptedDependencies(
+      [apiAnswerOf('pages_needed', ['page-0-eleveurs', 'page-0-club', 'page-1-eleveurs']), apiAnswerOf('run_finished')],
+      { curl: {}, browser: {} },
+      recordedRelay,
+    )
+    dependencies.readPageWithCurl = async (pageRequest: RelayPageRequest): Promise<RelayedPageResponse> => {
+      recordedRelay.curlReadUrls.push(pageRequest.url)
+      if (pageRequest.url === 'page-0-club') {
+        throw 'Adresse refusée : page-0-club'
+      }
+      return { url: pageRequest.url, status_code: 200, body: '{}' }
+    }
+
+    const lastAnswer: CentraleCanineRelayAnswer = await CentraleCanineRelayRunner.relay(dependencies, true)
+
+    expect(lastAnswer.state).toBe('run_finished')
+    expect(recordedRelay.curlReadUrls).toEqual(['page-0-eleveurs', 'page-0-club'])
+    expect(statusCodesSentIn(recordedRelay.sentRequests[1])).toEqual([200, null])
+    expect(recordedRelay.sentRequests[1]?.responses?.[1]?.curl_error).toBe('Adresse refusée : page-0-club')
+  })
+
+  it('tells where the relay stands after each page', async (): Promise<void> => {
+    const recordedRelay: RecordedRelay = emptyRecordedRelay()
+    const progressReports: CentraleCanineRelayProgress[] = []
+    const dependencies: CentraleCanineRelayDependencies = scriptedDependencies(
+      [
+        { ...apiAnswerOf('pages_needed', ['page-0-eleveurs', 'page-1-eleveurs']), source: 'scc_breeders' },
+        apiAnswerOf('run_finished'),
+      ],
+      { curl: {}, browser: {} },
+      recordedRelay,
+    )
+    dependencies.reportProgress = (progress: CentraleCanineRelayProgress): void => {
+      progressReports.push(progress)
+    }
+
+    await CentraleCanineRelayRunner.relay(dependencies, false)
+
+    expect(progressReports).toEqual([
+      { source: 'scc_breeders', pagesReadCount: 0, pagesPlannedCount: 2 },
+      { source: 'scc_breeders', pagesReadCount: 1, pagesPlannedCount: 2 },
+      { source: 'scc_breeders', pagesReadCount: 2, pagesPlannedCount: 2 },
+    ])
   })
 })

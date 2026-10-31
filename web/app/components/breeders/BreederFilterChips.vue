@@ -2,7 +2,7 @@
   <div
     role="group"
     aria-label="Filtrer les éleveurs"
-    class="-mx-5 flex [scrollbar-width:none] gap-1.5 overflow-x-auto px-5 md:mx-0 md:flex-wrap md:gap-2 md:overflow-visible md:px-0"
+    class="-mx-5 -my-1 flex [scrollbar-width:none] gap-1.5 overflow-x-auto overflow-y-hidden px-5 py-1 md:mx-0 md:flex-wrap md:gap-2 md:overflow-visible md:px-0"
   >
     <button
       v-for="filter in BREEDER_FILTER_OPTIONS"

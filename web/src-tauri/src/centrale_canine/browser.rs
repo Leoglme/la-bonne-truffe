@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use tauri::{AppHandle, Url, WebviewUrl, WebviewWindowBuilder};
 
-use super::{RelayedPageResponse, CENTRALE_CANINE_PAGES_PREFIX};
+use super::{is_relayed_page_url, RelayedPageResponse};
 
 /// Longest wait for the page, Cloudflare's check included.
 const PAGE_TIMEOUT: Duration = Duration::from_secs(30);
@@ -53,7 +53,7 @@ pub async fn read_centrale_canine_page_in_browser(
     app: AppHandle,
     url: String,
 ) -> Result<RelayedPageResponse, String> {
-    if !url.starts_with(CENTRALE_CANINE_PAGES_PREFIX) {
+    if !is_relayed_page_url(&url) {
         return Err(format!("Adresse refusée : {url}"));
     }
     let page_url: Url = url.parse().map_err(|error| format!("Adresse illisible : {error}"))?;

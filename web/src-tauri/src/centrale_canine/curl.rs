@@ -6,7 +6,7 @@ use std::process::Command;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
-use super::{RelayedPageResponse, CENTRALE_CANINE_PAGES_PREFIX};
+use super::{is_relayed_page_url, RelayedPageResponse};
 
 /// Process creation flag that keeps curl from opening a console window.
 #[cfg(target_os = "windows")]
@@ -21,7 +21,7 @@ pub async fn read_centrale_canine_page_with_curl(
     url: String,
     headers: Vec<(String, String)>,
 ) -> Result<RelayedPageResponse, String> {
-    if !url.starts_with(CENTRALE_CANINE_PAGES_PREFIX) {
+    if !is_relayed_page_url(&url) {
         return Err(format!("Adresse refusée : {url}"));
     }
     if !headers.iter().all(|(name, value)| is_safe_header(name, value)) {
