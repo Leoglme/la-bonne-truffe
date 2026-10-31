@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { LitterDetailPresentation } from '../app/utils/litterDetailPresentation'
 
+describe('LitterDetailPresentation.buildBreederPhoneLabel', (): void => {
+  it('writes a French number by pairs, any other unchanged', (): void => {
+    expect(LitterDetailPresentation.buildBreederPhoneLabel('+33679846555')).toBe('06 79 84 65 55')
+    expect(LitterDetailPresentation.buildBreederPhoneLabel('+32475123456')).toBe('+32475123456')
+  })
+})
+
 describe('LitterDetailPresentation.buildParentRatingLabel', (): void => {
   it('names the level of a father', (): void => {
     expect(LitterDetailPresentation.buildParentRatingLabel(1, 'sire')).toBe('Confirmé')

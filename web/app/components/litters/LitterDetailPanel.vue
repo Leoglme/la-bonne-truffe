@@ -15,6 +15,17 @@
         class="absolute top-3.5 right-3.5 size-11 min-h-11 justify-center rounded-full bg-card p-0 text-ink shadow-floating-over-photo hover:bg-card"
         @click="emit('close')"
       />
+      <UButton
+        icon="i-lucide-share"
+        color="neutral"
+        variant="solid"
+        size="md"
+        square
+        aria-label="Partager cette portée"
+        aria-haspopup="dialog"
+        class="absolute top-3.5 right-[66px] size-11 min-h-11 justify-center rounded-full bg-card p-0 text-ink shadow-floating-over-photo hover:bg-card"
+        @click="isShareDrawerOpen = true"
+      />
       <span
         v-if="photoBadge"
         class="absolute top-3.5 left-3.5 rounded-full bg-card px-3 py-[5px] text-[13px] leading-normal font-extrabold tracking-[0.02em] text-coral-text"
@@ -60,15 +71,16 @@
         {{ props.litter.follow_up ? 'Suivie' : 'Suivre' }}
       </UButton>
     </div>
+    <LitterShareDrawer v-model:open="isShareDrawerOpen" :litter="props.litter" />
   </aside>
 </template>
 
 <script lang="ts" setup>
-import type { ComputedRef, PropType } from 'vue'
+import type { ComputedRef, PropType, Ref } from 'vue'
 import type { LitterDetail } from '~/types/api'
 import type { LitterPrimaryAction } from '~/types/Litter'
 import type { LitterDetailPanelEmits, LitterDetailPanelProps } from '~/types/LitterDetailPanel'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { LitterDetailPresentation } from '~/utils/litterDetailPresentation'
 
 const props: LitterDetailPanelProps = defineProps({
@@ -81,6 +93,8 @@ const emit: LitterDetailPanelEmits = defineEmits<{
 
 const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
 const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
+
+const isShareDrawerOpen: Ref<boolean> = ref(false)
 
 const photoBadge: ComputedRef<string | null> = computed((): string | null =>
   LitterDetailPresentation.buildPhotoBadge(props.litter, new Date()),

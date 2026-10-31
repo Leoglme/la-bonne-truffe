@@ -2,7 +2,6 @@ import type { NotificationKind, NotificationLitter, SentNotification } from '~/t
 import type { DevicePosition } from '~/types/Location'
 import type { NotificationDayDefinition, NotificationDayKey, NotificationDaySection } from '~/types/Notification'
 import { NOTIFICATION_DAY_SECTIONS } from '~/constants/notificationKinds'
-import { FollowUpPresentation } from '~/utils/followUpPresentation'
 import { FrenchDate } from '~/utils/frenchDate'
 import { LitterPresentation } from '~/utils/litterPresentation'
 
@@ -50,23 +49,6 @@ export class NotificationPresentation {
    */
   static isLitterEvent(kind: NotificationKind): boolean {
     return LITTER_EVENT_KINDS.includes(kind)
-  }
-
-  /**
-   * Write the fact of a litter event before its sexes: when it was born, or when it is due.
-   *
-   * @param litter - The litter.
-   * @returns « Née le 27 oct. », « À naître vers le 7 nov. », or null when nothing is known.
-   */
-  static buildLitterFact(litter: NotificationLitter): string | null {
-    if (litter.kind === 'litter_expected') {
-      const expectedBirthPhrase: string = FollowUpPresentation.buildExpectedBirthPhrase(litter)
-      return expectedBirthPhrase.charAt(0).toUpperCase() + expectedBirthPhrase.slice(1)
-    }
-    if (litter.birth_date === null) {
-      return null
-    }
-    return `Née le ${FrenchDate.formatDayAndShortMonth(FrenchDate.parseDay(litter.birth_date))}`
   }
 
   /**

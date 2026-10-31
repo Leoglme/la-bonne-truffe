@@ -32,6 +32,21 @@ const BORN_GOLD_LITTER: LitterCard = {
   genetic_screening: null,
 }
 
+describe('LitterPresentation.buildBirthFact', (): void => {
+  it('says when a litter was born, or when it is due', (): void => {
+    expect(LitterPresentation.buildBirthFact(BORN_GOLD_LITTER)).toBe('Née le 27 oct.')
+    expect(
+      LitterPresentation.buildBirthFact({
+        ...BORN_GOLD_LITTER,
+        kind: 'litter_expected',
+        birth_date: null,
+        expected_birth_date: '2026-11-07',
+      }),
+    ).toBe('À naître vers le 7 nov.')
+    expect(LitterPresentation.buildBirthFact({ ...BORN_GOLD_LITTER, birth_date: null })).toBeNull()
+  })
+})
+
 describe('LitterPresentation price and sighting', (): void => {
   it('writes the price in euros, when a source gives one', (): void => {
     expect(LitterPresentation.buildPriceLabel(BORN_GOLD_LITTER)).toBeNull()

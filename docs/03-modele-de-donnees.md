@@ -56,6 +56,9 @@ Les événements gardés pour le récap du soir : `id`, `user_id`, `litter_group
 ### `signup_requests` (ajoutée le 29/10/2026)
 Les inscriptions tentées pendant qu'elles sont fermées, pour mesurer l'intérêt pour l'app : `id`, `name`, `email` (unique, en minuscules), `requested_at`, `last_requested_at`. Jamais de mot de passe.
 
+### `litter_shares` (ajoutée le 31/10/2026)
+Les liens privés d'une portée, ouverts sans compte pendant 30 jours : `id`, `token` (unique, la partie secrète du lien), `user_id`, `litter_group_id` (le lien disparaît avec la portée), `message` (nullable, le mot laissé pour les destinataires), `created_at`, `expires_at` (30 jours après la création).
+
 ### `notifications`
 Historique des notifications envoyées, pour l'écran « cloche » et l'idempotence.
 `id`, `user_id`, `kind`, `title`, `body`, `url`, `litter_group_id`, `sent_at`, `delivered_count`, `failed_count`.

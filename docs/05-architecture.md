@@ -55,6 +55,8 @@ la-bonne-truffe/
 | `GET /litters/{id}` | Détail : listings par source (pour une annonce de chiot : son sexe, ses couleurs et ses photos), éleveur, parents (nom et cotation pris sur la première annonce active qui les donne, Centrale Canine d'abord), raisons du score, changements, suivi |
 | `PATCH /litters/{id}/colors` | Confirmer une ou plusieurs couleurs à la main (`confirmed`) depuis le détail, après l'appel à l'éleveur ; une liste vide retire la confirmation |
 | `PATCH /litters/{id}/sexes` | Confirmer les mâles et les femelles à la main depuis le détail, quand les sources ne les donnent pas ; les deux vides retirent la confirmation (`has_confirmed_sexes` sur la carte) |
+| `POST /litters/{id}/shares` | Créer le lien privé d'une portée, valable 30 jours (`{ url, expires_at }`) ; un mot facultatif l'accompagne |
+| `GET /shares/{token}` | Sans compte : la page du lien (prénom de qui partage, son mot, la portée sans score, raisons ni suivi) ; `404` lien inconnu, `410` lien expiré |
 | `GET /profiles`, `PUT /profiles/{id}` | Critères |
 | `GET /follow-ups`, `PUT /litters/{id}/follow-up`, `POST /litters/{id}/notes` | Suivi et notes |
 | `DELETE /litters/{id}/follow-up`, `DELETE /litters/{id}/notes/{note_id}` | Ne plus suivre une portée (statut, rappel et notes effacés, renvoie le détail) ; supprimer une note (`204`) |
@@ -78,7 +80,7 @@ Toutes les routes sont préfixées par `/api/v1`.
 - **Position de l'appareil** : au premier lancement connecté, l'app demande sa position au téléphone (API de géolocalisation du navigateur, permission iOS comme pour les notifications ; store `location`, plugin `device-location.client.ts`), la garde en localStorage et la rafraîchit à chaque lancement passé six heures ; l'app Windows ne la demande que depuis Réglages. La distance à vol d'oiseau jusqu'à l'élevage (coordonnées de la Centrale Canine, `breeder_latitude` et `breeder_longitude` sur les cartes) s'écrit sur les cartes, le suivi et le détail (« à 32 km »), et « Carte » ouvre un tiroir Apple Plans, Google Maps ou Waze par liens universels, vers la position de l'élevage ou, à défaut, sa ville.
 - **Reprise et pushs reçus** : l'app gardée en mémoire par iOS recharge ses écrans quand elle revient au premier plan après plus de cinq minutes (`plugins/app-resume.client.ts`, composable `useAppRefresh`), en comptant ce retour comme un nouveau lancement pour les badges « Nouveau » ; un push reçu fenêtre ouverte recharge aussi les écrans (message `notification-received` du service worker), et la pastille de l'icône de l'app installée porte le nombre de notifications non lues (API Badging d'iOS, `utils/appBadge.ts`).
 - **Types** : générés depuis l'OpenAPI de FastAPI (`npm run types:api`, `openapi-typescript`) dans `app/types/api.generated.ts`, alias lisibles dans `app/types/api.ts`.
-- **Écrans** : Accueil/Portées, Détail d'une portée, Critères, Suivi, Réglages (notifications, sources, compte), et hors session Connexion, Créer un compte, Mot de passe oublié, Nouveau mot de passe. Voir `06-maquette-et-design.md`.
+- **Écrans** : Accueil/Portées, Détail d'une portée, Critères, Suivi, Réglages (notifications, sources, compte), et hors session Connexion, Créer un compte, Mot de passe oublié, Nouveau mot de passe, et la Portée partagée (`/partage/[token]`, seule page dont les données sont chargées côté serveur, pour l'aperçu du lien). Voir `06-maquette-et-design.md`.
 
 ## Standards de code de Léo (résumé)
 

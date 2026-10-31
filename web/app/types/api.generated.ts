@@ -757,6 +757,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/litters/{litter_id}/shares": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Share Litter
+         * @description Create the link of a litter, valid thirty days.
+         *
+         *     Args:
+         *         litter_id: The litter.
+         *         payload: Word for the people the link goes to.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The link to send.
+         */
+        post: operations["share_litter_api_v1_litters__litter_id__shares_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shares/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Shared Litter
+         * @description Read the page of a shared link. No account: the secret link is the key.
+         *
+         *     Args:
+         *         token: Secret part of the link.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The litter, the sharer's first name and their word.
+         */
+        get: operations["read_shared_litter_api_v1_shares__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sources": {
         parameters: {
             query?: never;
@@ -1306,6 +1362,27 @@ export interface components {
             points: number;
         };
         /**
+         * LitterShareCreate
+         * @description What the share drawer sends: a word for the people the link goes to, if any.
+         */
+        LitterShareCreate: {
+            /** Message */
+            message?: string | null;
+        };
+        /**
+         * LitterShareLink
+         * @description The link to send.
+         */
+        LitterShareLink: {
+            /** Url */
+            url: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /**
          * LitterSort
          * @description Order of the home screen list.
          * @enum {string}
@@ -1730,6 +1807,23 @@ export interface components {
          * @enum {string}
          */
         SexPreference: "male" | "female" | "any";
+        /**
+         * SharedLitter
+         * @description The page a shared link opens without an account: the litter, without what is personal to the sharer.
+         */
+        SharedLitter: {
+            /** Sharer Name */
+            sharer_name: string;
+            /** Message */
+            message: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** @description No score, reasons, flags nor follow-up: they belong to the sharer */
+            litter: components["schemas"]["LitterDetail"];
+        };
         /**
          * SignupAvailability
          * @description Whether the signup screen creates accounts, or keeps the attempt while signups are closed.
@@ -2699,6 +2793,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FollowUpCard"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    share_litter_api_v1_litters__litter_id__shares_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                litter_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LitterShareCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LitterShareLink"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_shared_litter_api_v1_shares__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedLitter"];
                 };
             };
             /** @description Validation Error */

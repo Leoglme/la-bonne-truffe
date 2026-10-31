@@ -12,6 +12,7 @@ from models.listing import Listing
 from models.listing_change import ListingChange
 from models.listing_match import ListingMatch
 from models.litter_group import LitterGroup
+from models.litter_share import LitterShare
 from models.notification import Notification
 from models.push_subscription import PushSubscription
 from models.search_profile import SearchProfile
@@ -31,6 +32,7 @@ __all__ = [
     "ListingChange",
     "ListingMatch",
     "LitterGroup",
+    "LitterShare",
     "Notification",
     "PushSubscription",
     "SearchProfile",

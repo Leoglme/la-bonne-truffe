@@ -4,6 +4,7 @@ import type { DevicePosition } from '~/types/Location'
 import { COAT_COLOR_LABELS } from '~/constants/coatColorLabels'
 import { COCKER_COAT_PALETTES, ILLUSTRATED_COATS } from '~/constants/cockerCoatPalettes'
 import { CrowFliesDistance } from '~/utils/crowFliesDistance'
+import { FollowUpPresentation } from '~/utils/followUpPresentation'
 import { FrenchDate } from '~/utils/frenchDate'
 import { FrenchText } from '~/utils/frenchText'
 
@@ -106,6 +107,23 @@ export class LitterPresentation {
       `${card.male_count} ${FrenchText.pickForm(card.male_count, 'mâle', 'mâles')}`,
       `${card.female_count} ${FrenchText.pickForm(card.female_count, 'femelle', 'femelles')}`,
     ]
+  }
+
+  /**
+   * Write when a litter was born, or when it is due.
+   *
+   * @param litter - The litter.
+   * @returns « Née le 27 oct. », « À naître vers le 7 nov. », or null while the birth is unknown.
+   */
+  static buildBirthFact(litter: LitterCard): string | null {
+    if (litter.kind === 'litter_expected') {
+      const expectedBirthPhrase: string = FollowUpPresentation.buildExpectedBirthPhrase(litter)
+      return expectedBirthPhrase.charAt(0).toUpperCase() + expectedBirthPhrase.slice(1)
+    }
+    if (litter.birth_date === null) {
+      return null
+    }
+    return `Née le ${FrenchDate.formatDayAndShortMonth(FrenchDate.parseDay(litter.birth_date))}`
   }
 
   /**

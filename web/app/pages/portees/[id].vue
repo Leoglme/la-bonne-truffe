@@ -38,6 +38,16 @@
         <button
           v-if="litter"
           type="button"
+          aria-label="Partager cette portée"
+          aria-haspopup="dialog"
+          class="absolute top-4 right-[76px] inline-flex size-11 items-center justify-center rounded-full border-0 bg-card text-ink shadow-floating-over-photo md:top-9 md:right-24 md:size-[52px] md:shadow-floating"
+          @click="isShareDrawerOpen = true"
+        >
+          <UIcon name="i-lucide-share" class="size-5 md:size-[22px]" />
+        </button>
+        <button
+          v-if="litter"
+          type="button"
           :aria-label="litter.follow_up ? 'Suivie, gérer le suivi' : 'Ajouter au suivi'"
           :aria-haspopup="litter.follow_up ? 'dialog' : undefined"
           :aria-busy="isFollowUpActionRunning"
@@ -171,6 +181,7 @@
       :photos="viewerPhotos"
       :start-index="photoViewerStartIndex"
     />
+    <LitterShareDrawer v-if="litter" v-model:open="isShareDrawerOpen" :litter="litter" />
   </div>
 </template>
 
@@ -203,6 +214,7 @@ const loadError: Ref<string | null> = ref(null)
 const isFollowUpActionRunning: Ref<boolean> = ref(false)
 const browsableLitterIds: Ref<number[]> = ref([])
 const isPhotoViewerOpen: Ref<boolean> = ref(false)
+const isShareDrawerOpen: Ref<boolean> = ref(false)
 const photoViewerStartIndex: Ref<number> = ref(0)
 
 const litterId: ComputedRef<number> = computed((): number => Number(route.params['id']))

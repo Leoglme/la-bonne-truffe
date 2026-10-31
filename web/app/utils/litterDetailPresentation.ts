@@ -22,6 +22,9 @@ import { LitterPresentation } from '~/utils/litterPresentation'
 const UNKNOWN_FACT_LABEL: string = 'À confirmer'
 const GONE_LISTING_LABEL: string = 'plus en ligne'
 const SIREN_DIGIT_GROUP: RegExp = /(\d{3})(?=\d)/g
+const FRENCH_COUNTRY_CODE: string = '+33'
+const FRENCH_NATIONAL_NUMBER_LENGTH: number = 9
+const PHONE_DIGIT_PAIR: RegExp = /(\d{2})(?=\d)/g
 
 /** How the detail screen and the desktop panel word a litter. */
 export class LitterDetailPresentation {
@@ -214,6 +217,20 @@ export class LitterDetailPresentation {
     const siren: string | null = breeder.siren ? `SIREN ${breeder.siren.replace(SIREN_DIGIT_GROUP, '$1 ')}` : null
     const line: string = this.joinKnownParts([breeder.city, siren])
     return line === '' ? null : line
+  }
+
+  /**
+   * Write the phone of the breeder the French way.
+   *
+   * @param phoneE164 - The number, international format.
+   * @returns « 06 79 84 65 55 » for a French number, the number unchanged otherwise.
+   */
+  static buildBreederPhoneLabel(phoneE164: string): string {
+    const nationalNumber: string = phoneE164.slice(FRENCH_COUNTRY_CODE.length)
+    if (!phoneE164.startsWith(FRENCH_COUNTRY_CODE) || nationalNumber.length !== FRENCH_NATIONAL_NUMBER_LENGTH) {
+      return phoneE164
+    }
+    return `0${nationalNumber}`.replace(PHONE_DIGIT_PAIR, '$1 ')
   }
 
   /**

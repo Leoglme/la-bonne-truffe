@@ -91,16 +91,8 @@ describe('NotificationPresentation', (): void => {
   })
 
   it('writes the facts of a litter around its sexes', (): void => {
-    expect(NotificationPresentation.buildLitterFact(BORN_LITTER)).toBe('Née le 27 oct.')
     expect(NotificationPresentation.buildAvailabilityFact(BORN_LITTER)).toBe('dispo vers le 22 déc.')
     expect(NotificationPresentation.buildPlaceAndColorLine(BORN_LITTER, null)).toBe('Redon · gold')
-    expect(
-      NotificationPresentation.buildLitterFact({
-        ...BORN_LITTER,
-        kind: 'litter_expected',
-        expected_birth_date: '2026-11-07',
-      }),
-    ).toBe('À naître vers le 7 nov.')
   })
 
   it('writes the puppies a followed litter still offers', (): void => {

@@ -98,6 +98,7 @@ def test_migrations_create_every_table_and_record_themselves(tmp_path: Path) -> 
         "add_notification_digest_litters",
         "add_litter_group_confirmed_sexes",
         "add_search_profile_max_puppy_age",
+        "add_litter_shares_table",
     ]
     assert runner.run() == []
     tables = set(inspect(database_engine).get_table_names())

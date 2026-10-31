@@ -53,6 +53,7 @@ import type { NotificationIconTile } from '~/types/Notification'
 import type { NotificationCardProps } from '~/types/NotificationCard'
 import { computed } from 'vue'
 import { NOTIFICATION_ICON_TILES } from '~/constants/notificationKinds'
+import { LitterPresentation } from '~/utils/litterPresentation'
 import { NotificationPresentation } from '~/utils/notificationPresentation'
 
 const props: NotificationCardProps = defineProps({
@@ -76,7 +77,7 @@ const litterFact: ComputedRef<string | null> = computed((): string | null => {
     return 'C’est l’heure d’appeler l’éleveur.'
   }
   return NotificationPresentation.isLitterEvent(props.notification.kind)
-    ? NotificationPresentation.buildLitterFact(litter.value)
+    ? LitterPresentation.buildBirthFact(litter.value)
     : null
 })
 const hasSexesShown: ComputedRef<boolean> = computed(

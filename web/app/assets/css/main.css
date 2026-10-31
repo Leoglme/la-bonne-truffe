@@ -132,6 +132,14 @@
   }
 }
 
+@utility scrollbar-hidden {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 .leaflet-container {
   background: var(--color-cream);
   font-family: var(--font-sans);

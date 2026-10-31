@@ -15,6 +15,14 @@
       {{ BREEDER_AFFIX_LINE }}
     </span>
     <a
+      v-if="props.isPhoneShown && props.litter.breeder?.phone_e164"
+      :href="`tel:${props.litter.breeder.phone_e164}`"
+      class="inline-flex min-h-11 items-center gap-1.5 self-start text-[15px] font-extrabold text-coral-text no-underline"
+    >
+      <UIcon name="i-lucide-phone" class="size-4" />
+      {{ LitterDetailPresentation.buildBreederPhoneLabel(props.litter.breeder.phone_e164) }}
+    </a>
+    <a
       v-if="props.litter.breeder?.website"
       :href="props.litter.breeder.website"
       target="_blank"
@@ -38,6 +46,7 @@ import { LitterDetailPresentation } from '~/utils/litterDetailPresentation'
 const props: LitterBreederCardProps = defineProps({
   litter: { type: Object as PropType<LitterDetail>, required: true },
   isInSidePanel: { type: Boolean, default: false },
+  isPhoneShown: { type: Boolean, default: false },
 })
 
 const breederName: ComputedRef<string | null> = computed((): string | null =>
