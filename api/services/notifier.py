@@ -24,6 +24,7 @@ from models.user import User
 from services.matching.criteria import LitterSnapshot
 from services.matching.snapshot_builder import LitterSnapshotBuilder
 from services.notification_texts import SOURCE_NAMES, NotificationTexts
+from services.puppy_arrival_service import PuppyArrivalService
 from services.push_service import push_service
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,7 @@ class NotifierService:
         A preferred litter is pushed right away, a birth too; an acceptable litter, or a followed one
         offering fewer puppies, waits for the evening digest. An event the profile turned off is still
         recorded as handled, so turning the setting back on later never floods the phone with old litters.
+        Once the user found their puppy, nothing goes out: the events are recorded as handled the same way.
 
         Args:
             db: Database session; the caller commits.
@@ -81,6 +83,8 @@ class NotifierService:
         Returns:
             The events handled, to record in ``ListingMatch.notified_events``.
         """
+        if PuppyArrivalService.is_search_paused(db, profile.user_id):
+            return events
         for event in events:
             if event in DIGEST_EVENT_KINDS:
                 if profile.notify_acceptable_in_digest:

@@ -39,6 +39,13 @@
           <span v-if="lastContactLabel" class="text-sm text-ink-muted">{{ lastContactLabel }}</span>
         </div>
 
+        <FollowUpFoundPuppyCard
+          v-if="isFoundPuppyCardShown"
+          :litter="litter"
+          @confirmed="followUpsStore.close()"
+          @dismissed="isFoundPuppyCardDismissed = true"
+        />
+
         <div class="flex flex-col gap-2">
           <label :for="reminderFieldId" class="text-[13px] font-extrabold tracking-[0.04em] text-ink-label uppercase">
             Rappel
@@ -151,29 +158,14 @@
           >
             Ne plus suivre cette portée
           </button>
-          <div v-else class="flex flex-col gap-3 rounded-2xl bg-coral-pastel p-4">
-            <p class="m-0 text-[15px] text-ink-secondary">
-              <strong class="text-ink">Ne plus suivre {{ litter.name }} ?</strong>
-              Son statut, son rappel et tes notes seront effacés.
-            </p>
-            <div class="flex gap-2">
-              <UButton
-                color="neutral"
-                variant="outline"
-                class="flex-1 justify-center md:flex-none"
-                @click="isStopFollowingConfirmShown = false"
-              >
-                Annuler
-              </UButton>
-              <UButton
-                loading-auto
-                class="min-h-12 flex-1 justify-center px-5 text-[15px] md:flex-none"
-                @click="stopFollowing"
-              >
-                Ne plus suivre
-              </UButton>
-            </div>
-          </div>
+          <UiInlineConfirmation
+            v-else
+            :question="`Ne plus suivre ${litter.name} ?`"
+            consequence="Son statut, son rappel et tes notes seront effacés."
+            confirm-label="Ne plus suivre"
+            :confirm-action="stopFollowing"
+            @cancelled="isStopFollowingConfirmShown = false"
+          />
         </div>
       </div>
     </template>
@@ -192,6 +184,7 @@ import { FrenchDate } from '~/utils/frenchDate'
 
 const route: RouteLocationNormalizedLoaded = useRoute()
 const followUpsStore: ReturnType<typeof useFollowUpsStore> = useFollowUpsStore()
+const puppyArrivalStore: ReturnType<typeof usePuppyArrivalStore> = usePuppyArrivalStore()
 
 const FINE_POINTER_MEDIA_QUERY: string = '(pointer: fine)'
 
@@ -202,6 +195,7 @@ const noteFieldId: string = useId()
 const noteText: Ref<string> = ref('')
 const noteIdAwaitingDeletion: Ref<number | null> = ref(null)
 const isStopFollowingConfirmShown: Ref<boolean> = ref(false)
+const isFoundPuppyCardDismissed: Ref<boolean> = ref(false)
 const actionError: Ref<string | null> = ref(null)
 
 const litter: ComputedRef<LitterDetail | null> = computed((): LitterDetail | null => followUpsStore.openedLitter)
@@ -212,6 +206,10 @@ const selectedStatus: ComputedRef<FollowUpStatus | null> = computed((): FollowUp
   }
   return status === 'new' ? 'to_contact' : status
 })
+const isFoundPuppyCardShown: ComputedRef<boolean> = computed(
+  (): boolean =>
+    selectedStatus.value === 'reserved' && !puppyArrivalStore.isSearchPaused && !isFoundPuppyCardDismissed.value,
+)
 const lastContactLabel: ComputedRef<string | null> = computed((): string | null =>
   FollowUpPresentation.buildLastContactLabel(litter.value?.follow_up?.last_contact_at ?? null),
 )
@@ -381,6 +379,7 @@ watch(
     noteText.value = ''
     noteIdAwaitingDeletion.value = null
     isStopFollowingConfirmShown.value = false
+    isFoundPuppyCardDismissed.value = false
     actionError.value = null
   },
 )

@@ -31,6 +31,7 @@ import { computed, onMounted, onUnmounted } from 'vue'
 const route: RouteLocationNormalizedLoaded = useRoute()
 const { isDesktopApp }: ReturnType<typeof useDesktopRuntime> = useDesktopRuntime()
 const centraleCanineRelayStore: ReturnType<typeof useCentraleCanineRelayStore> = useCentraleCanineRelayStore()
+const puppyArrivalStore: ReturnType<typeof usePuppyArrivalStore> = usePuppyArrivalStore()
 const {
   pullDistanceInPixels,
   isReadyToRefresh,
@@ -42,10 +43,11 @@ const {
 
 const isPushedScreen: ComputedRef<boolean> = computed((): boolean => route.meta.isPushedScreen === true)
 
-onMounted((): void => {
+onMounted(async (): Promise<void> => {
   if (isDesktopApp.value) {
     centraleCanineRelayStore.startWatching()
   }
+  await puppyArrivalStore.load()
 })
 
 onUnmounted((): void => {

@@ -14,6 +14,7 @@ from models.listing_match import ListingMatch
 from models.litter_group import LitterGroup
 from models.litter_share import LitterShare
 from models.notification import Notification
+from models.puppy_arrival import PuppyArrival
 from models.push_subscription import PushSubscription
 from models.search_profile import SearchProfile
 from models.signup_request import SignupRequest
@@ -34,6 +35,7 @@ __all__ = [
     "LitterGroup",
     "LitterShare",
     "Notification",
+    "PuppyArrival",
     "PushSubscription",
     "SearchProfile",
     "SignupRequest",

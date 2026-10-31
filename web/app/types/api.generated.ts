@@ -813,6 +813,81 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/puppy-arrival": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Puppy Arrival
+         * @description Return the puppy found, if any.
+         *
+         *     Args:
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The arrival, or null while the search goes on.
+         */
+        get: operations["read_puppy_arrival_api_v1_puppy_arrival_get"];
+        /**
+         * Start Puppy Arrival
+         * @description Pause the search on the puppy found, or change its litter or arrival day.
+         *
+         *     Args:
+         *         payload: The litter and the arrival day.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The arrival.
+         */
+        put: operations["start_puppy_arrival_api_v1_puppy_arrival_put"];
+        post?: never;
+        /**
+         * Resume Search
+         * @description Resume the search: the litter alerts go out again.
+         *
+         *     Args:
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         */
+        delete: operations["resume_search_api_v1_puppy_arrival_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/puppy-arrival/checklist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Puppy Arrival Checklist
+         * @description Keep the preparations ticked.
+         *
+         *     Args:
+         *         payload: Keys of the preparations ticked.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The arrival.
+         */
+        put: operations["update_puppy_arrival_checklist_api_v1_puppy_arrival_checklist_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sources": {
         parameters: {
             query?: never;
@@ -1636,6 +1711,50 @@ export interface components {
         PasswordResetToken: {
             /** Token */
             token: string;
+        };
+        /**
+         * PuppyArrivalChecklist
+         * @description The preparations ticked, by the keys the web app gives them.
+         */
+        PuppyArrivalChecklist: {
+            /** Done Items */
+            done_items: string[];
+        };
+        /**
+         * PuppyArrivalResponse
+         * @description The puppy found and where its arrival stands; the search is paused since then.
+         */
+        PuppyArrivalResponse: {
+            /**
+             * Litter Group Id
+             * @description Null once the litter left the database
+             */
+            litter_group_id: number | null;
+            /**
+             * Arrival On
+             * Format: date
+             */
+            arrival_on: string;
+            /** Done Items */
+            done_items: string[];
+            /**
+             * Paused Since
+             * Format: date-time
+             */
+            paused_since: string;
+        };
+        /**
+         * PuppyArrivalStart
+         * @description « C’est lui ! » : the litter of the puppy and the day it comes home.
+         */
+        PuppyArrivalStart: {
+            /** Litter Group Id */
+            litter_group_id: number;
+            /**
+             * Arrival On
+             * Format: date
+             */
+            arrival_on: string;
         };
         /**
          * PushKeys
@@ -2859,6 +2978,110 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SharedLitter"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_puppy_arrival_api_v1_puppy_arrival_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PuppyArrivalResponse"] | null;
+                };
+            };
+        };
+    };
+    start_puppy_arrival_api_v1_puppy_arrival_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PuppyArrivalStart"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PuppyArrivalResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_search_api_v1_puppy_arrival_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_puppy_arrival_checklist_api_v1_puppy_arrival_checklist_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PuppyArrivalChecklist"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PuppyArrivalResponse"];
                 };
             };
             /** @description Validation Error */

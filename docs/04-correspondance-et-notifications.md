@@ -64,6 +64,8 @@ Une disparition (`is_active` → faux) ne notifie pas, elle grise la carte. Le r
 
 **Le premier relevé réussi d'une source** n'envoie rien du tout : il note comme traité tout ce qui était déjà en ligne avant que La Bonne Truffe la surveille, y compris les annonces sans date de publication (les portées à venir de Chiens de France). Les relevés suivants envoient les nouveautés comme ci-dessus.
 
+**Chiot trouvé** (31/10/2026) : tant que l'utilisateur a trouvé son chiot (`puppy_arrivals`), aucune alerte de portée ne part, ni push ni ligne du récap ; les événements sont quand même notés comme traités, pour que la reprise de la recherche ne déverse pas les portées parues entre-temps. Les lignes du récap pas encore envoyées sont effacées au « C'est lui ! ». Les rappels du suivi, posés à la main, et les alertes de source continuent.
+
 ## Texte des notifications
 
 Titre : ce qui arrive et à qui, en quelques mots (« Portée née · De Kerlann », « Passée en préférée · … », « Rappel · appeler De Kerlann », « Récap du soir · 2 portées acceptables », « La Centrale Canine ne répond plus », « Demande d'inscription ») ; iOS affiche déjà le nom de l'app. Corps : couleur, lieu, sexes, en une phrase, sans répéter le titre. Exemples :

@@ -41,6 +41,7 @@ MIGRATION_MODULES: list[tuple[str, str]] = [
     ("add_litter_group_confirmed_sexes", "migrations.add_litter_group_confirmed_sexes"),
     ("add_search_profile_max_puppy_age", "migrations.add_search_profile_max_puppy_age"),
     ("add_litter_shares_table", "migrations.add_litter_shares_table"),
+    ("add_puppy_arrivals_table", "migrations.add_puppy_arrivals_table"),
 ]
 
 _NON_MIGRATION_MODULES: set[str] = {"__init__", "run_migrations"}
