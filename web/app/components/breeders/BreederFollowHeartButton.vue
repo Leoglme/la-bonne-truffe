@@ -3,8 +3,7 @@
     type="button"
     :aria-label="props.breeder.follow ? 'Éleveur suivi, modifier les alertes' : 'Suivre cet éleveur'"
     aria-haspopup="dialog"
-    class="inline-flex size-11 items-center justify-center rounded-full border-0 bg-card text-coral shadow-floating-over-photo"
-    :class="props.isInSidePanel ? '' : 'md:size-[52px] md:shadow-floating'"
+    class="inline-flex size-11 items-center justify-center rounded-full border-0 bg-card text-coral shadow-floating-over-photo md:size-[52px] md:shadow-floating"
     @click="breederFollowStore.openWith(props.breeder)"
   >
     <UiCustomIcon
@@ -23,7 +22,6 @@ import type { BreederFollowHeartButtonProps } from '~/types/BreederFollowHeartBu
 
 const props: BreederFollowHeartButtonProps = defineProps({
   breeder: { type: Object as PropType<BreederDetail>, required: true },
-  isInSidePanel: { type: Boolean, default: false },
 })
 
 const breederFollowStore: ReturnType<typeof useBreederFollowStore> = useBreederFollowStore()

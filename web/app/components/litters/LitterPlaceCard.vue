@@ -3,7 +3,7 @@
     v-if="mapDestination"
     class="flex items-center justify-between gap-2.5"
     :class="
-      props.isInSidePanel
+      props.isInAside
         ? 'rounded-2xl bg-cream px-3 py-2.5'
         : 'rounded-2xl bg-card px-3.5 py-3 shadow-card md:gap-3 md:rounded-[20px] md:px-[18px] md:py-3.5'
     "
@@ -11,11 +11,11 @@
     <span class="flex min-w-0 flex-col">
       <span
         class="text-[11px] font-extrabold text-ink-label uppercase"
-        :class="props.isInSidePanel ? '' : 'md:text-[13px] md:tracking-[0.04em]'"
+        :class="props.isInAside ? '' : 'md:text-[13px] md:tracking-[0.04em]'"
       >
         Lieu
       </span>
-      <span class="text-[15px] font-bold" :class="props.isInSidePanel ? '' : 'md:text-[17px]'">
+      <span class="text-[15px] font-bold" :class="props.isInAside ? '' : 'md:text-[17px]'">
         {{ mapDestination.placeName }}
       </span>
       <span v-if="distanceLabel" class="text-[13px] text-ink-muted">{{ distanceLabel }}</span>
@@ -47,7 +47,7 @@ import { LitterPresentation } from '~/utils/litterPresentation'
 
 const props: LitterPlaceCardProps = defineProps({
   litter: { type: Object as PropType<LitterDetail>, required: true },
-  isInSidePanel: { type: Boolean, default: false },
+  isInAside: { type: Boolean, default: false },
 })
 
 const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()

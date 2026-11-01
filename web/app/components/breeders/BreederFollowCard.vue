@@ -1,16 +1,9 @@
 <template>
   <section
-    class="flex flex-col gap-2.5"
-    :class="
-      props.isInSidePanel
-        ? 'rounded-[18px] bg-cream p-3.5'
-        : 'rounded-[20px] bg-card p-4 shadow-card md:rounded-card-compact md:px-[22px] md:py-5'
-    "
+    class="flex flex-col gap-2.5 rounded-[20px] bg-card p-4 shadow-card md:rounded-card-compact md:px-[22px] md:py-5"
   >
     <div class="flex items-center justify-between gap-3">
-      <h2 class="m-0 font-display font-semibold" :class="props.isInSidePanel ? 'text-base' : 'text-lg md:text-xl'">
-        Mon suivi
-      </h2>
+      <h2 class="m-0 font-display text-lg font-semibold md:text-xl">Mon suivi</h2>
       <span
         v-if="props.breeder.follow"
         class="inline-flex shrink-0 rounded-full bg-coral-pastel px-2.5 py-1 text-xs font-extrabold whitespace-nowrap text-coral-text md:px-3 md:text-[13px]"
@@ -75,15 +68,14 @@ const SHOWN_NOTES_COUNT: number = 3
 
 const props: BreederDetailSectionProps = defineProps({
   breeder: { type: Object as PropType<BreederDetail>, required: true },
-  isInSidePanel: { type: Boolean, default: false },
 })
 
 const breederFollowStore: ReturnType<typeof useBreederFollowStore> = useBreederFollowStore()
 
 const shownNotes: ComputedRef<BreederFollowNote[]> = computed((): BreederFollowNote[] =>
-  (props.breeder.follow?.notes ?? []).slice(0, props.isInSidePanel ? 1 : SHOWN_NOTES_COUNT),
+  (props.breeder.follow?.notes ?? []).slice(0, SHOWN_NOTES_COUNT),
 )
 const reminderLabel: ComputedRef<string | null> = computed((): string | null =>
-  props.breeder.follow && !props.isInSidePanel ? BreederPresentation.buildReminderLabel(props.breeder.follow) : null,
+  props.breeder.follow ? BreederPresentation.buildReminderLabel(props.breeder.follow) : null,
 )
 </script>

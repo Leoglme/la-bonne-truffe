@@ -172,3 +172,14 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 - **Constat** : sur les captures de Léo, l'élevage de la portée « Du Mont de la Chenaie » montrait l'illustration du cocker au lieu de photos. Son site Chiens de France (`fonddelachenaie`) ne suit pas son affixe, et ni un mini-site Centrale Canine ni une annonce du site principal ne le donnait à l'app (`02`).
 - **Vérifié** : la lecture des listes régionales d'éleveurs, livrée le même jour, le relie au relevé du matin. Sur la vraie liste des Pays de la Loire, sa fiche porte les mêmes mots et le même code postal que son nom d'élevage à la Centrale Canine.
 - **Corrigé** : les listes de « Provence-Alpes-Côte d'Azur » et de « La Réunion » n'étaient jamais lues, faute de la bonne adresse (404). Elles prennent maintenant celles des listes de chiots du site (`provence-alpes-cote-dazur`, `reunion`). Tests pytest, ruff et mypy.
+
+## 1er novembre : des pages entières sur ordinateur, et plus rien d'écrasé
+
+- **Demandé** : sur captures, trois affichages écrasés. Sur la fiche d'un élevage, la carte d'une portée (la pastille « Noir ou Noir et feu » cassée sur deux lignes, le nom coupé) et « Ses reproducteurs » (les tests ADN dans une colonne étroite, à côté de la cotation) ; dans l'onglet Éleveurs, les filtres et le tri qui passent à la ligne à côté du volet de droite. Ce volet disparaît sur ordinateur : une carte de Portées ou d'Éleveurs ouvre la page entière, comme le Suivi, l'iPhone et l'iPad. Tout vérifier à plusieurs tailles d'écran.
+- **Fait** :
+  - plus de volet de droite : une carte ouvre la fiche, « Retour » ramène la liste là où on l'avait laissée, et l'entrée de la barre latérale la reprend en haut (`05`, `06`) ;
+  - sur la carte d'une portée, la pastille de couleur et les sexes passent à la ligne d'un bloc, sans se casser ; à l'ordinateur, les portées et les reproducteurs de la fiche d'un élevage font 380 px de large au moins (une colonne jusqu'à 1536 px, deux au-delà) ;
+  - un reproducteur montre sa cotation à côté de « Lice » ou « Étalon », son nom en entier, puis ses tests ADN sur toute la largeur de la carte, sans couper un code à son tiret ni commencer une ligne par un point ;
+  - les filtres et le tri des éleveurs se rangent sur deux lignes jusqu'à 1280 px, et la grille des éleveurs passe à quatre colonnes à partir de 1536 px, comme celle des portées ;
+  - le nom d'un élevage passe à la ligne au lieu d'être coupé (recherche et liste sur iPhone), comme sur les maquettes.
+- **Vérifié** : toutes les pages à 390, 820, 1024, 1280, 1440 et 1920 px, avec un relevé automatique des textes coupés, des pastilles sur deux lignes et des débordements ; le retour à la position de la liste à 1440 px et sur iPhone ; tests vitest, lint et typecheck. Les reproducteurs, leurs tests ADN et les chances de gold ont été vus sur des données simulées, que la base locale n'a pas.

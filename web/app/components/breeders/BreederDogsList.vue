@@ -7,13 +7,13 @@
     <ul
       class="m-0 list-none p-0"
       :class="
-        props.isInWideLayout ? 'grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3' : 'flex flex-col gap-2.5'
+        props.isInWideLayout ? 'grid grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-3' : 'flex flex-col gap-2.5'
       "
     >
       <li
         v-for="dog in shownDogs"
         :key="dog.id"
-        class="flex items-center gap-3 rounded-[20px] bg-card py-3 pr-4 pl-3 shadow-card md:gap-4 md:rounded-[22px] md:pr-[18px]"
+        class="flex items-start gap-3 rounded-[20px] bg-card py-3 pr-4 pl-3 shadow-card md:gap-4 md:rounded-[22px] md:pr-[18px]"
       >
         <DogPortrait
           :photo-url="dog.photos[0] ?? null"
@@ -22,15 +22,23 @@
           :illustration-size-in-pixels="DOG_ILLUSTRATION_SIZE_IN_PIXELS"
         />
         <span class="flex min-w-0 grow flex-col gap-0.5">
-          <span class="text-[11px] font-extrabold tracking-[0.04em] text-ink-label uppercase md:text-[13px]">
-            {{ BreederPresentation.buildDogRoleLabel(dog) }}
+          <span class="flex min-h-6 items-center justify-between gap-2 md:min-h-7">
+            <span class="text-[11px] font-extrabold tracking-[0.04em] text-ink-label uppercase md:text-[13px]">
+              {{ BreederPresentation.buildDogRoleLabel(dog) }}
+            </span>
+            <span
+              v-if="BreederPresentation.buildDogRatingLabel(dog)"
+              class="inline-flex shrink-0 rounded-full bg-chip px-2.5 py-1 text-xs font-extrabold whitespace-nowrap text-ink-secondary md:px-3 md:text-[13px]"
+            >
+              {{ BreederPresentation.buildDogRatingLabel(dog) }}
+            </span>
           </span>
           <component
             :is="dog.external_url ? 'a' : 'span'"
             :href="dog.external_url ?? undefined"
             :target="dog.external_url ? '_blank' : undefined"
             :rel="dog.external_url ? 'noopener' : undefined"
-            class="truncate text-[15px] font-bold text-ink no-underline md:text-[17px]"
+            class="text-[15px] font-bold text-ink no-underline md:text-[17px]"
           >
             {{ BreederPresentation.buildDogName(dog) }}
           </component>
@@ -40,12 +48,6 @@
           <span v-if="dog.availability_text" class="text-[13px] font-bold text-coral-text md:text-sm">
             {{ dog.availability_text }}
           </span>
-        </span>
-        <span
-          v-if="BreederPresentation.buildDogRatingLabel(dog)"
-          class="inline-flex shrink-0 rounded-full bg-chip px-2.5 py-1 text-xs font-extrabold whitespace-nowrap text-ink-secondary md:px-3 md:py-1.5 md:text-sm"
-        >
-          {{ BreederPresentation.buildDogRatingLabel(dog) }}
         </span>
       </li>
     </ul>

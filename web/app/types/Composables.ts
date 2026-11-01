@@ -55,3 +55,7 @@ export type UseBackNavigationReturn = {
   readPreviousPath: () => string | null
   goBack: () => void
 }
+
+export type UseScrollRestorationReturn = {
+  scroller: Ref<HTMLElement | null>
+}

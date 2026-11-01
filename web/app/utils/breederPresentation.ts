@@ -48,6 +48,8 @@ const HOT_BIRTH_AGE_DAYS: number = 7
 const INACTIVE_AFTER_DAYS: number = 2 * 365
 const SIREN_DIGIT_GROUP: RegExp = /(\d{3})(?=\d)/g
 const E_LOCUS_CODE_PATTERN: RegExp = /^LocE\w*-/
+const WORD_JOINER: string = '\u2060'
+const NO_BREAK_SPACE: string = '\u00a0'
 const MONTH_AND_YEAR_FORMAT: Intl.DateTimeFormat = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
 const MONTH_FORMAT: Intl.DateTimeFormat = new Intl.DateTimeFormat('fr-FR', { month: 'long' })
 
@@ -441,9 +443,11 @@ export class BreederPresentation {
       parts.push(genotypeLabel)
     }
     parts.push(
-      ...dog.health_codes.filter((code: string): boolean => genotypeLabel === null || !E_LOCUS_CODE_PATTERN.test(code)),
+      ...dog.health_codes
+        .filter((code: string): boolean => genotypeLabel === null || !E_LOCUS_CODE_PATTERN.test(code))
+        .map((code: string): string => code.replaceAll('-', `-${WORD_JOINER}`)),
     )
-    return parts.length === 0 ? null : parts.join(' · ')
+    return parts.length === 0 ? null : parts.join(`${NO_BREAK_SPACE}· `)
   }
 
   /**

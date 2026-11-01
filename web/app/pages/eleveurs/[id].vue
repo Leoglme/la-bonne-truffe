@@ -153,7 +153,7 @@
         <template v-if="breeder">
           <div class="flex flex-col gap-[18px] rounded-card bg-card p-6 shadow-card">
             <BreederChips v-if="chips.length > 0" :chips="chips" />
-            <BreederStats :breeder="breeder" is-in-side-panel />
+            <BreederStats :breeder="breeder" is-in-aside />
             <template v-if="primaryAction">
               <div class="h-px bg-line" />
               <UButton

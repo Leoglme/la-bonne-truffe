@@ -47,7 +47,7 @@ import type { DrawerProps } from '@nuxt/ui'
 import type { PropType, Ref } from 'vue'
 import type { UiDialogEmits, UiDialogProps } from '~/types/UiDialog'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { SIDE_PANEL_MEDIA_QUERY } from '~/constants/mainNavigation'
+import { WIDE_SCREEN_MEDIA_QUERY } from '~/constants/mainNavigation'
 
 const props: UiDialogProps = defineProps({
   open: { type: Boolean, required: true },
@@ -75,7 +75,7 @@ function followScreenWidth(event: MediaQueryListEvent): void {
 }
 
 onMounted((): void => {
-  wideScreenCondition = window.matchMedia(SIDE_PANEL_MEDIA_QUERY)
+  wideScreenCondition = window.matchMedia(WIDE_SCREEN_MEDIA_QUERY)
   isWideScreen.value = wideScreenCondition.matches
   wideScreenCondition.addEventListener('change', followScreenWidth)
 })

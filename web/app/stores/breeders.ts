@@ -118,19 +118,12 @@ export const useBreedersStore = defineStore('breeders', () => {
   }
 
   /**
-   * Open a breeder on the detail screen or in the desktop panel.
+   * Open a breeder on the detail screen.
    *
    * @param breederId - The breeder.
    */
   async function select(breederId: number): Promise<void> {
     selectedBreeder.value = await BreedersService.get(breederId)
-  }
-
-  /**
-   * Close the desktop panel: no breeder is selected any more.
-   */
-  function clearSelection(): void {
-    selectedBreeder.value = null
   }
 
   /**
@@ -249,7 +242,7 @@ export const useBreedersStore = defineStore('breeders', () => {
   }
 
   /**
-   * Write a new detail into the list, the panel and the suggestions, wherever the breeder is shown.
+   * Write a new detail into the list, the detail screen and the suggestions, wherever the breeder is shown.
    *
    * @param detail - The detail returned by the API.
    */
@@ -288,7 +281,6 @@ export const useBreedersStore = defineStore('breeders', () => {
     search,
     clearSearch,
     select,
-    clearSelection,
     follow,
     saveFollow,
     removeFollow,

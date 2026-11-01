@@ -378,10 +378,19 @@ describe('BreederPresentation.listSeenOnLinks once the site is read', (): void =
 
 describe('BreederPresentation dogs', (): void => {
   it('words what a dog carries of the gold in place of its E locus code', (): void => {
-    expect(BreederPresentation.buildDogFactsLine(GOLD_STUD)).toBe('Gold · testé gold (e/e) · PRCD-1.1')
+    expect(BreederPresentation.buildDogFactsLine(GOLD_STUD)).toBe('Gold\u00a0· testé gold (e/e)\u00a0· PRCD-\u20601.1')
     expect(BreederPresentation.buildDogFactsLine(CARRIER_LICE)).toBe(
-      'Bleu rouan · porteuse du gold (E/e), d’après ses parents',
+      'Bleu rouan\u00a0· porteuse du gold (E/e), d’après ses parents',
     )
+  })
+
+  it('never cuts a health code at its hyphens, nor starts a line with a dot', (): void => {
+    const factsLine: string | null = BreederPresentation.buildDogFactsLine({
+      ...GOLD_STUD,
+      health_codes: ['PL-1-l/l', 'LocB-B/b'],
+    })
+
+    expect(factsLine).toBe('Gold\u00a0· testé gold (e/e)\u00a0· PL-\u20601-\u2060l/l\u00a0· LocB-\u2060B/b')
   })
 
   it('names the rating agreed with the sex', (): void => {

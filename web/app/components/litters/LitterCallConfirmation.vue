@@ -2,12 +2,7 @@
   <section
     v-if="canConfirmColor || canConfirmSexes"
     aria-label="À confirmer après ton appel"
-    class="flex flex-col"
-    :class="
-      props.isInSidePanel
-        ? 'gap-3'
-        : 'gap-3 rounded-[20px] bg-card px-4 py-3.5 shadow-card md:gap-4 md:rounded-card-compact md:px-[22px] md:py-5'
-    "
+    class="flex flex-col gap-3 rounded-[20px] bg-card px-4 py-3.5 shadow-card md:gap-4 md:rounded-card-compact md:px-[22px] md:py-5"
   >
     <h2 class="m-0 font-display text-[17px] font-semibold md:text-xl">Après ton appel</h2>
 
@@ -186,7 +181,6 @@ import { LitterPresentation } from '~/utils/litterPresentation'
 
 const props: LitterCallConfirmationProps = defineProps({
   litter: { type: Object as PropType<LitterDetail>, required: true },
-  isInSidePanel: { type: Boolean, default: false },
   isInWideLayout: { type: Boolean, default: false },
 })
 

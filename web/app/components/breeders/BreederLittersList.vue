@@ -1,13 +1,11 @@
 <template>
   <section class="flex flex-col gap-3">
-    <h2 class="m-0 font-display font-semibold" :class="props.isInSidePanel ? 'text-[17px]' : 'text-[19px] md:text-xl'">
-      Ses portées
-    </h2>
+    <h2 class="m-0 font-display text-[19px] font-semibold md:text-xl">Ses portées</h2>
     <p v-if="props.breeder.litters.length === 0" class="m-0 text-[15px] text-ink-muted">
       Aucune portée connue pour l’instant. Dès qu’il en déclare une, elle arrive ici.
     </p>
     <template v-else>
-      <div :class="props.isInWideLayout ? 'grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-3' : 'contents'">
+      <div :class="props.isInWideLayout ? 'grid grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-3' : 'contents'">
         <LitterRowCard v-for="litter in shownLitters" :key="litter.id" :litter="litter" is-gold-puppy-odds-shown />
       </div>
       <button
@@ -45,7 +43,6 @@ import { FrenchText } from '~/utils/frenchText'
 
 const props: BreederLittersListProps = defineProps({
   breeder: { type: Object as PropType<BreederDetail>, required: true },
-  isInSidePanel: { type: Boolean, default: false },
   isInWideLayout: { type: Boolean, default: false },
 })
 

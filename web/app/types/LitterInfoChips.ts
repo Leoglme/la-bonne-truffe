@@ -2,7 +2,7 @@ import type { GeneticScreening, LitterDetail } from '~/types/api'
 
 export type LitterInfoChipsProps = {
   litter: LitterDetail
-  isInSidePanel: boolean
+  isInAside: boolean
 }
 
 export type BreedingQualityChip = 'selected_breeding' | GeneticScreening | 'breed_club_member'

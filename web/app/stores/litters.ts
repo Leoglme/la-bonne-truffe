@@ -11,7 +11,7 @@ import { LitterSorting } from '~/utils/litterSorting'
 
 const SORT_STORAGE_KEY: string = 'lbt-litter-sort'
 
-/** Pinia store of the litters: the home list, its filter and sort, and the litter opened on the detail screen or the desktop panel. */
+/** Pinia store of the litters: the home list, its filter and sort, and the litter opened on the detail screen. */
 export const useLittersStore = defineStore('litters', () => {
   const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
 
@@ -139,19 +139,12 @@ export const useLittersStore = defineStore('litters', () => {
   }
 
   /**
-   * Open a litter in the desktop detail panel.
+   * Open a litter on its detail screen.
    *
    * @param litterId - The litter.
    */
   async function select(litterId: number): Promise<void> {
     selectedLitter.value = await LittersService.get(litterId)
-  }
-
-  /**
-   * Close the desktop panel: no litter is selected any more.
-   */
-  function clearSelection(): void {
-    selectedLitter.value = null
   }
 
   /**
@@ -278,7 +271,6 @@ export const useLittersStore = defineStore('litters', () => {
     recordResumeVisit,
     recordVisit,
     select,
-    clearSelection,
     follow,
     confirmColors,
     confirmSexes,

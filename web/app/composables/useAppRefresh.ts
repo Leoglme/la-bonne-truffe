@@ -21,8 +21,7 @@ export function useAppRefresh(): UseAppRefreshReturn {
       return
     }
     const routeLitterId: unknown = router.currentRoute.value.params['id']
-    const shownLitterId: number | null =
-      typeof routeLitterId === 'string' ? Number(routeLitterId) : (littersStore.selectedLitter?.id ?? null)
+    const shownLitterId: number | null = typeof routeLitterId === 'string' ? Number(routeLitterId) : null
     await Promise.all([
       littersStore.load(),
       bellStore.load(),

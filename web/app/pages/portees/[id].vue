@@ -217,9 +217,9 @@
       <template #aside>
         <template v-if="litter">
           <div class="flex flex-col gap-[18px] rounded-card bg-card p-6 shadow-card">
-            <LitterKeyFacts :litter="litter" is-in-side-panel />
-            <LitterInfoChips :litter="litter" is-in-side-panel />
-            <LitterPlaceCard :litter="litter" is-in-side-panel />
+            <LitterKeyFacts :litter="litter" is-in-aside />
+            <LitterInfoChips :litter="litter" is-in-aside />
+            <LitterPlaceCard :litter="litter" is-in-aside />
             <template v-if="primaryAction">
               <div class="h-px bg-line" />
               <UButton

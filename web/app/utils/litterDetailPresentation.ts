@@ -36,7 +36,7 @@ const FRENCH_COUNTRY_CODE: string = '+33'
 const FRENCH_NATIONAL_NUMBER_LENGTH: number = 9
 const PHONE_DIGIT_PAIR: RegExp = /(\d{2})(?=\d)/g
 
-/** How the detail screen and the desktop panel word a litter. */
+/** How the detail screen words a litter. */
 export class LitterDetailPresentation {
   /**
    * Build the badge over the photo.
@@ -480,7 +480,7 @@ export class LitterDetailPresentation {
    * @param key - Which fact it is.
    * @param label - « Naissance » or « Départ ».
    * @param isoDay - The day from the API, null while unknown.
-   * @returns « vers le 22 déc. » on the iPad, « 22 déc. » on the phone and the panel.
+   * @returns « vers le 22 déc. » on the iPad, « 22 déc. » on the phone and in the aside of the desktop.
    */
   private static buildApproximateDayFact(key: LitterDayFactKey, label: string, isoDay: string | null): LitterDayFact {
     if (isoDay === null) {

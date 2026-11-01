@@ -1,7 +1,7 @@
 import type { MainNavigationEntry, PushedScreenBackLabel } from '~/types/MainNavigation'
 
-/** From this width, a card opens in the side panel, a detail spreads over two columns, a choice opens in a window. */
-export const SIDE_PANEL_MEDIA_QUERY: string = '(min-width: 1280px)'
+/** From this width, a detail spreads over two columns and a choice opens in a window. */
+export const WIDE_SCREEN_MEDIA_QUERY: string = '(min-width: 1280px)'
 
 /** Checked before the entries of the navigation, whose paths these screens start with. */
 export const PUSHED_SCREEN_BACK_LABELS: PushedScreenBackLabel[] = [

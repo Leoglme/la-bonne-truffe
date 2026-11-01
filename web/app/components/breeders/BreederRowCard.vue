@@ -10,7 +10,7 @@
     />
     <span class="flex min-w-0 grow flex-col gap-[3px]">
       <span class="flex items-start justify-between gap-2">
-        <span class="truncate font-display text-lg leading-[1.2] font-semibold md:text-[21px]">
+        <span class="min-w-0 font-display text-lg leading-[1.2] font-semibold md:text-[21px]">
           {{ props.breeder.name }}
         </span>
         <UiCustomIcon

@@ -1,7 +1,7 @@
 <template>
   <button
     type="button"
-    class="inline-flex min-h-11 items-center gap-1 self-start border-0 bg-transparent px-0 text-sm font-bold text-ink-muted"
+    class="inline-flex min-h-11 items-center gap-1 self-start border-0 bg-transparent px-0 text-sm font-bold whitespace-nowrap text-ink-muted"
     :aria-label="`Trier : ${currentSortLabel}. Changer le tri`"
     @click="selectNextSort"
   >

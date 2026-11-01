@@ -2,8 +2,7 @@
   <p
     v-if="goneSinceLabel"
     role="status"
-    class="m-0 shrink-0 rounded-2xl bg-coral-pastel px-4 py-3 font-bold text-coral-text"
-    :class="props.isInSidePanel ? 'text-sm' : 'text-[15px] md:text-base'"
+    class="m-0 shrink-0 rounded-2xl bg-coral-pastel px-4 py-3 text-[15px] font-bold text-coral-text md:text-base"
   >
     {{ goneSinceLabel }} : la portée a disparu de ses sources.
   </p>
@@ -18,7 +17,6 @@ import { LitterPresentation } from '~/utils/litterPresentation'
 
 const props: LitterGoneBannerProps = defineProps({
   litter: { type: Object as PropType<LitterCard>, required: true },
-  isInSidePanel: { type: Boolean, default: false },
 })
 
 const goneSinceLabel: ComputedRef<string | null> = computed((): string | null =>
