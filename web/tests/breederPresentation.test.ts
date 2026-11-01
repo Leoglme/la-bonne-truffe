@@ -1,5 +1,6 @@
 import type { BreederCard, BreederDetail, BreederDog, BreederLinkPreview, LitterCard } from '../app/types/api'
 import type { BreederChip, BreederLinkRecognition, BreederSeenOnLink, BreederStat } from '../app/types/Breeder'
+import type { LinkLogo } from '../app/types/UiLinkLogo'
 import { describe, expect, it } from 'vitest'
 import { BreederManualFormPresentation } from '../app/utils/breederManualFormPresentation'
 import { BreederPresentation } from '../app/utils/breederPresentation'
@@ -306,20 +307,23 @@ describe('BreederPresentation.listSeenOnLinks', (): void => {
     expect(BreederPresentation.listSeenOnLinks(BREEDER_DETAIL, NOW)).toEqual([
       {
         key: 'scc',
+        logo: 'centrale_canine',
         label: 'Centrale Canine',
         description: 'Affixe déposé · SIREN 812 345 678',
         href: null,
       },
       {
         key: 'chiens-de-france',
+        logo: 'chiens_de_france',
         label: 'Chiens de France',
         description: 'Site de l’élevage · ses chiens, ses futures portées',
         href: 'https://landes-de-test.chiens-de-france.com',
       },
       {
         key: 'link-0',
+        logo: 'facebook',
         label: 'Facebook · ajouté par toi',
-        description: 'https://www.facebook.com/landes-de-test',
+        description: 'facebook.com/landes-de-test',
         href: 'https://www.facebook.com/landes-de-test',
       },
     ])
@@ -345,6 +349,7 @@ describe('BreederPresentation.listSeenOnLinks', (): void => {
     ])
     expect(links[2]).toEqual({
       key: 'facebook',
+      logo: 'facebook',
       label: 'Facebook',
       description: 'Page de l’élevage',
       href: 'https://www.facebook.com/landes.de.test',
@@ -372,6 +377,36 @@ describe('BreederPresentation.listSeenOnLinks once the site is read', (): void =
       'Site de l’élevage · relu ce matin',
       'Page de l’élevage · lien pris sur son site',
       'Chaîne de l’élevage · lien ajouté par toi',
+    ])
+  })
+})
+
+describe('BreederPresentation.listSeenOnLinks logos', (): void => {
+  it('gives each link the logo of the site it leads to, and the globe to an unknown site', (): void => {
+    const links: BreederSeenOnLink[] = BreederPresentation.listSeenOnLinks(
+      {
+        ...BREEDER_DETAIL,
+        website: 'https://www.facebook.com/elevage.de.test',
+        youtube_url: 'https://www.youtube.com/@landesdetest',
+        links: [
+          { label: 'Site', url: 'https://landes-de-test.chiens-de-france.com/cocker-spaniel-anglais' },
+          { label: 'Instagram', url: 'https://instagram.com/landes.de.test' },
+          { label: 'Leboncoin', url: 'https://www.leboncoin.fr/annonce-de-test' },
+          { label: 'Site', url: 'pas une adresse' },
+        ],
+      },
+      NOW,
+    )
+
+    expect(links.map((link: BreederSeenOnLink): LinkLogo => link.logo)).toEqual([
+      'centrale_canine',
+      'chiens_de_france',
+      'facebook',
+      'youtube',
+      'chiens_de_france',
+      'instagram',
+      'website',
+      'website',
     ])
   })
 })

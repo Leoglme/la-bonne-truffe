@@ -1,4 +1,5 @@
 import type { BreederFilter, BreederFollowStatus, BreederSort } from '~/types/api'
+import type { LinkLogo } from '~/types/UiLinkLogo'
 
 export type BreederChipTone = 'neutral' | 'gold' | 'coral' | 'green' | 'lilac'
 
@@ -29,6 +30,7 @@ export type BreederColorShareSlice = {
 
 export type BreederSeenOnLink = {
   key: string
+  logo: LinkLogo
   label: string
   description: string
   href: string | null

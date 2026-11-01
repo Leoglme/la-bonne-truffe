@@ -27,6 +27,7 @@ import type {
 import type { FrenchGender } from '~/types/FrenchText'
 import type { DevicePosition } from '~/types/Location'
 import type { PrimaryAction } from '~/types/PrimaryAction'
+import type { LinkLogo, LinkLogoImage } from '~/types/UiLinkLogo'
 import {
   BREEDER_DOGS_SHOWN_COUNT,
   COAT_COLOR_SWATCHES,
@@ -35,6 +36,7 @@ import {
   SOCIAL_LINK_ORIGIN_LABELS,
 } from '~/constants/breederOptions'
 import { COAT_COLOR_LABELS } from '~/constants/coatColorLabels'
+import { LINK_LOGOS_BY_DOMAIN } from '~/constants/linkLogos'
 import { UNKNOWN_PLACE_LABEL } from '~/constants/litterLabels'
 import { CrowFliesDistance } from '~/utils/crowFliesDistance'
 import { FrenchDate } from '~/utils/frenchDate'
@@ -48,6 +50,8 @@ const HOT_BIRTH_AGE_DAYS: number = 7
 const INACTIVE_AFTER_DAYS: number = 2 * 365
 const SIREN_DIGIT_GROUP: RegExp = /(\d{3})(?=\d)/g
 const E_LOCUS_CODE_PATTERN: RegExp = /^LocE\w*-/
+const ADDRESS_SCHEME_AND_WWW: RegExp = /^https?:\/\/(www\.)?/i
+const ADDRESS_LAST_SLASH: RegExp = /\/$/
 const WORD_JOINER: string = '\u2060'
 const NO_BREAK_SPACE: string = '\u00a0'
 const MONTH_AND_YEAR_FORMAT: Intl.DateTimeFormat = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
@@ -319,12 +323,19 @@ export class BreederPresentation {
       if (detail.siren) {
         facts.push(`SIREN ${detail.siren.replace(SIREN_DIGIT_GROUP, '$1 ')}`)
       }
-      links.push({ key: 'scc', label: 'Centrale Canine', description: facts.join(' · '), href: null })
+      links.push({
+        key: 'scc',
+        logo: 'centrale_canine',
+        label: 'Centrale Canine',
+        description: facts.join(' · '),
+        href: null,
+      })
     }
     if (detail.chiens_de_france_site_url !== null) {
       const siteReadAt: string | null = detail.chiens_de_france_site_seen_at ?? null
       links.push({
         key: 'chiens-de-france',
+        logo: 'chiens_de_france',
         label: 'Chiens de France',
         description: `Site de l’élevage · ${
           siteReadAt === null ? 'ses chiens, ses futures portées' : this.buildSiteReadLabel(siteReadAt, now)
@@ -333,12 +344,19 @@ export class BreederPresentation {
       })
     }
     if (detail.website !== null && detail.website !== detail.chiens_de_france_site_url) {
-      links.push({ key: 'website', label: 'Site de l’élevage', description: detail.website, href: detail.website })
+      links.push({
+        key: 'website',
+        logo: this.pickLinkLogo(detail.website),
+        label: 'Site de l’élevage',
+        description: this.buildReadableAddress(detail.website),
+        href: detail.website,
+      })
     }
     const origins: Record<string, SocialLinkOrigin> = detail.social_link_origins ?? {}
     if (detail.facebook_url !== null) {
       links.push({
         key: 'facebook',
+        logo: 'facebook',
         label: SOCIAL_ACCOUNT_LABELS.facebook,
         description: this.joinOrigin('Page de l’élevage', origins['facebook']),
         href: detail.facebook_url,
@@ -347,6 +365,7 @@ export class BreederPresentation {
     if (detail.instagram_url !== null) {
       links.push({
         key: 'instagram',
+        logo: 'instagram',
         label: SOCIAL_ACCOUNT_LABELS.instagram,
         description: this.joinOrigin('Compte de l’élevage', origins['instagram']),
         href: detail.instagram_url,
@@ -355,6 +374,7 @@ export class BreederPresentation {
     if (detail.youtube_url !== null) {
       links.push({
         key: 'youtube',
+        logo: 'youtube',
         label: SOCIAL_ACCOUNT_LABELS.youtube,
         description: this.joinOrigin('Chaîne de l’élevage', origins['youtube']),
         href: detail.youtube_url,
@@ -363,8 +383,9 @@ export class BreederPresentation {
     detail.links.forEach((link: BreederLink, index: number): void => {
       links.push({
         key: `link-${index}`,
+        logo: this.pickLinkLogo(link.url),
         label: `${link.label} · ajouté par toi`,
-        description: link.url,
+        description: this.buildReadableAddress(link.url),
         href: link.url,
       })
     })
@@ -627,6 +648,35 @@ export class BreederPresentation {
    */
   private static joinOrigin(description: string, origin: SocialLinkOrigin | undefined): string {
     return origin === undefined ? description : `${description} · ${SOCIAL_LINK_ORIGIN_LABELS[origin]}`
+  }
+
+  /**
+   * Write a web address as « Vu sur » shows it, without its scheme, its « www. » nor its last slash.
+   *
+   * @param url - The address.
+   * @returns « elevage-de-test.fr/cockers » for « https://www.elevage-de-test.fr/cockers/ ».
+   */
+  private static buildReadableAddress(url: string): string {
+    return url.replace(ADDRESS_SCHEME_AND_WWW, '').replace(ADDRESS_LAST_SLASH, '')
+  }
+
+  /**
+   * Pick the logo of a link by the site it leads to.
+   *
+   * @param url - The link; a subdomain counts as its site, so `fonddelachenaie.chiens-de-france.com` is Chiens de France.
+   * @returns The logo of the site, or the globe of an unknown website.
+   */
+  private static pickLinkLogo(url: string): LinkLogo {
+    let host: string = ''
+    try {
+      host = new URL(url).hostname.toLowerCase()
+    } catch {
+      return 'website'
+    }
+    const knownSite: [string, LinkLogoImage] | undefined = LINK_LOGOS_BY_DOMAIN.find(
+      ([domain]: [string, LinkLogoImage]): boolean => host === domain || host.endsWith(`.${domain}`),
+    )
+    return knownSite?.[1] ?? 'website'
   }
 
   /**

@@ -8,13 +8,14 @@
           :href="link.href ?? undefined"
           :target="link.href ? '_blank' : undefined"
           :rel="link.href ? 'noopener' : undefined"
-          class="flex min-h-14 items-center gap-3 rounded-[20px] bg-card px-4 py-3 text-ink no-underline shadow-card hover:text-ink md:px-[18px]"
+          class="flex min-h-14 items-center gap-3 rounded-[20px] bg-card py-3 pr-4 pl-3 text-ink no-underline shadow-card hover:text-ink md:pr-[18px]"
         >
+          <UiLinkLogo :logo="link.logo" />
           <span class="flex min-w-0 grow flex-col gap-0.5">
             <span class="text-[11px] font-extrabold tracking-[0.04em] text-ink-label uppercase md:text-[13px]">
               {{ link.label }}
             </span>
-            <span class="truncate text-[15px] font-bold md:text-base">{{ link.description }}</span>
+            <span class="text-[15px] font-bold wrap-anywhere md:text-base">{{ link.description }}</span>
           </span>
           <UIcon v-if="link.href" name="i-lucide-external-link" class="size-5 shrink-0 text-coral-text" />
         </component>
