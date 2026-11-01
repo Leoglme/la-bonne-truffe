@@ -13,20 +13,10 @@
     @update:open="onOpenChange"
   >
     <template #body="{ isShownAsWindow }">
-      <div
-        v-if="breeder"
-        :class="isShownAsWindow ? 'grid grid-cols-2 items-start gap-x-10 gap-y-6' : 'flex flex-col gap-6'"
-      >
-        <p
-          v-if="actionError"
-          role="alert"
-          class="m-0 text-[15px] font-bold text-coral-text"
-          :class="isShownAsWindow ? 'col-span-2' : ''"
-        >
-          {{ actionError }}
-        </p>
+      <div v-if="breeder" class="flex flex-col gap-6">
+        <p v-if="actionError" role="alert" class="m-0 text-[15px] font-bold text-coral-text">{{ actionError }}</p>
 
-        <div class="flex flex-col gap-2.5">
+        <div :class="isShownAsWindow ? 'grid grid-cols-2 gap-2.5' : 'flex flex-col gap-2.5'">
           <div
             v-for="setting in BREEDER_NOTIFICATION_SETTINGS"
             :key="setting.key"
@@ -45,50 +35,48 @@
           </div>
         </div>
 
-        <div :class="isShownAsWindow ? 'flex flex-col gap-6' : 'contents'">
-          <div class="flex flex-col gap-2">
-            <span class="text-[13px] font-extrabold tracking-[0.04em] text-ink-label uppercase">Dans mon carnet</span>
-            <div role="group" aria-label="Statut de l’éleveur dans mon carnet" class="flex flex-wrap gap-2">
-              <button
-                v-for="option in BREEDER_FOLLOW_STATUS_OPTIONS"
-                :key="option.value"
-                type="button"
-                :aria-pressed="draft.status === option.value"
-                :disabled="breederFollowStore.isSaving"
-                class="min-h-11 rounded-full px-[18px] text-[15px] font-extrabold whitespace-nowrap shadow-chip"
-                :class="draft.status === option.value ? 'bg-ink text-cream' : 'bg-card text-ink-secondary'"
-                @click="draft.status = option.value"
-              >
-                {{ option.label }}
-              </button>
-            </div>
-          </div>
-
-          <FollowUpReminderField v-model="draft.next_reminder_at" :is-disabled="breederFollowStore.isSaving" />
-
-          <div class="flex flex-col gap-2.5">
-            <UButton
-              size="xl"
-              class="min-h-[56px] w-full justify-center gap-2 text-[17px]"
-              :loading="breederFollowStore.isSaving"
-              @click="saveFollow"
-            >
-              <template v-if="breeder.follow === null" #leading>
-                <UiCustomIcon name="heart" :size-in-pixels="20" :stroke-width="2.2" />
-              </template>
-              {{ breeder.follow === null ? 'Suivre cet élevage' : 'Enregistrer' }}
-            </UButton>
-            <UButton
-              color="neutral"
-              variant="outline"
-              size="xl"
-              class="min-h-[52px] w-full justify-center text-[17px]"
+        <div class="flex flex-col gap-2">
+          <span class="text-[13px] font-extrabold tracking-[0.04em] text-ink-label uppercase">Dans mon carnet</span>
+          <div role="group" aria-label="Statut de l’éleveur dans mon carnet" class="flex flex-wrap gap-2">
+            <button
+              v-for="option in BREEDER_FOLLOW_STATUS_OPTIONS"
+              :key="option.value"
+              type="button"
+              :aria-pressed="draft.status === option.value"
               :disabled="breederFollowStore.isSaving"
-              @click="breederFollowStore.close()"
+              class="min-h-11 rounded-full px-[18px] text-[15px] font-extrabold whitespace-nowrap shadow-chip"
+              :class="draft.status === option.value ? 'bg-ink text-cream' : 'bg-card text-ink-secondary'"
+              @click="draft.status = option.value"
             >
-              Annuler
-            </UButton>
+              {{ option.label }}
+            </button>
           </div>
+        </div>
+
+        <FollowUpReminderField v-model="draft.next_reminder_at" :is-disabled="breederFollowStore.isSaving" />
+
+        <div :class="isShownAsWindow ? 'grid grid-cols-2 gap-2.5' : 'flex flex-col gap-2.5'">
+          <UButton
+            size="xl"
+            class="min-h-[56px] w-full justify-center gap-2 text-[17px]"
+            :loading="breederFollowStore.isSaving"
+            @click="saveFollow"
+          >
+            <template v-if="breeder.follow === null" #leading>
+              <UiCustomIcon name="heart" :size-in-pixels="20" :stroke-width="2.2" />
+            </template>
+            {{ breeder.follow === null ? 'Suivre cet élevage' : 'Enregistrer' }}
+          </UButton>
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="xl"
+            class="min-h-[52px] w-full justify-center text-[17px]"
+            :disabled="breederFollowStore.isSaving"
+            @click="breederFollowStore.close()"
+          >
+            Annuler
+          </UButton>
         </div>
 
         <template v-if="breeder.follow">
@@ -99,7 +87,6 @@
             :add-note="addNote"
             :remove-note="removeNote"
             class="border-t border-line pt-5"
-            :class="isShownAsWindow ? 'col-span-2' : ''"
           />
           <FollowUpStopButton
             :key="`stop-${breeder.id}`"
@@ -107,7 +94,6 @@
             :question="`Ne plus suivre ${breeder.name} ?`"
             consequence="Ses alertes, son statut, son rappel et tes notes seront effacés."
             :stop-action="stopFollowing"
-            :class="isShownAsWindow ? 'col-span-2' : ''"
           />
         </template>
       </div>

@@ -15,7 +15,7 @@
     <template #body="{ isShownAsWindow }">
       <div
         v-if="litter && litter.follow_up"
-        :class="isShownAsWindow ? 'grid grid-cols-2 items-start gap-x-10 gap-y-6' : 'flex flex-col gap-6'"
+        :class="isShownAsWindow ? 'grid grid-flow-row-dense grid-cols-2 items-start gap-6' : 'flex flex-col gap-6'"
       >
         <p
           v-if="actionError"
@@ -26,59 +26,59 @@
           {{ actionError }}
         </p>
 
-        <div :class="isShownAsWindow ? 'flex flex-col gap-6' : 'contents'">
-          <div class="flex flex-col gap-2">
-            <label :for="statusFieldId" class="text-[13px] font-extrabold tracking-[0.04em] text-ink-label uppercase">
-              Statut
-            </label>
-            <div class="relative">
-              <select
-                :id="statusFieldId"
-                :value="selectedStatus"
-                :disabled="followUpsStore.isSaving"
-                class="min-h-[52px] w-full appearance-none rounded-2xl border-2 border-line-strong bg-card ps-4 pe-12 text-[17px] font-bold text-ink disabled:opacity-60"
-                @change="changeStatus"
-              >
-                <option v-for="option in FOLLOW_UP_STATUS_OPTIONS" :key="option.value" :value="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-              <UIcon
-                name="i-lucide-chevrons-up-down"
-                class="pointer-events-none absolute end-4 top-1/2 size-5 -translate-y-1/2 text-ink-muted"
-              />
-            </div>
-            <span v-if="lastContactLabel" class="text-sm text-ink-muted">{{ lastContactLabel }}</span>
+        <div class="flex flex-col gap-2">
+          <label :for="statusFieldId" class="text-[13px] font-extrabold tracking-[0.04em] text-ink-label uppercase">
+            Statut
+          </label>
+          <div class="relative">
+            <select
+              :id="statusFieldId"
+              :value="selectedStatus"
+              :disabled="followUpsStore.isSaving"
+              class="min-h-[52px] w-full appearance-none rounded-2xl border-2 border-line-strong bg-card ps-4 pe-12 text-[17px] font-bold text-ink disabled:opacity-60"
+              @change="changeStatus"
+            >
+              <option v-for="option in FOLLOW_UP_STATUS_OPTIONS" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            <UIcon
+              name="i-lucide-chevrons-up-down"
+              class="pointer-events-none absolute end-4 top-1/2 size-5 -translate-y-1/2 text-ink-muted"
+            />
           </div>
-
-          <FollowUpFoundPuppyCard
-            v-if="isFoundPuppyCardShown"
-            :litter="litter"
-            @confirmed="followUpsStore.close()"
-            @dismissed="isFoundPuppyCardDismissed = true"
-          />
-
-          <FollowUpReminderField
-            :model-value="litter.follow_up.next_reminder_at ?? null"
-            :is-disabled="followUpsStore.isSaving"
-            @update:model-value="saveReminder"
-          />
-
-          <FollowUpStopButton
-            :key="`stop-${litter.id}`"
-            label="Ne plus suivre cette portée"
-            :question="`Ne plus suivre ${litter.name} ?`"
-            consequence="Son statut, son rappel et tes notes seront effacés."
-            :stop-action="stopFollowing"
-            :class="isShownAsWindow ? '' : 'order-last'"
-          />
+          <span v-if="lastContactLabel" class="text-sm text-ink-muted">{{ lastContactLabel }}</span>
         </div>
+
+        <FollowUpFoundPuppyCard
+          v-if="isFoundPuppyCardShown"
+          :litter="litter"
+          :class="isShownAsWindow ? 'col-span-2' : ''"
+          @confirmed="followUpsStore.close()"
+          @dismissed="isFoundPuppyCardDismissed = true"
+        />
+
+        <FollowUpReminderField
+          :model-value="litter.follow_up.next_reminder_at ?? null"
+          :is-disabled="followUpsStore.isSaving"
+          @update:model-value="saveReminder"
+        />
 
         <FollowUpNotesSection
           :key="litter.id"
           :notes="litter.follow_up.notes"
           :add-note="addNote"
           :remove-note="removeNote"
+          :class="isShownAsWindow ? 'col-span-2' : ''"
+        />
+
+        <FollowUpStopButton
+          :key="`stop-${litter.id}`"
+          label="Ne plus suivre cette portée"
+          :question="`Ne plus suivre ${litter.name} ?`"
+          consequence="Son statut, son rappel et tes notes seront effacés."
+          :stop-action="stopFollowing"
+          :class="isShownAsWindow ? 'col-span-2' : ''"
         />
       </div>
     </template>
