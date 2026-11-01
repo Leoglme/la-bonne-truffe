@@ -18,6 +18,7 @@ RECORDED_PAGES_BY_PATH: dict[str, str] = {
     f"/{BREED_SLUG}/saillies": "litters_to_come.html",
     f"/{BREED_SLUG}/chiots": "litters_for_sale.html",
     f"/{BREED_SLUG}/chiots-a-vendre/495610": "litter_for_sale_495610.html",
+    f"/{BREED_SLUG}/chiots-vendus": "litters_born.html",
     f"/{BREED_SLUG}/chiens/femelles": "females.html",
     f"/{BREED_SLUG}/chiens/etalons": "studs.html",
     f"/{BREED_SLUG}/chien/1212400": "dog_1212400.html",
@@ -27,6 +28,11 @@ EMPTY_SITE_PAGES_BY_PATH: dict[str, str] = {
     f"/{BREED_SLUG}/saillies": "litters_to_come_empty.html",
     f"/{BREED_SLUG}": "home.html",
 }
+
+MAIN_SITE_SLUG = "www"
+DIRECTORY_LIST_PATH = f"/eleveurs/{BREED_SLUG}/france/bretagne"
+DIRECTORY_LIST_URL = f"https://www.chiens-de-france.com{DIRECTORY_LIST_PATH}"
+MAIN_SITE_PAGES_BY_PATH: dict[str, str] = {DIRECTORY_LIST_PATH: "breeders_directory.html"}
 
 STILL_CLOCK_SECONDS = 100.0
 BROKEN_SITE_STATUS_CODE = 500
@@ -71,8 +77,8 @@ def chiens_de_france_site_collector_serving(
 ) -> ChiensDeFranceSiteCollector:
     """
     A collector that gets the recorded pages of ``elevage-a``, the empty litter list and the home page of
-    ``elevage-b``, a 500 for every page of ``elevage-c`` and a 404 for any other page (the site has none).
-    It does not wait between pages: the pauses it would make are recorded.
+    ``elevage-b``, the regional list of Brittany on the main site, a 500 for every page of ``elevage-c`` and a 404
+    for any other page (the site has none). It does not wait between pages: the pauses it would make are recorded.
 
     Args:
         requests: Filled with every request sent, when given.
@@ -97,7 +103,11 @@ def chiens_de_france_site_collector_serving(
         slug = request.url.host.removesuffix(SITE_HOST_SUFFIX)
         if slug == BROKEN_SITE_SLUG:
             return httpx.Response(BROKEN_SITE_STATUS_CODE)
-        pages_by_path = {RECORDED_SITE_SLUG: RECORDED_PAGES_BY_PATH, EMPTY_SITE_SLUG: EMPTY_SITE_PAGES_BY_PATH}
+        pages_by_path = {
+            RECORDED_SITE_SLUG: RECORDED_PAGES_BY_PATH,
+            EMPTY_SITE_SLUG: EMPTY_SITE_PAGES_BY_PATH,
+            MAIN_SITE_SLUG: MAIN_SITE_PAGES_BY_PATH,
+        }
         file_name = pages_by_path.get(slug, {}).get(request.url.path)
         if file_name is None:
             return httpx.Response(404)

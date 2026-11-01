@@ -44,13 +44,18 @@ class Breeder(TimestampMixin, Base):
         chiens_de_france_registered_on: « Inscrit sur chiens-de-france.com depuis le … ».
         breeding_females_count: « 18 femelles reproductrices au sein de l'élevage », as Chiens de France writes it.
         litters_last_year_count: « 14 portées au cours de l'année écoulée », as Chiens de France writes it.
+        chiens_de_france_site_seen_at: Last time the breeder's site on Chiens de France was read.
+        chiens_de_france_litters: The litters of the year its « Chiots nés chez nous » page lists, each
+            ``{"birth_date", "sire_name", "dam_name"}``.
         cover_photo_url: First photo found on the breeder's site.
         scc_site_cover_url: Cover photo of the breeder's site at the Centrale Canine (``h_image_uri``).
         scc_site_photos: Gallery images of that site, absolute URLs.
         scc_site_seen_at: Last time that site was read; it rests a month between two readings.
-        facebook_url: Facebook page that site declares, as an address.
-        instagram_url: Instagram account that site declares, as an address.
-        youtube_url: YouTube channel that site declares, as an address.
+        facebook_url: Facebook page of the breeding, as an address.
+        instagram_url: Instagram account of the breeding, as an address.
+        youtube_url: YouTube channel of the breeding, as an address.
+        social_link_origins: Where each of these accounts was found, ``SocialLinkOrigin`` by ``facebook``,
+            ``instagram`` or ``youtube``.
         links: Links Léo added by hand, each ``{"label", "url"}`` (Facebook, Instagram, a site).
         is_manual: Created by hand from the app, before any source listed the breeder.
         created_by_user_id: User who created the breeder by hand.
@@ -88,6 +93,8 @@ class Breeder(TimestampMixin, Base):
     chiens_de_france_registered_on: Mapped[date | None]
     breeding_females_count: Mapped[int | None]
     litters_last_year_count: Mapped[int | None]
+    chiens_de_france_site_seen_at: Mapped[datetime | None]
+    chiens_de_france_litters: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list, nullable=False)
     cover_photo_url: Mapped[str | None] = mapped_column(String(500))
     scc_site_cover_url: Mapped[str | None] = mapped_column(String(500))
     scc_site_photos: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
@@ -95,6 +102,7 @@ class Breeder(TimestampMixin, Base):
     facebook_url: Mapped[str | None] = mapped_column(String(500))
     instagram_url: Mapped[str | None] = mapped_column(String(500))
     youtube_url: Mapped[str | None] = mapped_column(String(500))
+    social_link_origins: Mapped[dict[str, str]] = mapped_column(JSON, default=dict, nullable=False)
     links: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list, nullable=False)
     is_manual: Mapped[bool] = mapped_column(default=False, nullable=False)
     created_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))

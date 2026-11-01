@@ -1,6 +1,7 @@
 const FRENCH_LOCALE: string = 'fr-FR'
 const MILLISECONDS_PER_MINUTE: number = 60_000
 const MILLISECONDS_PER_DAY: number = 86_400_000
+const NOON_HOUR: number = 12
 const TIME_ZONE_SUFFIX: RegExp = /(Z|[+-]\d{2}:?\d{2})$/i
 
 const DAY_AND_LONG_MONTH_FORMAT: Intl.DateTimeFormat = new Intl.DateTimeFormat(FRENCH_LOCALE, {
@@ -146,6 +147,34 @@ export class FrenchDate {
       return `il y a ${elapsedHours} h`
     }
     return `il y a ${Math.floor(elapsedHours / 24)} j`
+  }
+
+  /**
+   * Say when a recent moment was, the way it is said aloud.
+   *
+   * @param moment - The past moment.
+   * @param now - Current time.
+   * @returns « ce matin », « aujourd’hui », « hier » or « le 28 oct. ».
+   */
+  static formatRecentMoment(moment: Date, now: Date): string {
+    const daysAgo: number = this.countDaysAgo(this.startOfDay(moment), now)
+    if (daysAgo <= 0) {
+      return moment.getHours() < NOON_HOUR ? 'ce matin' : 'aujourd’hui'
+    }
+    if (daysAgo === 1) {
+      return 'hier'
+    }
+    return `le ${this.formatDayAndShortMonth(moment)}`
+  }
+
+  /**
+   * The day of a moment, at local midnight.
+   *
+   * @param moment - The moment.
+   * @returns Its day.
+   */
+  static startOfDay(moment: Date): Date {
+    return new Date(moment.getFullYear(), moment.getMonth(), moment.getDate())
   }
 
   /**

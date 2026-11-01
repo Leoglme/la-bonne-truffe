@@ -13,14 +13,21 @@ from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
 from services.matching.scoring import COLOR_LABELS
 
-E_LOCUS_CODE_PREFIX = "LocE-"
+E_LOCUS_CODE_PATTERN = re.compile(r"^LocE\w*-(.+)$")
+RECESSIVE_E_ALLELE = "e"
 GOLD_GENOTYPE = "e/e"
 CARRIER_GENOTYPE = "E/e"
 NON_CARRIER_GENOTYPE = "E/E"
+GOLD_PUPPY_ODDS_OF_GOLD_COUPLE = 1.0
+GOLD_PUPPY_ODDS_WITH_ONE_CARRIER = 0.5
+GOLD_PUPPY_ODDS_OF_TWO_CARRIERS = 0.25
 
 # LOF Select writes the colour in abbreviations (« F.Or. », « Noi. Mar.Fau. »): each token is one word.
 LOF_SELECT_TOKEN_PATTERN = re.compile(r"[a-z]+\.?")
-GOLD_TOKENS: frozenset[str] = frozenset({"f.", "f.or.", "f.cl.", "f.fo.", "fau.", "rou.", "gol.", "or.", "ora."})
+GOLD_TOKENS: frozenset[str] = frozenset(
+    {"f.", "f.or.", "f.cl.", "f.fo.", "fau.", "rou.", "gol.", "or.", "ora.", "cit."}
+)
+GOLD_COAT_COLORS: frozenset[CoatColor] = frozenset({CoatColor.GOLD, CoatColor.ORANGE_ROUAN})
 BLACK_TOKENS: frozenset[str] = frozenset({"noi."})
 BROWN_TOKENS: frozenset[str] = frozenset({"mar.", "cho.", "foi."})
 TAN_TOKENS: frozenset[str] = frozenset({"fau.", "feu", "feu."})
@@ -48,40 +55,65 @@ PLAIN_TEXT_COLORS: tuple[tuple[tuple[str, ...], CoatColor], ...] = (
 
 @dataclass(frozen=True)
 class ParentColorFacts:
-    """What is known of a parent's colour: its canonical colour, and its E locus genotype when tested."""
+    """
+    What is known of a parent's colour: its canonical colour, its E locus genotype when tested, and whether one
+    of its own parents had a coat of the gold family.
+    """
 
     color: CoatColor
     e_locus: str | None = None
+    has_gold_parent: bool = False
 
     @property
     def genotype(self) -> str | None:
         """
-        The E locus genotype: the tested one, else ``e/e`` for a gold dog (gold is recessive), else unknown.
+        The E locus genotype: the tested one, else ``e/e`` for a gold dog (gold is recessive), else ``E/e`` for a
+        dog one of whose parents had two « e » and gave it one, else unknown.
 
         Returns:
             « e/e », « E/e », « E/E », or None while unknown.
         """
         if self.e_locus is not None:
             return self.e_locus
-        return GOLD_GENOTYPE if self.color == CoatColor.GOLD else None
+        if self.color == CoatColor.GOLD:
+            return GOLD_GENOTYPE
+        return CARRIER_GENOTYPE if self.has_gold_parent else None
+
+    @property
+    def carries_gold_by_parents(self) -> bool:
+        """
+        Whether the dog carries the gold because one of its parents had a coat of the gold family, without a test.
+
+        Returns:
+            True when the carrier genotype comes from its parents.
+        """
+        return self.e_locus is None and self.color != CoatColor.GOLD and self.has_gold_parent
 
 
 @dataclass(frozen=True)
 class ExpectedColor:
-    """One colour the parents imply for the puppies, how sure it is, and why."""
+    """One colour the parents imply for the puppies, how sure it is, why, and the share of puppies of that colour."""
 
     color: CoatColor
     confidence: ColorConfidence
     reason: str
+    puppy_odds: float | None = None
 
-    def as_json(self) -> dict[str, str]:
+    def as_json(self) -> dict[str, str | float]:
         """
         The form stored in ``LitterGroup.expected_colors``.
 
         Returns:
-            The colour, its confidence and its reason, as the litter group keeps them.
+            The colour, its confidence and its reason, and the odds of each puppy when the genotypes tell them.
         """
-        return {"color": self.color.value, "confidence": self.confidence.value, "reason": self.reason}
+        stored: dict[str, str | float] = {
+            "color": self.color.value,
+            "confidence": self.confidence.value,
+            "reason": self.reason,
+        }
+        if self.puppy_odds is not None:
+            stored["puppy_odds"] = self.puppy_odds
+        return stored
 
 
 class DogColorInference:
@@ -106,27 +138,56 @@ class DogColorInference:
             return DogColorInference._color_of_lof_select_tokens(tokens)
         return DogColorInference._color_of_plain_text(lowered)
 
+    @classmethod
+    def has_gold_coat(cls, code: str | None) -> bool:
+        """
+        Whether a coat belongs to the gold family, which only a dog with two « e » shows: gold, red, orange or
+        lemon, roan or with white.
+
+        Args:
+            code: The colour as the source writes it (« F.Or. », « Fau. Pan.Bla.Rou. », « Golden »).
+
+        Returns:
+            True for a coat of the gold family.
+        """
+        if not code:
+            return False
+        lowered = without_accents(code).lower().strip()
+        tokens = LOF_SELECT_TOKEN_PATTERN.findall(lowered)
+        if tokens and all(token.endswith(".") or token in TAN_TOKENS for token in tokens):
+            return tokens[0] in GOLD_TOKENS or tokens[0].startswith("f.")
+        return cls._color_of_plain_text(lowered) in GOLD_COAT_COLORS
+
     @staticmethod
     def e_locus_of(health_codes: tuple[str, ...] | list[str]) -> str | None:
         """
-        The E locus genotype among the health test codes.
+        The E locus genotype among the health test codes, written with « E » for any dominant allele: the mask
+        « Em » of « LocEm-Em/e » is one.
 
         Args:
-            health_codes: Codes as LOF Select lists them (« FN-1.1 », « LocE-e/e »).
+            health_codes: Codes as LOF Select lists them (« FN-1.1 », « LocE-e/e », « LocEm-Em/e »).
 
         Returns:
             « e/e », « E/e » or « E/E », or None when the locus is not tested.
         """
         for code in health_codes:
-            if code.startswith(E_LOCUS_CODE_PREFIX):
-                genotype = code.removeprefix(E_LOCUS_CODE_PREFIX).strip()
-                return genotype or None
+            code_match = E_LOCUS_CODE_PATTERN.match(code.strip())
+            if code_match is None:
+                continue
+            alleles = [allele.strip() for allele in code_match.group(1).split("/")]
+            if len(alleles) != 2 or not all(alleles):
+                return None
+            dominant_first = sorted(
+                RECESSIVE_E_ALLELE if allele.startswith(RECESSIVE_E_ALLELE) else "E" for allele in alleles
+            )
+            return "/".join(dominant_first)
         return None
 
     @classmethod
     def expected_colors(cls, sire: ParentColorFacts | None, dam: ParentColorFacts | None) -> tuple[ExpectedColor, ...]:
         """
-        The colours a couple of parents implies, by the E locus: two ``e/e`` parents only give gold puppies.
+        The colours a couple of parents implies, by the E locus: two ``e/e`` parents only give gold puppies, a gold
+        parent and a carrier one gold puppy in two, two carriers one in four.
 
         Args:
             sire: What is known of the father, None while his page is not read.
@@ -139,7 +200,16 @@ class DogColorInference:
             return ()
         sire_genotype, dam_genotype = sire.genotype, dam.genotype
         if sire_genotype == GOLD_GENOTYPE and dam_genotype == GOLD_GENOTYPE:
-            return (ExpectedColor(CoatColor.GOLD, ColorConfidence.INFERRED, "Gold : les deux parents sont gold"),)
+            return (
+                ExpectedColor(
+                    CoatColor.GOLD,
+                    ColorConfidence.INFERRED,
+                    "Gold : les deux parents sont gold",
+                    GOLD_PUPPY_ODDS_OF_GOLD_COUPLE,
+                ),
+            )
+        if sire_genotype == CARRIER_GENOTYPE and dam_genotype == CARRIER_GENOTYPE:
+            return cls._colors_of_two_carriers(sire, dam)
         gold_parent, other_parent, other_genotype = cls._gold_parent_and_other(sire, dam, sire_genotype, dam_genotype)
         if gold_parent is None or other_parent is None:
             return ()
@@ -154,12 +224,35 @@ class DogColorInference:
                     f"Pas de gold : l’autre parent, {other_label}, ne transmet pas le gold",
                 ),
             )
-        reason = f"Gold possible : un parent gold, l’autre {other_label}" + (
-            " porteur du gold" if other_genotype == CARRIER_GENOTYPE else ""
-        )
-        expected = [ExpectedColor(CoatColor.GOLD, ColorConfidence.AMBIGUOUS, reason)]
+        if other_genotype == CARRIER_GENOTYPE:
+            reason = f"Gold possible, un chiot sur deux : un parent gold, l’autre {other_label} porteur du gold"
+            gold_odds: float | None = GOLD_PUPPY_ODDS_WITH_ONE_CARRIER
+        else:
+            reason = f"Gold possible : un parent gold, l’autre {other_label}"
+            gold_odds = None
+        expected = [ExpectedColor(CoatColor.GOLD, ColorConfidence.AMBIGUOUS, reason, gold_odds)]
         if other_parent.color not in (CoatColor.INCONNUE, CoatColor.GOLD):
             expected.append(ExpectedColor(other_parent.color, ColorConfidence.AMBIGUOUS, reason))
+        return tuple(expected)
+
+    @staticmethod
+    def _colors_of_two_carriers(sire: ParentColorFacts, dam: ParentColorFacts) -> tuple[ExpectedColor, ...]:
+        """
+        The colours of two parents that both carry the gold without being gold: gold for one puppy in four, their
+        own colours for the others.
+
+        Args:
+            sire: The father.
+            dam: The mother.
+
+        Returns:
+            Gold first, then the colours of the parents, each once.
+        """
+        reason = "Gold possible, un chiot sur quatre : les deux parents portent le gold"
+        expected = [ExpectedColor(CoatColor.GOLD, ColorConfidence.AMBIGUOUS, reason, GOLD_PUPPY_ODDS_OF_TWO_CARRIERS)]
+        for parent_color in dict.fromkeys((sire.color, dam.color)):
+            if parent_color not in (CoatColor.INCONNUE, CoatColor.GOLD):
+                expected.append(ExpectedColor(parent_color, ColorConfidence.AMBIGUOUS, reason))
         return tuple(expected)
 
     @staticmethod
@@ -204,7 +297,7 @@ class DogColorInference:
             return CoatColor.ZIBELINE
         if first in BLACK_TOKENS:
             if marks & TAN_TOKENS:
-                return CoatColor.NOIR_ET_FEU
+                return CoatColor.TRICOLORE if marks & WHITE_TOKENS else CoatColor.NOIR_ET_FEU
             if marks & ROAN_TOKENS:
                 return CoatColor.BLEU_ROUAN
             if marks & WHITE_TOKENS:
@@ -212,7 +305,7 @@ class DogColorInference:
             return CoatColor.NOIR
         if first in BROWN_TOKENS:
             if marks & TAN_TOKENS:
-                return CoatColor.MARRON_ET_FEU
+                return CoatColor.TRICOLORE if marks & WHITE_TOKENS else CoatColor.MARRON_ET_FEU
             if marks & ROAN_TOKENS:
                 return CoatColor.MARRON_ROUAN
             if marks & WHITE_TOKENS:

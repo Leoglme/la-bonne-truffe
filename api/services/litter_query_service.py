@@ -2,24 +2,30 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import StrEnum
 from typing import Self
 
 from fastapi import HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from core.text import without_accents
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
 from enums.dog_role import DogRole
 from enums.listing_kind import ListingKind
+from enums.listing_source import ListingSource
 from enums.match_flag import MatchFlag
 from enums.match_tier import MatchTier
+from enums.puppy_ad_state import PuppyAdState
 from models.breed import Breed
 from models.breeder import Breeder
 from models.department import Department
 from models.dog import Dog
 from models.follow_up import FollowUp, FollowUpNote
 from models.listing import Listing
+from models.listing_change import ListingChange
 from models.listing_match import ListingMatch
 from models.litter_group import LitterGroup
 from models.search_profile import SearchProfile
@@ -38,11 +44,17 @@ from schemas.litter import (
     LitterSourceListing,
 )
 from schemas.notification import NotificationLitter
+from services.dog_chip import DogChip
+from services.dog_ingestion import DogIngestionService
 from services.genetic_screening import GeneticScreeningReader
 from services.matching.snapshot_builder import LitterSnapshotBuilder
 
 SELECTED_BREEDING_GROUP = 1
 GROUPS_WITH_AFFIX = (1, 2)
+PHOTOS_FIELD = "photos"
+SOLD_STATUS_WORDS: tuple[str, ...] = ("vendu", "adopte")
+RESERVED_STATUS_WORD = "reserv"
+AVAILABLE_STATUS_WORD = "disponible"
 
 
 class LitterSort(StrEnum):
@@ -188,6 +200,9 @@ class LitterQueryService:
 
         sire = cls._parent(listings, lambda listing: listing.sire_name, lambda listing: listing.sire_rating)
         dam = cls._parent(listings, lambda listing: listing.dam_name, lambda listing: listing.dam_rating)
+        sire_dog = db.get(Dog, group.sire_dog_id) if group.sire_dog_id else None
+        dam_dog = db.get(Dog, group.dam_dog_id) if group.dam_dog_id else None
+        site_photos_by_chip = cls._site_photos_by_chip(db, [dog for dog in (sire_dog, dam_dog) if dog is not None])
         return LitterDetail(
             **card.model_dump(),
             reasons=[LitterReason(text=str(reason["text"]), points=int(reason["points"])) for reason in match.reasons]
@@ -196,8 +211,8 @@ class LitterQueryService:
             flags=[MatchFlag(flag) for flag in match.flags] if match is not None else [],
             litter_number=next((listing.litter_number for listing in listings if listing.litter_number), None),
             mating_date=group.mating_date,
-            sire=cls._parent_with_dog(sire, db.get(Dog, group.sire_dog_id) if group.sire_dog_id else None),
-            dam=cls._parent_with_dog(dam, db.get(Dog, group.dam_dog_id) if group.dam_dog_id else None),
+            sire=cls._parent_with_dog(sire, sire_dog, site_photos_by_chip),
+            dam=cls._parent_with_dog(dam, dam_dog, site_photos_by_chip),
             breeder=cls._breeder(breeder) if breeder is not None else None,
             photos=photos,
             puppies=[
@@ -215,9 +230,10 @@ class LitterQueryService:
             ],
             expected_colors=[
                 LitterExpectedColor(
-                    color=CoatColor(entry["color"]),
-                    confidence=ColorConfidence(entry["confidence"]),
+                    color=CoatColor(str(entry["color"])),
+                    confidence=ColorConfidence(str(entry["confidence"])),
                     reason=str(entry.get("reason", "")),
+                    puppy_odds=float(odds) if isinstance(odds := entry.get("puppy_odds"), int | float) else None,
                 )
                 for entry in group.expected_colors
             ],
@@ -236,10 +252,13 @@ class LitterQueryService:
                         for entry in listing.colors
                     ],
                     photos=listing.photos,
+                    puppy_state=cls._puppy_state(listing),
+                    price_cents=listing.price_cents,
                 )
                 for listing in listings
             ],
             follow_up=cls._follow_up_payload(db, follow_up) if follow_up is not None else None,
+            photos_added_at=cls._photos_added_at(db, listings),
         )
 
     @classmethod
@@ -495,6 +514,7 @@ class LitterQueryService:
             genetic_screening=GeneticScreeningReader.of_parents(
                 snapshot.breed_slug, snapshot.sire_rating, snapshot.dam_rating
             ),
+            gold_puppy_odds=snapshot.gold_puppy_odds,
         )
 
     @staticmethod
@@ -540,13 +560,17 @@ class LitterQueryService:
         return LitterParent(name=name, rating=rating)
 
     @staticmethod
-    def _parent_with_dog(parent: LitterParent | None, dog: Dog | None) -> LitterParent | None:
+    def _parent_with_dog(
+        parent: LitterParent | None, dog: Dog | None, site_photos_by_chip: dict[str, str]
+    ) -> LitterParent | None:
         """
-        A parent completed with its Centrale Canine page: colour, E locus, health tests, page.
+        A parent completed with its Centrale Canine page (colour, E locus, health tests, page) and with the first
+        photo its breeder's site shows of the dog of the same chip.
 
         Args:
             parent: The parent as the listings name it, if any.
             dog: Its dog row, once its page is read.
+            site_photos_by_chip: First photo on a breeder's site, by chip digits.
 
         Returns:
             The parent, from the dog alone when no listing names it.
@@ -556,15 +580,95 @@ class LitterQueryService:
         name = parent.name if parent is not None else (dog.full_name or dog.name or "")
         if not name:
             return parent
+        color_facts = DogIngestionService.color_facts_of(dog)
+        chip = DogChip.key_of(dog.identifier)
         return LitterParent(
             name=name,
             rating=parent.rating if parent is not None and parent.rating is not None else dog.rating,
-            color=dog.color if dog.color != CoatColor.INCONNUE else None,
+            color=color_facts.color if color_facts.color != CoatColor.INCONNUE else None,
             color_code=dog.color_code,
-            e_locus=dog.e_locus,
+            e_locus=color_facts.e_locus,
+            carries_gold_by_parents=color_facts.carries_gold_by_parents,
             health_codes=list(dog.health_codes),
             scc_url=dog.external_url,
+            photo_url=site_photos_by_chip.get(chip) if chip is not None else None,
         )
+
+    @staticmethod
+    def _site_photos_by_chip(db: Session, parents: list[Dog]) -> dict[str, str]:
+        """
+        The first photo the breeders' sites on Chiens de France show of each parent, found by its chip.
+
+        Args:
+            db: Database session.
+            parents: The parents read at the Centrale Canine.
+
+        Returns:
+            Photo URL by chip digits, for the parents a site shows with a photo.
+        """
+        chips = {chip for chip in (DogChip.key_of(parent.identifier) for parent in parents) if chip is not None}
+        if not chips:
+            return {}
+        photos_by_chip: dict[str, str] = {}
+        site_dogs = (
+            db.query(Dog)
+            .filter(Dog.source == ListingSource.CHIENS_DE_FRANCE, Dog.identifier.is_not(None))
+            .order_by(Dog.id)
+        )
+        for site_dog in site_dogs:
+            chip = DogChip.key_of(site_dog.identifier)
+            if chip in chips and site_dog.photos:
+                photos_by_chip.setdefault(chip, site_dog.photos[0])
+        return photos_by_chip
+
+    @staticmethod
+    def _puppy_state(listing: Listing) -> PuppyAdState | None:
+        """
+        Where the puppy of a puppy ad stands, from its status line (« Femelle réservée », « Mâle vendu ») or,
+        failing that, from whether the ad still offers it.
+
+        Args:
+            listing: The listing.
+
+        Returns:
+            The state, None for a litter listing or a puppy ad that tells nothing.
+        """
+        if listing.kind != ListingKind.PUPPY_AD:
+            return None
+        status_text = without_accents(str((listing.raw_json or {}).get("status") or "")).lower()
+        if any(word in status_text for word in SOLD_STATUS_WORDS):
+            return PuppyAdState.SOLD
+        if RESERVED_STATUS_WORD in status_text:
+            return PuppyAdState.RESERVED
+        if listing.puppies_available == 1 or AVAILABLE_STATUS_WORD in status_text:
+            return PuppyAdState.AVAILABLE
+        if listing.puppies_available == 0:
+            return PuppyAdState.RESERVED
+        return None
+
+    @staticmethod
+    def _photos_added_at(db: Session, listings: list[Listing]) -> datetime | None:
+        """
+        The last time new photos reached the litter: a listing seen first with photos, or new photos on one.
+
+        Args:
+            db: Database session.
+            listings: Every listing of the group.
+
+        Returns:
+            The time, naive UTC, or None while no listing has a photo.
+        """
+        arrivals = [listing.first_seen_at for listing in listings if listing.photos]
+        listing_ids = [listing.id for listing in listings]
+        if listing_ids:
+            last_photo_change = (
+                db.query(func.max(ListingChange.changed_at))
+                .filter(ListingChange.listing_id.in_(listing_ids), ListingChange.field == PHOTOS_FIELD)
+                .scalar()
+            )
+            if last_photo_change is not None:
+                arrivals.append(last_photo_change)
+        return max(arrivals, default=None)
 
     @staticmethod
     def _breeder(breeder: Breeder) -> LitterBreeder:

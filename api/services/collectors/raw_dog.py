@@ -40,6 +40,8 @@ class RawDog:
     has_dna_profile: bool | None = None
     sire_external_id: str | None = None
     dam_external_id: str | None = None
+    sire_color_code: str | None = None
+    dam_color_code: str | None = None
     photos: tuple[str, ...] = ()
     availability_text: str | None = None
 
@@ -74,8 +76,20 @@ class RawBreederProfile:
 
 
 @dataclass(frozen=True)
+class RawBreederSiteLitter:
+    """A litter the « Chiots nés chez nous » page of a breeder's site lists: when it was born, and its parents."""
+
+    birth_date: date
+    sire_name: str | None = None
+    dam_name: str | None = None
+
+
+@dataclass(frozen=True)
 class RawBreederSiteFacts:
-    """What the site of a breeder on Chiens de France says of the breeding itself, beyond its litters and dogs."""
+    """
+    What the site of a breeder on Chiens de France says of the breeding itself, beyond its litters for sale and its
+    dogs. ``litters_born`` stays None when the « Chiots nés chez nous » page could not be read.
+    """
 
     breeder_source_id: str
     site_url: str
@@ -83,3 +97,17 @@ class RawBreederSiteFacts:
     breeding_females_count: int | None = None
     litters_last_year_count: int | None = None
     registered_on: date | None = None
+    facebook_url: str | None = None
+    instagram_url: str | None = None
+    youtube_url: str | None = None
+    litters_born: tuple[RawBreederSiteLitter, ...] | None = None
+
+
+@dataclass(frozen=True)
+class RawSiteDirectoryEntry:
+    """A breeder as the regional list of the breeders of a breed on Chiens de France shows it, with its site."""
+
+    site_url: str
+    name: str
+    zip_code: str | None = None
+    town: str | None = None

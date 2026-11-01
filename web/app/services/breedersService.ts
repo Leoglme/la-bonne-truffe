@@ -4,6 +4,8 @@ import type {
   BreederDetail,
   BreederFollowNote,
   BreederFollowUpdate,
+  BreederLinkCreate,
+  BreederLinkPreview,
   BreederSearchResults,
   BreederUpdate,
 } from '~/types/api'
@@ -63,6 +65,28 @@ export class BreedersService {
    */
   static async update(breederId: number, payload: BreederUpdate): Promise<BreederDetail> {
     return ApiClient.patch<BreederDetail>(`${BREEDERS_ENDPOINT}/${breederId}`, payload)
+  }
+
+  /**
+   * Ask what a pasted link is, before adding it: a Chiens de France site, a social account or another site.
+   *
+   * @param breederId - The breeder.
+   * @param payload - The link.
+   * @returns What the API recognises.
+   */
+  static async previewLink(breederId: number, payload: BreederLinkCreate): Promise<BreederLinkPreview> {
+    return ApiClient.post<BreederLinkPreview>(`${BREEDERS_ENDPOINT}/${breederId}/links/preview`, payload)
+  }
+
+  /**
+   * Add a pasted link to a breeder; its site on Chiens de France is read at once.
+   *
+   * @param breederId - The breeder.
+   * @param payload - The link.
+   * @returns The updated detail.
+   */
+  static async addLink(breederId: number, payload: BreederLinkCreate): Promise<BreederDetail> {
+    return ApiClient.post<BreederDetail>(`${BREEDERS_ENDPOINT}/${breederId}/links`, payload)
   }
 
   /**

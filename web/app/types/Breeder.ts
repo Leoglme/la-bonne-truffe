@@ -34,6 +34,31 @@ export type BreederSeenOnLink = {
   href: string | null
 }
 
+export type BreederSiteLittersYear = {
+  year: number
+  littersCount: number
+}
+
+export type BreederSiteLink = {
+  label: string
+  href: string
+}
+
+export type BreederSocialAccountKind = 'facebook' | 'instagram' | 'youtube'
+
+export type BreederSocialAccountRecognition = {
+  title: string
+  helperWhenNew: string
+  helperWhenKnown: string
+  helperWhenReplacing: string
+}
+
+export type BreederLinkRecognition = {
+  title: string
+  helper: string
+  accountLabels: string[]
+}
+
 export type BreederFilterOption = {
   key: BreederFilter
   label: string

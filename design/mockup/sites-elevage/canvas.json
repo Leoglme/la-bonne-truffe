@@ -1,0 +1,19 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-11-01T14:35:00Z" },
+  "title": "La Bonne Truffe · Sites d'élevage",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 820, "h": 2050, "title": "iPad · La fiche d'un éleveur, son site relié (page entière)", "radius": 36 },
+    "AjouterLien.dc.html": { "x": 900, "y": 0, "w": 820, "h": 1180, "title": "iPad · Ajouter un lien : son site Chiens de France", "radius": 36 },
+    "AjouterLienAutreSite.dc.html": { "x": 1800, "y": 0, "w": 820, "h": 1180, "title": "iPad · Ajouter un lien : un autre site", "radius": 36 },
+    "Portee.dc.html": { "x": 2700, "y": 0, "w": 820, "h": 1700, "title": "iPad · Une portée : les parents en photo, le gold expliqué (page entière)", "radius": 36 },
+    "iPhonePortee.dc.html": { "x": 3600, "y": 0, "w": 390, "h": 1250, "title": "iPhone · Les photos des chiots arrivées (page entière)", "radius": 44 }
+  },
+  "order": ["Main.dc.html", "AjouterLien.dc.html", "AjouterLienAutreSite.dc.html", "Portee.dc.html", "iPhonePortee.dc.html"],
+  "notes": {
+    "titre": { "x": 0, "y": -300, "text": "Sites d'élevage · la fiche d'un éleveur et d'une portée une fois son site relu · iPad 820 de large, iPhone 390", "kind": "title1", "maxW": 3990 }
+  },
+  "designSystems": []
+}

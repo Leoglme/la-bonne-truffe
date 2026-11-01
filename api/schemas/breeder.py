@@ -6,10 +6,12 @@ from enum import StrEnum
 from pydantic import BaseModel, Field
 
 from enums.breeder_follow_status import BreederFollowStatus
+from enums.breeder_link_kind import BreederLinkKind
 from enums.coat_color import CoatColor
 from enums.dog_role import DogRole
 from enums.dog_sex import DogSex
 from enums.listing_source import ListingSource
+from enums.social_link_origin import SocialLinkOrigin
 from schemas.litter import LitterCard
 
 
@@ -128,9 +130,21 @@ class BreederDog(BaseModel):
     rating: int | None
     health_codes: list[str]
     e_locus: str | None
+    carries_gold_by_parents: bool = Field(
+        default=False, description="Untested, but one of its own parents had a coat of the gold family"
+    )
+    is_current_litter_parent: bool = Field(default=False, description="Father or mother of a current litter")
     photos: list[str]
     external_url: str | None
     availability_text: str | None
+
+
+class BreederSiteLitter(BaseModel):
+    """A litter of the year the breeder's site lists in « Chiots nés chez nous »."""
+
+    birth_date: date
+    sire_name: str | None
+    dam_name: str | None
 
 
 class BreederDetail(BreederCard):
@@ -140,9 +154,20 @@ class BreederDetail(BreederCard):
     siren: str | None
     website: str | None
     chiens_de_france_site_url: str | None
-    facebook_url: str | None = Field(description="Facebook page the Centrale Canine site of the breeding declares")
-    instagram_url: str | None = Field(description="Instagram account that site declares")
-    youtube_url: str | None = Field(description="YouTube channel that site declares")
+    chiens_de_france_site_seen_at: datetime | None = Field(
+        default=None, description="Last time the breeder's site on Chiens de France was read, naive UTC"
+    )
+    site_litters: list[BreederSiteLitter] = Field(
+        default_factory=list, description="The litters of the year its site lists in « Chiots nés chez nous »"
+    )
+    site_litters_url: str | None = Field(default=None, description="« Chiots nés chez nous » on its site")
+    site_dogs_url: str | None = Field(default=None, description="The pages of its site for the breed")
+    facebook_url: str | None = Field(description="Facebook page of the breeding")
+    instagram_url: str | None = Field(description="Instagram account of the breeding")
+    youtube_url: str | None = Field(description="YouTube channel of the breeding")
+    social_link_origins: dict[str, SocialLinkOrigin] = Field(
+        default_factory=dict, description="Where each account was found, by facebook, instagram or youtube"
+    )
     scc_breeder_id: str | None
     links: list[BreederLink]
     notes: str | None
@@ -182,3 +207,27 @@ class BreederUpdate(BaseModel):
     phone: str | None = Field(default=None, max_length=30)
     website: str | None = Field(default=None, max_length=500)
     notes: str | None = Field(default=None, max_length=4000)
+
+
+class BreederLinkCreate(BaseModel):
+    """A link pasted on a breeder: its site, its Facebook page, an ad."""
+
+    url: str = Field(..., min_length=4, max_length=500)
+
+
+class BreederSocialAccount(BaseModel):
+    """A social account found at the bottom of a site."""
+
+    account: str = Field(description="facebook, instagram or youtube")
+    url: str
+
+
+class BreederLinkPreview(BaseModel):
+    """What the app recognises in a pasted link, before it is added."""
+
+    kind: BreederLinkKind
+    address: str = Field(description="The link as it will be kept: the root of a Chiens de France site")
+    social_accounts: list[BreederSocialAccount] = Field(
+        description="The accounts found at the bottom of another site's page"
+    )
+    is_page_read: bool = Field(description="Whether the page of another site could be read")

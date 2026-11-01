@@ -1,9 +1,12 @@
-"""Breeder routes: the Éleveurs list, the search, the detail, the creation by hand, the follow and its notes."""
+"""Breeder routes: the Éleveurs list, the search, the detail, the creation by hand, its links, the follow, its notes."""
 
-from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
+from sqlalchemy.orm import Session, sessionmaker
 
+from core.clock import naive_utc_now
 from core.database import get_db
+from enums.breeder_link_kind import BreederLinkKind
+from enums.listing_source import ListingSource
 from models.user import User
 from schemas.breeder import (
     BreederCard,
@@ -13,13 +16,18 @@ from schemas.breeder import (
     BreederFollowNoteCreate,
     BreederFollowNoteResponse,
     BreederFollowUpdate,
+    BreederLinkCreate,
+    BreederLinkPreview,
     BreederSearchResults,
+    BreederSocialAccount,
     BreederSort,
     BreederUpdate,
 )
 from services.auth_service import get_current_user
 from services.breeder_command_service import BreederCommandService
+from services.breeder_link_service import breeder_link_service
 from services.breeder_query_service import BreederQueryService
+from services.source_run_launcher import source_run_launcher
 
 router = APIRouter(prefix="/breeders", tags=["breeders"])
 
@@ -129,6 +137,69 @@ async def update_breeder(
         The updated detail.
     """
     BreederCommandService.update(db, breeder_id, payload)
+    return BreederQueryService.detail(db, current_user.id, breeder_id)
+
+
+@router.post("/{breeder_id}/links/preview", response_model=BreederLinkPreview)
+def preview_breeder_link(
+    breeder_id: int,
+    payload: BreederLinkCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> BreederLinkPreview:
+    """
+    Tell what a pasted link is before it is added: the breeder's site on Chiens de France, a social account, or
+    another site, whose page is read for the accounts it links.
+
+    Args:
+        breeder_id: The breeder.
+        payload: The link.
+        current_user: The authenticated user.
+        db: Database session.
+
+    Returns:
+        What the app recognises.
+    """
+    BreederQueryService.get_breeder(db, breeder_id)
+    reading = breeder_link_service.read(payload.url)
+    return BreederLinkPreview(
+        kind=reading.kind,
+        address=reading.address,
+        social_accounts=[
+            BreederSocialAccount(account=account, url=address) for account, address in reading.social_accounts.items()
+        ],
+        is_page_read=reading.is_page_read,
+    )
+
+
+@router.post("/{breeder_id}/links", response_model=BreederDetail)
+def add_breeder_link(
+    breeder_id: int,
+    payload: BreederLinkCreate,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> BreederDetail:
+    """
+    Add a pasted link to a breeder; its site on Chiens de France is read at once, in the background, unless a
+    reading of the sites runs already.
+
+    Args:
+        breeder_id: The breeder.
+        payload: The link.
+        background_tasks: Where the reading of the site goes on after the answer.
+        current_user: The authenticated user.
+        db: Database session.
+
+    Returns:
+        The updated detail.
+    """
+    reading = breeder_link_service.add(db, breeder_id, payload.url)
+    if reading.kind == BreederLinkKind.CHIENS_DE_FRANCE_SITE and source_run_launcher.claim(
+        db, ListingSource.CHIENS_DE_FRANCE_SITES, naive_utc_now()
+    ):
+        session_factory = sessionmaker(bind=db.get_bind(), autoflush=False)
+        background_tasks.add_task(source_run_launcher.read_breeder_site, session_factory, breeder_id)
     return BreederQueryService.detail(db, current_user.id, breeder_id)
 
 

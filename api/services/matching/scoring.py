@@ -15,6 +15,7 @@ FRESHNESS_WINDOW_DAYS = 14
 MINIMUM_PROXIMITY_POINTS = 2
 GOOD_PARENT_RATING = 4
 SELECTED_BREEDING_GROUP = 1
+GOLD_PUPPY_ODDS_PHRASES: dict[float, str] = {0.5: "un chiot sur deux", 0.25: "un chiot sur quatre"}
 
 COLOR_LABELS: dict[CoatColor, str] = {
     CoatColor.GOLD: "gold",
@@ -115,6 +116,9 @@ class ScoreCalculator:
         wanted = [color for color, level in levels.items() if level != ColorPreferenceLevel.IGNORED]
         if not wanted:
             return None
+        gold_odds_phrase = GOLD_PUPPY_ODDS_PHRASES.get(snapshot.gold_puppy_odds or 0.0)
+        if gold_odds_phrase is not None and levels.get(CoatColor.GOLD) == ColorPreferenceLevel.PREFERRED:
+            return ScoreReason(f"Gold possible, ta couleur préférée : {gold_odds_phrase}", 20)
         possible = " ou ".join(cls.color_label(color) for color in levels)
         return ScoreReason(f"Couleur à confirmer : {possible}", 20)
 

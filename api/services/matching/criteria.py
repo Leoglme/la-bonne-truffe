@@ -78,6 +78,8 @@ class LitterSnapshot:
     collection first saw it when no source gives that date.
 
     ``name`` is the one the cards show, so a notification names the litter as the app does.
+
+    ``gold_puppy_odds`` is the share of gold puppies the genotypes of the parents give, when they tell it.
     """
 
     group_id: int
@@ -99,6 +101,7 @@ class LitterSnapshot:
     breeder_selection_group: int | None
     sire_rating: int | None
     dam_rating: int | None
+    gold_puppy_odds: float | None = None
 
     @property
     def has_certain_colors(self) -> bool:

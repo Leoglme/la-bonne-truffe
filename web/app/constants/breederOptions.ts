@@ -1,10 +1,12 @@
-import type { BreederFollowStatus, BreederFollowUpdate, CoatColor } from '~/types/api'
+import type { BreederFollowStatus, BreederFollowUpdate, CoatColor, SocialLinkOrigin } from '~/types/api'
 import type {
   BreederChipTone,
   BreederFilterOption,
   BreederFollowStatusOption,
   BreederLitterStatusTone,
   BreederNotificationSetting,
+  BreederSocialAccountKind,
+  BreederSocialAccountRecognition,
   BreederSortOption,
 } from '~/types/Breeder'
 
@@ -102,6 +104,47 @@ export const COAT_COLOR_SWATCHES: Record<CoatColor, string> = {
 
 /** How many litters the breeder page shows before « les autres portées ». */
 export const BREEDER_LITTERS_SHOWN_COUNT: number = 3
+
+/** How many dogs the breeder page shows before « les autres chiens », besides the parents of its current litters. */
+export const BREEDER_DOGS_SHOWN_COUNT: number = 4
+
+/** Where a social account of « Vu sur » comes from. */
+export const SOCIAL_LINK_ORIGIN_LABELS: Record<SocialLinkOrigin, string> = {
+  centrale_canine: 'lien donné à la Centrale Canine',
+  breeder_site: 'lien pris sur son site',
+  added_by_hand: 'lien ajouté par toi',
+}
+
+export const SOCIAL_ACCOUNT_LABELS: Record<BreederSocialAccountKind, string> = {
+  facebook: 'Facebook',
+  instagram: 'Instagram',
+  youtube: 'YouTube',
+}
+
+/** What a pasted social account is, and what becomes of the one « Vu sur » already shows. */
+export const SOCIAL_ACCOUNT_RECOGNITIONS: Record<BreederSocialAccountKind, BreederSocialAccountRecognition> = {
+  facebook: {
+    title: 'Sa page Facebook',
+    helperWhenNew: 'Elle ira dans « Vu sur ».',
+    helperWhenKnown: 'Elle est déjà dans « Vu sur ».',
+    helperWhenReplacing: 'Elle remplacera celle de « Vu sur ».',
+  },
+  instagram: {
+    title: 'Son compte Instagram',
+    helperWhenNew: 'Il ira dans « Vu sur ».',
+    helperWhenKnown: 'Il est déjà dans « Vu sur ».',
+    helperWhenReplacing: 'Il remplacera celui de « Vu sur ».',
+  },
+  youtube: {
+    title: 'Sa chaîne YouTube',
+    helperWhenNew: 'Elle ira dans « Vu sur ».',
+    helperWhenKnown: 'Elle est déjà dans « Vu sur ».',
+    helperWhenReplacing: 'Elle remplacera celle de « Vu sur ».',
+  },
+}
+
+/** How long the typing of a pasted link pauses before the app asks what it is. */
+export const BREEDER_LINK_PREVIEW_DEBOUNCE_MS: number = 400
 
 export const BREEDER_RECENT_SEARCHES_STORAGE_KEY: string = 'lbt-breeder-searches'
 export const BREEDER_RECENT_SEARCHES_COUNT: number = 5

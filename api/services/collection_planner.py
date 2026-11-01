@@ -1,10 +1,12 @@
 """Builds what a collection run reads, from the active search profiles."""
 
+import re
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 from sqlalchemy.orm import Session
 
+from core.text import without_accents
 from enums.coat_color import CoatColor
 from enums.listing_source import ListingSource
 from models.breed import Breed
@@ -20,7 +22,8 @@ from services.collectors.centrale_canine import (
     SccDepartmentTarget,
     SccVarietyTarget,
 )
-from services.collectors.chiens_de_france_sites import SiteCollectionPlan, SiteTarget
+from services.collectors.chiens_de_france import CHIENS_DE_FRANCE_BASE_URL
+from services.collectors.chiens_de_france_sites import SiteCollectionPlan, SiteDirectoryPlan, SiteTarget
 from services.collectors.html_source import (
     BREEDER_SITE_HOST_SUFFIX,
     HtmlBreedTarget,
@@ -38,32 +41,33 @@ from services.collectors.scc_sites import SccSiteCollectionPlan, SccSiteTarget
 SITE_DOG_REFRESH_DAYS = 30
 SCC_SITE_REFRESH_DAYS = 30
 SCC_SITES_PER_RUN = 80
+NON_SLUG_CHARACTERS_PATTERN = re.compile(r"[^a-z0-9]+")
 
 
 class CollectionPlanner:
     """Turns the active profiles into the breeds and departments each collector reads."""
 
     @staticmethod
-    def build_breeder_sites_plan(db: Session, now: datetime) -> SiteCollectionPlan:
+    def build_breeder_sites_plan(
+        db: Session, now: datetime, breeder_ids: frozenset[int] | None = None
+    ) -> SiteCollectionPlan:
         """
-        Plan a run of the breeder sites on Chiens de France: every breeder whose site is known, for every breed
-        of the active profiles that Chiens de France knows.
+        Plan a run of the breeder sites on Chiens de France: every breeder whose site is known, or the ones asked,
+        for every breed of the active profiles that Chiens de France knows.
 
         Args:
             db: Database session.
             now: Current time, naive UTC.
+            breeder_ids: The breeders whose site to read, None for every one.
 
         Returns:
             The plan, empty when no breeder has a site or no profile is active.
         """
-        breed_slugs, _ = CollectionPlanner._profile_breeds_and_departments(db)
-        breeds = (
-            db.query(Breed)
-            .filter(Breed.slug.in_(breed_slugs), Breed.is_active.is_(True), Breed.chiens_de_france_id.is_not(None))
-            .order_by(Breed.id)
-            .all()
-        )
-        breeders = db.query(Breeder).filter(Breeder.chiens_de_france_site_url.is_not(None)).order_by(Breeder.id).all()
+        breeds = CollectionPlanner._breeder_site_breeds(db)
+        breeders_query = db.query(Breeder).filter(Breeder.chiens_de_france_site_url.is_not(None))
+        if breeder_ids is not None:
+            breeders_query = breeders_query.filter(Breeder.id.in_(breeder_ids))
+        breeders = breeders_query.order_by(Breeder.id).all()
         fresh_dog_ids_by_breeder: dict[int, set[str]] = {}
         for dog in db.query(Dog).filter(
             Dog.source == ListingSource.CHIENS_DE_FRANCE,
@@ -90,6 +94,87 @@ class CollectionPlanner:
                 for breed in breeds
             )
         return SiteCollectionPlan(sites=tuple(targets))
+
+    @staticmethod
+    def build_site_directory_plan(db: Session) -> SiteDirectoryPlan:
+        """
+        Plan the regional lists of breeders to read on Chiens de France before the sites: the regions of the
+        departments of the active profiles and of the followed breeders, for every breed of the active profiles
+        that Chiens de France knows.
+
+        Args:
+            db: Database session.
+
+        Returns:
+            The lists, empty when no profile is active.
+        """
+        breeds = CollectionPlanner._breeder_site_breeds(db)
+        _, department_codes = CollectionPlanner._profile_breeds_and_departments(db)
+        followed_department_codes = {
+            department_code
+            for (department_code,) in db.query(Breeder.department_code)
+            .join(BreederFollow, BreederFollow.breeder_id == Breeder.id)
+            .filter(Breeder.department_code.is_not(None))
+        }
+        region_names = {
+            department.region
+            for department in db.query(Department).filter(
+                Department.code.in_(set(department_codes) | followed_department_codes)
+            )
+        }
+        region_slugs = sorted({CollectionPlanner._slug_of(region) for region in region_names} - {""})
+        return SiteDirectoryPlan(
+            list_urls=tuple(
+                f"{CHIENS_DE_FRANCE_BASE_URL}/eleveurs/{breed.chiens_de_france_id}/france/{region_slug}"
+                for breed in breeds
+                for region_slug in region_slugs
+            )
+        )
+
+    @staticmethod
+    def breeder_site_breed_slugs(db: Session) -> list[str]:
+        """
+        The addresses, on the breeders' sites, of the breeds of the active profiles (« cocker-spaniel-anglais »).
+
+        Args:
+            db: Database session.
+
+        Returns:
+            The slugs, by breed id.
+        """
+        return [breed.chiens_de_france_id or "" for breed in CollectionPlanner._breeder_site_breeds(db)]
+
+    @staticmethod
+    def _breeder_site_breeds(db: Session) -> list[Breed]:
+        """
+        The breeds of the active profiles that Chiens de France knows, whose pages the sites have.
+
+        Args:
+            db: Database session.
+
+        Returns:
+            The breeds, by id.
+        """
+        breed_slugs, _ = CollectionPlanner._profile_breeds_and_departments(db)
+        return (
+            db.query(Breed)
+            .filter(Breed.slug.in_(breed_slugs), Breed.is_active.is_(True), Breed.chiens_de_france_id.is_not(None))
+            .order_by(Breed.id)
+            .all()
+        )
+
+    @staticmethod
+    def _slug_of(name: str) -> str:
+        """
+        The address form of a region name on Chiens de France.
+
+        Args:
+            name: « Pays de la Loire », « Provence-Alpes-Côte d'Azur ».
+
+        Returns:
+            « pays-de-la-loire », « provence-alpes-cote-d-azur ».
+        """
+        return NON_SLUG_CHARACTERS_PATTERN.sub("-", without_accents(name).lower()).strip("-")
 
     @staticmethod
     def build_scc_breeder_directory_plan(db: Session) -> SccBreederDirectoryPlan:

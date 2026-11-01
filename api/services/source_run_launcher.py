@@ -13,6 +13,7 @@ from enums.listing_source import ListingSource
 from enums.source_run_status import SourceRunStatus
 from models.source_run import SourceRun
 from services.collection_runner import collection_runner
+from services.collectors.chiens_de_france_sites import ChiensDeFranceSiteCollector
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +89,25 @@ class SourceRunLauncher:
             db.close()
             with self._lock:
                 self.launched_sources.discard(source)
+
+    def read_breeder_site(self, session_factory: sessionmaker[Session], breeder_id: int) -> None:
+        """
+        Read the Chiens de France site of one breeder now (a site added by hand), once the source is claimed,
+        with its own session, then free the source.
+
+        Args:
+            session_factory: Opens a session on the database of the request.
+            breeder_id: The breeder whose site to read.
+        """
+        db = session_factory()
+        try:
+            collection_runner.run_breeder_sites(db, ChiensDeFranceSiteCollector(), frozenset({breeder_id}))
+        except Exception:
+            logger.exception("Reading of the site of breeder %s crashed", breeder_id)
+        finally:
+            db.close()
+            with self._lock:
+                self.launched_sources.discard(ListingSource.CHIENS_DE_FRANCE_SITES)
 
 
 source_run_launcher = SourceRunLauncher()

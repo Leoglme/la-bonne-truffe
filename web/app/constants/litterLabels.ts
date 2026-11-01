@@ -1,4 +1,5 @@
-import type { ListingKind, ListingSource, LofStatus, MatchFlag, MatchTier } from '~/types/api'
+import type { DogSex, ListingKind, ListingSource, LofStatus, MatchFlag, MatchTier, PuppyAdState } from '~/types/api'
+import type { FrenchGender } from '~/types/FrenchText'
 import type { BreedingQualityChip, LitterInfoChipLabels } from '~/types/LitterInfoChips'
 
 export const TIER_LABELS: Record<MatchTier, string> = {
@@ -66,4 +67,22 @@ export const MATCH_FLAG_LABELS: Record<MatchFlag, string | null> = {
   lof_unknown: 'le LOF',
   price_unknown: 'le prix',
   department_unknown: 'le département',
+}
+
+/** The sex of the puppy of an ad, when the ad tells it. */
+export const PUPPY_SEX_LABELS: Record<Exclude<DogSex, 'unknown'>, string> = {
+  male: 'Mâle',
+  female: 'Femelle',
+}
+
+export const PUPPY_SEX_TEXT_CLASSES: Record<DogSex, string> = {
+  male: 'text-male',
+  female: 'text-female',
+  unknown: '',
+}
+
+/** Where the puppy of an ad stands once it is no longer free, agreed with its sex. */
+export const PUPPY_AD_STATE_LABELS: Record<Exclude<PuppyAdState, 'available'>, Record<FrenchGender, string>> = {
+  reserved: { masculine: 'Réservé', feminine: 'Réservée' },
+  sold: { masculine: 'Vendu', feminine: 'Vendue' },
 }

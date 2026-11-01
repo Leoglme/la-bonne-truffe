@@ -97,6 +97,7 @@ def test_a_dog_page_gives_the_colour_the_locus_and_the_tests_but_never_the_owner
     assert (dog.color_code, dog.color, dog.e_locus, dog.rating) == ("F.Or.", CoatColor.GOLD, "e/e", 4)
     assert dog.health_codes == ("FN-1.1", "LocE-e/e")
     assert (dog.sire_external_id, dog.dam_external_id, dog.has_dna_profile) == ("1", "2", True)
+    assert (dog.sire_color_code, dog.dam_color_code) == ("F.Or.", "F.Cl.")
     assert dog.litter_group_id is None
 
 
@@ -178,7 +179,7 @@ def test_the_run_ties_the_parents_and_the_puppies_and_settles_the_colours(
         "e/e",
     )
     assert group_of(db, GOLD_LITTER_ID).expected_colors == [
-        {"color": "gold", "confidence": "inferred", "reason": "Gold : les deux parents sont gold"}
+        {"color": "gold", "confidence": "inferred", "reason": "Gold : les deux parents sont gold", "puppy_odds": 1.0}
     ]
     assert gold_detail["sire"]["color"] == "gold"
     assert gold_detail["sire"]["e_locus"] == "e/e"

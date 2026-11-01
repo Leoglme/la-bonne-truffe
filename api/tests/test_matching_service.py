@@ -139,6 +139,25 @@ def test_ambiguous_bundle_with_an_acceptable_colour_is_acceptable() -> None:
     assert MatchFlag.COLOR_TO_CONFIRM in verdict.flags
 
 
+def test_gold_possible_by_the_genotypes_says_how_many_puppies() -> None:
+    gold_or_tricolour = (
+        ColorReading(CoatColor.GOLD, ColorConfidence.AMBIGUOUS),
+        ColorReading(CoatColor.TRICOLORE, ColorConfidence.AMBIGUOUS),
+    )
+    one_in_two = replace(GOLD_BORN_IN_35, colors=gold_or_tricolour, gold_puppy_odds=0.5)
+    unknown_odds = replace(GOLD_BORN_IN_35, colors=gold_or_tricolour)
+
+    verdict = MatchingService.evaluate(one_in_two, LEO, TODAY)
+
+    assert (verdict.reasons[0].text, verdict.reasons[0].points) == (
+        "Gold possible, ta couleur préférée : un chiot sur deux",
+        20,
+    )
+    assert MatchingService.evaluate(unknown_odds, LEO, TODAY).reasons[0].text == (
+        "Couleur à confirmer : gold ou tricolore"
+    )
+
+
 def test_ambiguous_bundle_of_ignored_colours_is_ignored_not_excluded() -> None:
     roans = (
         ColorReading(CoatColor.BLEU_ROUAN, ColorConfidence.AMBIGUOUS),

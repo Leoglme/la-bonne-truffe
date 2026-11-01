@@ -170,7 +170,17 @@ export class LitterPresentation {
     if (card.price_cents === null) {
       return null
     }
-    return EURO_FORMAT.format(card.price_cents / 100)
+    return this.formatPrice(card.price_cents)
+  }
+
+  /**
+   * Write a price in euros, without cents.
+   *
+   * @param priceCents - The price, in cents.
+   * @returns « 1 400 € ».
+   */
+  static formatPrice(priceCents: number): string {
+    return EURO_FORMAT.format(priceCents / 100)
   }
 
   /**

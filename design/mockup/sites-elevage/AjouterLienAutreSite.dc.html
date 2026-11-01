@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Ajouter un lien : un autre site</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap">
+<style>
+body{margin:0;font-family:Nunito,system-ui,sans-serif;color:#2B2420;background:#FBF6EE}
+a{color:#C94A28}a:hover{color:#A33A1C}
+button{font:inherit;cursor:pointer;color:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #E2552F;outline-offset:3px}
+</style>
+</helmet>
+<div style="position: relative; width: 820px; height: 1180px; box-sizing: border-box; display: flex; flex-direction: column; background: #FBE7CC; overflow: hidden; font-family: Nunito, system-ui, sans-serif; color: #2B2420; font-size: 16px; line-height: 1.5">
+
+  <div style="position: relative; height: 300px; flex-shrink: 0; background: #FBE7CC; overflow: hidden">
+    <img src="/_blob/c45488204f9afc4af4fa65f0b294c5a6" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 35%">
+    <span aria-hidden="true" style="position: absolute; top: 36px; left: 32px; width: 52px; height: 52px; border-radius: 50%; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; color: #2B2420">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+    </span>
+    <span aria-hidden="true" style="position: absolute; top: 36px; right: 32px; width: 52px; height: 52px; border-radius: 50%; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; color: #E2552F">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+    </span>
+  </div>
+
+  <div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; background: #FBF6EE; border-radius: 36px 36px 0 0; margin-top: -36px; overflow: hidden">
+    <div style="padding: 32px 32px 24px 32px; display: flex; flex-direction: column; gap: 24px">
+      <div style="display: flex; align-items: center; gap: 18px">
+        <span aria-hidden="true" style="width: 72px; height: 72px; flex-shrink: 0; border-radius: 22px; background: #FBE7CC; color: #8A5A14; display: inline-flex; align-items: center; justify-content: center; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 26px">MS</span>
+        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+          <span style="font-family: Fredoka, sans-serif; font-weight: 600; font-size: 32px; line-height: 1.1">Du Moulin des Saules</span>
+          <span style="font-size: 17px; color: #7A6657">La Ferme des Saules · Évron, Mayenne · 1 h 05 de route</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(43,36,32,0.45)"></div>
+
+  <div role="dialog" aria-labelledby="add-other-link-title" style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 24px; padding: 14px 32px 30px 32px; border-radius: 36px 36px 0 0; background: #FBF6EE; box-shadow: 0 -8px 30px rgba(43,36,32,0.18)">
+    <span aria-hidden="true" style="align-self: center; width: 48px; height: 6px; border-radius: 999px; background: #EADFD3"></span>
+
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <h2 id="add-other-link-title" style="margin: 0; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 28px; line-height: 1.15">Ajouter un lien</h2>
+      <p style="margin: 0; font-size: 17px; color: #7A6657">Son site, sa page Facebook, une annonce : colle l'adresse, l'app s'occupe du reste.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <label for="add-other-link-url" style="font-size: 15px; font-weight: 800; color: #5E4B3F">Adresse</label>
+      <input id="add-other-link-url" type="url" value="https://www.ferme-des-saules.fr" style="box-sizing: border-box; width: 100%; min-height: 58px; padding: 0 18px; border-radius: 18px; border: 2px solid #E2552F; background: #FFFFFF; font: inherit; font-size: 17px; color: #2B2420">
+      <div style="display: flex; align-items: flex-start; gap: 12px; padding-top: 4px">
+        <span aria-hidden="true" style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: #DCEBD4; color: #3E6630; display: inline-flex; align-items: center; justify-content: center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+        </span>
+        <span style="display: flex; flex-direction: column; gap: 8px">
+          <span style="display: flex; flex-direction: column; gap: 2px">
+            <span style="font-weight: 800; font-size: 17px">Le site de l'élevage</span>
+            <span style="font-size: 16px; color: #5E4B3F">En bas de sa page, trois comptes. Ils iront dans « Vu sur ».</span>
+          </span>
+          <span style="display: flex; flex-wrap: wrap; gap: 8px">
+            <span style="display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 999px; background: #F3EBDF; font-size: 15px; font-weight: 800; color: #5E4B3F">Facebook</span>
+            <span style="display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 999px; background: #F3EBDF; font-size: 15px; font-weight: 800; color: #5E4B3F">Instagram</span>
+            <span style="display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 999px; background: #F3EBDF; font-size: 15px; font-weight: 800; color: #5E4B3F">YouTube</span>
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <a href="Main.dc.html" style="min-height: 60px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 999px; background: #E2552F; color: #FFFFFF; font-size: 19px; font-weight: 800; text-decoration: none">Ajouter le lien</a>
+      <a href="Main.dc.html" style="min-height: 56px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; border: 2px solid #2B2420; color: #2B2420; font-size: 18px; font-weight: 800; text-decoration: none">Annuler</a>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":820,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -15,6 +15,7 @@ from enums.listing_source import ListingSource
 from enums.lof_status import LofStatus
 from enums.match_flag import MatchFlag
 from enums.match_tier import MatchTier
+from enums.puppy_ad_state import PuppyAdState
 
 MAX_PUPPIES_PER_SEX = 20
 
@@ -61,6 +62,9 @@ class LitterCard(BaseModel):
     genetic_screening: GeneticScreening | None = Field(
         description="APR and NF screening the ratings of the parents guarantee, none when they guarantee nothing"
     )
+    gold_puppy_odds: float | None = Field(
+        default=None, description="Share of gold puppies the genotypes of the parents give (1, 0.5, 0.25), when known"
+    )
 
 
 class LitterReason(BaseModel):
@@ -78,8 +82,12 @@ class LitterParent(BaseModel):
     color: CoatColor | None = Field(default=None, description="Colour read on its Centrale Canine page")
     color_code: str | None = None
     e_locus: str | None = Field(default=None, description="E locus genotype, when tested (« e/e »)")
+    carries_gold_by_parents: bool = Field(
+        default=False, description="Untested, but one of its own parents had a coat of the gold family"
+    )
     health_codes: list[str] = Field(default_factory=list)
     scc_url: str | None = None
+    photo_url: str | None = Field(default=None, description="First photo of the dog on its breeder's site, by chip")
 
 
 class LitterBreeder(BaseModel):
@@ -112,6 +120,8 @@ class LitterSourceListing(BaseModel):
     female_count: int | None
     colors: list[LitterColor]
     photos: list[str]
+    puppy_state: PuppyAdState | None = Field(default=None, description="Where the puppy of a puppy ad stands")
+    price_cents: int | None = None
 
 
 class FollowUpNoteResponse(BaseModel):
@@ -137,6 +147,7 @@ class LitterExpectedColor(BaseModel):
     color: CoatColor
     confidence: ColorConfidence
     reason: str
+    puppy_odds: float | None = Field(default=None, description="Share of the puppies of that colour, when known")
 
 
 class LitterPuppy(BaseModel):
@@ -168,6 +179,9 @@ class LitterDetail(LitterCard):
     puppies: list[LitterPuppy] = Field(default_factory=list, description="The registered puppies, read one by one")
     expected_colors: list[LitterExpectedColor] = Field(
         default_factory=list, description="The colours the parents imply, and why"
+    )
+    photos_added_at: datetime | None = Field(
+        default=None, description="Last time new photos reached one of its listings, naive UTC"
     )
 
 

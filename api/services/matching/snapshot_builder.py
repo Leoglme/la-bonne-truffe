@@ -107,7 +107,25 @@ class LitterSnapshotBuilder:
                 [listing.sire_rating for listing in cls.centrale_canine_first(active_listings)]
             ),
             dam_rating=cls._first_known([listing.dam_rating for listing in cls.centrale_canine_first(active_listings)]),
+            gold_puppy_odds=cls.gold_puppy_odds(group),
         )
+
+    @staticmethod
+    def gold_puppy_odds(group: LitterGroup) -> float | None:
+        """
+        The share of gold puppies the parents' genotypes give, as the expected colours of the group keep it.
+
+        Args:
+            group: The group.
+
+        Returns:
+            1, 0.5 or 0.25, or None while the genotypes do not tell it.
+        """
+        for entry in group.expected_colors:
+            odds = entry.get("puppy_odds")
+            if entry.get("color") == CoatColor.GOLD.value and isinstance(odds, int | float):
+                return float(odds)
+        return None
 
     @staticmethod
     def centrale_canine_first(listings: list[Listing]) -> list[Listing]:
@@ -231,7 +249,7 @@ class LitterSnapshotBuilder:
         if puppy_readings:
             return cls._unique_colors(puppy_readings)
         expected = [
-            ColorReading(CoatColor(entry["color"]), ColorConfidence(entry["confidence"]))
+            ColorReading(CoatColor(str(entry["color"])), ColorConfidence(str(entry["confidence"])))
             for entry in group.expected_colors
         ]
         inferred = [reading for reading in expected if reading.confidence == ColorConfidence.INFERRED]

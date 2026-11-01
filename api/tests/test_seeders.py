@@ -108,6 +108,8 @@ def test_migrations_create_every_table_and_record_themselves(tmp_path: Path) -> 
         "add_breeder_social_link_columns",
         "reset_scc_site_readings_for_links",
         "follow_breeders_of_followed_litters",
+        "add_dog_parent_colors",
+        "add_breeder_site_reading_columns",
     ]
     assert runner.run() == []
     tables = set(inspect(database_engine).get_table_names())

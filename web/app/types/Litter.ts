@@ -1,3 +1,5 @@
+import type { CoatColor, DogSex } from '~/types/api'
+
 export type LitterFilterKey = 'all' | 'preferred' | 'expected'
 
 export type LitterFilterOption = {
@@ -37,5 +39,18 @@ export type LitterListingLine = {
   label: string
   description: string
   thumbnailUrl: string | null
+  isGone: boolean
+}
+
+export type LitterPuppyLine = {
+  key: string
+  href: string | null
+  label: string
+  sex: DogSex
+  sexLabel: string | null
+  color: CoatColor | null
+  stateLabel: string | null
+  isAvailable: boolean
+  photoUrl: string | null
   isGone: boolean
 }

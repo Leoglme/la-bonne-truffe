@@ -30,21 +30,29 @@
         </span>
         <LitterSexCounts :litter="props.litter" />
       </span>
+      <span v-if="goldPuppyOddsLine" class="text-[13px] font-bold text-gold-ink">{{ goldPuppyOddsLine }}</span>
     </span>
   </NuxtLink>
 </template>
 
 <script lang="ts" setup>
-import type { PropType } from 'vue'
+import type { ComputedRef, PropType } from 'vue'
 import type { LitterCard } from '~/types/api'
 import type { LitterRowCardProps } from '~/types/LitterRowCard'
+import { computed } from 'vue'
+import { GoldGeneticsPresentation } from '~/utils/goldGeneticsPresentation'
 import { LitterPresentation } from '~/utils/litterPresentation'
 
 const props: LitterRowCardProps = defineProps({
   litter: { type: Object as PropType<LitterCard>, required: true },
   isNew: { type: Boolean, default: false },
   drivingMinutes: { type: Number as PropType<number | null>, default: null },
+  isGoldPuppyOddsShown: { type: Boolean, default: false },
 })
 
 const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
+
+const goldPuppyOddsLine: ComputedRef<string | null> = computed((): string | null =>
+  props.isGoldPuppyOddsShown ? GoldGeneticsPresentation.buildPuppyOddsLine(props.litter.gold_puppy_odds ?? null) : null,
+)
 </script>

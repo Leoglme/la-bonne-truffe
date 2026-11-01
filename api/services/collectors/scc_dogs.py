@@ -333,6 +333,8 @@ class SccDogCollector:
             has_dna_profile=bool(dna) if isinstance(dna, list) else None,
             sire_external_id=str(sire["id"]) if isinstance(sire, dict) and sire.get("id") is not None else None,
             dam_external_id=str(dam["id"]) if isinstance(dam, dict) and dam.get("id") is not None else None,
+            sire_color_code=SccValueParser.to_text(sire.get("couleur")) if isinstance(sire, dict) else None,
+            dam_color_code=SccValueParser.to_text(dam.get("couleur")) if isinstance(dam, dict) else None,
         )
 
     @staticmethod

@@ -44,6 +44,8 @@ class Dog(TimestampMixin, Base):
         has_dna_profile: Whether a DNA profile is recorded.
         sire_external_id: Identifier of the father on the source, when given.
         dam_external_id: Identifier of the mother on the source, when given.
+        sire_color_code: Colour of the father as the source writes it, when given.
+        dam_color_code: Colour of the mother as the source writes it, when given.
         photos: Photo URLs.
         availability_text: What the source says of the dog (« Disponible pour saillie », « En vente »).
         fetched_at: Last time the page of the dog was read.
@@ -74,6 +76,8 @@ class Dog(TimestampMixin, Base):
     has_dna_profile: Mapped[bool | None]
     sire_external_id: Mapped[str | None] = mapped_column(String(80))
     dam_external_id: Mapped[str | None] = mapped_column(String(80))
+    sire_color_code: Mapped[str | None] = mapped_column(String(80))
+    dam_color_code: Mapped[str | None] = mapped_column(String(80))
     photos: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     availability_text: Mapped[str | None] = mapped_column(String(120))
     fetched_at: Mapped[datetime | None]

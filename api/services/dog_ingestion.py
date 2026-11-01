@@ -102,6 +102,8 @@ class DogIngestionService:
         dog.has_dna_profile = raw_dog.has_dna_profile if raw_dog.has_dna_profile is not None else dog.has_dna_profile
         dog.sire_external_id = raw_dog.sire_external_id or dog.sire_external_id
         dog.dam_external_id = raw_dog.dam_external_id or dog.dam_external_id
+        dog.sire_color_code = raw_dog.sire_color_code or dog.sire_color_code
+        dog.dam_color_code = raw_dog.dam_color_code or dog.dam_color_code
         if raw_dog.photos:
             dog.photos = list(raw_dog.photos)
         dog.availability_text = raw_dog.availability_text or dog.availability_text
@@ -176,10 +178,29 @@ class DogIngestionService:
         sire = db.get(Dog, group.sire_dog_id) if group.sire_dog_id is not None else None
         dam = db.get(Dog, group.dam_dog_id) if group.dam_dog_id is not None else None
         expected = DogColorInference.expected_colors(
-            ParentColorFacts(sire.color, sire.e_locus) if sire is not None else None,
-            ParentColorFacts(dam.color, dam.e_locus) if dam is not None else None,
+            DogIngestionService.color_facts_of(sire) if sire is not None else None,
+            DogIngestionService.color_facts_of(dam) if dam is not None else None,
         )
         group.expected_colors = [color.as_json() for color in expected]
+
+    @staticmethod
+    def color_facts_of(dog: Dog) -> ParentColorFacts:
+        """
+        What a parent's page tells of its colour genes: its colour, its tested E locus, and whether one of its
+        own parents had a coat of the gold family.
+
+        Args:
+            dog: The parent.
+
+        Returns:
+            The facts the colour inference works on.
+        """
+        return ParentColorFacts(
+            color=DogColorInference.canonical_color(dog.color_code) if dog.color_code else dog.color,
+            e_locus=dog.e_locus or DogColorInference.e_locus_of(dog.health_codes),
+            has_gold_parent=DogColorInference.has_gold_coat(dog.sire_color_code)
+            or DogColorInference.has_gold_coat(dog.dam_color_code),
+        )
 
 
 dog_ingestion_service = DogIngestionService()

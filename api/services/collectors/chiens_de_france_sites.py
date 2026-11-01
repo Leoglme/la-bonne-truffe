@@ -1,9 +1,11 @@
 """
 Chiens de France breeder sites collector: the site each breeder gets on ``<slug>.chiens-de-france.com``
 (docs/02-sources.md, « Site d'un éleveur sur Chiens de France »). For one breed of one site it reads the
-litters to come, the litters for sale and each of their puppies, the reproducers shown, and what the site
-says of the breeding itself. Politeness: one request per second and the honest User-Agent. A site that
-cannot be read is reported and the run goes on with the next one.
+litters to come, the litters for sale and each of their puppies, the litters born this year, the reproducers
+shown, and what the site says of the breeding itself, its social accounts included. Before the sites, it reads
+the regional lists of the breeders of the breed on the main site, which give the address of each site.
+Politeness: one request per second and the honest User-Agent. A site that cannot be read is reported and the
+run goes on with the next one.
 """
 
 import logging
@@ -12,6 +14,7 @@ import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from urllib.parse import urlparse
 
 import httpx
 from selectolax.lexbor import LexborHTMLParser, LexborNode
@@ -32,10 +35,26 @@ from services.collectors.chiens_de_france import (
     french_date_of,
     litter_photos_of,
 )
-from services.collectors.html_source import WHITESPACE_PATTERN, HtmlAdParser, HtmlRawPage
+from services.collectors.html_source import (
+    BREEDER_SITE_HOST_SUFFIX,
+    WHITESPACE_PATTERN,
+    HtmlAdParser,
+    HtmlRawPage,
+)
 from services.collectors.polite_http_client import PoliteHttpClient, SourcePageMissingError, SourceReadError
-from services.collectors.raw_dog import RawBreederSiteFacts, RawDog
+from services.collectors.raw_dog import (
+    RawBreederSiteFacts,
+    RawBreederSiteLitter,
+    RawDog,
+    RawSiteDirectoryEntry,
+)
 from services.collectors.raw_listing import RawBreeder, RawListing
+from services.collectors.social_link_parser import (
+    FACEBOOK_ACCOUNT,
+    INSTAGRAM_ACCOUNT,
+    YOUTUBE_ACCOUNT,
+    SocialLinkParser,
+)
 from services.dog_color_inference import DogColorInference
 
 logger = logging.getLogger(__name__)
@@ -43,7 +62,10 @@ logger = logging.getLogger(__name__)
 LITTERS_TO_COME_PATH = "saillies"
 LITTERS_FOR_SALE_PATH = "chiots"
 LITTER_FOR_SALE_PATH = "chiots-a-vendre"
+LITTERS_BORN_PATH = "chiots-vendus"
 DOG_LIST_PATHS: tuple[str, ...] = ("chiens/femelles", "chiens/males", "chiens/etalons")
+MAIN_SITE_HOST = "www.chiens-de-france.com"
+ZIP_CODE_PATTERN = re.compile(r"\b(\d{5})\b")
 
 LITTER_TO_COME_LINK_PATTERN = re.compile(r"/saillie/(\d+)$")
 LITTER_FOR_SALE_LINK_PATTERN = re.compile(r"/chiots-a-vendre/(\d+)$")
@@ -86,6 +108,22 @@ class SiteCollectionPlan:
     """The sites one run reads."""
 
     sites: tuple[SiteTarget, ...]
+
+
+@dataclass(frozen=True)
+class SiteDirectoryPlan:
+    """The regional lists of breeders one run reads before the sites (``/eleveurs/<race>/france/<région>``)."""
+
+    list_urls: tuple[str, ...]
+
+
+@dataclass
+class SiteDirectoryCollection:
+    """What the regional lists bring back: one entry per breeder site, the pages, the lists not read."""
+
+    entries: list[RawSiteDirectoryEntry] = field(default_factory=list)
+    raw_pages: list[HtmlRawPage] = field(default_factory=list)
+    failed_urls: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -166,6 +204,32 @@ class ChiensDeFranceSiteCollector:
                 collection.failed_sites.append(site.site_url)
         return collection
 
+    def collect_directory(self, plan: SiteDirectoryPlan) -> SiteDirectoryCollection:
+        """
+        Read the regional lists of breeders of a plan. A list that cannot be read is listed in ``failed_urls``
+        and the next one is read all the same.
+
+        Args:
+            plan: The lists to read.
+
+        Returns:
+            The breeder sites the lists give, and the pages they come from.
+        """
+        collection = SiteDirectoryCollection()
+        for list_url in plan.list_urls:
+            try:
+                html = self.polite_client.get(list_url, accept="text/html").text
+            except SourcePageMissingError as error:
+                logger.info("Sites Chiens de France: regional list missing, skipped: %s", error)
+                continue
+            except SourceReadError as error:
+                logger.warning("Sites Chiens de France: regional list not read %s: %s", list_url, error)
+                collection.failed_urls.append(list_url)
+                continue
+            collection.raw_pages.append(HtmlRawPage(list_url, html))
+            collection.entries.extend(self.parse_directory_page(LexborHTMLParser(html)))
+        return collection
+
     def _collect_site(self, site: SiteTarget, collection: SiteCollection) -> None:
         """
         Read the pages of one site in the order docs/02 lists them, then each litter for sale and each dog
@@ -182,13 +246,16 @@ class ChiensDeFranceSiteCollector:
         first_page_index = len(collection.raw_pages)
         photo_urls: list[str] = []
         breeding_counts: tuple[int | None, int | None] = (None, None)
+        social_accounts: dict[str, str] = {}
 
         litters_to_come_tree = self._read_page(f"{breed_url}/{LITTERS_TO_COME_PATH}", collection)
         if litters_to_come_tree is not None:
             collection.listings.extend(self.parse_litters_to_come_page(litters_to_come_tree, site))
+            social_accounts = self.parse_social_links(litters_to_come_tree)
 
         litters_for_sale_tree = self._read_page(f"{breed_url}/{LITTERS_FOR_SALE_PATH}", collection)
         if litters_for_sale_tree is not None:
+            social_accounts = social_accounts or self.parse_social_links(litters_for_sale_tree)
             photo_urls.extend(litter_photos_of(litters_for_sale_tree))
             for litter_id in self.parse_litters_for_sale_page(litters_for_sale_tree):
                 litter_url = f"{breed_url}/{LITTER_FOR_SALE_PATH}/{litter_id}"
@@ -199,6 +266,12 @@ class ChiensDeFranceSiteCollector:
                 photo_urls.extend(litter_photos_of(litter_tree))
                 if breeding_counts == (None, None):
                     breeding_counts = self.breeding_counts(litter_tree)
+
+        litters_born: tuple[RawBreederSiteLitter, ...] | None = None
+        litters_born_tree = self._read_page(f"{breed_url}/{LITTERS_BORN_PATH}", collection)
+        if litters_born_tree is not None:
+            litters_born = tuple(self.parse_litters_born_page(litters_born_tree))
+            social_accounts = social_accounts or self.parse_social_links(litters_born_tree)
 
         listed_dogs: dict[str, ListedDog] = {}
         for list_path in DOG_LIST_PATHS:
@@ -232,6 +305,10 @@ class ChiensDeFranceSiteCollector:
                 breeding_females_count=breeding_counts[0],
                 litters_last_year_count=breeding_counts[1],
                 registered_on=self._registered_on(collection.raw_pages[first_page_index:]),
+                facebook_url=social_accounts.get(FACEBOOK_ACCOUNT),
+                instagram_url=social_accounts.get(INSTAGRAM_ACCOUNT),
+                youtube_url=social_accounts.get(YOUTUBE_ACCOUNT),
+                litters_born=litters_born,
             )
         )
 
@@ -394,6 +471,83 @@ class ChiensDeFranceSiteCollector:
         if counts_match is None:
             return None, None
         return int(counts_match.group(1)), int(counts_match.group(2))
+
+    @staticmethod
+    def parse_social_links(tree: LexborHTMLParser) -> dict[str, str]:
+        """
+        The social accounts of the breeding, from the buttons of the site's menu (``a.nav-add-facebook``).
+
+        Args:
+            tree: Any parsed page of the site.
+
+        Returns:
+            Address by account (``facebook``, ``instagram``, ``youtube``), for those the menu shows.
+        """
+        addresses = [(link.attributes.get("href") or "").strip() for link in tree.css('a[class*="nav-add-"][href]')]
+        return SocialLinkParser.accounts_in(addresses)
+
+    @classmethod
+    def parse_litters_born_page(cls, tree: LexborHTMLParser) -> list[RawBreederSiteLitter]:
+        """
+        Read the « Chiots nés chez nous » list of the year: one litter per entry, with its birth date, as its
+        title writes it (« Portée née le 27/08/2026 »), and its parents.
+
+        Args:
+            tree: The parsed list.
+
+        Returns:
+            The litters, in page order; an entry without a date is left out.
+        """
+        litters: list[RawBreederSiteLitter] = []
+        for link in tree.css("a.liste-portees[href]"):
+            if LITTER_FOR_SALE_LINK_PATTERN.search((link.attributes.get("href") or "").strip()) is None:
+                continue
+            birth_date = french_date_of(link.attributes.get("title") or "") or french_date_of(
+                HtmlAdParser.text_of(link.css_first("p.port"))
+            )
+            if birth_date is None:
+                continue
+            parents = cls._listed_parents(link)
+            litters.append(
+                RawBreederSiteLitter(
+                    birth_date=birth_date, sire_name=parents.get(SIRE_ROLE), dam_name=parents.get(DAM_ROLE)
+                )
+            )
+        return litters
+
+    @staticmethod
+    def parse_directory_page(tree: LexborHTMLParser) -> list[RawSiteDirectoryEntry]:
+        """
+        Read a regional list of the breeders of a breed: each box links the breeder's site and gives its name,
+        then its postal code and its town (or its department).
+
+        Args:
+            tree: The parsed list.
+
+        Returns:
+            One entry per breeder site, in page order, each once.
+        """
+        entries: dict[str, RawSiteDirectoryEntry] = {}
+        for box in tree.css("a.box-2-sm[href]"):
+            host = urlparse((box.attributes.get("href") or "").strip()).netloc.lower()
+            if not host.endswith(BREEDER_SITE_HOST_SUFFIX) or host == MAIN_SITE_HOST:
+                continue
+            name = HtmlAdParser.text_of(box.css_first("div.box-int-1")) or (box.attributes.get("title") or "").strip()
+            if not name:
+                continue
+            place_node = box.css_first("div.box-int-3")
+            zip_match = ZIP_CODE_PATTERN.search(HtmlAdParser.text_of(place_node))
+            site_url = f"https://{host}"
+            entries.setdefault(
+                site_url,
+                RawSiteDirectoryEntry(
+                    site_url=site_url,
+                    name=name,
+                    zip_code=zip_match.group(1) if zip_match else None,
+                    town=HtmlAdParser.text_of(place_node.css_first("span")) or None if place_node else None,
+                ),
+            )
+        return list(entries.values())
 
     @staticmethod
     def parse_dog_list_page(tree: LexborHTMLParser) -> list[ListedDog]:

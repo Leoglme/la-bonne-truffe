@@ -6,10 +6,13 @@ from urllib.parse import urlparse
 
 from sqlalchemy.orm import Session
 
+from enums.social_link_origin import SocialLinkOrigin
 from models.breeder import Breeder
 from services.breeder_search_text import BreederSearchText
+from services.breeder_social_links import BreederSocialLinks
 from services.collectors.html_source import BREEDER_SITE_HOST_SUFFIX
 from services.collectors.scc_sites import RawSccSite
+from services.collectors.social_link_parser import FACEBOOK_ACCOUNT, INSTAGRAM_ACCOUNT, YOUTUBE_ACCOUNT
 from services.stored_value import known_or_current
 
 
@@ -50,9 +53,12 @@ class SccSiteIngestionService:
             before = self._stored_values(breeder)
             breeder.scc_site_cover_url = site.cover_photo_url
             breeder.scc_site_photos = list(site.photo_urls)
-            breeder.facebook_url = known_or_current(site.links.facebook_url, breeder.facebook_url)
-            breeder.instagram_url = known_or_current(site.links.instagram_url, breeder.instagram_url)
-            breeder.youtube_url = known_or_current(site.links.youtube_url, breeder.youtube_url)
+            for account, address in (
+                (FACEBOOK_ACCOUNT, site.links.facebook_url),
+                (INSTAGRAM_ACCOUNT, site.links.instagram_url),
+                (YOUTUBE_ACCOUNT, site.links.youtube_url),
+            ):
+                BreederSocialLinks.keep(breeder, account, address, SocialLinkOrigin.CENTRALE_CANINE)
             self._apply_other_site(breeder, site.links.other_site_url)
             breeder.search_text = BreederSearchText.build(breeder)
             if self._stored_values(breeder) != before:

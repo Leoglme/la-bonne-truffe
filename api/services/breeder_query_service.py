@@ -1,5 +1,6 @@
 """Reads the breeders for the Éleveurs tab: list, search, detail. Every query is scoped to the user (docs/05)."""
 
+import re
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -10,12 +11,15 @@ from core.text import without_accents
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
 from enums.dog_role import DogRole
+from enums.dog_sex import DogSex
 from enums.listing_source import ListingSource
 from enums.match_tier import MatchTier
+from enums.social_link_origin import SocialLinkOrigin
 from models.breeder import Breeder
 from models.breeder_follow import BreederFollow, BreederFollowNote
 from models.department import Department
 from models.dog import Dog
+from models.listing import Listing
 from models.litter_group import LitterGroup
 from models.search_profile import SearchProfile
 from schemas.breeder import (
@@ -28,16 +32,24 @@ from schemas.breeder import (
     BreederFollowResponse,
     BreederLink,
     BreederSearchResults,
+    BreederSiteLitter,
     BreederSort,
 )
 from schemas.litter import LitterCard
 from services.breeder_search_text import BreederSearchText
+from services.collection_planner import CollectionPlanner
+from services.collectors.chiens_de_france_sites import LITTERS_BORN_PATH
+from services.dog_chip import DogChip
+from services.dog_color_inference import DogColorInference
+from services.dog_ingestion import DogIngestionService
 from services.litter_query_service import LitterCardFacts, LitterQueryService, LitterSort
 
 NAMELESS_BREEDER = "Éleveur sans nom"
 SELECTED_BREEDING_GROUP = 1
 SEARCH_LIMIT = 8
 REPRODUCER_ROLES: tuple[DogRole, ...] = (DogRole.REPRODUCER, DogRole.PARENT)
+SAME_LITTER_DAYS = 3
+DOG_NAME_WORD_PATTERN = re.compile(r"[a-z0-9]+")
 
 
 @dataclass
@@ -196,15 +208,32 @@ class BreederQueryService:
             .order_by(Dog.role, Dog.full_name, Dog.id)
             .all()
         )
+        site_breed_url = cls._site_breed_url(db, breeder)
         return BreederDetail(
             **card.model_dump(),
             phone_e164=breeder.phone_e164,
             siren=breeder.siren,
             website=breeder.website,
             chiens_de_france_site_url=breeder.chiens_de_france_site_url,
+            chiens_de_france_site_seen_at=breeder.chiens_de_france_site_seen_at,
+            site_litters=[
+                BreederSiteLitter(
+                    birth_date=date.fromisoformat(entry["birth_date"]),
+                    sire_name=entry.get("sire_name") or None,
+                    dam_name=entry.get("dam_name") or None,
+                )
+                for entry in breeder.chiens_de_france_litters
+            ],
+            site_litters_url=f"{site_breed_url}/{LITTERS_BORN_PATH}"
+            if site_breed_url and breeder.chiens_de_france_litters
+            else None,
+            site_dogs_url=site_breed_url,
             facebook_url=breeder.facebook_url,
             instagram_url=breeder.instagram_url,
             youtube_url=breeder.youtube_url,
+            social_link_origins={
+                account: SocialLinkOrigin(origin) for account, origin in breeder.social_link_origins.items()
+            },
             scc_breeder_id=breeder.scc_breeder_id,
             links=[
                 BreederLink(label=str(link.get("label", "")), url=str(link.get("url", ""))) for link in breeder.links
@@ -214,8 +243,8 @@ class BreederQueryService:
             scc_last_litter_at=breeder.scc_last_litter_at,
             scc_directory_seen_at=breeder.scc_directory_seen_at,
             litters=litters,
-            color_shares=cls._color_shares(litters),
-            reproducers=[cls._dog(dog) for dog in reproducers],
+            color_shares=cls._color_shares(litters, cls._site_gold_litters_count(db, breeder, litters, reproducers)),
+            reproducers=cls._merged_reproducers(reproducers, cls._current_parent_dog_ids(db, breeder.id)),
             photos=list(breeder.scc_site_photos),
             follow=cls._follow_payload(db, follow) if follow is not None else None,
         )
@@ -472,12 +501,13 @@ class BreederQueryService:
         return all(word in haystack or word in compact for word in words)
 
     @staticmethod
-    def _color_shares(litters: list[LitterCard]) -> list[BreederColorShare]:
+    def _color_shares(litters: list[LitterCard], site_gold_litters_count: int = 0) -> list[BreederColorShare]:
         """
         How many known litters were of each colour, the most frequent first.
 
         Args:
             litters: The litter cards of the breeder.
+            site_gold_litters_count: Gold litters only the breeder's site lists.
 
         Returns:
             The shares, ambiguous colours left out.
@@ -487,38 +517,196 @@ class BreederQueryService:
             for reading in card.colors:
                 if reading.confidence != ColorConfidence.AMBIGUOUS and reading.color != CoatColor.INCONNUE:
                     counts[reading.color] = counts.get(reading.color, 0) + 1
+        if site_gold_litters_count:
+            counts[CoatColor.GOLD] = counts.get(CoatColor.GOLD, 0) + site_gold_litters_count
         return [
             BreederColorShare(color=color, litters_count=count)
             for color, count in sorted(counts.items(), key=lambda item: (-item[1], item[0].value))
         ]
 
-    @staticmethod
-    def _dog(dog: Dog) -> BreederDog:
+    @classmethod
+    def _merged_reproducers(cls, dogs: list[Dog], current_parent_dog_ids: set[int]) -> list[BreederDog]:
         """
-        The payload of a reproducer or a parent.
+        The reproducers of a breeding, a dog the Centrale Canine and the breeder's site both know shown once (same
+        chip); the parents of the current litters first, then the dogs with a photo.
 
         Args:
-            dog: The dog.
+            dogs: The parents and the reproducers of the breeding.
+            current_parent_dog_ids: The dogs that are father or mother of a current litter.
+
+        Returns:
+            One payload per dog.
+        """
+        dogs_by_chip: dict[str, list[Dog]] = {}
+        for dog in dogs:
+            dogs_by_chip.setdefault(DogChip.key_of(dog.identifier) or f"dog-{dog.id}", []).append(dog)
+        merged = [cls._merged_dog(same_dogs, current_parent_dog_ids) for same_dogs in dogs_by_chip.values()]
+        return sorted(
+            merged,
+            key=lambda dog: (
+                not dog.is_current_litter_parent,
+                not dog.photos,
+                (dog.full_name or dog.name or "").lower(),
+            ),
+        )
+
+    @staticmethod
+    def _merged_dog(same_dogs: list[Dog], current_parent_dog_ids: set[int]) -> BreederDog:
+        """
+        The payload of one dog from its rows: the Centrale Canine for its colour genes and its rating, the
+        breeder's site for its name as written there, its photos, its page and what it says of the dog.
+
+        Args:
+            same_dogs: The rows of the same dog, one per source.
+            current_parent_dog_ids: The dogs that are father or mother of a current litter.
 
         Returns:
             What the detail shows of it.
         """
+        scc_dog = next((dog for dog in same_dogs if dog.source == ListingSource.CENTRALE_CANINE), None)
+        site_dog = next((dog for dog in same_dogs if dog.source == ListingSource.CHIENS_DE_FRANCE), None)
+        main_dog = scc_dog or site_dog or same_dogs[0]
+        shown_dog = site_dog or main_dog
+        color_facts = DogIngestionService.color_facts_of(main_dog)
+        site_color = DogIngestionService.color_facts_of(site_dog).color if site_dog is not None else CoatColor.INCONNUE
         return BreederDog(
-            id=dog.id,
-            role=dog.role,
-            name=dog.name,
-            full_name=dog.full_name,
-            sex=dog.sex,
-            birth_date=dog.birth_date,
-            color=dog.color,
-            color_code=dog.color_code,
-            rating=dog.rating,
-            health_codes=list(dog.health_codes),
-            e_locus=dog.e_locus,
-            photos=list(dog.photos),
-            external_url=dog.external_url,
-            availability_text=dog.availability_text,
+            id=main_dog.id,
+            role=main_dog.role,
+            name=shown_dog.name,
+            full_name=shown_dog.full_name,
+            sex=next((dog.sex for dog in same_dogs if dog.sex != DogSex.UNKNOWN), DogSex.UNKNOWN),
+            birth_date=next((dog.birth_date for dog in same_dogs if dog.birth_date is not None), None),
+            color=color_facts.color if color_facts.color != CoatColor.INCONNUE else site_color,
+            color_code=main_dog.color_code or shown_dog.color_code,
+            rating=next(
+                (dog.rating for dog in (scc_dog, site_dog) if dog is not None and dog.rating is not None), None
+            ),
+            health_codes=list(main_dog.health_codes),
+            e_locus=color_facts.e_locus,
+            carries_gold_by_parents=color_facts.carries_gold_by_parents,
+            is_current_litter_parent=any(dog.id in current_parent_dog_ids for dog in same_dogs),
+            photos=next((list(dog.photos) for dog in (site_dog, scc_dog) if dog is not None and dog.photos), []),
+            external_url=shown_dog.external_url,
+            availability_text=shown_dog.availability_text or main_dog.availability_text,
         )
+
+    @staticmethod
+    def _current_parent_dog_ids(db: Session, breeder_id: int) -> set[int]:
+        """
+        The fathers and mothers of the active litters of a breeding.
+
+        Args:
+            db: Database session.
+            breeder_id: The breeder.
+
+        Returns:
+            Their dog ids.
+        """
+        parent_ids: set[int] = set()
+        for sire_dog_id, dam_dog_id in db.query(LitterGroup.sire_dog_id, LitterGroup.dam_dog_id).filter(
+            LitterGroup.breeder_id == breeder_id, LitterGroup.is_active.is_(True)
+        ):
+            parent_ids.update(dog_id for dog_id in (sire_dog_id, dam_dog_id) if dog_id is not None)
+        return parent_ids
+
+    @classmethod
+    def _site_gold_litters_count(cls, db: Session, breeder: Breeder, litters: list[LitterCard], dogs: list[Dog]) -> int:
+        """
+        The litters of the year only the breeder's site lists that are gold for sure: both their parents, as the
+        site shows them, are gold. A litter the app knows already (same mother, born within three days) counts once.
+
+        Args:
+            db: Database session.
+            breeder: The breeder.
+            litters: The litters the app knows of the breeder.
+            dogs: The dogs of the breeding, those of its site included.
+
+        Returns:
+            How many of them.
+        """
+        if not breeder.chiens_de_france_litters:
+            return 0
+        site_dogs_by_name = {
+            cls._dog_name_key(dog.full_name or dog.name): dog
+            for dog in dogs
+            if dog.source == ListingSource.CHIENS_DE_FRANCE
+        }
+        known_litters = cls._known_birth_dates_and_dams(db, litters)
+        gold_count = 0
+        for entry in breeder.chiens_de_france_litters:
+            birth_date = date.fromisoformat(entry["birth_date"])
+            dam_key = cls._dog_name_key(entry.get("dam_name"))
+            if any(
+                abs((birth_date - known_birth_date).days) <= SAME_LITTER_DAYS and dam_key and dam_key in known_dam_keys
+                for known_birth_date, known_dam_keys in known_litters
+            ):
+                continue
+            sire = site_dogs_by_name.get(cls._dog_name_key(entry.get("sire_name")))
+            dam = site_dogs_by_name.get(dam_key)
+            if sire is None or dam is None:
+                continue
+            expected = DogColorInference.expected_colors(
+                DogIngestionService.color_facts_of(sire), DogIngestionService.color_facts_of(dam)
+            )
+            if any(
+                color.color == CoatColor.GOLD and color.confidence == ColorConfidence.INFERRED for color in expected
+            ):
+                gold_count += 1
+        return gold_count
+
+    @classmethod
+    def _known_birth_dates_and_dams(cls, db: Session, litters: list[LitterCard]) -> list[tuple[date, set[str]]]:
+        """
+        The birth date and the mothers' names of each litter the app knows of a breeder, as its listings write them.
+
+        Args:
+            db: Database session.
+            litters: The litter cards.
+
+        Returns:
+            One entry per born litter.
+        """
+        dam_keys_by_group: dict[int, set[str]] = {}
+        for group_id, dam_name in db.query(Listing.litter_group_id, Listing.dam_name).filter(
+            Listing.litter_group_id.in_([card.id for card in litters]), Listing.dam_name.is_not(None)
+        ):
+            if group_id is not None:
+                dam_keys_by_group.setdefault(group_id, set()).add(cls._dog_name_key(dam_name))
+        return [
+            (card.birth_date, dam_keys_by_group.get(card.id, set())) for card in litters if card.birth_date is not None
+        ]
+
+    @staticmethod
+    def _dog_name_key(name: str | None) -> str:
+        """
+        A dog's name as two lists compare it: lower case, without accents nor punctuation.
+
+        Args:
+            name: « Sarah bernhardt Du Moulin des Saules ».
+
+        Returns:
+            « sarah bernhardt du moulin des saules », empty for no name.
+        """
+        return " ".join(DOG_NAME_WORD_PATTERN.findall(without_accents(name or "").lower()))
+
+    @staticmethod
+    def _site_breed_url(db: Session, breeder: Breeder) -> str | None:
+        """
+        The pages of the breeder's site on Chiens de France for the breed of the profiles.
+
+        Args:
+            db: Database session.
+            breeder: The breeder.
+
+        Returns:
+            « https://<slug>.chiens-de-france.com/cocker-spaniel-anglais », or None without a site.
+        """
+        if breeder.chiens_de_france_site_url is None:
+            return None
+        breed_slugs = CollectionPlanner.breeder_site_breed_slugs(db)
+        if not breed_slugs:
+            return None
+        return f"{breeder.chiens_de_france_site_url.rstrip('/')}/{breed_slugs[0]}"
 
     @staticmethod
     def _follow_payload(db: Session, follow: BreederFollow) -> BreederFollowResponse:

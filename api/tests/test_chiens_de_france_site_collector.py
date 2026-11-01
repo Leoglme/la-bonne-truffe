@@ -11,11 +11,17 @@ from enums.dog_role import DogRole
 from enums.dog_sex import DogSex
 from enums.listing_kind import ListingKind
 from enums.lof_status import LofStatus
-from services.collectors.chiens_de_france_sites import ChiensDeFranceSiteCollector, ListedDog, SiteCollectionPlan
-from services.collectors.raw_dog import RawBreederSiteFacts
+from services.collectors.chiens_de_france_sites import (
+    ChiensDeFranceSiteCollector,
+    ListedDog,
+    SiteCollectionPlan,
+    SiteDirectoryPlan,
+)
+from services.collectors.raw_dog import RawBreederSiteFacts, RawBreederSiteLitter, RawSiteDirectoryEntry
 from services.collectors.raw_listing import RawBreeder
 from tests.chiens_de_france_site_pages import (
     BROKEN_SITE_SLUG,
+    DIRECTORY_LIST_URL,
     EMPTY_SITE_SLUG,
     RECORDED_SITE_SLUG,
     chiens_de_france_site_collector_serving,
@@ -39,6 +45,7 @@ RECORDED_SITE_PATHS = [
     "/cocker-spaniel-anglais/chiots",
     "/cocker-spaniel-anglais/chiots-a-vendre/495610",
     "/cocker-spaniel-anglais/chiots-a-vendre/494507",
+    "/cocker-spaniel-anglais/chiots-vendus",
     "/cocker-spaniel-anglais/chiens/femelles",
     "/cocker-spaniel-anglais/chiens/males",
     "/cocker-spaniel-anglais/chiens/etalons",
@@ -204,6 +211,7 @@ def test_collect_reads_the_pages_in_order_then_each_litter_and_each_dog_and_skip
         f"{BREED_URL}/saillies",
         f"{BREED_URL}/chiots",
         f"{BREED_URL}/chiots-a-vendre/495610",
+        f"{BREED_URL}/chiots-vendus",
         f"{BREED_URL}/chiens/femelles",
         f"{BREED_URL}/chiens/etalons",
         f"{BREED_URL}/chien/1212400",
@@ -224,6 +232,11 @@ def test_collect_gives_the_facts_of_the_site_with_its_first_litter_photo_as_cove
             breeding_females_count=18,
             litters_last_year_count=14,
             registered_on=None,
+            facebook_url="https://www.facebook.com/elevage.a.test",
+            litters_born=(
+                RawBreederSiteLitter(date(2026, 8, 28), "Père de test 11", "Mère de test 12 Du Clos de l'Élevage A"),
+                RawBreederSiteLitter(date(2026, 7, 19), "Père de test 13", "Chien de test 1 Du Clos de l'Élevage A"),
+            ),
         )
     ]
 
@@ -259,6 +272,7 @@ def test_site_without_puppy_nor_dog_takes_its_cover_from_its_home_page() -> None
     assert [request.url.path for request in requests] == [
         "/cocker-spaniel-anglais/saillies",
         "/cocker-spaniel-anglais/chiots",
+        "/cocker-spaniel-anglais/chiots-vendus",
         "/cocker-spaniel-anglais/chiens/femelles",
         "/cocker-spaniel-anglais/chiens/males",
         "/cocker-spaniel-anglais/chiens/etalons",
@@ -287,3 +301,43 @@ def test_failing_site_is_reported_and_the_next_site_is_still_read() -> None:
     ]
     assert [facts.breeder_source_id for facts in collection.site_facts] == ["elevage-a"]
     assert len(collection.listings) == 6
+
+
+def test_the_menu_of_a_site_gives_its_social_accounts() -> None:
+    assert ChiensDeFranceSiteCollector.parse_social_links(parsed("litters_born.html")) == {
+        "facebook": "https://www.facebook.com/elevage.a.test"
+    }
+    assert ChiensDeFranceSiteCollector.parse_social_links(parsed("litters_to_come.html")) == {}
+
+
+def test_litters_born_page_gives_each_litter_of_the_year_with_its_date_and_parents() -> None:
+    litters = ChiensDeFranceSiteCollector.parse_litters_born_page(parsed("litters_born.html"))
+
+    assert litters == [
+        RawBreederSiteLitter(date(2026, 8, 28), "Père de test 11", "Mère de test 12 Du Clos de l'Élevage A"),
+        RawBreederSiteLitter(date(2026, 7, 19), "Père de test 13", "Chien de test 1 Du Clos de l'Élevage A"),
+    ]
+
+
+def test_regional_list_gives_each_breeder_site_with_its_postal_code() -> None:
+    entries = ChiensDeFranceSiteCollector.parse_directory_page(parsed("breeders_directory.html"))
+
+    assert entries == [
+        RawSiteDirectoryEntry(SITE_URL, "Sarl La Ferme Des Tests", "35340", "Liffré"),
+        RawSiteDirectoryEntry(
+            "https://elevage-d.chiens-de-france.com", "Du Clos de l'Élevage D", "35340", "ille-et-vilaine"
+        ),
+    ]
+
+
+def test_collect_directory_reads_each_list_and_skips_a_missing_one() -> None:
+    requests: list[httpx.Request] = []
+    missing_list_url = "https://www.chiens-de-france.com/eleveurs/cocker-spaniel-anglais/france/normandie"
+    plan = SiteDirectoryPlan(list_urls=(DIRECTORY_LIST_URL, missing_list_url))
+
+    collection = chiens_de_france_site_collector_serving(requests).collect_directory(plan)
+
+    assert [request.url for request in requests] == [DIRECTORY_LIST_URL, missing_list_url]
+    assert [entry.site_url for entry in collection.entries] == [SITE_URL, "https://elevage-d.chiens-de-france.com"]
+    assert [page.url for page in collection.raw_pages] == [DIRECTORY_LIST_URL]
+    assert collection.failed_urls == []

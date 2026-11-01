@@ -868,6 +868,67 @@ export interface paths {
         patch: operations["update_breeder_api_v1_breeders__breeder_id__patch"];
         trace?: never;
     };
+    "/api/v1/breeders/{breeder_id}/links/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Breeder Link
+         * @description Tell what a pasted link is before it is added: the breeder's site on Chiens de France, a social account, or
+         *     another site, whose page is read for the accounts it links.
+         *
+         *     Args:
+         *         breeder_id: The breeder.
+         *         payload: The link.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         What the app recognises.
+         */
+        post: operations["preview_breeder_link_api_v1_breeders__breeder_id__links_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeders/{breeder_id}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Breeder Link
+         * @description Add a pasted link to a breeder; its site on Chiens de France is read at once, in the background, unless a
+         *     reading of the sites runs already.
+         *
+         *     Args:
+         *         breeder_id: The breeder.
+         *         payload: The link.
+         *         background_tasks: Where the reading of the site goes on after the answer.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The updated detail.
+         */
+        post: operations["add_breeder_link_api_v1_breeders__breeder_id__links_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/breeders/{breeder_id}/follow": {
         parameters: {
             query?: never;
@@ -1449,20 +1510,47 @@ export interface components {
             /** Chiens De France Site Url */
             chiens_de_france_site_url: string | null;
             /**
+             * Chiens De France Site Seen At
+             * @description Last time the breeder's site on Chiens de France was read, naive UTC
+             */
+            chiens_de_france_site_seen_at?: string | null;
+            /**
+             * Site Litters
+             * @description The litters of the year its site lists in « Chiots nés chez nous »
+             */
+            site_litters?: components["schemas"]["BreederSiteLitter"][];
+            /**
+             * Site Litters Url
+             * @description « Chiots nés chez nous » on its site
+             */
+            site_litters_url?: string | null;
+            /**
+             * Site Dogs Url
+             * @description The pages of its site for the breed
+             */
+            site_dogs_url?: string | null;
+            /**
              * Facebook Url
-             * @description Facebook page the Centrale Canine site of the breeding declares
+             * @description Facebook page of the breeding
              */
             facebook_url: string | null;
             /**
              * Instagram Url
-             * @description Instagram account that site declares
+             * @description Instagram account of the breeding
              */
             instagram_url: string | null;
             /**
              * Youtube Url
-             * @description YouTube channel that site declares
+             * @description YouTube channel of the breeding
              */
             youtube_url: string | null;
+            /**
+             * Social Link Origins
+             * @description Where each account was found, by facebook, instagram or youtube
+             */
+            social_link_origins?: {
+                [key: string]: components["schemas"]["SocialLinkOrigin"];
+            };
             /** Scc Breeder Id */
             scc_breeder_id: string | null;
             /** Links */
@@ -1515,6 +1603,18 @@ export interface components {
             health_codes: string[];
             /** E Locus */
             e_locus: string | null;
+            /**
+             * Carries Gold By Parents
+             * @description Untested, but one of its own parents had a coat of the gold family
+             * @default false
+             */
+            carries_gold_by_parents: boolean;
+            /**
+             * Is Current Litter Parent
+             * @description Father or mother of a current litter
+             * @default false
+             */
+            is_current_litter_parent: boolean;
             /** Photos */
             photos: string[];
             /** External Url */
@@ -1621,6 +1721,42 @@ export interface components {
             url: string;
         };
         /**
+         * BreederLinkCreate
+         * @description A link pasted on a breeder: its site, its Facebook page, an ad.
+         */
+        BreederLinkCreate: {
+            /** Url */
+            url: string;
+        };
+        /**
+         * BreederLinkKind
+         * @description What a link added to a breeder by hand leads to: its site on Chiens de France, a social account, or another site.
+         * @enum {string}
+         */
+        BreederLinkKind: "chiens_de_france_site" | "facebook" | "instagram" | "youtube" | "website";
+        /**
+         * BreederLinkPreview
+         * @description What the app recognises in a pasted link, before it is added.
+         */
+        BreederLinkPreview: {
+            kind: components["schemas"]["BreederLinkKind"];
+            /**
+             * Address
+             * @description The link as it will be kept: the root of a Chiens de France site
+             */
+            address: string;
+            /**
+             * Social Accounts
+             * @description The accounts found at the bottom of another site's page
+             */
+            social_accounts: components["schemas"]["BreederSocialAccount"][];
+            /**
+             * Is Page Read
+             * @description Whether the page of another site could be read
+             */
+            is_page_read: boolean;
+        };
+        /**
          * BreederSearchResults
          * @description The suggestions of the search: breeders, then litters.
          */
@@ -1629,6 +1765,34 @@ export interface components {
             breeders: components["schemas"]["BreederCard"][];
             /** Litters */
             litters: components["schemas"]["LitterCard"][];
+        };
+        /**
+         * BreederSiteLitter
+         * @description A litter of the year the breeder's site lists in « Chiots nés chez nous ».
+         */
+        BreederSiteLitter: {
+            /**
+             * Birth Date
+             * Format: date
+             */
+            birth_date: string;
+            /** Sire Name */
+            sire_name: string | null;
+            /** Dam Name */
+            dam_name: string | null;
+        };
+        /**
+         * BreederSocialAccount
+         * @description A social account found at the bottom of a site.
+         */
+        BreederSocialAccount: {
+            /**
+             * Account
+             * @description facebook, instagram or youtube
+             */
+            account: string;
+            /** Url */
+            url: string;
         };
         /**
          * BreederSort
@@ -1996,6 +2160,11 @@ export interface components {
             follow_up_status: components["schemas"]["FollowUpStatus"] | null;
             /** @description APR and NF screening the ratings of the parents guarantee, none when they guarantee nothing */
             genetic_screening: components["schemas"]["GeneticScreening"] | null;
+            /**
+             * Gold Puppy Odds
+             * @description Share of gold puppies the genotypes of the parents give (1, 0.5, 0.25), when known
+             */
+            gold_puppy_odds?: number | null;
         };
         /**
          * LitterColor
@@ -2087,6 +2256,11 @@ export interface components {
             follow_up_status: components["schemas"]["FollowUpStatus"] | null;
             /** @description APR and NF screening the ratings of the parents guarantee, none when they guarantee nothing */
             genetic_screening: components["schemas"]["GeneticScreening"] | null;
+            /**
+             * Gold Puppy Odds
+             * @description Share of gold puppies the genotypes of the parents give (1, 0.5, 0.25), when known
+             */
+            gold_puppy_odds?: number | null;
             /** Reasons */
             reasons: components["schemas"]["LitterReason"][];
             /** Flags */
@@ -2113,6 +2287,11 @@ export interface components {
              * @description The colours the parents imply, and why
              */
             expected_colors?: components["schemas"]["LitterExpectedColor"][];
+            /**
+             * Photos Added At
+             * @description Last time new photos reached one of its listings, naive UTC
+             */
+            photos_added_at?: string | null;
         };
         /**
          * LitterExpectedColor
@@ -2123,6 +2302,11 @@ export interface components {
             confidence: components["schemas"]["ColorConfidence"];
             /** Reason */
             reason: string;
+            /**
+             * Puppy Odds
+             * @description Share of the puppies of that colour, when known
+             */
+            puppy_odds?: number | null;
         };
         /**
          * LitterFollowUp
@@ -2155,10 +2339,21 @@ export interface components {
              * @description E locus genotype, when tested (« e/e »)
              */
             e_locus?: string | null;
+            /**
+             * Carries Gold By Parents
+             * @description Untested, but one of its own parents had a coat of the gold family
+             * @default false
+             */
+            carries_gold_by_parents: boolean;
             /** Health Codes */
             health_codes?: string[];
             /** Scc Url */
             scc_url?: string | null;
+            /**
+             * Photo Url
+             * @description First photo of the dog on its breeder's site, by chip
+             */
+            photo_url?: string | null;
         };
         /**
          * LitterPuppy
@@ -2243,6 +2438,10 @@ export interface components {
             colors: components["schemas"]["LitterColor"][];
             /** Photos */
             photos: string[];
+            /** @description Where the puppy of a puppy ad stands */
+            puppy_state?: components["schemas"]["PuppyAdState"] | null;
+            /** Price Cents */
+            price_cents?: number | null;
         };
         /**
          * LitterVisit
@@ -2381,6 +2580,11 @@ export interface components {
             /** @description APR and NF screening the ratings of the parents guarantee, none when they guarantee nothing */
             genetic_screening: components["schemas"]["GeneticScreening"] | null;
             /**
+             * Gold Puppy Odds
+             * @description Share of gold puppies the genotypes of the parents give (1, 0.5, 0.25), when known
+             */
+            gold_puppy_odds?: number | null;
+            /**
              * Breeder Phone E164
              * @description Phone of the breeder, for the call button of a reminder
              */
@@ -2466,6 +2670,12 @@ export interface components {
             /** Token */
             token: string;
         };
+        /**
+         * PuppyAdState
+         * @description Where the puppy of an ad stands: still offered, reserved, or sold.
+         * @enum {string}
+         */
+        PuppyAdState: "available" | "reserved" | "sold";
         /**
          * PuppyArrivalChecklist
          * @description The preparations ticked, by the keys the web app gives them.
@@ -2726,6 +2936,12 @@ export interface components {
             /** Email */
             email: string;
         };
+        /**
+         * SocialLinkOrigin
+         * @description Where the app found a social account of a breeding: its Centrale Canine site, its own site, or added by hand.
+         * @enum {string}
+         */
+        SocialLinkOrigin: "centrale_canine" | "breeder_site" | "added_by_hand";
         /**
          * SourceActivity
          * @description What runs now, for every device to show its buttons loading, wherever the run was asked.
@@ -3832,6 +4048,76 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["BreederUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreederDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_breeder_link_api_v1_breeders__breeder_id__links_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breeder_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreederLinkCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreederLinkPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_breeder_link_api_v1_breeders__breeder_id__links_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breeder_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreederLinkCreate"];
             };
         };
         responses: {

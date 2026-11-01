@@ -8,7 +8,7 @@
     </p>
     <template v-else>
       <div :class="props.isInWideLayout ? 'grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-3' : 'contents'">
-        <LitterRowCard v-for="litter in shownLitters" :key="litter.id" :litter="litter" />
+        <LitterRowCard v-for="litter in shownLitters" :key="litter.id" :litter="litter" is-gold-puppy-odds-shown />
       </div>
       <button
         v-if="hiddenLittersCount > 0"
@@ -20,15 +20,27 @@
         <UIcon name="i-lucide-chevron-right" class="size-5 shrink-0 text-coral-text" />
       </button>
     </template>
+    <a
+      v-if="siteLittersLink"
+      :href="siteLittersLink.href"
+      target="_blank"
+      rel="noopener"
+      class="inline-flex min-h-[52px] items-center justify-between gap-3 rounded-[20px] bg-card px-[18px] text-[15px] font-bold text-ink-secondary no-underline shadow-card hover:text-ink-secondary"
+    >
+      {{ siteLittersLink.label }}
+      <UIcon name="i-lucide-external-link" class="size-5 shrink-0 text-coral-text" />
+    </a>
   </section>
 </template>
 
 <script lang="ts" setup>
 import type { ComputedRef, PropType, Ref } from 'vue'
 import type { BreederDetail, LitterCard } from '~/types/api'
+import type { BreederSiteLink } from '~/types/Breeder'
 import type { BreederLittersListProps } from '~/types/BreederLittersList'
 import { computed, ref, watch } from 'vue'
 import { BREEDER_LITTERS_SHOWN_COUNT } from '~/constants/breederOptions'
+import { BreederPresentation } from '~/utils/breederPresentation'
 import { FrenchText } from '~/utils/frenchText'
 
 const props: BreederLittersListProps = defineProps({
@@ -49,6 +61,9 @@ const hiddenLittersLabel: ComputedRef<string> = computed((): string => {
   const count: number = hiddenLittersCount.value
   return `${count} ${FrenchText.pickForm(count, 'autre portée', 'autres portées')}`
 })
+const siteLittersLink: ComputedRef<BreederSiteLink | null> = computed((): BreederSiteLink | null =>
+  BreederPresentation.buildSiteLittersLink(props.breeder),
+)
 
 watch(
   (): number => props.breeder.id,

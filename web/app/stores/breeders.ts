@@ -227,6 +227,19 @@ export const useBreedersStore = defineStore('breeders', () => {
   }
 
   /**
+   * Add a pasted link to a breeder, wherever it is shown.
+   *
+   * @param breederId - The breeder.
+   * @param url - The link as pasted.
+   * @returns The updated detail.
+   */
+  async function addLink(breederId: number, url: string): Promise<BreederDetail> {
+    const detail: BreederDetail = await BreedersService.addLink(breederId, { url })
+    applyDetail(detail)
+    return detail
+  }
+
+  /**
    * Read a breeder again from the API, then write it wherever it is shown.
    *
    * @param breederId - The breeder.
@@ -283,6 +296,7 @@ export const useBreedersStore = defineStore('breeders', () => {
     removeNote,
     createManual,
     update,
+    addLink,
     reloadBreeder,
     applyDetail,
   }

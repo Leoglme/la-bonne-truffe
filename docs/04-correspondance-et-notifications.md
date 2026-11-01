@@ -123,6 +123,8 @@ Raisons affichées : « Gold : les deux parents sont gold », « Gold possible :
 
 Les chiots inscrits donnent aussi, par chiot, le nom, la puce et le numéro LOF ; la fiche d'une portée les liste avec leur couleur, et le détail d'un chiot vendu sur Chiens de France son statut (« réservé », « vendu », « disponible »), qui recalcule `puppies_available`.
 
+**Le gold porté, et sa part** (1er novembre) : le génotype du locus E se lit aussi dans `LocEm-…` (le masque `Em` est un allèle dominant, compté comme `E`) ; sans test, un parent d'une autre couleur dont le père ou la mère a une robe de la famille du gold (lue dans `ws.chien.pere.couleur` et `mere.couleur` de sa fiche) est porteur, `E/e`. La règle de `03` donne alors la part des chiots gold (`puppy_odds`) : tous pour deux parents gold, un sur deux pour un gold et un porteur, un sur quatre pour deux porteurs. Raisons affichées : « Gold possible, un chiot sur deux : un parent gold, l'autre noir et feu porteur du gold », « Gold possible, un chiot sur quatre : les deux parents portent le gold » ; la raison du score dit « Gold possible, ta couleur préférée : un chiot sur deux » (20 points comme toute couleur ambiguë). Le détail de la portée l'explique dans « Les chances de gold » : qui transmet le gold, la chance de chaque chiot, et, une fois les chiots nés, la fréquence d'au moins un gold parmi eux (« Au moins un gold sur les trois, 7 fois sur 8 », en fraction jusqu'à 16 cas, sur 100 au-delà).
+
 ## Les alertes d'éleveur (jalon 6)
 
 Pour chaque `breeder_follow`, sur les portées de cet éleveur, **quels que soient le département et le palier** :

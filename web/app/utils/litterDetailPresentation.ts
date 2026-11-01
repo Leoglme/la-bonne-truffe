@@ -1,5 +1,15 @@
-import type { LitterBreeder, LitterCard, LitterDetail, LitterSourceListing, MatchFlag } from '~/types/api'
-import type { LitterDayFact, LitterDayFactKey, LitterKeyFact, LitterListingLine } from '~/types/Litter'
+import type {
+  DogSex,
+  ListingSource,
+  LitterBreeder,
+  LitterCard,
+  LitterColor,
+  LitterDetail,
+  LitterSourceListing,
+  MatchFlag,
+  PuppyAdState,
+} from '~/types/api'
+import type { LitterDayFact, LitterDayFactKey, LitterKeyFact, LitterListingLine, LitterPuppyLine } from '~/types/Litter'
 import type { LitterParentRole } from '~/types/LitterParentsList'
 import type { DevicePosition, GeographicPoint, MapDestination } from '~/types/Location'
 import type { PrimaryAction } from '~/types/PrimaryAction'
@@ -9,13 +19,18 @@ import {
   LISTING_SOURCE_LABELS,
   LISTING_SOURCE_LINK_LABELS,
   MATCH_FLAG_LABELS,
+  PUPPY_AD_STATE_LABELS,
+  PUPPY_SEX_LABELS,
 } from '~/constants/litterLabels'
 import { MAX_PARENT_RATING, PARENT_RATING_LABELS } from '~/constants/parentRatings'
 import { FrenchDate } from '~/utils/frenchDate'
+import { FrenchText } from '~/utils/frenchText'
 import { LitterPresentation } from '~/utils/litterPresentation'
 
 const UNKNOWN_FACT_LABEL: string = 'À confirmer'
 const GONE_LISTING_LABEL: string = 'plus en ligne'
+const GONE_PUPPY_LABEL: string = 'Plus en ligne'
+const NEW_PHOTOS_BADGE_DAYS: number = 1
 const SIREN_DIGIT_GROUP: RegExp = /(\d{3})(?=\d)/g
 const FRENCH_COUNTRY_CODE: string = '+33'
 const FRENCH_NATIONAL_NUMBER_LENGTH: number = 9
@@ -28,16 +43,25 @@ export class LitterDetailPresentation {
    *
    * @param litter - The litter.
    * @param now - Current time.
-   * @returns « NÉE CETTE NUIT », « À NAÎTRE », or null.
+   * @returns « NÉE CETTE NUIT », « À NAÎTRE », « NOUVELLES PHOTOS · CE MATIN » the day new photos came and the next
+   *   one, or null.
    */
-  static buildPhotoBadge(litter: LitterCard, now: Date): string | null {
+  static buildPhotoBadge(litter: LitterDetail, now: Date): string | null {
     if (litter.kind === 'litter_expected') {
       return 'À NAÎTRE'
     }
     if (LitterPresentation.isBornLastNight(litter, now)) {
       return 'NÉE CETTE NUIT'
     }
-    return null
+    const photosAddedAt: string | null = litter.photos_added_at ?? null
+    if (photosAddedAt === null) {
+      return null
+    }
+    const addedAt: Date = FrenchDate.parseApiDate(photosAddedAt)
+    if (FrenchDate.countDaysAgo(FrenchDate.startOfDay(addedAt), now) > NEW_PHOTOS_BADGE_DAYS) {
+      return null
+    }
+    return `NOUVELLES PHOTOS · ${FrenchDate.formatRecentMoment(addedAt, now).toUpperCase()}`
   }
 
   /**
@@ -111,39 +135,93 @@ export class LitterDetailPresentation {
   }
 
   /**
-   * Build the cards of the listings: one per puppy ad, « Chiot 1 », « Chiot 2 »…, and « Vu sur » for the others.
+   * Build the cards of « Vu sur »: one per listing, and a single one per source for its puppy ads.
    *
    * @param litter - The litter.
-   * @returns One line per listing, in the order of the API.
+   * @returns The lines, in the order of the API; the puppy ads of a source where its first one stands.
    */
   static buildListingLines(litter: LitterDetail): LitterListingLine[] {
-    const puppyAds: LitterSourceListing[] = this.listPuppyAds(litter)
-    return litter.listings.map((listing: LitterSourceListing, index: number): LitterListingLine => {
+    const puppyAdsBySource: Map<ListingSource, LitterSourceListing[]> = new Map()
+    this.listPuppyAds(litter.listings).forEach((listing: LitterSourceListing): void => {
+      puppyAdsBySource.set(listing.source, [...(puppyAdsBySource.get(listing.source) ?? []), listing])
+    })
+    const lines: LitterListingLine[] = []
+    litter.listings.forEach((listing: LitterSourceListing, index: number): void => {
       const key: string = `${listing.source}-${index}`
-      const goneLabel: string | null = listing.is_active ? null : GONE_LISTING_LABEL
       if (listing.kind !== 'puppy_ad') {
-        return {
+        lines.push({
           key,
           href: listing.external_url,
           label: 'Vu sur',
-          description: this.joinKnownParts([this.buildSourceLine(listing), goneLabel]),
+          description: this.joinKnownParts([
+            this.buildSourceLine(listing),
+            listing.is_active ? null : GONE_LISTING_LABEL,
+          ]),
           thumbnailUrl: null,
           isGone: !listing.is_active,
-        }
+        })
+        return
       }
+      const sourcePuppyAds: LitterSourceListing[] = puppyAdsBySource.get(listing.source) ?? []
+      if (sourcePuppyAds[0] === listing) {
+        lines.push(this.buildPuppyAdsLine(key, listing.source, sourcePuppyAds))
+      }
+    })
+    return lines
+  }
+
+  /**
+   * Build the rows of « Les chiots »: one per puppy ad, its photo, its sex and where it stands.
+   *
+   * @param listings - The listings of the litter.
+   * @returns « Chiot 1 · mâle · Disponible · 1 400 € »…, in the order of the API.
+   */
+  static buildPuppyLines(listings: LitterSourceListing[]): LitterPuppyLine[] {
+    const puppyAds: LitterSourceListing[] = this.listPuppyAds(listings)
+    return puppyAds.map((listing: LitterSourceListing, puppyIndex: number): LitterPuppyLine => {
+      const sex: DogSex = this.readPuppySex(listing)
+      const onlyColor: LitterColor | undefined = listing.colors.length === 1 ? listing.colors[0] : undefined
       return {
-        key,
+        key: `${listing.source}-${puppyIndex}`,
         href: listing.external_url,
-        label: this.buildPuppyLabel(puppyAds.indexOf(listing), puppyAds.length),
-        description: this.joinKnownParts([
-          this.buildPuppyDescription(listing),
-          LISTING_SOURCE_LABELS[listing.source],
-          goneLabel,
-        ]),
-        thumbnailUrl: listing.photos[0] ?? null,
+        label: this.buildPuppyLabel(puppyIndex, puppyAds.length),
+        sex,
+        sexLabel: sex === 'unknown' ? null : PUPPY_SEX_LABELS[sex].toLowerCase(),
+        color: onlyColor?.color ?? null,
+        stateLabel: this.buildPuppyStateLabel(listing, sex),
+        isAvailable: listing.puppy_state === 'available',
+        photoUrl: listing.photos[0] ?? null,
         isGone: !listing.is_active,
       }
     })
+  }
+
+  /**
+   * Say where the puppy ads were seen last, beside the title of « Les chiots ».
+   *
+   * @param listings - The listings of the litter.
+   * @param now - Current time.
+   * @returns « Sur Chiens de France, ce matin » when they all come from one source, « Vus hier » otherwise, or null
+   *   without puppy ads.
+   */
+  static buildPuppiesCaption(listings: LitterSourceListing[], now: Date): string | null {
+    const puppyAds: LitterSourceListing[] = this.listPuppyAds(listings)
+    const firstPuppyAd: LitterSourceListing | undefined = puppyAds[0]
+    if (firstPuppyAd === undefined) {
+      return null
+    }
+    const lastSeenAt: Date = new Date(
+      Math.max(
+        ...puppyAds.map((listing: LitterSourceListing): number =>
+          FrenchDate.parseApiDate(listing.last_seen_at).getTime(),
+        ),
+      ),
+    )
+    const seenMoment: string = FrenchDate.formatRecentMoment(lastSeenAt, now)
+    const isFromOneSource: boolean = puppyAds.every(
+      (listing: LitterSourceListing): boolean => listing.source === firstPuppyAd.source,
+    )
+    return isFromOneSource ? `Sur ${LISTING_SOURCE_LABELS[firstPuppyAd.source]}, ${seenMoment}` : `Vus ${seenMoment}`
   }
 
   /**
@@ -153,7 +231,7 @@ export class LitterDetailPresentation {
    * @returns The photos, « Chiot 2 · Femelle » under those of a puppy ad.
    */
   static buildViewerPhotos(litter: LitterDetail): UiPhotoViewerPhoto[] {
-    const puppyAds: LitterSourceListing[] = this.listPuppyAds(litter)
+    const puppyAds: LitterSourceListing[] = this.listPuppyAds(litter.listings)
     return litter.photos.map((url: string): UiPhotoViewerPhoto => {
       const puppyIndex: number = puppyAds.findIndex((listing: LitterSourceListing): boolean =>
         listing.photos.includes(url),
@@ -255,11 +333,11 @@ export class LitterDetailPresentation {
   /**
    * List the puppy ads of a litter, one per puppy, in the order of the API.
    *
-   * @param litter - The litter.
-   * @returns Its listings of kind « annonce ».
+   * @param listings - The listings of the litter.
+   * @returns Those of kind « annonce ».
    */
-  private static listPuppyAds(litter: LitterDetail): LitterSourceListing[] {
-    return litter.listings.filter((listing: LitterSourceListing): boolean => listing.kind === 'puppy_ad')
+  private static listPuppyAds(listings: LitterSourceListing[]): LitterSourceListing[] {
+    return listings.filter((listing: LitterSourceListing): boolean => listing.kind === 'puppy_ad')
   }
 
   /**
@@ -291,15 +369,87 @@ export class LitterDetailPresentation {
    */
   private static buildPuppyDescription(listing: LitterSourceListing): string | null {
     const parts: string[] = []
-    if (listing.male_count === 1 && listing.female_count === 0) {
-      parts.push('Mâle')
-    } else if (listing.female_count === 1 && listing.male_count === 0) {
-      parts.push('Femelle')
+    const sex: DogSex = this.readPuppySex(listing)
+    if (sex !== 'unknown') {
+      parts.push(PUPPY_SEX_LABELS[sex])
     }
     if (LitterPresentation.hasKnownColors(listing.colors)) {
       parts.push(LitterPresentation.buildColorLabel(listing.colors, true))
     }
     return parts.length > 0 ? parts.join(' · ') : null
+  }
+
+  /**
+   * Read the sex of the puppy of an ad, from the counts the ad gives.
+   *
+   * @param listing - The puppy ad.
+   * @returns « male » or « female », « unknown » when the ad does not tell.
+   */
+  private static readPuppySex(listing: LitterSourceListing): DogSex {
+    if (listing.male_count === 1 && listing.female_count === 0) {
+      return 'male'
+    }
+    if (listing.female_count === 1 && listing.male_count === 0) {
+      return 'female'
+    }
+    return 'unknown'
+  }
+
+  /**
+   * Say where the puppy of an ad stands: free and at what price, reserved, sold, or gone from its source.
+   *
+   * @param listing - The puppy ad.
+   * @param sex - Its sex, as French agrees with it.
+   * @returns « Disponible · 1 400 € », « Réservée », « Vendu », « Plus en ligne », or null when nothing tells it.
+   */
+  private static buildPuppyStateLabel(listing: LitterSourceListing, sex: DogSex): string | null {
+    const state: PuppyAdState | null = listing.puppy_state ?? null
+    if (state === 'available') {
+      const priceCents: number | null = listing.price_cents ?? null
+      return priceCents === null ? 'Disponible' : `Disponible · ${LitterPresentation.formatPrice(priceCents)}`
+    }
+    if (state !== null) {
+      return PUPPY_AD_STATE_LABELS[state][sex === 'female' ? 'feminine' : 'masculine']
+    }
+    return listing.is_active ? null : GONE_PUPPY_LABEL
+  }
+
+  /**
+   * Build the « Vu sur » line of the puppy ads of a source: how many puppies it shows, and a link to the first ad.
+   *
+   * @param key - Key of the line.
+   * @param source - The source.
+   * @param puppyAds - Its puppy ads, at least one.
+   * @returns « Sites d’élevage (Chiens de France) · 3 chiots en photo ».
+   */
+  private static buildPuppyAdsLine(
+    key: string,
+    source: ListingSource,
+    puppyAds: LitterSourceListing[],
+  ): LitterListingLine {
+    const isGone: boolean = puppyAds.every((listing: LitterSourceListing): boolean => !listing.is_active)
+    const photographedCount: number = puppyAds.filter(
+      (listing: LitterSourceListing): boolean => listing.photos.length > 0,
+    ).length
+    const puppiesLabel: string =
+      photographedCount > 0
+        ? `${photographedCount} ${FrenchText.pickForm(photographedCount, 'chiot en photo', 'chiots en photo')}`
+        : `${puppyAds.length} ${FrenchText.pickForm(puppyAds.length, 'annonce de chiot', 'annonces de chiots')}`
+    const firstLink: LitterSourceListing | undefined = puppyAds.find(
+      (listing: LitterSourceListing): boolean => listing.external_url !== null,
+    )
+    return {
+      key,
+      href: firstLink?.external_url ?? null,
+      label: 'Vu sur',
+      description: this.joinKnownParts([
+        LISTING_SOURCE_LABELS[source],
+        puppiesLabel,
+        isGone ? GONE_LISTING_LABEL : null,
+      ]),
+      thumbnailUrl: null,
+      isGone,
+    }
   }
 
   /**

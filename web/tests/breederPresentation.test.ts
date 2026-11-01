@@ -1,5 +1,5 @@
-import type { BreederCard, BreederDetail, LitterCard } from '../app/types/api'
-import type { BreederChip, BreederStat } from '../app/types/Breeder'
+import type { BreederCard, BreederDetail, BreederDog, BreederLinkPreview, LitterCard } from '../app/types/api'
+import type { BreederChip, BreederLinkRecognition, BreederSeenOnLink, BreederStat } from '../app/types/Breeder'
 import { describe, expect, it } from 'vitest'
 import { BreederManualFormPresentation } from '../app/utils/breederManualFormPresentation'
 import { BreederPresentation } from '../app/utils/breederPresentation'
@@ -112,6 +112,46 @@ const BREEDER_DETAIL: BreederDetail = {
     notes: [],
   },
 }
+
+const GOLD_STUD: BreederDog = {
+  id: 11,
+  role: 'reproducer',
+  name: 'Père de test 11',
+  full_name: 'Père de test 11 des Landes de Test',
+  sex: 'male',
+  birth_date: null,
+  color: 'gold',
+  color_code: 'F.Or.',
+  rating: 1,
+  health_codes: ['LocE-e/e', 'PRCD-1.1'],
+  e_locus: 'e/e',
+  carries_gold_by_parents: false,
+  is_current_litter_parent: true,
+  photos: ['https://landes-de-test.chiens-de-france.com/photo-de-test-1.jpg'],
+  external_url: null,
+  availability_text: null,
+}
+
+const CARRIER_LICE: BreederDog = {
+  ...GOLD_STUD,
+  id: 12,
+  name: 'Mère de test 12',
+  full_name: 'Mère de test 12 des Landes de Test',
+  sex: 'female',
+  color: 'bleu_rouan',
+  color_code: 'Noi. Bla.Rou.',
+  health_codes: [],
+  e_locus: null,
+  carries_gold_by_parents: true,
+  photos: [],
+}
+
+const OTHER_DOGS: BreederDog[] = [21, 22, 23, 24].map((id: number): BreederDog => ({
+  ...CARRIER_LICE,
+  id,
+  is_current_litter_parent: false,
+  rating: null,
+}))
 
 describe('BreederPresentation.passesFilter', (): void => {
   it('keeps a breeder for the chips that describe it', (): void => {
@@ -236,6 +276,21 @@ describe('BreederPresentation.buildStats', (): void => {
   })
 })
 
+describe('BreederPresentation.buildStats with the litters of its site', (): void => {
+  it('gives the rhythm as the litters its site shows for the last year', (): void => {
+    expect(
+      BreederPresentation.buildStats({
+        ...BREEDER_DETAIL,
+        site_litters: [
+          { birth_date: '2026-08-28', sire_name: 'Père de test 11', dam_name: 'Mère de test 12' },
+          { birth_date: '2026-07-19', sire_name: null, dam_name: null },
+          { birth_date: '2025-05-01', sire_name: null, dam_name: null },
+        ],
+      })[2]?.value,
+    ).toBe('2 en 2026 · 6 lices')
+  })
+})
+
 describe('BreederPresentation.buildColorShares', (): void => {
   it('turns the litters of each colour into percentages', (): void => {
     expect(BreederPresentation.buildColorShares(BREEDER_DETAIL)).toEqual([
@@ -248,7 +303,7 @@ describe('BreederPresentation.buildColorShares', (): void => {
 
 describe('BreederPresentation.listSeenOnLinks', (): void => {
   it('lists the directories, then the site, then what was added by hand', (): void => {
-    expect(BreederPresentation.listSeenOnLinks(BREEDER_DETAIL)).toEqual([
+    expect(BreederPresentation.listSeenOnLinks(BREEDER_DETAIL, NOW)).toEqual([
       {
         key: 'scc',
         label: 'Centrale Canine',
@@ -271,13 +326,16 @@ describe('BreederPresentation.listSeenOnLinks', (): void => {
   })
 
   it('lists the social accounts the Centrale Canine site declares, after the sites', (): void => {
-    const links: BreederSeenOnLink[] = BreederPresentation.listSeenOnLinks({
-      ...BREEDER_DETAIL,
-      links: [],
-      facebook_url: 'https://www.facebook.com/landes.de.test',
-      instagram_url: 'https://www.instagram.com/landes.de.test/',
-      youtube_url: null,
-    })
+    const links: BreederSeenOnLink[] = BreederPresentation.listSeenOnLinks(
+      {
+        ...BREEDER_DETAIL,
+        links: [],
+        facebook_url: 'https://www.facebook.com/landes.de.test',
+        instagram_url: 'https://www.instagram.com/landes.de.test/',
+        youtube_url: null,
+      },
+      NOW,
+    )
 
     expect(links.map((link: BreederSeenOnLink): string => link.key)).toEqual([
       'scc',
@@ -292,6 +350,150 @@ describe('BreederPresentation.listSeenOnLinks', (): void => {
       href: 'https://www.facebook.com/landes.de.test',
     })
     expect(links[3]?.description).toBe('Compte de l’élevage')
+  })
+})
+
+describe('BreederPresentation.listSeenOnLinks once the site is read', (): void => {
+  it('says when the site was read and where each social link comes from', (): void => {
+    const links: BreederSeenOnLink[] = BreederPresentation.listSeenOnLinks(
+      {
+        ...BREEDER_DETAIL,
+        links: [],
+        chiens_de_france_site_seen_at: '2026-11-02T06:40:00',
+        facebook_url: 'https://www.facebook.com/landes.de.test',
+        youtube_url: 'https://www.youtube.com/@landesdetest',
+        social_link_origins: { facebook: 'breeder_site', youtube: 'added_by_hand' },
+      },
+      NOW,
+    )
+
+    expect(links.map((link: BreederSeenOnLink): string => link.description)).toEqual([
+      'Affixe déposé · SIREN 812 345 678',
+      'Site de l’élevage · relu ce matin',
+      'Page de l’élevage · lien pris sur son site',
+      'Chaîne de l’élevage · lien ajouté par toi',
+    ])
+  })
+})
+
+describe('BreederPresentation dogs', (): void => {
+  it('words what a dog carries of the gold in place of its E locus code', (): void => {
+    expect(BreederPresentation.buildDogFactsLine(GOLD_STUD)).toBe('Gold · testé gold (e/e) · PRCD-1.1')
+    expect(BreederPresentation.buildDogFactsLine(CARRIER_LICE)).toBe(
+      'Bleu rouan · porteuse du gold (E/e), d’après ses parents',
+    )
+  })
+
+  it('names the rating agreed with the sex', (): void => {
+    expect(BreederPresentation.buildDogRatingLabel(GOLD_STUD)).toBe('Confirmé')
+    expect(BreederPresentation.buildDogRatingLabel(CARRIER_LICE)).toBe('Confirmée')
+    expect(BreederPresentation.buildDogRatingLabel({ ...GOLD_STUD, rating: null })).toBeNull()
+  })
+
+  it('shows the parents of its current litters, then the next dogs up to four', (): void => {
+    const reproducers: BreederDog[] = [GOLD_STUD, CARRIER_LICE, ...OTHER_DOGS]
+
+    expect(
+      BreederPresentation.listShownDogs({ ...BREEDER_DETAIL, reproducers }).map((dog: BreederDog): number => dog.id),
+    ).toEqual([11, 12, 21, 22])
+    expect(
+      BreederPresentation.listShownDogs({
+        ...BREEDER_DETAIL,
+        reproducers: reproducers.map((dog: BreederDog): BreederDog => ({ ...dog, is_current_litter_parent: true })),
+      }),
+    ).toHaveLength(6)
+    expect(BreederPresentation.buildHiddenDogsLabel(34, true)).toBe('34 autres chiens sur son site')
+    expect(BreederPresentation.buildHiddenDogsLabel(1, false)).toBe('1 autre chien')
+  })
+})
+
+describe('BreederPresentation.buildSiteLittersLink', (): void => {
+  it('opens the litters its site shows for the last year', (): void => {
+    const siteLittersUrl: string = 'https://landes-de-test.chiens-de-france.com/cocker-spaniel-anglais/chiots-vendus'
+
+    expect(
+      BreederPresentation.buildSiteLittersLink({
+        ...BREEDER_DETAIL,
+        site_litters_url: siteLittersUrl,
+        site_litters: [
+          { birth_date: '2026-08-28', sire_name: null, dam_name: null },
+          { birth_date: '2026-07-19', sire_name: null, dam_name: null },
+        ],
+      }),
+    ).toEqual({ label: 'Ses 2 portées de 2026, en photos sur son site', href: siteLittersUrl })
+    expect(
+      BreederPresentation.buildSiteLittersLink({
+        ...BREEDER_DETAIL,
+        site_litters_url: siteLittersUrl,
+        site_litters: [{ birth_date: '2025-04-02', sire_name: null, dam_name: null }],
+      })?.label,
+    ).toBe('Sa portée de 2025, en photos sur son site')
+    expect(BreederPresentation.buildSiteLittersLink(BREEDER_DETAIL)).toBeNull()
+  })
+})
+
+describe('BreederPresentation.buildLinkRecognition', (): void => {
+  const facebookPreview: BreederLinkPreview = {
+    kind: 'facebook',
+    address: 'https://www.facebook.com/landes.de.test',
+    social_accounts: [],
+    is_page_read: false,
+  }
+  const websitePreview: BreederLinkPreview = {
+    kind: 'website',
+    address: 'https://www.landes-de-test.fr',
+    social_accounts: [
+      { account: 'facebook', url: 'https://www.facebook.com/landes.de.test' },
+      { account: 'instagram', url: 'https://www.instagram.com/landes.de.test/' },
+      { account: 'youtube', url: 'https://www.youtube.com/@landesdetest' },
+    ],
+    is_page_read: true,
+  }
+
+  it('says that the site of Chiens de France will be read', (): void => {
+    expect(
+      BreederPresentation.buildLinkRecognition(
+        { ...facebookPreview, kind: 'chiens_de_france_site', address: 'https://landes-de-test.chiens-de-france.com' },
+        BREEDER_DETAIL,
+      ).title,
+    ).toBe('Son site Chiens de France')
+  })
+
+  it('tells whether a social account comes, is known or replaces the one known', (): void => {
+    expect(BreederPresentation.buildLinkRecognition(facebookPreview, BREEDER_DETAIL)).toEqual({
+      title: 'Sa page Facebook',
+      helper: 'Elle ira dans « Vu sur ».',
+      accountLabels: [],
+    })
+    expect(
+      BreederPresentation.buildLinkRecognition(facebookPreview, {
+        ...BREEDER_DETAIL,
+        facebook_url: 'https://www.facebook.com/landes.de.test',
+      }).helper,
+    ).toBe('Elle est déjà dans « Vu sur ».')
+    expect(
+      BreederPresentation.buildLinkRecognition(facebookPreview, {
+        ...BREEDER_DETAIL,
+        facebook_url: 'https://www.facebook.com/ancienne.page',
+      }).helper,
+    ).toBe('Elle remplacera celle de « Vu sur ».')
+  })
+
+  it('lists the accounts at the bottom of another site, and which ones « Vu sur » lacks', (): void => {
+    expect(BreederPresentation.buildLinkRecognition(websitePreview, BREEDER_DETAIL)).toEqual<BreederLinkRecognition>({
+      title: 'Le site de l’élevage',
+      helper: 'En bas de sa page, trois comptes. Ils iront dans « Vu sur ».',
+      accountLabels: ['Facebook', 'Instagram', 'YouTube'],
+    })
+    expect(
+      BreederPresentation.buildLinkRecognition(websitePreview, {
+        ...BREEDER_DETAIL,
+        facebook_url: 'https://www.facebook.com/landes.de.test',
+      }).helper,
+    ).toBe('En bas de sa page, trois comptes. Ceux qui manquent iront dans « Vu sur ».')
+    expect(
+      BreederPresentation.buildLinkRecognition({ ...websitePreview, is_page_read: false }, BREEDER_DETAIL).title,
+    ).toBe('Une autre page')
   })
 })
 

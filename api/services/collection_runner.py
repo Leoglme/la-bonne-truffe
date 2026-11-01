@@ -27,6 +27,7 @@ from services.collectors.chiens_de_france_sites import (
     ChiensDeFranceSiteCollector,
     SiteCollection,
     SiteCollectionPlan,
+    SiteDirectoryCollection,
 )
 from services.collectors.chiots_de_france import ChiotsDeFranceCollector
 from services.collectors.coeur_de_cocker import CoeurDeCockerCollector
@@ -113,10 +114,12 @@ class HtmlRunReport:
 
 @dataclass
 class BreederSitesRunReport:
-    """Everything a run of the breeder sites on Chiens de France did."""
+    """Everything a run of the breeder sites on Chiens de France did, from the regional lists to the sites."""
 
     source_run: SourceRun
-    plan: SiteCollectionPlan
+    plan: SiteCollectionPlan = field(default_factory=lambda: SiteCollectionPlan(sites=()))
+    directory: SiteDirectoryCollection = field(default_factory=SiteDirectoryCollection)
+    linked_breeder_ids: list[int] = field(default_factory=list)
     collection: SiteCollection = field(default_factory=SiteCollection)
     summary: IngestionSummary = field(default_factory=IngestionSummary)
     grouping: GroupingResult = field(default_factory=GroupingResult)
@@ -174,31 +177,42 @@ class CollectionRunner:
             return self.run_breeder_sites(db, ChiensDeFranceSiteCollector())
         raise ValueError(f"Aucun collecteur pour {source}")
 
-    def run_breeder_sites(self, db: Session, collector: ChiensDeFranceSiteCollector) -> BreederSitesRunReport:
+    def run_breeder_sites(
+        self, db: Session, collector: ChiensDeFranceSiteCollector, breeder_ids: frozenset[int] | None = None
+    ) -> BreederSitesRunReport:
         """
-        Read the site of every breeder known on Chiens de France: future litters, puppies for sale with their
-        photos, reproducers; then regroup, score and notify.
+        Read the regional lists of breeders of Chiens de France, which give their sites to the breeders that had
+        none, then the site of every breeder known on Chiens de France: future litters, puppies for sale with
+        their photos, litters of the year, reproducers; then regroup, score and notify. A run asked for some
+        breeders reads only their sites.
 
         Args:
             db: Database session.
             collector: Collector to read with (a real one, or one on a fake transport in the tests).
+            breeder_ids: The breeders whose site to read, None for the whole morning run.
 
         Returns:
             The run report; a site that fails is listed in ``collection.failed_sites`` without failing the run.
         """
         source_run = self._open_run(db, ListingSource.CHIENS_DE_FRANCE_SITES)
-        plan = CollectionPlanner.build_breeder_sites_plan(db, naive_utc_now())
-        report = BreederSitesRunReport(source_run=source_run, plan=plan)
+        report = BreederSitesRunReport(source_run=source_run)
 
         def collect_and_store() -> IngestionSummary:
             """
-            Read the planned sites and store what they bring.
+            Read the regional lists and keep the sites they give, then read the planned sites and store what they
+            bring.
 
             Returns:
                 The ingestion summary.
             """
-            report.collection = collector.collect(plan)
-            return breeder_site_ingestion_service.ingest(db, plan, report.collection, naive_utc_now())
+            if breeder_ids is None:
+                report.directory = collector.collect_directory(CollectionPlanner.build_site_directory_plan(db))
+                report.linked_breeder_ids = breeder_site_ingestion_service.link_directory_sites(
+                    db, report.directory.entries
+                )
+            report.plan = CollectionPlanner.build_breeder_sites_plan(db, naive_utc_now(), breeder_ids)
+            report.collection = collector.collect(report.plan)
+            return breeder_site_ingestion_service.ingest(db, report.plan, report.collection, naive_utc_now())
 
         report.summary, report.grouping = self._finish_run(db, source_run, collect_and_store)
         return report
