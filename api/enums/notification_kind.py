@@ -9,6 +9,7 @@ class NotificationKind(StrEnum):
     NEW_PREFERRED = "new_preferred"
     BORN = "born"
     UPGRADED = "upgraded"
+    AVAILABILITY_CHANGE = "availability_change"
     EVENING_DIGEST = "evening_digest"
     SOURCE_DOWN = "source_down"
     SOURCE_SILENT = "source_silent"

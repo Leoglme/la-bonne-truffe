@@ -3,7 +3,7 @@
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -12,6 +12,7 @@ from enums.listing_source import ListingSource
 from enums.source_run_status import SourceRunStatus
 from models.breed import Breed
 from models.breeder import Breeder
+from models.breeder_follow import BreederFollow
 from models.source_run import SourceRun
 from services.breeder_alert_service import BreederRunFacts, breeder_alert_service
 from services.breeder_directory_ingestion import breeder_directory_ingestion_service
@@ -52,6 +53,9 @@ from services.scc_reference_sync import scc_reference_sync
 from services.scc_site_ingestion import scc_site_ingestion_service
 
 logger = logging.getLogger(__name__)
+
+# A run line still « running » after that long belongs to a process that stopped: it no longer shows in progress.
+RUN_IN_PROGRESS_LIMIT = timedelta(hours=2)
 
 INTERRUPTED_RUN_MESSAGE = "Relevé interrompu : le serveur a redémarré pendant le relevé."
 
@@ -222,6 +226,31 @@ class CollectionRunner:
             db, source_run, collect_and_store, first_site_read_breeder_ids=never_read_breeder_ids
         )
         return report
+
+    def run_followed_breeder_sites(
+        self, db: Session, collector: ChiensDeFranceSiteCollector
+    ) -> BreederSitesRunReport | None:
+        """
+        Read again the sites of the breeders someone follows, between two readings of every site, so that a litter
+        a followed breeder puts on their site is told the same day.
+
+        Args:
+            db: Database session.
+            collector: Collector to read with (a real one, or one on a fake transport in the tests).
+
+        Returns:
+            The run report, or None when no followed breeder has a site or while another reading of the sites
+            goes on.
+        """
+        followed_breeder_ids = frozenset(
+            breeder_id
+            for (breeder_id,) in db.query(BreederFollow.breeder_id)
+            .join(Breeder, Breeder.id == BreederFollow.breeder_id)
+            .filter(Breeder.chiens_de_france_site_url.is_not(None))
+        )
+        if not followed_breeder_ids or self._is_running(db, ListingSource.CHIENS_DE_FRANCE_SITES):
+            return None
+        return self.run_breeder_sites(db, collector, followed_breeder_ids)
 
     def run_scc_breeders(self, db: Session, collector: SccBreederDirectoryCollector) -> SccBreederDirectoryRunReport:
         """
@@ -539,6 +568,29 @@ class CollectionRunner:
         if source_run.status != SourceRunStatus.OK:
             notifier_service.alert_if_source_down(db, source_run.source, naive_utc_now())
         return summary, grouping
+
+    @staticmethod
+    def _is_running(db: Session, source: ListingSource) -> bool:
+        """
+        Whether a run of the source is still going on: its line is open and was opened less than two hours ago.
+
+        Args:
+            db: Database session.
+            source: The source.
+
+        Returns:
+            True while a run of the source goes on.
+        """
+        return (
+            db.query(SourceRun)
+            .filter(
+                SourceRun.source == source,
+                SourceRun.status == SourceRunStatus.RUNNING,
+                SourceRun.started_at > naive_utc_now() - RUN_IN_PROGRESS_LIMIT,
+            )
+            .first()
+            is not None
+        )
 
     @staticmethod
     def _has_succeeded_before(db: Session, source_run: SourceRun) -> bool:

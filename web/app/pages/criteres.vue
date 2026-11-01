@@ -149,10 +149,13 @@
         </div>
         <div class="flex items-center justify-between gap-3">
           <span class="flex flex-col">
-            <span class="text-[17px] font-bold">Naissance d’une portée suivie</span>
-            <span class="text-sm text-ink-muted">Tout de suite, même pour une portée acceptable</span>
+            <span class="text-[17px] font-bold">Portée suivie</span>
+            <span class="text-sm text-ink-muted">Sa naissance et chaque chiot réservé, tout de suite</span>
           </span>
-          <USwitch v-model="draft.notify_birth_of_followed" aria-label="Notifier la naissance d’une portée suivie" />
+          <USwitch
+            v-model="draft.notify_birth_of_followed"
+            aria-label="Notifier la naissance et les chiots réservés d’une portée suivie"
+          />
         </div>
         <div class="flex items-center justify-between gap-3">
           <span class="flex flex-col">

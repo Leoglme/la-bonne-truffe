@@ -18,13 +18,16 @@ from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
 from enums.puppy_ad_state import PuppyAdState
 from enums.social_link_origin import SocialLinkOrigin
+from enums.source_run_status import SourceRunStatus
 from migrations import add_breeder_site_reading_columns, add_dog_parent_colors
 from models.breeder import Breeder
+from models.breeder_follow import BreederFollow
 from models.department import Department
 from models.dog import Dog
 from models.listing import Listing
 from models.litter_group import LitterGroup
 from models.search_profile import SearchProfile
+from models.source_run import SourceRun
 from models.user import User
 from seeders.run_seeders import SeederRunner
 from services.auth_service import AuthService
@@ -131,6 +134,38 @@ def test_a_site_read_for_the_first_time_records_its_breeders_alerts_without_send
     collection_runner.run_breeder_sites(db, chiens_de_france_site_collector_serving())
 
     assert [facts.first_site_read_breeder_ids for facts in raised_facts] == [frozenset({never_read.id})]
+
+
+def test_the_hourly_reading_reads_only_the_sites_of_the_followed_breeders(db: Session, seeded: dict[str, str]) -> None:
+    followed = ferme_des_tests(db, chiens_de_france_site_url=SITE_URL)
+    not_followed = Breeder(
+        display_name="Du Clos de Test", chiens_de_france_site_url="https://elevage-b.chiens-de-france.com"
+    )
+    db.add(not_followed)
+    db.add(BreederFollow(user_id=db.query(User).one().id, breeder_id=followed.id))
+    db.commit()
+
+    report = collection_runner.run_followed_breeder_sites(db, chiens_de_france_site_collector_serving())
+
+    assert report is not None
+    assert report.directory.raw_pages == []
+    assert {site.breeder_id for site in report.plan.sites} == {followed.id}
+
+
+def test_the_hourly_reading_waits_while_the_sites_are_read_and_without_a_followed_site(
+    db: Session, seeded: dict[str, str]
+) -> None:
+    followed = ferme_des_tests(db)
+    db.add(BreederFollow(user_id=db.query(User).one().id, breeder_id=followed.id))
+    db.commit()
+    without_followed_site = collection_runner.run_followed_breeder_sites(db, chiens_de_france_site_collector_serving())
+    followed.chiens_de_france_site_url = SITE_URL
+    db.add(SourceRun(source=ListingSource.CHIENS_DE_FRANCE_SITES, status=SourceRunStatus.RUNNING))
+    db.commit()
+
+    while_another_reading = collection_runner.run_followed_breeder_sites(db, chiens_de_france_site_collector_serving())
+
+    assert (without_followed_site, while_another_reading) == (None, None)
 
 
 def test_a_name_two_breeders_of_the_postal_code_bear_or_a_known_site_links_nothing(

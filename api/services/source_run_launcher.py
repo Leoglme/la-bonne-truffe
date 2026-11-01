@@ -5,20 +5,17 @@ run goes on after it, and every device sees it in progress until its run line is
 
 import logging
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from sqlalchemy.orm import Session, sessionmaker
 
 from enums.listing_source import ListingSource
 from enums.source_run_status import SourceRunStatus
 from models.source_run import SourceRun
-from services.collection_runner import collection_runner
+from services.collection_runner import RUN_IN_PROGRESS_LIMIT, collection_runner
 from services.collectors.chiens_de_france_sites import ChiensDeFranceSiteCollector
 
 logger = logging.getLogger(__name__)
-
-# A run line still « running » after that long belongs to a process that stopped: it no longer shows in progress.
-RUN_IN_PROGRESS_LIMIT = timedelta(hours=2)
 
 
 class SourceRunLauncher:

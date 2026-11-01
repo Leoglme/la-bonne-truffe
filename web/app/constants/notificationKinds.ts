@@ -10,6 +10,7 @@ export const NOTIFICATION_CHIPS: Record<NotificationKind, NotificationChip> = {
   born: { label: 'Née', tone: 'coral' },
   new_preferred: { label: 'Préférée', tone: 'gold' },
   upgraded: { label: 'Préférée', tone: 'gold' },
+  availability_change: { label: 'Réservé', tone: 'coral' },
   follow_up_reminder: { label: 'Rappel', tone: 'dark' },
   evening_digest: { label: 'Récap du soir', tone: 'neutral' },
   source_down: { label: 'Source', tone: 'neutral' },

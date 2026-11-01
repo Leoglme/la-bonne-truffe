@@ -65,8 +65,17 @@ class NotificationTexts:
             snapshot: The litter.
 
         Returns:
-            « Portée née · De Kerlann ».
+            « Portée née · De Kerlann », or « Plus que 2 chiots · De Kerlann » for a followed litter.
         """
+        if event == MatchEventKind.AVAILABILITY_CHANGE:
+            puppies_left = snapshot.puppies_available
+            if puppies_left is None:
+                return f"Moins de chiots · {snapshot.name}"
+            if puppies_left == 0:
+                return f"Plus aucun chiot · {snapshot.name}"
+            if puppies_left == 1:
+                return f"Plus qu’un chiot · {snapshot.name}"
+            return f"Plus que {puppies_left} chiots · {snapshot.name}"
         return f"{LITTER_EVENT_TITLES[event]} · {snapshot.name}"
 
     @staticmethod
@@ -225,6 +234,8 @@ class NotificationTexts:
             et 3 femelles. Dispo vers le 22 décembre. »
         """
         place = f" ({snapshot.department_name})" if snapshot.department_name else ""
+        if event == MatchEventKind.AVAILABILITY_CHANGE:
+            return cls._puppies_left_sentence(snapshot, place)
         color = cls._color_phrase(snapshot)
         if snapshot.is_born:
             opening = {
@@ -354,6 +365,30 @@ class NotificationTexts:
         if count == 1:
             return f"{summary} : une portée {cls._color_phrase(first)}{place}."
         return f"{summary}, dont 1 {cls._color_phrase(first)}{place}."
+
+    @classmethod
+    def _puppies_left_sentence(cls, snapshot: LitterSnapshot, place: str) -> str:
+        """
+        What a followed litter offering fewer puppies has left, and why to call.
+
+        Args:
+            snapshot: The litter.
+            place: Its department in brackets, or nothing.
+
+        Returns:
+            « La portée née le 29 octobre (Sarthe) n’a plus que 2 chiots disponibles : appelle vite pour en
+            réserver un. »
+        """
+        born_on = f" née le {cls.french_day(snapshot.birth_date)}" if snapshot.birth_date else ""
+        litter = f"La portée{born_on}{place}"
+        puppies_left = snapshot.puppies_available
+        if puppies_left is None:
+            return f"{litter} a moins de chiots disponibles."
+        if puppies_left == 0:
+            return f"{litter} n’a plus aucun chiot disponible."
+        if puppies_left == 1:
+            return f"{litter} n’a plus qu’un chiot disponible : appelle vite pour le réserver."
+        return f"{litter} n’a plus que {puppies_left} chiots disponibles : appelle vite pour en réserver un."
 
     @staticmethod
     def _puppies_left_phrase(litter_name: str, puppies_left: int) -> str:

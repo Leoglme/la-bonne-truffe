@@ -47,10 +47,11 @@ IMMEDIATE_EVENT_KINDS: dict[MatchEventKind, NotificationKind] = {
     MatchEventKind.NEW_PREFERRED: NotificationKind.NEW_PREFERRED,
     MatchEventKind.BORN: NotificationKind.BORN,
     MatchEventKind.UPGRADED: NotificationKind.UPGRADED,
+    MatchEventKind.AVAILABILITY_CHANGE: NotificationKind.AVAILABILITY_CHANGE,
 }
 
-DIGEST_EVENT_KINDS: frozenset[MatchEventKind] = frozenset(
-    {MatchEventKind.NEW_ACCEPTABLE, MatchEventKind.AVAILABILITY_CHANGE}
+FOLLOWED_LITTER_EVENT_KINDS: frozenset[MatchEventKind] = frozenset(
+    {MatchEventKind.BORN, MatchEventKind.AVAILABILITY_CHANGE}
 )
 
 
@@ -69,9 +70,10 @@ class NotifierService:
         """
         Send or queue each event, as the profile asks.
 
-        A preferred litter is pushed right away, a birth too; an acceptable litter, or a followed one
-        offering fewer puppies, waits for the evening digest. An event the profile turned off is still
-        recorded as handled, so turning the setting back on later never floods the phone with old litters.
+        A preferred litter is pushed right away, a birth too, and a followed litter offering fewer puppies; an
+        acceptable litter waits for the evening digest, as does that drop when the pushes of the followed
+        litters are off. An event the profile turned off is still recorded as handled, so turning the setting
+        back on later never floods the phone with old litters.
         Once the user found their puppy, nothing goes out: the events are recorded as handled the same way.
 
         Args:
@@ -88,12 +90,15 @@ class NotifierService:
         if PuppyArrivalService.is_search_paused(db, profile.user_id):
             return events
         for event in events:
-            if event in DIGEST_EVENT_KINDS:
+            is_drop_kept_for_digest = (
+                event == MatchEventKind.AVAILABILITY_CHANGE and not profile.notify_birth_of_followed
+            )
+            if event == MatchEventKind.NEW_ACCEPTABLE or is_drop_kept_for_digest:
                 if profile.notify_acceptable_in_digest:
                     self._queue_for_digest(db, profile.user_id, snapshot.group_id, event, now)
                 continue
             is_wanted = profile.notify_preferred_immediately
-            if event == MatchEventKind.BORN and is_followed:
+            if event in FOLLOWED_LITTER_EVENT_KINDS and is_followed:
                 is_wanted = is_wanted or profile.notify_birth_of_followed
             if is_wanted:
                 self.send(

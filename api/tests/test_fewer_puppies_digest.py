@@ -1,4 +1,5 @@
-"""The evening digest tells when a followed litter offers fewer puppies, at every drop (docs/04, ``availability_change``)."""
+"""A followed litter offering fewer puppies is pushed at every drop, or told in the evening digest when its pushes
+are off (docs/04, ``availability_change``)."""
 
 from datetime import date, datetime, timedelta
 
@@ -15,6 +16,8 @@ from models.breeder import Breeder
 from models.digest_entry import DigestEntry
 from models.follow_up import FollowUp
 from models.listing import Listing
+from models.notification import Notification
+from models.search_profile import SearchProfile
 from models.user import User
 from seeders.run_seeders import SeederRunner
 from services.litter_grouping import litter_grouping_service
@@ -105,6 +108,12 @@ def collect(db: Session, now: datetime, should_notify: bool = True) -> None:
     )
 
 
+def turn_off_the_pushes_of_the_followed_litters(db: Session) -> None:
+    """Switch off « Portée suivie »: a followed litter offering fewer puppies then waits for the evening digest."""
+    db.query(SearchProfile).one().notify_birth_of_followed = False
+    db.commit()
+
+
 def gold_litter_offering_four_puppies(db: Session, is_followed: bool) -> Listing:
     """
     The seeds and a preferred gold litter of four puppies, already collected once without news.
@@ -126,10 +135,32 @@ def gold_litter_offering_four_puppies(db: Session, is_followed: bool) -> Listing
     return litter_ad
 
 
-def test_a_followed_litter_offering_fewer_puppies_is_told_in_the_evening_digest_at_every_drop(
+def test_a_followed_litter_offering_fewer_puppies_is_pushed_at_once_at_every_drop(
     db: Session, pushed_bodies: list[str]
 ) -> None:
     litter_ad = gold_litter_offering_four_puppies(db, is_followed=True)
+
+    litter_ad.puppies_available = 2
+    collect(db, SECOND_MORNING)
+    litter_ad.puppies_available = 1
+    collect(db, THIRD_MORNING)
+
+    pushes = db.query(Notification).order_by(Notification.id).all()
+    assert [push.title for push in pushes] == ["Plus que 2 chiots · De Kerlann", "Plus qu’un chiot · De Kerlann"]
+    assert pushed_bodies == [
+        "La portée née le 20 septembre (Ille-et-Vilaine) n’a plus que 2 chiots disponibles : appelle vite pour en "
+        "réserver un.",
+        "La portée née le 20 septembre (Ille-et-Vilaine) n’a plus qu’un chiot disponible : appelle vite pour le "
+        "réserver.",
+    ]
+    assert db.query(DigestEntry).count() == 0
+
+
+def test_a_followed_litter_offering_fewer_puppies_is_told_in_the_evening_digest_when_its_pushes_are_off(
+    db: Session, pushed_bodies: list[str]
+) -> None:
+    litter_ad = gold_litter_offering_four_puppies(db, is_followed=True)
+    turn_off_the_pushes_of_the_followed_litters(db)
 
     litter_ad.puppies_available = 2
     collect(db, SECOND_MORNING)
@@ -150,6 +181,7 @@ def test_the_digest_tells_the_new_acceptable_litters_then_the_followed_ones_offe
     db: Session, pushed_bodies: list[str]
 ) -> None:
     litter_ad = gold_litter_offering_four_puppies(db, is_followed=True)
+    turn_off_the_pushes_of_the_followed_litters(db)
 
     litter_ad.puppies_available = 0
     add_born_litter_ad(db, "annonce-2", "Du Val d'Oust", "noir_et_feu", 3, SECOND_MORNING)
@@ -163,6 +195,7 @@ def test_the_digest_tells_the_new_acceptable_litters_then_the_followed_ones_offe
 
 def test_a_digest_missed_at_its_hour_goes_out_at_the_next_full_hour_once(db: Session, pushed_bodies: list[str]) -> None:
     litter_ad = gold_litter_offering_four_puppies(db, is_followed=True)
+    turn_off_the_pushes_of_the_followed_litters(db)
     litter_ad.puppies_available = 2
     collect(db, SECOND_MORNING)
 
@@ -177,6 +210,7 @@ def test_a_digest_missed_at_its_hour_goes_out_at_the_next_full_hour_once(db: Ses
 
 def test_an_entry_queued_after_the_digest_hour_waits_for_the_next_day(db: Session, pushed_bodies: list[str]) -> None:
     litter_ad = gold_litter_offering_four_puppies(db, is_followed=True)
+    turn_off_the_pushes_of_the_followed_litters(db)
     litter_ad.puppies_available = 2
     second_day = SECOND_EVENING.date()
     collect(db, naive_utc_of_french_time(second_day, 20) + timedelta(minutes=20))

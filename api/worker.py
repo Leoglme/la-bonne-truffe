@@ -14,6 +14,7 @@ from core.database import SessionLocal, engine
 from enums.listing_source import ListingSource
 from migrations.run_migrations import MigrationRunner
 from services.collection_runner import collection_runner
+from services.collectors.chiens_de_france_sites import ChiensDeFranceSiteCollector
 from services.housekeeping_service import housekeeping_service
 from services.notifier import notifier_service
 from services.source_status_service import COLLECTED_SOURCES, DESKTOP_RELAYED_SOURCES
@@ -45,6 +46,10 @@ DAILY_COLLECTION_TIMES: dict[ListingSource, tuple[tuple[int, ...], int]] = {
     ListingSource.SCC_SITES: ((7,), 30),
 }
 
+# French hours and minute of the readings of the followed breeders' sites, between two readings of every site.
+FOLLOWED_BREEDER_SITES_HOURS = "8-22"
+FOLLOWED_BREEDER_SITES_MINUTE = 55
+
 # The relayed sources whose silence is worth an alert: those relayed every hour.
 SILENCE_WATCHED_SOURCES: frozenset[ListingSource] = frozenset({ListingSource.CENTRALE_CANINE})
 
@@ -72,11 +77,12 @@ class CollectionWorker:
         """
         Create the scheduler and register the jobs.
 
-        One job per collected source runs every hour, a few minutes apart (``COLLECTION_MINUTES``). The
-        evening digest job wakes at minute 0 of every hour and sends the digests whose ``digest_hour``
-        has come. The follow-up reminders are pushed within five minutes of their time. When the Windows
-        app relays a source, an hourly job tells Léo once per silence that nobody relays it any more. A
-        nightly job drops the raw pages and the change history nobody reads any more.
+        One job per collected source runs every hour, a few minutes apart (``COLLECTION_MINUTES``), and the
+        sites of the followed breeders are read again every hour of the day. The evening digest job wakes at
+        minute 0 of every hour and sends the digests whose ``digest_hour`` has come. The follow-up reminders
+        are pushed within five minutes of their time. When the Windows app relays a source, an hourly job
+        tells Léo once per silence that nobody relays it any more. A nightly job drops the raw pages and the
+        change history nobody reads any more.
 
         Returns:
             The configured scheduler, not started.
@@ -97,6 +103,14 @@ class CollectionWorker:
                 minute=daily_minute,
                 args=[source],
                 id=f"collect_{source.value}",
+            )
+        if ListingSource.CHIENS_DE_FRANCE_SITES in self.collected_sources:
+            scheduler.add_job(
+                self.collect_followed_breeder_sites,
+                "cron",
+                hour=FOLLOWED_BREEDER_SITES_HOURS,
+                minute=FOLLOWED_BREEDER_SITES_MINUTE,
+                id="collect_followed_breeder_sites",
             )
         scheduler.add_job(self.send_evening_digests, "cron", minute=0, id="send_evening_digests")
         scheduler.add_job(self.send_follow_up_reminders, "cron", minute="*/5", id="send_follow_up_reminders")
@@ -129,6 +143,22 @@ class CollectionWorker:
                 report.source_run.listings_new,
                 report.source_run.listings_changed,
             )
+        finally:
+            db.close()
+
+    def collect_followed_breeder_sites(self) -> None:
+        """Every hour of the day: read again the sites of the followed breeders, to tell a new litter the same day."""
+        db = SessionLocal()
+        try:
+            report = collection_runner.run_followed_breeder_sites(db, ChiensDeFranceSiteCollector())
+            if report is not None:
+                logger.info(
+                    "Followed breeder sites run %s: %d seen, %d new, %d changed",
+                    report.source_run.status,
+                    report.source_run.listings_seen,
+                    report.source_run.listings_new,
+                    report.source_run.listings_changed,
+                )
         finally:
             db.close()
 
