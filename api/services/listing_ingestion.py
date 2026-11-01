@@ -326,6 +326,7 @@ class ListingIngestionService:
             breeder,
             display_name=raw_breeder.display_name,
             affix=raw_breeder.affix,
+            is_from_centrale_canine=source == ListingSource.CENTRALE_CANINE,
             phone_e164=raw_breeder.phone_e164,
             zip_code=raw_breeder.zip_code,
             city=raw_breeder.city,

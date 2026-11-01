@@ -48,6 +48,34 @@ def test_breeder_known_only_by_its_ad_stays_the_same_from_one_run_to_the_next(db
     assert db.query(Breeder).count() == 1
 
 
+def test_an_ad_never_rewrites_the_affix_the_centrale_canine_wrote(db: Session) -> None:
+    centrale_canine_ad = replace(
+        private_seller_ad(db), breeder=RawBreeder(source_id="85379", affix="Du Clos de test A")
+    )
+    chiens_de_france_ad = replace(
+        centrale_canine_ad, breeder=RawBreeder(source_id="elevage-a", affix="Du Clos De Test A")
+    )
+
+    listing_ingestion_service.ingest(db, ListingSource.CENTRALE_CANINE, [centrale_canine_ad], {"72"}, naive_utc_now())
+    listing_ingestion_service.ingest(db, ListingSource.CHIENS_DE_FRANCE, [chiens_de_france_ad], {"72"}, naive_utc_now())
+
+    assert db.query(Breeder).one().affix == "Du Clos de test A"
+
+
+def test_the_centrale_canine_rewrites_the_affix_an_ad_wrote_first(db: Session) -> None:
+    chiens_de_france_ad = replace(
+        private_seller_ad(db), breeder=RawBreeder(source_id="elevage-a", affix="Du Clos De Test A")
+    )
+    centrale_canine_ad = replace(chiens_de_france_ad, breeder=RawBreeder(source_id="85379", affix="Du Clos de test A"))
+
+    listing_ingestion_service.ingest(db, ListingSource.CHIENS_DE_FRANCE, [chiens_de_france_ad], {"72"}, naive_utc_now())
+    first_affix = db.query(Breeder).one().affix
+    listing_ingestion_service.ingest(db, ListingSource.CENTRALE_CANINE, [centrale_canine_ad], {"72"}, naive_utc_now())
+
+    assert first_affix == "Du Clos De Test A"
+    assert db.query(Breeder).one().affix == "Du Clos de test A"
+
+
 def test_a_litter_born_too_long_ago_turns_inactive_once_and_stays_so_while_its_ad_is_online(db: Session) -> None:
     ad = private_seller_ad(db)
     fresh_run = datetime(2026, 10, 30, 12, 0)

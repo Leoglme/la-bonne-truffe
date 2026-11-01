@@ -119,6 +119,7 @@ class BreederDirectoryIngestionService:
             breeder,
             display_name=profile.display_name,
             affix=profile.affix,
+            is_from_centrale_canine=True,
             phone_e164=profile.phone_e164,
             zip_code=profile.zip_code,
             city=profile.city,

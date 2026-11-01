@@ -95,6 +95,8 @@ Deux mères nommées différemment ne sont jamais regroupées. Les noms se compa
 
 Normalisation de l'affixe : minuscules, sans accents, sans « de », « du », « des », « la », « le », « l' », espaces réduits.
 
+Écriture de l'affixe : celle de la Centrale Canine, qui le délivre. Une autre source n'écrit que l'affixe d'un élevage qui n'en a pas, si bien que le nom ne change plus de casse avec la dernière source lue (01/11/2026).
+
 ## Les dates calculées
 
 - Gestation : 63 jours. `expected_birth_date = mating_date + 63 j` quand la naissance n'est pas déclarée.
