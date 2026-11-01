@@ -7,9 +7,20 @@ import httpx
 from core.text import without_accents
 from services.collectors.scc_sites import SccSiteCollector
 
-# The site of Élevage A: a cover photo and two gallery images. The site of Élevage F is gone (404).
+# The site of Élevage A: a cover photo, two gallery images, three social accounts and « mon autre site » hosted
+# by Chiens de France. The site of Élevage G declares no link. The site of Élevage F is gone (404).
 SITE_A_COVER_PATH = "/sites/default/files/2025-04/couverture-elevage-a.jpeg"
 SITE_A_GALLERY_PATHS = ("/sites/default/files/2022-01/galerie-a-1.JPG", "/sites/default/files/2022-01/galerie-a-2.JPG")
+SITE_A_FACEBOOK_PAGE_ID = "100000000000001"
+SITE_A_INSTAGRAM_HANDLE = "elevage.a"
+SITE_A_YOUTUBE_CHANNEL_ID = "UCelevageA00000000000000"
+SITE_A_OTHER_SITE_URL = "http://elevage-a.chiens-de-france.com/cocker-spaniel-anglais.html "
+SITE_A_CHIENS_DE_FRANCE_SITE_URL = "https://elevage-a.chiens-de-france.com"
+SITE_A_SOCIALS: dict[str, str] = {
+    "facebook_id": SITE_A_FACEBOOK_PAGE_ID,
+    "instagram_id": f"@{SITE_A_INSTAGRAM_HANDLE}",
+    "youtube_id": SITE_A_YOUTUBE_CHANNEL_ID,
+}
 
 
 def site_slug_of(affix: str) -> str:
@@ -73,13 +84,49 @@ def dogs_page(gallery_paths: tuple[str, ...]) -> dict[str, Any]:
     return {"main_content": {"n_type": "page", "n_title": "Les chiens"}, "media": media}
 
 
+def general_page(site_slug: str, socials: dict[str, str] | list[Any], other_site_url: str | None) -> dict[str, Any]:
+    """
+    The ``api/general`` JSON of a site: its menu, with « mon autre site » when the breeding declares one, and
+    its social accounts in the footer.
+
+    Args:
+        site_slug: Slug of the site, which its menu paths start with.
+        socials: ``footer.socials``: ``facebook_id``, ``instagram_id`` and ``youtube_id`` as declared, or the
+            empty list the real site gives when nothing is declared.
+        other_site_url: The address of « mon autre site », or None.
+
+    Returns:
+        The page.
+    """
+    menu: list[dict[str, Any]] = [
+        {"is_expanded": False, "title": "Accueil", "url": f"/{site_slug}"},
+        {"is_expanded": False, "title": "Les portées", "url": f"{site_slug}/nos-portees/cocker-spaniel-anglais"},
+    ]
+    if other_site_url is not None:
+        menu.append({"is_expanded": False, "title": "mon autre site", "url": other_site_url})
+    return {
+        "header": {
+            "main_menu": menu,
+            "settings": {"main_logo": "/sites/default/files/logos/LOGO%20SCC%20POSITIF-RVB%20%281%29.jpg"},
+        },
+        "footer": {
+            "footer_menu": [{"title": "Politique de cookies", "url": "/articles/utilisation-des-cookies"}],
+            "socials": socials,
+        },
+        "general_data": {"backoffice_type": "simplified", "domain_type": "breeder"},
+        "cache_tags": ["general:1"],
+    }
+
+
 def recorded_site_pages() -> dict[str, dict[str, Any]]:
     """The pages of the sites of the tests, by URL path."""
     return {
         f"/{SITE_A_SLUG}/api/homepage": homepage_page("DU CLOS DE L'ÉLEVAGE A", SITE_A_COVER_PATH),
         f"/{SITE_A_SLUG}/api/dogs": dogs_page(SITE_A_GALLERY_PATHS),
+        f"/{SITE_A_SLUG}/api/general": general_page(SITE_A_SLUG, SITE_A_SOCIALS, SITE_A_OTHER_SITE_URL),
         f"/{SITE_G_SLUG}/api/homepage": homepage_page("DU CLOS DE L'ÉLEVAGE G", None),
         f"/{SITE_G_SLUG}/api/dogs": dogs_page(()),
+        f"/{SITE_G_SLUG}/api/general": general_page(SITE_G_SLUG, [], None),
     }
 
 

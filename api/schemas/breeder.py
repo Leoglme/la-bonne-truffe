@@ -140,6 +140,9 @@ class BreederDetail(BreederCard):
     siren: str | None
     website: str | None
     chiens_de_france_site_url: str | None
+    facebook_url: str | None = Field(description="Facebook page the Centrale Canine site of the breeding declares")
+    instagram_url: str | None = Field(description="Instagram account that site declares")
+    youtube_url: str | None = Field(description="YouTube channel that site declares")
     scc_breeder_id: str | None
     links: list[BreederLink]
     notes: str | None

@@ -284,7 +284,7 @@ export class BreederPresentation {
    * Build the rows of « Vu sur »: each place the breeder is known from, with a link when there is one.
    *
    * @param detail - The breeder.
-   * @returns The rows, the directories first, then what was added by hand.
+   * @returns The rows, the directories first, then the sites and the social accounts, then what was added by hand.
    */
   static listSeenOnLinks(detail: BreederDetail): BreederSeenOnLink[] {
     const links: BreederSeenOnLink[] = []
@@ -305,6 +305,20 @@ export class BreederPresentation {
     }
     if (detail.website !== null && detail.website !== detail.chiens_de_france_site_url) {
       links.push({ key: 'website', label: 'Site de l’élevage', description: detail.website, href: detail.website })
+    }
+    if (detail.facebook_url !== null) {
+      links.push({ key: 'facebook', label: 'Facebook', description: 'Page de l’élevage', href: detail.facebook_url })
+    }
+    if (detail.instagram_url !== null) {
+      links.push({
+        key: 'instagram',
+        label: 'Instagram',
+        description: 'Compte de l’élevage',
+        href: detail.instagram_url,
+      })
+    }
+    if (detail.youtube_url !== null) {
+      links.push({ key: 'youtube', label: 'YouTube', description: 'Chaîne de l’élevage', href: detail.youtube_url })
     }
     detail.links.forEach((link: BreederLink, index: number): void => {
       links.push({

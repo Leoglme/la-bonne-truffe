@@ -202,6 +202,9 @@ class BreederQueryService:
             siren=breeder.siren,
             website=breeder.website,
             chiens_de_france_site_url=breeder.chiens_de_france_site_url,
+            facebook_url=breeder.facebook_url,
+            instagram_url=breeder.instagram_url,
+            youtube_url=breeder.youtube_url,
             scc_breeder_id=breeder.scc_breeder_id,
             links=[
                 BreederLink(label=str(link.get("label", "")), url=str(link.get("url", ""))) for link in breeder.links

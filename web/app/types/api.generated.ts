@@ -1416,6 +1416,21 @@ export interface components {
             website: string | null;
             /** Chiens De France Site Url */
             chiens_de_france_site_url: string | null;
+            /**
+             * Facebook Url
+             * @description Facebook page the Centrale Canine site of the breeding declares
+             */
+            facebook_url: string | null;
+            /**
+             * Instagram Url
+             * @description Instagram account that site declares
+             */
+            instagram_url: string | null;
+            /**
+             * Youtube Url
+             * @description YouTube channel that site declares
+             */
+            youtube_url: string | null;
             /** Scc Breeder Id */
             scc_breeder_id: string | null;
             /** Links */

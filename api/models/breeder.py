@@ -48,6 +48,9 @@ class Breeder(TimestampMixin, Base):
         scc_site_cover_url: Cover photo of the breeder's site at the Centrale Canine (``h_image_uri``).
         scc_site_photos: Gallery images of that site, absolute URLs.
         scc_site_seen_at: Last time that site was read; it rests a month between two readings.
+        facebook_url: Facebook page that site declares, as an address.
+        instagram_url: Instagram account that site declares, as an address.
+        youtube_url: YouTube channel that site declares, as an address.
         links: Links Léo added by hand, each ``{"label", "url"}`` (Facebook, Instagram, a site).
         is_manual: Created by hand from the app, before any source listed the breeder.
         created_by_user_id: User who created the breeder by hand.
@@ -89,6 +92,9 @@ class Breeder(TimestampMixin, Base):
     scc_site_cover_url: Mapped[str | None] = mapped_column(String(500))
     scc_site_photos: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     scc_site_seen_at: Mapped[datetime | None]
+    facebook_url: Mapped[str | None] = mapped_column(String(500))
+    instagram_url: Mapped[str | None] = mapped_column(String(500))
+    youtube_url: Mapped[str | None] = mapped_column(String(500))
     links: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list, nullable=False)
     is_manual: Mapped[bool] = mapped_column(default=False, nullable=False)
     created_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))

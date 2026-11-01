@@ -1,6 +1,7 @@
 """
 Centrale Canine site collector: the mini-site of a breeding (``/<slug>``, docs/02 « Mini-site SCC d'un élevage »),
-read for its photos: the cover of its home page, and the gallery images its « dogs » document carries.
+read for its photos (the cover of its home page, the gallery images its « dogs » document carries) and for
+the links its « general » document declares: the social accounts of the breeding, and its other site.
 
 Same access rules as the litters: a browser User-Agent, one request per second, relayed by the desktop app
 when the server is refused.
@@ -11,6 +12,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
@@ -24,11 +26,13 @@ from services.collectors.centrale_canine import (
 )
 from services.collectors.polite_http_client import PoliteHttpClient, SourcePageMissingError
 from services.collectors.scc_value_parser import SccValueParser
+from services.collectors.social_link_parser import SocialLinkParser
 
 logger = logging.getLogger(__name__)
 
 GALLERY_IMAGE_BUNDLE = "gallery_image"
 MAX_SITE_PHOTOS = 24
+SCC_HOST_SUFFIX = "centrale-canine.fr"
 
 
 @dataclass(frozen=True)
@@ -47,13 +51,24 @@ class SccSiteCollectionPlan:
 
 
 @dataclass(frozen=True)
+class SccSiteLinks:
+    """What the « general » document of a site declares: the social accounts of the breeding, and its other site."""
+
+    facebook_url: str | None = None
+    instagram_url: str | None = None
+    youtube_url: str | None = None
+    other_site_url: str | None = None
+
+
+@dataclass(frozen=True)
 class RawSccSite:
-    """What the site of a breeding shows: its cover photo and its gallery; ``is_missing`` when the site is gone."""
+    """What the site of a breeding shows: its cover photo, its gallery, its links; ``is_missing`` when it is gone."""
 
     breeder_id: int
     site_slug: str
     cover_photo_url: str | None = None
     photo_urls: tuple[str, ...] = ()
+    links: SccSiteLinks = SccSiteLinks()
     is_missing: bool = False
 
 
@@ -67,7 +82,7 @@ class SccSiteCollection:
 
 
 class SccSiteCollector:
-    """Reads the home page and the « dogs » document of each site, politely."""
+    """Reads the home page, the « dogs » document and the « general » document of each site, politely."""
 
     def __init__(
         self,
@@ -116,9 +131,22 @@ class SccSiteCollector:
         """
         return f"{SCC_BASE_URL}/{site_slug}/api/dogs"
 
+    @staticmethod
+    def general_url(site_slug: str) -> str:
+        """
+        URL of the JSON of the « general » document of a site: its menu, its footer with the social accounts.
+
+        Args:
+            site_slug: Slug of the site.
+
+        Returns:
+            The URL, query string excluded.
+        """
+        return f"{SCC_BASE_URL}/{site_slug}/api/general"
+
     def collect(self, plan: SccSiteCollectionPlan) -> SccSiteCollection:
         """
-        Read the home page then the « dogs » document of every site of the plan.
+        Read the home page, then the « dogs » document, then the « general » document of every site of the plan.
 
         Args:
             plan: The sites to read.
@@ -139,12 +167,14 @@ class SccSiteCollector:
             if not isinstance(homepage.get("main_content"), dict):
                 continue
             dogs_document = self._fetch(collection, self.dogs_url(target.site_slug))
+            general_document = self._fetch(collection, self.general_url(target.site_slug))
             collection.sites.append(
                 RawSccSite(
                     breeder_id=target.breeder_id,
                     site_slug=target.site_slug,
                     cover_photo_url=self.parse_cover(homepage),
                     photo_urls=self.parse_gallery(dogs_document) if dogs_document is not None else (),
+                    links=self.parse_links(general_document) if general_document is not None else SccSiteLinks(),
                 )
             )
         return collection
@@ -187,6 +217,52 @@ class SccSiteCollector:
             if url is not None:
                 photos[url] = None
         return tuple(photos)[:MAX_SITE_PHOTOS]
+
+    @classmethod
+    def parse_links(cls, payload: dict[str, Any]) -> SccSiteLinks:
+        """
+        The social accounts and the other site a « general » document declares.
+
+        Args:
+            payload: The ``api/general`` JSON: ``footer.socials`` (``facebook_id``, ``instagram_id``, ``youtube_id``,
+                each an address, an id or a handle, or an empty list when the site declares nothing) and
+                ``header.main_menu``, whose entries off the Centrale Canine (« mon autre site ») point to the
+                other site of the breeding.
+
+        Returns:
+            The links, each None when the document declares none.
+        """
+        footer = payload.get("footer")
+        socials = footer.get("socials") if isinstance(footer, dict) else None
+        socials = socials if isinstance(socials, dict) else {}
+        header = payload.get("header")
+        menu = header.get("main_menu") if isinstance(header, dict) else None
+        return SccSiteLinks(
+            facebook_url=SocialLinkParser.facebook(SccValueParser.to_text(socials.get("facebook_id"))),
+            instagram_url=SocialLinkParser.instagram(SccValueParser.to_text(socials.get("instagram_id"))),
+            youtube_url=SocialLinkParser.youtube(SccValueParser.to_text(socials.get("youtube_id"))),
+            other_site_url=cls._other_site_url(menu if isinstance(menu, list) else []),
+        )
+
+    @staticmethod
+    def _other_site_url(menu: list[Any]) -> str | None:
+        """
+        The first entry of the menu that leaves the Centrale Canine: the other site of the breeding.
+
+        Args:
+            menu: ``header.main_menu``, whose entries carry a ``url`` (a path of the site, or a full address).
+
+        Returns:
+            The address, or None when every entry stays on the Centrale Canine.
+        """
+        for entry in menu:
+            url = SccValueParser.to_text(entry.get("url")) if isinstance(entry, dict) else None
+            if url is None or not url.startswith(("http://", "https://")):
+                continue
+            host = urlparse(url).netloc.lower()
+            if host and not host.endswith(SCC_HOST_SUFFIX):
+                return url
+        return None
 
     def _fetch(self, collection: SccSiteCollection, url: str) -> dict[str, Any] | None:
         """

@@ -85,6 +85,9 @@ const BREEDER_DETAIL: BreederDetail = {
   siren: '812345678',
   website: null,
   chiens_de_france_site_url: 'https://landes-de-test.chiens-de-france.com',
+  facebook_url: null,
+  instagram_url: null,
+  youtube_url: null,
   scc_breeder_id: '266172',
   links: [{ label: 'Facebook', url: 'https://www.facebook.com/landes-de-test' }],
   notes: null,
@@ -265,6 +268,30 @@ describe('BreederPresentation.listSeenOnLinks', (): void => {
         href: 'https://www.facebook.com/landes-de-test',
       },
     ])
+  })
+
+  it('lists the social accounts the Centrale Canine site declares, after the sites', (): void => {
+    const links: BreederSeenOnLink[] = BreederPresentation.listSeenOnLinks({
+      ...BREEDER_DETAIL,
+      links: [],
+      facebook_url: 'https://www.facebook.com/landes.de.test',
+      instagram_url: 'https://www.instagram.com/landes.de.test/',
+      youtube_url: null,
+    })
+
+    expect(links.map((link: BreederSeenOnLink): string => link.key)).toEqual([
+      'scc',
+      'chiens-de-france',
+      'facebook',
+      'instagram',
+    ])
+    expect(links[2]).toEqual({
+      key: 'facebook',
+      label: 'Facebook',
+      description: 'Page de l’élevage',
+      href: 'https://www.facebook.com/landes.de.test',
+    })
+    expect(links[3]?.description).toBe('Compte de l’élevage')
   })
 })
 
