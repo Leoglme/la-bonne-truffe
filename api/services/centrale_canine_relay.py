@@ -44,8 +44,7 @@ ABANDONED_RELAY_DELAY = timedelta(minutes=2)
 # Pages asked per answer: the app calls back often, so that the relay stays alive and the progress shows.
 MAX_PAGE_REQUESTS_PER_ANSWER = 20
 
-# A desktop app checks every fifteen seconds, about once a minute when its window is hidden: silent for that long,
-# its computer is off or asleep.
+# A hidden desktop app still checks about once a minute: silent for that long, its computer is off or asleep.
 DESKTOP_APP_PRESENCE_WINDOW = timedelta(minutes=3)
 
 # The order the sources are relayed in, and how long a run of each stays valid.
