@@ -135,3 +135,9 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 
 - Léo suit la portée « Du Mont de la Chenaie » (Sarthe, née le 29/10). Le site de l'élevage donne 4 ou 5 étoiles aux parents, l'app « Confirmé » (cotation 1) ; il pense que les données de l'élevage ne sont pas alignées sur la Centrale Canine.
 - **Vérifié** (`02`) : la Centrale Canine cote les deux parents à 1 partout (liste des portées, fiche de la portée, fiches LOF Select, pages publiques), et l'app affiche cette valeur. Les étoiles de Chiens de France ne sont pas une cotation : elles comptent les générations d'ancêtres saisies sur le site (4 pour le père, 6 pour la mère, jusqu'à 7 pour d'autres chiens de l'élevage). Rien à corriger dans le code.
+
+## 1er novembre : les liens de l'app Windows
+
+- **Signalé** : dans l'app Windows, « Vu sur Centrale Canine » n'ouvre rien ; sur l'iPhone et l'iPad, le même lien ouvre la page.
+- **Cause** : les liens vers d'autres sites sont des `<a target="_blank">`, et la fenêtre WebView2 de l'app jette toute demande de nouvelle fenêtre quand aucun gestionnaire n'est posé (code de wry 0.57). Un lien sans `target` aurait, lui, emmené la fenêtre hors de l'app.
+- **Fait** : dans l'app Windows seulement, un clic ou un clic molette sur un lien `http` ou `https` vers un autre site l'ouvre dans le navigateur par défaut, par `tauri-plugin-opener` limité à ces deux protocoles : « Vu sur » d'une portée et d'un élevage, site de l'élevage, reproducteurs, Plans, Google Maps et Waze, bouton du bas quand il mène à l'annonce ou au site (`05`). Rien ne change sur le web, l'iPhone et l'iPad, ni pour « Appeler l'éleveur ». Vérifié : `cargo check`, test vitest, lint et typecheck.

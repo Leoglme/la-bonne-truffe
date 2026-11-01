@@ -22,6 +22,7 @@ pub fn run() {
     builder
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_opener::Builder::new().open_js_links_on_click(false).build())
         .invoke_handler(tauri::generate_handler![
             centrale_canine::curl::read_centrale_canine_page_with_curl,
             centrale_canine::browser::read_centrale_canine_page_in_browser
