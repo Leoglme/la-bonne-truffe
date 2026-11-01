@@ -23,6 +23,15 @@ def test_every_collected_source_has_its_hourly_job() -> None:
     }
 
 
+def test_the_breeder_sites_are_read_in_the_morning_and_in_the_evening() -> None:
+    scheduler = CollectionWorker(frozenset(ListingSource), relayed_sources=frozenset()).build_scheduler()
+
+    job = scheduler.get_job("collect_chiens_de_france_sites")
+
+    assert job is not None
+    assert str(job.trigger) == "cron[hour='6,18', minute='40']"
+
+
 def test_a_skipped_source_has_no_job() -> None:
     worker = CollectionWorker(
         frozenset({ListingSource.CHIENS_DE_FRANCE, ListingSource.CHIOTS_DE_FRANCE}), relayed_sources=frozenset()

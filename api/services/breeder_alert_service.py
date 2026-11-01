@@ -3,6 +3,7 @@ The alerts of the followed breeders (docs/04, « Les alertes d'éleveur »): a m
 photos or a new ad on one of their litters, whatever the department and the tier of the litter.
 """
 
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
@@ -10,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from enums.breeder_event_kind import BreederEventKind
 from enums.color_preference_level import ColorPreferenceLevel
-from enums.match_event_kind import MatchEventKind
+from enums.listing_source import ListingSource
 from enums.notification_kind import NotificationKind
 from models.breeder import Breeder
 from models.breeder_follow import BreederFollow, BreederFollowEvent
@@ -25,12 +26,19 @@ from services.notification_texts import NotificationTexts
 from services.notifier import notifier_service
 from services.puppy_arrival_service import PuppyArrivalService
 
-PUSHED_EVENT_KINDS: dict[BreederEventKind, NotificationKind] = {
+BREEDER_EVENT_NOTIFICATION_KINDS: dict[BreederEventKind, NotificationKind] = {
     BreederEventKind.NEW_MATING: NotificationKind.BREEDER_NEW_MATING,
     BreederEventKind.BIRTH: NotificationKind.BREEDER_BIRTH,
+    BreederEventKind.NEW_PHOTOS: NotificationKind.BREEDER_NEW_PHOTOS,
+    BreederEventKind.NEW_AD: NotificationKind.BREEDER_NEW_AD,
 }
 LITTER_PUSH_KINDS: frozenset[NotificationKind] = frozenset(
-    {NotificationKind.NEW_PREFERRED, NotificationKind.BORN, NotificationKind.UPGRADED}
+    {
+        NotificationKind.NEW_PREFERRED,
+        NotificationKind.BORN,
+        NotificationKind.UPGRADED,
+        *BREEDER_EVENT_NOTIFICATION_KINDS.values(),
+    }
 )
 PHOTOS_FIELD = "photos"
 NEW_PHOTOS_EVENT_REPEAT_DELAY = timedelta(days=1)
@@ -45,17 +53,18 @@ class BreederRunFacts:
     new_listing_ids: list[int] = field(default_factory=list)
     changed_listing_ids: list[int] = field(default_factory=list)
     run_started_at: datetime | None = None
+    first_site_read_breeder_ids: frozenset[int] = frozenset()
 
 
 class BreederAlertService:
-    """Raises the events of the followed breeders after a run, pushes the urgent ones, queues the others."""
+    """Raises the events of the followed breeders after a run, and pushes each one once."""
 
     def raise_events(self, db: Session, facts: BreederRunFacts, now: datetime, should_notify: bool) -> int:
         """
         Compare what the run brought with the breeders each user follows, and notify once per event.
 
-        An event is recorded even when it is not sent (setting off, search paused, colour ignored, or the
-        litter itself just pushed), so that it never comes back.
+        An event is recorded even when it is not sent (setting off, search paused, colour ignored, site of the
+        breeder read for the first time, or the litter itself just pushed), so that it never comes back.
 
         Args:
             db: Database session; committed at the end.
@@ -71,7 +80,8 @@ class BreederAlertService:
             return 0
         candidate_group_ids = facts.new_group_ids | facts.born_group_ids
         photo_group_ids = self._groups_with_new_photos(db, facts)
-        new_ad_group_ids = self._groups_with_new_ad(db, facts)
+        new_ad_sources = self._groups_with_new_ad(db, facts)
+        new_ad_group_ids = set(new_ad_sources)
         candidate_group_ids |= photo_group_ids | new_ad_group_ids
         if not candidate_group_ids:
             return 0
@@ -88,6 +98,7 @@ class BreederAlertService:
             breeder = db.get(Breeder, follow.breeder_id)
             criteria = self._criteria_of(db, follow.user_id)
             is_paused = PuppyArrivalService.is_search_paused(db, follow.user_id)
+            is_site_read_for_the_first_time = follow.breeder_id in facts.first_site_read_breeder_ids
             for group in sorted(groups, key=lambda candidate: candidate.id):
                 snapshot = LitterSnapshotBuilder.build(db, group)
                 if snapshot is None:
@@ -97,25 +108,23 @@ class BreederAlertService:
                         continue
                     is_wanted = self._is_wanted(follow, kind, snapshot, criteria)
                     is_sent = False
-                    if should_notify and is_wanted and not is_paused:
-                        is_sent = self._notify(db, follow, breeder, group, kind, snapshot, now)
+                    if should_notify and is_wanted and not is_paused and not is_site_read_for_the_first_time:
+                        new_ad_source = new_ad_sources.get(group.id)
+                        is_sent = self._notify(db, follow, breeder, group, kind, snapshot, new_ad_source, now)
                     sent_count += int(is_sent)
                     db.add(
                         BreederFollowEvent(
-                            follow_id=follow.id,
-                            litter_group_id=group.id,
-                            kind=kind,
-                            created_at=now,
-                            sent_at=None if (is_wanted and kind not in PUSHED_EVENT_KINDS and should_notify) else now,
+                            follow_id=follow.id, litter_group_id=group.id, kind=kind, created_at=now, sent_at=now
                         )
                     )
         db.commit()
         return sent_count
 
-    @staticmethod
-    def _groups_with_new_photos(db: Session, facts: BreederRunFacts) -> set[int]:
+    @classmethod
+    def _groups_with_new_photos(cls, db: Session, facts: BreederRunFacts) -> set[int]:
         """
-        The groups whose listings got new photos during the run.
+        The groups whose listings got a photo never seen on them before during the run: two sources that give the
+        same ad different photos, in turn, bring nothing new.
 
         Args:
             db: Database session.
@@ -127,12 +136,13 @@ class BreederAlertService:
         if not facts.changed_listing_ids or facts.run_started_at is None:
             return set()
         changed_listing_ids = {
-            listing_id
-            for (listing_id,) in db.query(ListingChange.listing_id).filter(
+            change.listing_id
+            for change in db.query(ListingChange).filter(
                 ListingChange.listing_id.in_(facts.changed_listing_ids),
                 ListingChange.field == PHOTOS_FIELD,
                 ListingChange.changed_at >= facts.run_started_at,
             )
+            if cls._adds_unseen_photo(db, change)
         }
         if not changed_listing_ids:
             return set()
@@ -143,25 +153,48 @@ class BreederAlertService:
         }
 
     @staticmethod
-    def _groups_with_new_ad(db: Session, facts: BreederRunFacts) -> set[int]:
+    def _adds_unseen_photo(db: Session, change: ListingChange) -> bool:
         """
-        The groups already known that gained a listing on another source during the run.
+        Whether a change of the photos of a listing brings a photo the listing never had.
+
+        Args:
+            db: Database session.
+            change: The change of the photos.
+
+        Returns:
+            True when one of its photos is new to the listing.
+        """
+        seen_photos = set(json.loads(change.old_value or "[]"))
+        for earlier_change in db.query(ListingChange).filter(
+            ListingChange.listing_id == change.listing_id,
+            ListingChange.field == PHOTOS_FIELD,
+            ListingChange.id < change.id,
+        ):
+            seen_photos |= set(json.loads(earlier_change.old_value or "[]"))
+            seen_photos |= set(json.loads(earlier_change.new_value or "[]"))
+        return bool(set(json.loads(change.new_value or "[]")) - seen_photos)
+
+    @staticmethod
+    def _groups_with_new_ad(db: Session, facts: BreederRunFacts) -> dict[int, ListingSource]:
+        """
+        The groups already known that gained a listing on another source during the run, with that source.
 
         Args:
             db: Database session.
             facts: What the run brought.
 
         Returns:
-            Group ids.
+            The source of the new listing, by group id.
         """
         if not facts.new_listing_ids:
-            return set()
-        group_ids = {
-            group_id
-            for (group_id,) in db.query(Listing.litter_group_id).filter(Listing.id.in_(facts.new_listing_ids))
-            if group_id is not None
+            return {}
+        return {
+            group_id: source
+            for (group_id, source) in db.query(Listing.litter_group_id, Listing.source).filter(
+                Listing.id.in_(facts.new_listing_ids)
+            )
+            if group_id is not None and group_id not in facts.new_group_ids
         }
-        return group_ids - facts.new_group_ids
 
     @staticmethod
     def _kinds_of(
@@ -258,10 +291,11 @@ class BreederAlertService:
         group: LitterGroup,
         kind: BreederEventKind,
         snapshot: LitterSnapshot,
+        new_ad_source: ListingSource | None,
         now: datetime,
     ) -> bool:
         """
-        Push an urgent event, unless the litter itself was just pushed; a digest event is only queued.
+        Push an event, unless the litter was already pushed in this run, for itself or for its breeder.
 
         Args:
             db: Database session.
@@ -270,23 +304,21 @@ class BreederAlertService:
             group: The litter.
             kind: The event.
             snapshot: The litter.
+            new_ad_source: Where the new ad of the litter appeared, for a new ad.
             now: Run time.
 
         Returns:
             Whether a push went out.
         """
-        if kind not in PUSHED_EVENT_KINDS:
-            return False
         if self._was_litter_just_pushed(db, follow.user_id, group.id, now):
             return False
         breeder_name = (breeder.card_name if breeder is not None else None) or snapshot.name
-        litter_event = MatchEventKind.BORN if kind == BreederEventKind.BIRTH else MatchEventKind.NEW_PREFERRED
         notifier_service.send(
             db,
             user_id=follow.user_id,
-            kind=PUSHED_EVENT_KINDS[kind],
+            kind=BREEDER_EVENT_NOTIFICATION_KINDS[kind],
             title=NotificationTexts.breeder_event_title(kind, breeder_name),
-            body=NotificationTexts.breeder_event(kind, snapshot, litter_event),
+            body=NotificationTexts.breeder_event(kind, snapshot, new_ad_source),
             litter_group_id=group.id,
             now=now,
         )
@@ -295,7 +327,8 @@ class BreederAlertService:
     @staticmethod
     def _was_litter_just_pushed(db: Session, user_id: int, group_id: int, now: datetime) -> bool:
         """
-        Whether a litter notification about this group went out in the same run: one notification then suffices.
+        Whether a notification about this litter went out in the same run, for itself or for its breeder: one
+        notification then suffices.
 
         Args:
             db: Database session.

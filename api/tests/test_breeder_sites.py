@@ -28,6 +28,7 @@ from models.search_profile import SearchProfile
 from models.user import User
 from seeders.run_seeders import SeederRunner
 from services.auth_service import AuthService
+from services.breeder_alert_service import BreederRunFacts, breeder_alert_service
 from services.breeder_link_service import BreederLinkService
 from services.breeder_site_ingestion import breeder_site_ingestion_service
 from services.breeder_social_links import BreederSocialLinks
@@ -105,6 +106,31 @@ def test_the_morning_run_gives_a_breeder_its_site_from_the_regional_list_then_re
     detail = LitterQueryService.detail(db, user.id, puppy_ad.litter_group_id)
     assert detail.photos_added_at is not None
     assert {listing.puppy_state for listing in detail.listings} >= {PuppyAdState.AVAILABLE, PuppyAdState.RESERVED}
+
+
+def test_a_site_read_for_the_first_time_records_its_breeders_alerts_without_sending_them(
+    db: Session, seeded: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    never_read = ferme_des_tests(db, chiens_de_france_site_url=SITE_URL)
+    already_read = Breeder(
+        display_name="Du Clos de Test",
+        chiens_de_france_site_url="https://elevage-b.chiens-de-france.com",
+        chiens_de_france_site_seen_at=datetime(2026, 10, 31, 5, 40),
+    )
+    db.add(already_read)
+    db.commit()
+    raised_facts: list[BreederRunFacts] = []
+
+    def record_facts(_db: Session, facts: BreederRunFacts, _now: datetime, should_notify: bool) -> int:
+        """Keep the facts the run hands to the breeder alerts."""
+        raised_facts.append(facts)
+        return 0
+
+    monkeypatch.setattr(breeder_alert_service, "raise_events", record_facts)
+
+    collection_runner.run_breeder_sites(db, chiens_de_france_site_collector_serving())
+
+    assert [facts.first_site_read_breeder_ids for facts in raised_facts] == [frozenset({never_read.id})]
 
 
 def test_a_name_two_breeders_of_the_postal_code_bear_or_a_known_site_links_nothing(

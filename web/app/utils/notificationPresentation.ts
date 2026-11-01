@@ -11,6 +11,8 @@ const LITTER_EVENT_KINDS: NotificationKind[] = [
   'upgraded',
   'breeder_new_mating',
   'breeder_birth',
+  'breeder_new_photos',
+  'breeder_new_ad',
 ]
 
 /** How the bell words a notification: its day, its time, and the facts of its litter. */
@@ -51,7 +53,7 @@ export class NotificationPresentation {
    * Whether a notification tells about one litter whose facts the card can show.
    *
    * @param kind - Kind of the notification.
-   * @returns True for a birth, a preferred litter, an upgrade, or a mating or a birth at a followed breeder.
+   * @returns True for a birth, a preferred litter, an upgrade, or a mating, a birth, photos or an ad at a followed breeder.
    */
   static isLitterEvent(kind: NotificationKind): boolean {
     return LITTER_EVENT_KINDS.includes(kind)

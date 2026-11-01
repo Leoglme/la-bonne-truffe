@@ -15,7 +15,7 @@ from enums.match_event_kind import MatchEventKind
 from enums.notification_kind import NotificationKind
 from enums.source_run_status import SourceRunStatus
 from models.breeder import Breeder
-from models.breeder_follow import BreederFollow, BreederFollowEvent
+from models.breeder_follow import BreederFollow
 from models.digest_entry import DigestEntry
 from models.follow_up import FollowUp
 from models.litter_group import LitterGroup
@@ -213,18 +213,14 @@ class NotifierService:
                 else:
                     continue
                 digest_litters.append({"litter_group_id": snapshot.group_id, "event": entry.event_kind.value})
-            breeder_lines, breeder_digest_litters = self._breeder_digest_lines(db, user_id, digest_due_at, now)
-            digest_litters.extend(breeder_digest_litters)
             litter_group_ids = {snapshot.group_id for snapshot in [*acceptable_snapshots, *followed_with_fewer_puppies]}
-            litter_group_ids |= {entry["litter_group_id"] for entry in breeder_digest_litters}
             if litter_group_ids:
-                body = NotificationTexts.evening_digest(acceptable_snapshots, followed_with_fewer_puppies)
                 self.send(
                     db,
                     user_id=user_id,
                     kind=NotificationKind.EVENING_DIGEST,
                     title=NotificationTexts.evening_digest_title(len(acceptable_snapshots)),
-                    body=" ".join(sentence for sentence in [body, *breeder_lines] if sentence),
+                    body=NotificationTexts.evening_digest(acceptable_snapshots, followed_with_fewer_puppies),
                     litter_group_id=next(iter(litter_group_ids)) if len(litter_group_ids) == 1 else None,
                     now=now,
                     digest_litters=digest_litters,
@@ -232,48 +228,6 @@ class NotifierService:
                 sent_count += 1
         db.commit()
         return sent_count
-
-    @staticmethod
-    def _breeder_digest_lines(
-        db: Session, user_id: int, digest_due_at: datetime, now: datetime
-    ) -> tuple[list[str], list[DigestLitterEntry]]:
-        """
-        The followed breeders' events waiting for the digest of a user: one sentence each, marked sent.
-
-        Args:
-            db: Database session.
-            user_id: The user.
-            digest_due_at: The hour of the digest; a later event waits for the next day.
-            now: Sending time.
-
-        Returns:
-            The sentences, and the litters they are about with their event.
-        """
-        pending_events = (
-            db.query(BreederFollowEvent)
-            .join(BreederFollow, BreederFollow.id == BreederFollowEvent.follow_id)
-            .filter(
-                BreederFollow.user_id == user_id,
-                BreederFollowEvent.sent_at.is_(None),
-                BreederFollowEvent.created_at < digest_due_at,
-            )
-            .order_by(BreederFollowEvent.id)
-            .all()
-        )
-        sentences: list[str] = []
-        digest_litters: list[DigestLitterEntry] = []
-        for event in pending_events:
-            event.sent_at = now
-            follow = db.get(BreederFollow, event.follow_id)
-            breeder = db.get(Breeder, follow.breeder_id) if follow is not None else None
-            group = db.get(LitterGroup, event.litter_group_id) if event.litter_group_id is not None else None
-            snapshot = LitterSnapshotBuilder.build(db, group) if group is not None and group.is_active else None
-            if breeder is None or snapshot is None:
-                continue
-            breeder_name = breeder.card_name or snapshot.name
-            sentences.append(NotificationTexts.breeder_digest_line(event.kind, breeder_name, snapshot.name))
-            digest_litters.append({"litter_group_id": snapshot.group_id, "event": event.kind.value})
-        return sentences, digest_litters
 
     def send_due_breeder_follow_reminders(self, db: Session, now: datetime) -> int:
         """

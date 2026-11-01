@@ -1,6 +1,7 @@
 """
 Adds a link pasted on a breeder (docs/05, « Ajouter un lien »): its site on Chiens de France, read at once then every
-morning; a Facebook, Instagram or YouTube account; or another site, whose page gives the social accounts at its bottom.
+morning and evening; a Facebook, Instagram or YouTube account; or another site, whose page gives the social accounts at
+its bottom.
 """
 
 from collections.abc import Callable
@@ -97,7 +98,7 @@ class BreederLinkService:
 
     def add(self, db: Session, breeder_id: int, url: str) -> BreederLinkReading:
         """
-        Write a pasted link on the breeder: a Chiens de France site becomes the one the morning run reads; a social
+        Write a pasted link on the breeder: a Chiens de France site becomes the one the daily runs read; a social
         account replaces the one known; another site becomes the website of the breeding (or one more link) and
         gives the accounts its page links, where none is known.
 

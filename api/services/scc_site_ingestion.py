@@ -69,7 +69,7 @@ class SccSiteIngestionService:
     @staticmethod
     def _apply_other_site(breeder: Breeder, other_site_url: str | None) -> None:
         """
-        Keep the other site a breeding declares: hosted by Chiens de France, it is the site the morning run reads
+        Keep the other site a breeding declares: hosted by Chiens de France, it is the site the daily runs read
         for its photos and its litters; elsewhere, it is the website of the breeding.
 
         Args:

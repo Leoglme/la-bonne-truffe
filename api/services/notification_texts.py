@@ -84,23 +84,36 @@ class NotificationTexts:
         return f"{BREEDER_EVENT_TITLES[event]} · {breeder_name}"
 
     @classmethod
-    def breeder_event(cls, event: BreederEventKind, snapshot: LitterSnapshot, litter_event: MatchEventKind) -> str:
+    def breeder_event(
+        cls, event: BreederEventKind, snapshot: LitterSnapshot, new_ad_source: ListingSource | None
+    ) -> str:
         """
-        Body of a push about a followed breeder: the litter in one sentence, then why to hurry.
+        Body of a push about a followed breeder: the litter in one sentence, then why to hurry or what is new.
 
         Args:
             event: The event.
             snapshot: The litter.
-            litter_event: The litter event the sentence is phrased after (born, or declared).
+            new_ad_source: Where the new ad of the litter appeared, for a new ad.
 
         Returns:
             « Née le 27 octobre (Morbihan) : une portée gold, 2 mâles et 3 femelles. Dispo vers le 22 décembre.
-            Appelle vite : les réservations se prennent dans l’ordre des appels. »
+            Appelle vite : les réservations se prennent dans l’ordre des appels. », or « Sa portée née le
+            29 octobre (Sarthe) est en ligne sur Chiens de France : une portée gold, 1 mâle et 2 femelles. »
         """
-        sentence = cls.litter_event(litter_event, snapshot)
         if event == BreederEventKind.BIRTH:
+            sentence = cls.litter_event(MatchEventKind.BORN, snapshot)
             return f"{sentence} Appelle vite : les réservations se prennent dans l’ordre des appels."
-        return f"{sentence} Quatre mois d’avance pour te placer sur sa liste."
+        if event == BreederEventKind.NEW_MATING:
+            sentence = cls.litter_event(MatchEventKind.NEW_PREFERRED, snapshot)
+            return f"{sentence} Quatre mois d’avance pour te placer sur sa liste."
+        if event == BreederEventKind.NEW_PHOTOS:
+            news = "a de nouvelles photos"
+        elif new_ad_source is None:
+            news = "est en ligne"
+        else:
+            news = f"est en ligne sur {cls._source_in_sentence(new_ad_source)}"
+        litter = f"une portée {cls._color_phrase(snapshot)}{cls._sexes_phrase(snapshot)}"
+        return f"{cls._breeder_litter_subject(snapshot)} {news} : {litter}."
 
     @staticmethod
     def breeder_follow_reminder_title(breeder_name: str | None) -> str:
@@ -129,23 +142,6 @@ class NotificationTexts:
         """
         place = f" ({city})" if city else ""
         return f"C’est l’heure d’appeler {breeder_name or 'l’éleveur'}{place}."
-
-    @staticmethod
-    def breeder_digest_line(event: BreederEventKind, breeder_name: str, litter_name: str) -> str:
-        """
-        One sentence of the evening digest about a followed breeder.
-
-        Args:
-            event: The event, new photos or a new ad.
-            breeder_name: The breeder, as the app names it.
-            litter_name: The litter, as its card names it.
-
-        Returns:
-            « Du Clos de l'Élevage A a ajouté des photos à sa portée. »
-        """
-        if event == BreederEventKind.NEW_PHOTOS:
-            return f"{breeder_name} a ajouté des photos à la portée {litter_name}."
-        return f"{breeder_name} a publié une annonce pour la portée {litter_name}."
 
     @staticmethod
     def evening_digest_title(acceptable_count: int) -> str:
@@ -393,6 +389,38 @@ class NotificationTexts:
             return "de couleur à confirmer"
         labels = " ou ".join(ScoreCalculator.color_label(reading.color) for reading in snapshot.colors)
         return labels if snapshot.has_certain_colors else f"{labels} (à confirmer)"
+
+    @classmethod
+    def _breeder_litter_subject(cls, snapshot: LitterSnapshot) -> str:
+        """
+        The litter of a followed breeder as the subject of a sentence.
+
+        Args:
+            snapshot: The litter.
+
+        Returns:
+            « Sa portée née le 29 octobre (Sarthe) » or « Sa portée à naître vers le 7 novembre (Sarthe) ».
+        """
+        place = f" ({snapshot.department_name})" if snapshot.department_name else ""
+        if snapshot.is_born:
+            born_on = f" née le {cls.french_day(snapshot.birth_date)}" if snapshot.birth_date else ""
+            return f"Sa portée{born_on}{place}"
+        expected = f" vers le {cls.french_day(snapshot.expected_birth_date)}" if snapshot.expected_birth_date else ""
+        return f"Sa portée à naître{expected}{place}"
+
+    @staticmethod
+    def _source_in_sentence(source: ListingSource) -> str:
+        """
+        The name of a source inside a sentence, its article in lower case.
+
+        Args:
+            source: The source.
+
+        Returns:
+            « Chiens de France », or « la Centrale Canine ».
+        """
+        name = SOURCE_NAMES[source]
+        return f"{name[0].lower()}{name[1:]}" if name.startswith(("La ", "Les ", "L’")) else name
 
     @staticmethod
     def _sexes_phrase(snapshot: LitterSnapshot) -> str:

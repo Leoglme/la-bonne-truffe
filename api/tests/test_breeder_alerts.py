@@ -1,22 +1,27 @@
-"""Alerts on the followed breeders: a mating or a birth pushed once, never twice, the reminders and the digest."""
+"""Alerts on the followed breeders: a mating, a birth, new photos or a new ad pushed once, and the reminders."""
 
-from datetime import UTC, date, datetime, timedelta
+import json
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from core.clock import naive_utc_now, naive_utc_of_french_time
+from core.clock import naive_utc_now
 from enums.breeder_event_kind import BreederEventKind
+from enums.listing_kind import ListingKind
+from enums.listing_source import ListingSource
 from enums.notification_kind import NotificationKind
 from models.breeder import Breeder
 from models.breeder_follow import BreederFollow, BreederFollowEvent
 from models.listing import Listing
+from models.listing_change import ListingChange
 from models.notification import Notification
 from models.user import User
 from seeders.run_seeders import SeederRunner
 from services.auth_service import AuthService
+from services.breeder_alert_service import BreederRunFacts, breeder_alert_service
 from services.collection_runner import collection_runner
 from services.notifier import notifier_service
 from services.push_service import PushResult, PushService
@@ -37,6 +42,9 @@ FIRST_BREEDER_EXPECTED_LITTER_ID = "4337070"
 # Élevage D (74617): the gold litters, pushed for themselves.
 GOLD_BREEDER_OLD_LITTER_ID = "4298826"
 GOLD_BREEDER_BORN_LITTER_ID = "4333817"
+
+FIRST_PUPPY_PHOTO = "https://www.chiens-de-france.com/photo/eleveurs/1/100/portees/photo-de-test-1.jpg"
+SECOND_PUPPY_PHOTO = "https://www.chiens-de-france.com/photo/eleveurs/1/100/portees/photo-de-test-2.jpg"
 
 
 @pytest.fixture
@@ -98,6 +106,37 @@ def follow(client: TestClient, headers: dict[str, str], breeder_id: int, **setti
 def name_of(breeder: Breeder) -> str:
     """The breeder as the pushes name it."""
     return breeder.affix or breeder.display_name or ""
+
+
+def a_run_that_gave_photos(db: Session, listing: Listing, photos: list[str], run_time: datetime) -> BreederRunFacts:
+    """What a run brings when it gives a listing these photos in place of its own."""
+    db.add(
+        ListingChange(
+            listing_id=listing.id,
+            field="photos",
+            old_value=json.dumps(listing.photos),
+            new_value=json.dumps(photos),
+            changed_at=run_time,
+        )
+    )
+    listing.photos = photos
+    db.commit()
+    return BreederRunFacts(changed_listing_ids=[listing.id], run_started_at=run_time)
+
+
+def a_site_ad_joined(db: Session, listing: Listing) -> Listing:
+    """A puppy ad of the breeder's site on Chiens de France, joined to the litter of the listing."""
+    site_ad = Listing(
+        source=ListingSource.CHIENS_DE_FRANCE,
+        external_id="chiot-2299001",
+        breed_id=listing.breed_id,
+        kind=ListingKind.PUPPY_AD,
+        breeder_id=listing.breeder_id,
+        litter_group_id=listing.litter_group_id,
+    )
+    db.add(site_ad)
+    db.commit()
+    return site_ad
 
 
 def events(db: Session) -> list[tuple[BreederEventKind, bool]]:
@@ -186,28 +225,93 @@ def test_a_due_reminder_on_a_breeder_is_pushed_once(
     assert db.query(BreederFollow).one().reminder_sent_at is not None
 
 
-def test_new_photos_at_a_followed_breeder_are_told_in_the_evening_digest(
+def test_new_photos_at_a_followed_breeder_are_pushed_at_once_and_once_a_day(
     client: TestClient, db: Session, headers: dict[str, str], pushed: list[tuple[str, str]]
 ) -> None:
     first_run_without(db)
     breeder = breeder_of_litter(db, FIRST_BREEDER_OLD_LITTER_ID)
-    follow(client, headers, breeder.id)
+    follow(client, headers, breeder.id, notify_ignored_colors=True)
     listing = db.query(Listing).filter(Listing.external_id == FIRST_BREEDER_OLD_LITTER_ID).one()
-    db.add(
-        BreederFollowEvent(
-            follow_id=db.query(BreederFollow).one().id,
-            litter_group_id=listing.litter_group_id,
-            kind=BreederEventKind.NEW_PHOTOS,
-            created_at=datetime(2026, 12, 1, 8, 0),
-            sent_at=None,
-        )
+    morning = naive_utc_now()
+    evening = morning + timedelta(hours=12)
+
+    morning_count = breeder_alert_service.raise_events(
+        db, a_run_that_gave_photos(db, listing, [FIRST_PUPPY_PHOTO], morning), morning, should_notify=True
     )
-    db.commit()
+    evening_count = breeder_alert_service.raise_events(
+        db,
+        a_run_that_gave_photos(db, listing, [FIRST_PUPPY_PHOTO, SECOND_PUPPY_PHOTO], evening),
+        evening,
+        should_notify=True,
+    )
 
-    digest_count = notifier_service.send_due_evening_digests(db, naive_utc_of_french_time(date(2026, 12, 1), 20))
-    again_count = notifier_service.send_due_evening_digests(db, naive_utc_of_french_time(date(2026, 12, 2), 20))
-
-    digest = db.query(Notification).filter(Notification.kind == NotificationKind.EVENING_DIGEST).one()
-    assert (digest_count, again_count) == (1, 0)
-    assert f"{name_of(breeder)} a ajouté des photos à la portée" in digest.body
+    photos_push = db.query(Notification).filter(Notification.kind == NotificationKind.BREEDER_NEW_PHOTOS).one()
+    assert (morning_count, evening_count) == (1, 0)
+    assert photos_push.title == f"Nouvelles photos · {name_of(breeder)}"
+    assert photos_push.body.startswith("Sa portée née le ")
+    assert " a de nouvelles photos : une portée " in photos_push.body
     assert events(db) == [(BreederEventKind.NEW_PHOTOS, True)]
+
+
+def test_photos_two_sources_give_an_ad_in_turn_are_not_new(
+    client: TestClient, db: Session, headers: dict[str, str], pushed: list[tuple[str, str]]
+) -> None:
+    first_run_without(db)
+    breeder = breeder_of_litter(db, FIRST_BREEDER_OLD_LITTER_ID)
+    follow(client, headers, breeder.id, notify_ignored_colors=True)
+    listing = db.query(Listing).filter(Listing.external_id == FIRST_BREEDER_OLD_LITTER_ID).one()
+    now = naive_utc_now()
+    a_run_that_gave_photos(db, listing, [FIRST_PUPPY_PHOTO], now - timedelta(days=3))
+    a_run_that_gave_photos(db, listing, [SECOND_PUPPY_PHOTO], now - timedelta(days=2))
+
+    count = breeder_alert_service.raise_events(
+        db, a_run_that_gave_photos(db, listing, [FIRST_PUPPY_PHOTO], now), now, should_notify=True
+    )
+
+    assert count == 0
+    assert events(db) == []
+
+
+def test_a_new_ad_for_a_litter_of_a_followed_breeder_is_pushed_with_its_source(
+    client: TestClient, db: Session, headers: dict[str, str], pushed: list[tuple[str, str]]
+) -> None:
+    first_run_without(db)
+    breeder = breeder_of_litter(db, FIRST_BREEDER_OLD_LITTER_ID)
+    follow(client, headers, breeder.id, notify_ignored_colors=True)
+    listing = db.query(Listing).filter(Listing.external_id == FIRST_BREEDER_OLD_LITTER_ID).one()
+    site_ad = a_site_ad_joined(db, listing)
+    now = naive_utc_now()
+
+    count = breeder_alert_service.raise_events(
+        db, BreederRunFacts(new_listing_ids=[site_ad.id], run_started_at=now), now, should_notify=True
+    )
+
+    ad_push = db.query(Notification).filter(Notification.kind == NotificationKind.BREEDER_NEW_AD).one()
+    assert count == 1
+    assert ad_push.title == f"Nouvelle annonce · {name_of(breeder)}"
+    assert " est en ligne sur Chiens de France : une portée " in ad_push.body
+    assert events(db) == [(BreederEventKind.NEW_AD, True)]
+
+
+def test_the_first_reading_of_a_breeders_site_records_its_alerts_without_sending_them(
+    client: TestClient, db: Session, headers: dict[str, str], pushed: list[tuple[str, str]]
+) -> None:
+    first_run_without(db)
+    breeder = breeder_of_litter(db, FIRST_BREEDER_OLD_LITTER_ID)
+    follow(client, headers, breeder.id, notify_ignored_colors=True)
+    listing = db.query(Listing).filter(Listing.external_id == FIRST_BREEDER_OLD_LITTER_ID).one()
+    site_ad = a_site_ad_joined(db, listing)
+    now = naive_utc_now()
+
+    count = breeder_alert_service.raise_events(
+        db,
+        BreederRunFacts(
+            new_listing_ids=[site_ad.id], run_started_at=now, first_site_read_breeder_ids=frozenset({breeder.id})
+        ),
+        now,
+        should_notify=True,
+    )
+
+    assert count == 0
+    assert db.query(Notification).filter(Notification.kind == NotificationKind.BREEDER_NEW_AD).count() == 0
+    assert events(db) == [(BreederEventKind.NEW_AD, True)]

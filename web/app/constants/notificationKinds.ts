@@ -17,6 +17,8 @@ export const NOTIFICATION_CHIPS: Record<NotificationKind, NotificationChip> = {
   signup_request: { label: 'Inscription', tone: 'lilac' },
   breeder_new_mating: { label: 'Saillie', tone: 'coral' },
   breeder_birth: { label: 'Née', tone: 'coral' },
+  breeder_new_photos: { label: 'Photos', tone: 'coral' },
+  breeder_new_ad: { label: 'Annonce', tone: 'coral' },
   breeder_follow_reminder: { label: 'Rappel', tone: 'dark' },
 }
 

@@ -11,6 +11,7 @@ from core.clock import naive_utc_now
 from enums.listing_source import ListingSource
 from enums.source_run_status import SourceRunStatus
 from models.breed import Breed
+from models.breeder import Breeder
 from models.source_run import SourceRun
 from services.breeder_alert_service import BreederRunFacts, breeder_alert_service
 from services.breeder_directory_ingestion import breeder_directory_ingestion_service
@@ -184,18 +185,21 @@ class CollectionRunner:
         Read the regional lists of breeders of Chiens de France, which give their sites to the breeders that had
         none, then the site of every breeder known on Chiens de France: future litters, puppies for sale with
         their photos, litters of the year, reproducers; then regroup, score and notify. A run asked for some
-        breeders reads only their sites.
+        breeders reads only their sites. The first reading of a site notifies nothing of its breeder.
 
         Args:
             db: Database session.
             collector: Collector to read with (a real one, or one on a fake transport in the tests).
-            breeder_ids: The breeders whose site to read, None for the whole morning run.
+            breeder_ids: The breeders whose site to read, None for the whole run of the morning or the evening.
 
         Returns:
             The run report; a site that fails is listed in ``collection.failed_sites`` without failing the run.
         """
         source_run = self._open_run(db, ListingSource.CHIENS_DE_FRANCE_SITES)
         report = BreederSitesRunReport(source_run=source_run)
+        never_read_breeder_ids = frozenset(
+            breeder_id for (breeder_id,) in db.query(Breeder.id).filter(Breeder.chiens_de_france_site_seen_at.is_(None))
+        )
 
         def collect_and_store() -> IngestionSummary:
             """
@@ -214,7 +218,9 @@ class CollectionRunner:
             report.collection = collector.collect(report.plan)
             return breeder_site_ingestion_service.ingest(db, report.plan, report.collection, naive_utc_now())
 
-        report.summary, report.grouping = self._finish_run(db, source_run, collect_and_store)
+        report.summary, report.grouping = self._finish_run(
+            db, source_run, collect_and_store, first_site_read_breeder_ids=never_read_breeder_ids
+        )
         return report
 
     def run_scc_breeders(self, db: Session, collector: SccBreederDirectoryCollector) -> SccBreederDirectoryRunReport:
@@ -466,7 +472,10 @@ class CollectionRunner:
 
     @staticmethod
     def _finish_run(
-        db: Session, source_run: SourceRun, collect_and_store: Callable[[], IngestionSummary]
+        db: Session,
+        source_run: SourceRun,
+        collect_and_store: Callable[[], IngestionSummary],
+        first_site_read_breeder_ids: frozenset[int] = frozenset(),
     ) -> tuple[IngestionSummary, GroupingResult]:
         """
         Collect and store, then regroup, score and notify, and record the outcome on the run line: a crash in
@@ -477,6 +486,8 @@ class CollectionRunner:
             db: Database session.
             source_run: The run line.
             collect_and_store: Reads the source and stores its listings.
+            first_site_read_breeder_ids: The breeders whose site is read for the first time: their alerts are
+                recorded without being sent, as what their site already showed is not news.
 
         Returns:
             The ingestion summary and the grouping, empty after a failure.
@@ -502,6 +513,7 @@ class CollectionRunner:
                     new_listing_ids=list(summary.new_listing_ids),
                     changed_listing_ids=list(summary.changed_listing_ids),
                     run_started_at=source_run.started_at,
+                    first_site_read_breeder_ids=first_site_read_breeder_ids,
                 ),
                 now,
                 should_notify=should_notify,

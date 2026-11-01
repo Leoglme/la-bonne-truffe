@@ -2486,7 +2486,7 @@ export interface components {
          * @description Event a sent notification reports (see docs/04-correspondance-et-notifications.md).
          * @enum {string}
          */
-        NotificationKind: "new_preferred" | "born" | "upgraded" | "evening_digest" | "source_down" | "source_silent" | "signup_request" | "follow_up_reminder" | "breeder_new_mating" | "breeder_birth" | "breeder_follow_reminder";
+        NotificationKind: "new_preferred" | "born" | "upgraded" | "evening_digest" | "source_down" | "source_silent" | "signup_request" | "follow_up_reminder" | "breeder_new_mating" | "breeder_birth" | "breeder_new_photos" | "breeder_new_ad" | "breeder_follow_reminder";
         /**
          * NotificationListResponse
          * @description A page of the notification history plus the unread count that lights the bell.

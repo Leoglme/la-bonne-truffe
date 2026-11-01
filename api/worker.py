@@ -38,11 +38,11 @@ COLLECTION_MINUTES: dict[ListingSource, int] = {
     ListingSource.COEUR_DE_COCKER: 50,
 }
 
-# French hour and minute of the sources read once a day (docs/05, « Nouveaux relevés »).
-DAILY_COLLECTION_TIMES: dict[ListingSource, tuple[int, int]] = {
-    ListingSource.CHIENS_DE_FRANCE_SITES: (6, 40),
-    ListingSource.SCC_BREEDERS: (7, 10),
-    ListingSource.SCC_SITES: (7, 30),
+# French hours and minute of the sources read once or twice a day (docs/05, « Nouveaux relevés »).
+DAILY_COLLECTION_TIMES: dict[ListingSource, tuple[tuple[int, ...], int]] = {
+    ListingSource.CHIENS_DE_FRANCE_SITES: ((6, 18), 40),
+    ListingSource.SCC_BREEDERS: ((7,), 10),
+    ListingSource.SCC_SITES: ((7,), 30),
 }
 
 # The relayed sources whose silence is worth an alert: those relayed every hour.
@@ -87,11 +87,16 @@ class CollectionWorker:
             if source not in self.collected_sources:
                 continue
             scheduler.add_job(self.collect_source, "cron", minute=minute, args=[source], id=f"collect_{source.value}")
-        for source, (hour, daily_minute) in DAILY_COLLECTION_TIMES.items():
+        for source, (hours, daily_minute) in DAILY_COLLECTION_TIMES.items():
             if source not in self.collected_sources:
                 continue
             scheduler.add_job(
-                self.collect_source, "cron", hour=hour, minute=daily_minute, args=[source], id=f"collect_{source.value}"
+                self.collect_source,
+                "cron",
+                hour=",".join(str(hour) for hour in hours),
+                minute=daily_minute,
+                args=[source],
+                id=f"collect_{source.value}",
             )
         scheduler.add_job(self.send_evening_digests, "cron", minute=0, id="send_evening_digests")
         scheduler.add_job(self.send_follow_up_reminders, "cron", minute="*/5", id="send_follow_up_reminders")

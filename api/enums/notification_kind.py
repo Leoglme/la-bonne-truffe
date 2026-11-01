@@ -16,4 +16,6 @@ class NotificationKind(StrEnum):
     FOLLOW_UP_REMINDER = "follow_up_reminder"
     BREEDER_NEW_MATING = "breeder_new_mating"
     BREEDER_BIRTH = "breeder_birth"
+    BREEDER_NEW_PHOTOS = "breeder_new_photos"
+    BREEDER_NEW_AD = "breeder_new_ad"
     BREEDER_FOLLOW_REMINDER = "breeder_follow_reminder"
