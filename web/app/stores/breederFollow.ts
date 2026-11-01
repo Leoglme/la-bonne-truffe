@@ -4,13 +4,13 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { BreedersService } from '~/services/breedersService'
 
-/** Pinia store of the drawer that manages the follow of a breeder: its status, reminder, alerts and notes. */
+/** Pinia store of the dialog that manages the follow of a breeder: its status, reminder, alerts and notes. */
 export const useBreederFollowStore = defineStore('breederFollow', () => {
   const openedBreeder: Ref<BreederDetail | null> = ref(null)
   const isSaving: Ref<boolean> = ref(false)
 
   /**
-   * Open the drawer of a breeder.
+   * Open the dialog of a breeder.
    *
    * @param breederId - The breeder.
    */
@@ -19,7 +19,7 @@ export const useBreederFollowStore = defineStore('breederFollow', () => {
   }
 
   /**
-   * Open the drawer on a breeder already loaded, without asking the API again.
+   * Open the dialog on a breeder already loaded, without asking the API again.
    *
    * @param breeder - The breeder shown.
    */
@@ -28,7 +28,7 @@ export const useBreederFollowStore = defineStore('breederFollow', () => {
   }
 
   /**
-   * Close the drawer.
+   * Close the dialog.
    */
   function close(): void {
     openedBreeder.value = null
@@ -64,7 +64,7 @@ export const useBreederFollowStore = defineStore('breederFollow', () => {
   }
 
   /**
-   * Stop following the opened breeder: its status, reminder, alerts and notes go, and the drawer closes.
+   * Stop following the opened breeder: its status, reminder, alerts and notes go, and the dialog closes.
    */
   async function stopFollowing(): Promise<void> {
     await saveChange(async (breederId: number): Promise<BreederDetail> => {

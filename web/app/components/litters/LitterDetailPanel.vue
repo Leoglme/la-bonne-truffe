@@ -24,7 +24,7 @@
         aria-label="Partager cette portée"
         aria-haspopup="dialog"
         class="absolute top-3.5 right-[66px] size-11 min-h-11 justify-center rounded-full bg-card p-0 text-ink shadow-floating-over-photo hover:bg-card"
-        @click="isShareDrawerOpen = true"
+        @click="isShareDialogOpen = true"
       />
       <span
         v-if="photoBadge"
@@ -71,7 +71,7 @@
         {{ props.litter.follow_up ? 'Suivie' : 'Suivre' }}
       </UButton>
     </div>
-    <LitterShareDrawer v-model:open="isShareDrawerOpen" :litter="props.litter" />
+    <LitterShareDialog v-model:open="isShareDialogOpen" :litter="props.litter" />
   </aside>
 </template>
 
@@ -94,7 +94,7 @@ const emit: LitterDetailPanelEmits = defineEmits<{
 const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
 const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
 
-const isShareDrawerOpen: Ref<boolean> = ref(false)
+const isShareDialogOpen: Ref<boolean> = ref(false)
 
 const photoBadge: ComputedRef<string | null> = computed((): string | null =>
   LitterDetailPresentation.buildPhotoBadge(props.litter, new Date()),

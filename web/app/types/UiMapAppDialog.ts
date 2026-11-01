@@ -1,10 +1,10 @@
 import type { MapDestination } from '~/types/Location'
 
-export type UiMapAppDrawerProps = {
+export type UiMapAppDialogProps = {
   open: boolean
   destination: MapDestination
 }
 
-export type UiMapAppDrawerEmits = {
+export type UiMapAppDialogEmits = {
   (event: 'update:open', isOpen: boolean): void
 }

@@ -1,9 +1,10 @@
 <template>
-  <UDrawer
+  <UiDialog
     :open="props.open"
     title="Partager cette portée"
     description="Une page qui s’ouvre sans compte, avec le téléphone de l’éleveur. Valable 30 jours."
-    :ui="{
+    has-cream-background
+    :drawer-ui="{
       content: 'rounded-t-3xl bg-cream md:mx-auto md:w-full md:max-w-md',
       container: 'gap-4 px-5 pt-2 pb-8 md:px-8',
       title: 'font-display text-2xl font-semibold text-ink',
@@ -80,24 +81,24 @@
         </button>
       </div>
     </template>
-  </UDrawer>
+  </UiDialog>
 </template>
 
 <script lang="ts" setup>
 import type { ComputedRef, PropType, Ref } from 'vue'
 import type { LitterDetail, LitterShareLink } from '~/types/api'
-import type { LitterShareDrawerEmits, LitterShareDrawerProps } from '~/types/LitterShareDrawer'
+import type { LitterShareDialogEmits, LitterShareDialogProps } from '~/types/LitterShareDialog'
 import { computed, ref, useId, watch } from 'vue'
 import { MAX_SHARE_MESSAGE_LENGTH } from '~/constants/litterLimits'
 import { SharesService } from '~/services/sharesService'
 import { LitterSharePresentation } from '~/utils/litterSharePresentation'
 
-const props: LitterShareDrawerProps = defineProps({
+const props: LitterShareDialogProps = defineProps({
   open: { type: Boolean, required: true },
   litter: { type: Object as PropType<LitterDetail>, required: true },
 })
 
-const emit: LitterShareDrawerEmits = defineEmits<{
+const emit: LitterShareDialogEmits = defineEmits<{
   (event: 'update:open', isOpen: boolean): void
 }>()
 
@@ -132,7 +133,7 @@ async function shareLink(): Promise<void> {
 }
 
 /**
- * Open the share sheet, or copy the link; when the device refuses, the link and its button stay in the drawer.
+ * Open the share sheet, or copy the link; when the device refuses, the link and its button stay in the dialog.
  */
 async function handOverLink(): Promise<void> {
   if (sharedUrl.value === null) {
@@ -158,7 +159,7 @@ async function handOverLink(): Promise<void> {
 /**
  * The text that goes with the link in the message.
  *
- * @returns The word typed in the drawer, or the name of the litter.
+ * @returns The word typed in the dialog, or the name of the litter.
  */
 function buildShareText(): string {
   const trimmedMessage: string = message.value.trim()

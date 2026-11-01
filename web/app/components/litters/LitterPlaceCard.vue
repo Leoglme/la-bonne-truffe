@@ -30,9 +30,9 @@
       aria-haspopup="dialog"
       class="size-[52px] min-h-[52px] shrink-0 justify-center p-0"
       :ui="{ leadingIcon: 'size-[22px]' }"
-      @click="isMapDrawerOpen = true"
+      @click="isMapDialogOpen = true"
     />
-    <UiMapAppDrawer v-model:open="isMapDrawerOpen" :destination="mapDestination" />
+    <UiMapAppDialog v-model:open="isMapDialogOpen" :destination="mapDestination" />
   </div>
 </template>
 
@@ -52,7 +52,7 @@ const props: LitterPlaceCardProps = defineProps({
 
 const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
 
-const isMapDrawerOpen: Ref<boolean> = ref(false)
+const isMapDialogOpen: Ref<boolean> = ref(false)
 
 const mapDestination: ComputedRef<MapDestination | null> = computed((): MapDestination | null =>
   LitterDetailPresentation.buildMapDestination(props.litter),

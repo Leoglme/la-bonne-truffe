@@ -6,7 +6,7 @@ import { computed, ref } from 'vue'
 import { FOLLOW_UP_SECTIONS } from '~/constants/followUpOptions'
 import { LittersService } from '~/services/littersService'
 
-/** Pinia store of the follow-up screen, and of the follow-up drawer. */
+/** Pinia store of the follow-up screen, and of the follow-up dialog. */
 export const useFollowUpsStore = defineStore('followUps', () => {
   const cards: Ref<FollowUpCard[]> = ref([])
   const openedLitter: Ref<LitterDetail | null> = ref(null)
@@ -36,7 +36,7 @@ export const useFollowUpsStore = defineStore('followUps', () => {
   }
 
   /**
-   * Open the drawer of a followed litter.
+   * Open the dialog of a followed litter.
    *
    * @param litterId - The litter.
    */
@@ -45,7 +45,7 @@ export const useFollowUpsStore = defineStore('followUps', () => {
   }
 
   /**
-   * Close the drawer.
+   * Close the dialog.
    */
   function close(): void {
     openedLitter.value = null
@@ -99,7 +99,7 @@ export const useFollowUpsStore = defineStore('followUps', () => {
   }
 
   /**
-   * Stop following the opened litter: its status, reminder and notes go, and the drawer closes.
+   * Stop following the opened litter: its status, reminder and notes go, and the dialog closes.
    */
   async function stopFollowing(): Promise<void> {
     if (openedLitter.value === null) {
@@ -128,7 +128,7 @@ export const useFollowUpsStore = defineStore('followUps', () => {
   }
 
   /**
-   * Write the new detail of the opened litter into the drawer, then into the litters store.
+   * Write the new detail of the opened litter into the dialog, then into the litters store.
    *
    * @param detail - The detail returned by the API.
    */

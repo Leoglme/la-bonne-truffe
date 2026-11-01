@@ -41,7 +41,7 @@
           aria-label="Partager cette portée"
           aria-haspopup="dialog"
           class="absolute top-4 right-[76px] inline-flex size-11 items-center justify-center rounded-full border-0 bg-card text-ink shadow-floating-over-photo md:top-9 md:right-24 md:size-[52px] md:shadow-floating"
-          @click="isShareDrawerOpen = true"
+          @click="isShareDialogOpen = true"
         >
           <UIcon name="i-lucide-share" class="size-5 md:size-[22px]" />
         </button>
@@ -163,7 +163,7 @@
           aria-label="Partager cette portée"
           aria-haspopup="dialog"
           class="inline-flex size-[52px] items-center justify-center rounded-full border-0 bg-card text-ink shadow-floating"
-          @click="isShareDrawerOpen = true"
+          @click="isShareDialogOpen = true"
         >
           <UIcon name="i-lucide-share" class="size-[22px]" />
         </button>
@@ -248,7 +248,7 @@
       :photos="viewerPhotos"
       :start-index="photoViewerStartIndex"
     />
-    <LitterShareDrawer v-if="litter" v-model:open="isShareDrawerOpen" :litter="litter" />
+    <LitterShareDialog v-if="litter" v-model:open="isShareDialogOpen" :litter="litter" />
   </div>
 </template>
 
@@ -284,7 +284,7 @@ const backLabel: Ref<string> = ref(BACK_FALLBACK_LABEL)
 const loadError: Ref<string | null> = ref(null)
 const browsableLitterIds: Ref<number[]> = ref([])
 const isPhotoViewerOpen: Ref<boolean> = ref(false)
-const isShareDrawerOpen: Ref<boolean> = ref(false)
+const isShareDialogOpen: Ref<boolean> = ref(false)
 const photoViewerStartIndex: Ref<number> = ref(0)
 
 const litterId: ComputedRef<number> = computed((): number => Number(route.params['id']))

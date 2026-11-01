@@ -1,9 +1,9 @@
 <template>
-  <UDrawer
+  <UiDialog
     :open="props.open"
     title="Voir sur la carte"
     :description="props.destination.placeName"
-    :ui="{
+    :drawer-ui="{
       content: 'rounded-t-3xl bg-card md:mx-auto md:w-full md:max-w-md',
       container: 'gap-4 px-5 pt-2 pb-8 md:px-8',
       title: 'font-display text-2xl font-semibold text-ink',
@@ -39,22 +39,22 @@
         </UButton>
       </div>
     </template>
-  </UDrawer>
+  </UiDialog>
 </template>
 
 <script lang="ts" setup>
 import type { ComputedRef, PropType } from 'vue'
 import type { MapAppLink, MapDestination } from '~/types/Location'
-import type { UiMapAppDrawerEmits, UiMapAppDrawerProps } from '~/types/UiMapAppDrawer'
+import type { UiMapAppDialogEmits, UiMapAppDialogProps } from '~/types/UiMapAppDialog'
 import { computed } from 'vue'
 import { MapLinks } from '~/utils/mapLinks'
 
-const props: UiMapAppDrawerProps = defineProps({
+const props: UiMapAppDialogProps = defineProps({
   open: { type: Boolean, required: true },
   destination: { type: Object as PropType<MapDestination>, required: true },
 })
 
-const emit: UiMapAppDrawerEmits = defineEmits<{
+const emit: UiMapAppDialogEmits = defineEmits<{
   (event: 'update:open', isOpen: boolean): void
 }>()
 

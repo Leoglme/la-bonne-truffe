@@ -1,10 +1,10 @@
 import type { LitterDetail } from '~/types/api'
 
-export type LitterShareDrawerProps = {
+export type LitterShareDialogProps = {
   open: boolean
   litter: LitterDetail
 }
 
-export type LitterShareDrawerEmits = {
+export type LitterShareDialogEmits = {
   (event: 'update:open', isOpen: boolean): void
 }
