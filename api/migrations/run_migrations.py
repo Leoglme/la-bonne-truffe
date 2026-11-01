@@ -49,6 +49,7 @@ MIGRATION_MODULES: list[tuple[str, str]] = [
     ("add_breeder_scc_site_columns", "migrations.add_breeder_scc_site_columns"),
     ("add_breeder_social_link_columns", "migrations.add_breeder_social_link_columns"),
     ("reset_scc_site_readings_for_links", "migrations.reset_scc_site_readings_for_links"),
+    ("follow_breeders_of_followed_litters", "migrations.follow_breeders_of_followed_litters"),
 ]
 
 _NON_MIGRATION_MODULES: set[str] = {"__init__", "run_migrations"}

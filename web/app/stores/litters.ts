@@ -166,6 +166,12 @@ export const useLittersStore = defineStore('litters', () => {
     }
     const detail: LitterDetail = await LittersService.setFollowUp(litter.id, { status: 'to_contact' })
     applyDetail(detail)
+    const breederId: number | null = detail.breeder?.id ?? null
+    if (breederId !== null) {
+      useBreedersStore()
+        .reloadBreeder(breederId)
+        .catch((): void => undefined)
+    }
     return detail
   }
 

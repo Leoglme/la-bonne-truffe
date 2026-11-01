@@ -114,7 +114,7 @@ Un chien connu d'une source, parent, reproducteur ou chiot.
 `sire_dog_id` et `dam_dog_id` (identifiants de lignes `dogs`, nullables, sans contrainte en base : les deux tables se référencent), `expected_colors` (JSON : `[{color, confidence, reason}]` déduites des parents), `puppies_detail_fetched_at` (dernière lecture des chiots un par un), `puppies_detail_next_try_at` (prochaine tentative tant que les chiots ne sont pas inscrits). Les chiots inscrits sont les lignes `dogs` de `role = puppy` liées au groupe.
 
 ### `breeder_follows` et `breeder_follow_notes` (nouvelles)
-`breeder_follows` : `id`, `user_id`, `breeder_id` (unique par utilisateur), `status` (`to_contact` | `contacted` | `waiting` | `deposit`), `notify_new_mating`, `notify_birth`, `notify_new_photos`, `notify_ignored_colors` (booléens, vrai, vrai, vrai, faux par défaut), `next_reminder_at`, `reminder_sent_at`, `last_contact_at`, `created_at`, `updated_at`.
+`breeder_follows` : `id`, `user_id`, `breeder_id` (unique par utilisateur), `status` (`to_contact` | `contacted` | `waiting` | `deposit`), `notify_new_mating`, `notify_birth`, `notify_new_photos`, `notify_ignored_colors` (booléens, vrai, vrai, vrai, faux par défaut), `next_reminder_at`, `reminder_sent_at`, `last_contact_at`, `created_at`, `updated_at`. Une portée qui entre dans `follow_ups` crée aussi le suivi de son élevage, avec ces valeurs par défaut, quand il n'existe pas (`04`).
 `breeder_follow_notes` : `id`, `follow_id`, `created_at`, `text`.
 
 ### `breeder_follow_events` (nouvelle)

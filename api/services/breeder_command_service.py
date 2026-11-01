@@ -127,6 +127,19 @@ class BreederCommandService:
         return follow
 
     @classmethod
+    def follow_if_not_followed(cls, db: Session, user_id: int, breeder_id: int) -> None:
+        """
+        Follow a breeder with the alerts « Suivre cet élevage » starts with; a followed breeder keeps its follow.
+
+        Args:
+            db: Database session; not committed.
+            user_id: The user.
+            breeder_id: The breeder.
+        """
+        if cls._find_follow(db, user_id, breeder_id) is None:
+            db.add(BreederFollow(user_id=user_id, breeder_id=breeder_id))
+
+    @classmethod
     def remove_follow(cls, db: Session, user_id: int, breeder_id: int) -> None:
         """
         Stop following a breeder: its settings, status, reminder, notes and handled events are deleted.

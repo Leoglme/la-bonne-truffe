@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 
 from core.clock import naive_utc_now, naive_utc_of
 from models.follow_up import FollowUp, FollowUpNote
+from models.litter_group import LitterGroup
 from models.user import User
 from schemas.litter import ColorConfirmation, FollowUpNoteCreate, FollowUpUpdate, SexConfirmation
+from services.breeder_command_service import BreederCommandService
 from services.litter_query_service import LitterQueryService
 from services.matching.match_refresh import match_refresh_service
 
@@ -63,11 +65,10 @@ class LitterCommandService:
         Returns:
             The follow-up.
         """
-        LitterQueryService.get_group(db, litter_group_id)
+        group = LitterQueryService.get_group(db, litter_group_id)
         follow_up = cls._find_follow_up(db, user_id, litter_group_id)
         if follow_up is None:
-            follow_up = FollowUp(user_id=user_id, litter_group_id=litter_group_id)
-            db.add(follow_up)
+            follow_up = cls._start_follow_up(db, user_id, group)
         next_reminder_at = naive_utc_of(payload.next_reminder_at)
         if next_reminder_at != follow_up.next_reminder_at:
             follow_up.reminder_sent_at = None
@@ -109,11 +110,10 @@ class LitterCommandService:
         Returns:
             The note.
         """
-        LitterQueryService.get_group(db, litter_group_id)
+        group = LitterQueryService.get_group(db, litter_group_id)
         follow_up = cls._find_follow_up(db, user_id, litter_group_id)
         if follow_up is None:
-            follow_up = FollowUp(user_id=user_id, litter_group_id=litter_group_id)
-            db.add(follow_up)
+            follow_up = cls._start_follow_up(db, user_id, group)
             db.flush()
         note = FollowUpNote(follow_up_id=follow_up.id, text=payload.text.strip(), created_at=naive_utc_now())
         db.add(note)
@@ -157,6 +157,25 @@ class LitterCommandService:
         user.litters_visited_at = naive_utc_now()
         db.commit()
         return previous_visit_at
+
+    @staticmethod
+    def _start_follow_up(db: Session, user_id: int, group: LitterGroup) -> FollowUp:
+        """
+        Put a litter in the follow-up, and follow its breeder when it is known and not followed yet (docs/04).
+
+        Args:
+            db: Database session; not committed.
+            user_id: The user.
+            group: The litter.
+
+        Returns:
+            The follow-up, added to the session.
+        """
+        follow_up = FollowUp(user_id=user_id, litter_group_id=group.id)
+        db.add(follow_up)
+        if group.breeder_id is not None:
+            BreederCommandService.follow_if_not_followed(db, user_id, group.breeder_id)
+        return follow_up
 
     @staticmethod
     def _find_follow_up(db: Session, user_id: int, litter_group_id: int) -> FollowUp | None:

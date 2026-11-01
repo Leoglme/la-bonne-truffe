@@ -227,6 +227,15 @@ export const useBreedersStore = defineStore('breeders', () => {
   }
 
   /**
+   * Read a breeder again from the API, then write it wherever it is shown.
+   *
+   * @param breederId - The breeder.
+   */
+  async function reloadBreeder(breederId: number): Promise<void> {
+    applyDetail(await BreedersService.get(breederId))
+  }
+
+  /**
    * Write a new detail into the list, the panel and the suggestions, wherever the breeder is shown.
    *
    * @param detail - The detail returned by the API.
@@ -274,6 +283,7 @@ export const useBreedersStore = defineStore('breeders', () => {
     removeNote,
     createManual,
     update,
+    reloadBreeder,
     applyDetail,
   }
 })
