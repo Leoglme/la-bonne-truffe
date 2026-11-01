@@ -7,3 +7,8 @@ export type MainNavigationEntry = {
   activeIcon: CustomIconName
   isInTabBar: boolean
 }
+
+export type PushedScreenBackLabel = {
+  pathPattern: RegExp
+  label: string
+}

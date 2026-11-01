@@ -1,7 +1,7 @@
 <template>
-  <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+  <div class="flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-none xl:overflow-visible">
     <div
-      class="flex min-h-0 flex-1 touch-pan-y touch-pinch-zoom flex-col lg:w-full lg:max-w-5xl"
+      class="flex min-h-0 flex-1 touch-pan-y touch-pinch-zoom flex-col lg:w-full lg:max-w-5xl xl:hidden"
       :class="tileClass"
       :style="swipeStyle"
       @touchstart="onTouchStart"
@@ -45,29 +45,7 @@
         >
           <UIcon name="i-lucide-share" class="size-5 md:size-[22px]" />
         </button>
-        <button
-          v-if="litter"
-          type="button"
-          :aria-label="litter.follow_up ? 'Suivie, gérer le suivi' : 'Ajouter au suivi'"
-          :aria-haspopup="litter.follow_up ? 'dialog' : undefined"
-          :aria-busy="isFollowUpActionRunning"
-          :disabled="isFollowUpActionRunning"
-          class="absolute top-4 right-5 inline-flex size-11 items-center justify-center rounded-full bg-card text-coral shadow-floating-over-photo md:top-9 md:right-8 md:size-[52px] md:shadow-floating"
-          @click="followOrOpenFollowUp"
-        >
-          <UIcon
-            v-if="isFollowUpActionRunning"
-            name="i-lucide-loader-circle"
-            class="size-5 animate-spin md:size-[22px]"
-          />
-          <UiCustomIcon
-            v-else
-            :name="litter.follow_up ? 'heart-filled' : 'heart'"
-            :size-in-pixels="22"
-            :stroke-width="2.2"
-            class="size-5 md:size-[22px]"
-          />
-        </button>
+        <LitterFollowHeartButton v-if="litter" :litter="litter" class="absolute top-4 right-5 md:top-9 md:right-8" />
         <span
           v-if="photoBadge"
           class="absolute top-11 left-1/2 hidden -translate-x-1/2 rounded-full bg-card px-4 py-1.5 text-sm leading-normal font-extrabold tracking-[0.02em] whitespace-nowrap text-coral-text md:inline"
@@ -168,12 +146,101 @@
       v-if="!loadError && !litter"
       aria-busy="true"
       aria-label="Chargement de la portée"
-      class="relative -mt-7 flex min-h-0 flex-1 flex-col gap-4 rounded-t-[28px] bg-cream px-5 pt-[22px] md:mt-0 md:gap-6 md:rounded-t-[36px] md:px-8 md:pt-8"
+      class="relative -mt-7 flex min-h-0 flex-1 flex-col gap-4 rounded-t-[28px] bg-cream px-5 pt-[22px] md:mt-0 md:gap-6 md:rounded-t-[36px] md:px-8 md:pt-8 xl:hidden"
     >
       <USkeleton class="h-8 w-2/3 rounded-full" />
       <USkeleton class="h-20 w-full rounded-2xl" />
       <USkeleton class="h-20 w-full rounded-2xl" />
     </div>
+
+    <UiWideDetailLayout class="hidden xl:flex" aside-label="L’essentiel de la portée">
+      <template #back>
+        <UiBackButton :label="backLabel" @click="goBack" />
+      </template>
+      <template v-if="litter" #actions>
+        <button
+          type="button"
+          aria-label="Partager cette portée"
+          aria-haspopup="dialog"
+          class="inline-flex size-[52px] items-center justify-center rounded-full border-0 bg-card text-ink shadow-floating"
+          @click="isShareDrawerOpen = true"
+        >
+          <UIcon name="i-lucide-share" class="size-[22px]" />
+        </button>
+        <LitterFollowHeartButton :litter="litter" />
+      </template>
+
+      <p v-if="loadError" role="alert" class="m-0 text-[15px] font-bold text-coral-text">{{ loadError }}</p>
+      <template v-else-if="litter">
+        <LitterGoneBanner :litter="litter" />
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex min-w-0 flex-col gap-1">
+            <h1 class="m-0 font-display text-4xl leading-[1.1] font-semibold">{{ litter.name }}</h1>
+            <span class="inline-flex items-center gap-1.5 text-[17px] text-ink-muted">
+              <UiCustomIcon name="pin" :size-in-pixels="18" :stroke-width="2" />
+              {{ LitterDetailPresentation.buildTownAndDepartment(litter, locationStore.position) }}
+            </span>
+          </div>
+          <LitterScoreBubble :litter="litter" />
+        </div>
+        <UiPhotoMosaic
+          v-if="litter.photos.length > 0"
+          :photos="litter.photos"
+          :badge-label="photoBadge"
+          first-photo-position="center 30%"
+          @open="openPhotoViewer"
+        />
+        <LitterTileFrame v-else :litter="litter" class="h-80 overflow-hidden rounded-card">
+          <LitterVisual :litter="litter" :illustration-size-in-pixels="200" />
+          <span
+            v-if="photoBadge"
+            class="absolute top-4 left-4 rounded-full bg-card px-3.5 py-[5px] text-[13px] leading-normal font-extrabold tracking-[0.02em] text-coral-text"
+          >
+            {{ photoBadge }}
+          </span>
+        </LitterTileFrame>
+        <LitterCallConfirmation :litter="litter" is-in-wide-layout />
+        <LitterReasonsCard :litter="litter" />
+        <LitterParentsList :litter="litter" is-in-wide-layout />
+        <LitterBreederCard :litter="litter" />
+      </template>
+      <template v-else>
+        <USkeleton class="h-10 w-2/3 rounded-full" />
+        <USkeleton class="h-80 w-full rounded-card" />
+        <USkeleton class="h-40 w-full rounded-card-compact" />
+      </template>
+
+      <template #aside>
+        <template v-if="litter">
+          <div class="flex flex-col gap-[18px] rounded-card bg-card p-6 shadow-card">
+            <LitterKeyFacts :litter="litter" is-in-side-panel />
+            <LitterInfoChips :litter="litter" is-in-side-panel />
+            <LitterPlaceCard :litter="litter" is-in-side-panel />
+            <template v-if="primaryAction">
+              <div class="h-px bg-line" />
+              <UButton
+                :to="primaryAction.href"
+                :target="primaryAction.isCall ? undefined : '_blank'"
+                size="xl"
+                class="min-h-[58px] w-full justify-center gap-2.5 px-4 text-[17px]"
+              >
+                <template #leading>
+                  <UiCustomIcon v-if="primaryAction.isCall" name="phone" :size-in-pixels="20" :stroke-width="2.2" />
+                  <UIcon v-else name="i-lucide-external-link" class="size-5" />
+                </template>
+                {{ primaryAction.label }}
+              </UButton>
+              <UiPhoneNumberCopy v-if="breederPhoneLabel" :phone-number-label="breederPhoneLabel" />
+            </template>
+          </div>
+          <section v-if="hasListingLines" class="flex flex-col gap-2.5">
+            <h2 class="m-0 font-display text-xl font-semibold">Vu sur</h2>
+            <LitterListingsList :litter="litter" />
+          </section>
+        </template>
+        <USkeleton v-else-if="!loadError" class="h-[420px] w-full rounded-card" />
+      </template>
+    </UiWideDetailLayout>
 
     <UiPhotoViewer
       v-if="litter"
@@ -196,12 +263,12 @@ import type { UiPhotoViewerPhoto } from '~/types/UiPhotoViewer'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { LitterDetailPresentation } from '~/utils/litterDetailPresentation'
 import { LitterPresentation } from '~/utils/litterPresentation'
+import { MainNavigation } from '~/utils/mainNavigation'
 
 definePageMeta({ isPushedScreen: true, key: 'litter-detail' })
 
 const route: RouteLocationNormalizedLoaded = useRoute()
 const router: Router = useRouter()
-const toast: ReturnType<typeof useToast> = useToast()
 const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
 const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
 const { swipeStyle, onTouchStart, onTouchMove, onTouchEnd, onTouchCancel }: UseHorizontalSwipeReturn =
@@ -210,10 +277,11 @@ const { readPreviousPath, goBack }: UseBackNavigationReturn = useBackNavigation(
 
 const GALLERY_VISIBLE_PHOTO_COUNT: number = 3
 const FOLLOW_UPS_PATH: string = '/suivi'
+const BACK_FALLBACK_LABEL: string = 'Portées'
 
 const contentScroller: Ref<HTMLElement | null> = ref(null)
+const backLabel: Ref<string> = ref(BACK_FALLBACK_LABEL)
 const loadError: Ref<string | null> = ref(null)
-const isFollowUpActionRunning: Ref<boolean> = ref(false)
 const browsableLitterIds: Ref<number[]> = ref([])
 const isPhotoViewerOpen: Ref<boolean> = ref(false)
 const isShareDrawerOpen: Ref<boolean> = ref(false)
@@ -231,6 +299,13 @@ const photoBadge: ComputedRef<string | null> = computed((): string | null =>
 )
 const primaryAction: ComputedRef<PrimaryAction | null> = computed((): PrimaryAction | null =>
   litter.value ? LitterDetailPresentation.resolvePrimaryAction(litter.value) : null,
+)
+const breederPhoneLabel: ComputedRef<string | null> = computed((): string | null => {
+  const phoneE164: string | null = litter.value?.breeder?.phone_e164 ?? null
+  return phoneE164 === null ? null : LitterDetailPresentation.buildBreederPhoneLabel(phoneE164)
+})
+const hasListingLines: ComputedRef<boolean> = computed(
+  (): boolean => litter.value !== null && LitterDetailPresentation.buildListingLines(litter.value).length > 0,
 )
 const otherPhotos: ComputedRef<string[]> = computed((): string[] => (litter.value?.photos ?? []).slice(1))
 const galleryPhotos: ComputedRef<string[]> = computed((): string[] =>
@@ -299,23 +374,6 @@ async function showNeighbor(direction: HorizontalSwipeDirection): Promise<void> 
 }
 
 /**
- * Follow the litter, or open its follow-up drawer once it is followed.
- */
-async function followOrOpenFollowUp(): Promise<void> {
-  if (litter.value === null) {
-    return
-  }
-  isFollowUpActionRunning.value = true
-  try {
-    await littersStore.followOrOpenFollowUp(litter.value)
-  } catch (error: unknown) {
-    toast.add({ title: error instanceof Error ? error.message : 'Suivi impossible', color: 'error' })
-  } finally {
-    isFollowUpActionRunning.value = false
-  }
-}
-
-/**
  * Open the full-screen photos on one of them.
  *
  * @param photoIndex - The photo to start from.
@@ -344,6 +402,7 @@ watch(litterId, async (id: number): Promise<void> => {
 })
 
 onMounted(async (): Promise<void> => {
+  backLabel.value = MainNavigation.buildBackLabel(readPreviousPath(), BACK_FALLBACK_LABEL)
   await loadLitter(litterId.value)
   browsableLitterIds.value = await littersStore.listBrowsableLitterIds(resolveBrowsingOrigin(), litterId.value)
 })

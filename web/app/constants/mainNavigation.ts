@@ -1,7 +1,16 @@
-import type { MainNavigationEntry } from '~/types/MainNavigation'
+import type { MainNavigationEntry, PushedScreenBackLabel } from '~/types/MainNavigation'
 
-/** From this width, a card opens in the side panel instead of its own screen. */
+/** From this width, a card opens in the side panel, a detail spreads over two columns, a choice opens in a window. */
 export const SIDE_PANEL_MEDIA_QUERY: string = '(min-width: 1280px)'
+
+/** Checked before the entries of the navigation, whose paths these screens start with. */
+export const PUSHED_SCREEN_BACK_LABELS: PushedScreenBackLabel[] = [
+  { pathPattern: /^\/portees\/\d+/, label: 'La portée' },
+  { pathPattern: /^\/eleveurs\/recherche/, label: 'Recherche' },
+  { pathPattern: /^\/eleveurs\/\d+/, label: 'L’élevage' },
+  { pathPattern: /^\/notifications/, label: 'Notifications' },
+  { pathPattern: /^\/carte/, label: 'Carte' },
+]
 
 export const MAIN_NAVIGATION_ENTRIES: MainNavigationEntry[] = [
   { label: 'Portées', path: '/', icon: 'paw', activeIcon: 'paw-filled', isInTabBar: true },

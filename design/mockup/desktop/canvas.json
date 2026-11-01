@@ -1,0 +1,21 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-11-01T14:05:00Z" },
+  "title": "La Bonne Truffe · Desktop",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 1560, "title": "Ordinateur · La fiche d'une portée sans photo (ta capture 1)", "expand": "fill", "radius": 12 },
+    "PorteePhotos.dc.html": { "x": 1520, "y": 0, "w": 1440, "h": 900, "title": "Ordinateur · La même fiche, portée avec photos (haut de page)", "expand": "fill", "radius": 12 },
+    "Eleveur.dc.html": { "x": 0, "y": 1980, "w": 1440, "h": 1520, "title": "Ordinateur · La fiche d'un éleveur (ta capture 3)", "expand": "fill", "radius": 12 },
+    "Tri.dc.html": { "x": 0, "y": 3920, "w": 1440, "h": 900, "title": "Ordinateur · Trier les portées : une fenêtre au centre (ta capture 2)", "expand": "fill", "radius": 12 },
+    "TriMenu.dc.html": { "x": 1520, "y": 3920, "w": 1440, "h": 900, "title": "Écartée · Trier les portées : un menu sous le bouton", "expand": "fill", "radius": 12 }
+  },
+  "order": ["Main.dc.html", "PorteePhotos.dc.html", "Eleveur.dc.html", "Tri.dc.html", "TriMenu.dc.html"],
+  "notes": {
+    "t1": { "x": 0, "y": -300, "text": "Validé le 01/11/2026 · sur ordinateur (dès 1 280 px) · la fiche d'une portée en pleine page", "kind": "title1", "maxW": 2960 },
+    "t2": { "x": 0, "y": 1680, "text": "La fiche d'un éleveur · même gabarit", "kind": "title1", "maxW": 1440 },
+    "t3": { "x": 0, "y": 3620, "text": "Trier les portées · la fenêtre au centre, retenue · le menu, écarté", "kind": "title1", "maxW": 2960 }
+  },
+  "designSystems": []
+}

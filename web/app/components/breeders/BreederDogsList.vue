@@ -1,7 +1,12 @@
 <template>
   <section v-if="props.breeder.reproducers.length > 0" class="flex flex-col gap-3">
     <h2 class="m-0 font-display text-[19px] font-semibold md:text-xl">Ses reproducteurs</h2>
-    <ul class="m-0 flex list-none flex-col gap-2.5 p-0">
+    <ul
+      class="m-0 list-none p-0"
+      :class="
+        props.isInWideLayout ? 'grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3' : 'flex flex-col gap-2.5'
+      "
+    >
       <li
         v-for="dog in props.breeder.reproducers"
         :key="dog.id"
@@ -54,5 +59,6 @@ import { BreederPresentation } from '~/utils/breederPresentation'
 
 const props: BreederDogsListProps = defineProps({
   breeder: { type: Object as PropType<BreederDetail>, required: true },
+  isInWideLayout: { type: Boolean, default: false },
 })
 </script>

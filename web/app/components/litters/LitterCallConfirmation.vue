@@ -44,13 +44,31 @@
         </div>
       </template>
       <template v-else>
-        <ul class="m-0 flex list-none flex-col p-0" aria-label="Couleurs possibles">
-          <li v-for="row in offeredColorRows" :key="row.color" class="border-t border-line first:border-t-0">
+        <ul
+          class="m-0 list-none p-0"
+          :class="
+            props.isInWideLayout ? 'grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-2.5' : 'flex flex-col'
+          "
+          aria-label="Couleurs possibles"
+        >
+          <li
+            v-for="row in offeredColorRows"
+            :key="row.color"
+            :class="props.isInWideLayout ? '' : 'border-t border-line first:border-t-0'"
+          >
             <button
               type="button"
               :aria-pressed="isColorConfirmed(row.color)"
               :disabled="isSaving"
-              class="flex min-h-14 w-full items-center gap-3 border-0 bg-transparent px-0 text-left text-[15px] font-bold text-ink disabled:opacity-60 md:text-[17px]"
+              class="flex min-h-14 w-full items-center gap-3 text-left text-[15px] font-bold text-ink disabled:opacity-60 md:text-[17px]"
+              :class="
+                props.isInWideLayout
+                  ? [
+                      'rounded-tile-compact border-2 bg-card px-3.5',
+                      isColorConfirmed(row.color) ? 'border-coral' : 'border-line',
+                    ]
+                  : 'border-0 bg-transparent px-0'
+              "
               @click="toggleColor(row.color)"
             >
               <CockerIllustration :coat="row.coat" :size-in-pixels="40" />
@@ -169,6 +187,7 @@ import { LitterPresentation } from '~/utils/litterPresentation'
 const props: LitterCallConfirmationProps = defineProps({
   litter: { type: Object as PropType<LitterDetail>, required: true },
   isInSidePanel: { type: Boolean, default: false },
+  isInWideLayout: { type: Boolean, default: false },
 })
 
 const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()

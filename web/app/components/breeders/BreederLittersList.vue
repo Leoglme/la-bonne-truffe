@@ -7,7 +7,9 @@
       Aucune portée connue pour l’instant. Dès qu’il en déclare une, elle arrive ici.
     </p>
     <template v-else>
-      <LitterRowCard v-for="litter in shownLitters" :key="litter.id" :litter="litter" />
+      <div :class="props.isInWideLayout ? 'grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-3' : 'contents'">
+        <LitterRowCard v-for="litter in shownLitters" :key="litter.id" :litter="litter" />
+      </div>
       <button
         v-if="hiddenLittersCount > 0"
         type="button"
@@ -24,14 +26,15 @@
 <script lang="ts" setup>
 import type { ComputedRef, PropType, Ref } from 'vue'
 import type { BreederDetail, LitterCard } from '~/types/api'
-import type { BreederDetailSectionProps } from '~/types/BreederDetailSection'
+import type { BreederLittersListProps } from '~/types/BreederLittersList'
 import { computed, ref, watch } from 'vue'
 import { BREEDER_LITTERS_SHOWN_COUNT } from '~/constants/breederOptions'
 import { FrenchText } from '~/utils/frenchText'
 
-const props: BreederDetailSectionProps = defineProps({
+const props: BreederLittersListProps = defineProps({
   breeder: { type: Object as PropType<BreederDetail>, required: true },
   isInSidePanel: { type: Boolean, default: false },
+  isInWideLayout: { type: Boolean, default: false },
 })
 
 const areAllLittersShown: Ref<boolean> = ref(false)

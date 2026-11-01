@@ -3,6 +3,7 @@ import type { LitterDetail } from '~/types/api'
 export type LitterParentsListProps = {
   litter: LitterDetail
   isTitleShownOnPhone: boolean
+  isInWideLayout: boolean
 }
 
 export type LitterParentRole = 'sire' | 'dam'

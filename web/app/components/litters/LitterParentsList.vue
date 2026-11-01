@@ -6,17 +6,19 @@
     >
       Les parents
     </h2>
-    <div
-      v-for="parent in parents"
-      :key="parent.role"
-      class="flex flex-col gap-0.5 rounded-2xl bg-card px-3.5 py-3 shadow-card md:rounded-[20px] md:px-[18px] md:py-3.5"
-    >
-      <span class="text-[11px] font-extrabold text-ink-label md:text-[13px]">{{ parent.roleLabel }}</span>
-      <span class="text-[15px] font-bold md:text-[17px]">{{ parent.name }}</span>
-      <span v-if="parent.rating !== null" class="mt-1 flex items-center gap-2.5">
-        <UiLevelGauge :level="parent.rating" :maximum-level="MAX_PARENT_RATING" />
-        <span class="text-[13px] font-extrabold text-ink-secondary md:text-sm">{{ parent.ratingLabel }}</span>
-      </span>
+    <div :class="props.isInWideLayout ? 'grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3' : 'contents'">
+      <div
+        v-for="parent in parents"
+        :key="parent.role"
+        class="flex flex-col gap-0.5 rounded-2xl bg-card px-3.5 py-3 shadow-card md:rounded-[20px] md:px-[18px] md:py-3.5"
+      >
+        <span class="text-[11px] font-extrabold text-ink-label md:text-[13px]">{{ parent.roleLabel }}</span>
+        <span class="text-[15px] font-bold md:text-[17px]">{{ parent.name }}</span>
+        <span v-if="parent.rating !== null" class="mt-1 flex items-center gap-2.5">
+          <UiLevelGauge :level="parent.rating" :maximum-level="MAX_PARENT_RATING" />
+          <span class="text-[13px] font-extrabold text-ink-secondary md:text-sm">{{ parent.ratingLabel }}</span>
+        </span>
+      </div>
     </div>
     <p v-if="hasRatedParent" class="m-0 text-[13px] text-ink-muted md:text-sm">{{ PARENT_RATING_SCALE_NOTE }}</p>
   </div>
@@ -33,6 +35,7 @@ import { LitterDetailPresentation } from '~/utils/litterDetailPresentation'
 const props: LitterParentsListProps = defineProps({
   litter: { type: Object as PropType<LitterDetail>, required: true },
   isTitleShownOnPhone: { type: Boolean, default: false },
+  isInWideLayout: { type: Boolean, default: false },
 })
 
 const parents: ComputedRef<LitterParentLine[]> = computed((): LitterParentLine[] => {

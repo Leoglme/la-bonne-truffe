@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Trier les portées, fenêtre au centre</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap">
+<style>
+body{margin:0;font-family:Nunito,system-ui,sans-serif;color:#2B2420;background:#FBF6EE}
+a{color:#C94A28}a:hover{color:#A33A1C}
+button{font:inherit;cursor:pointer;color:inherit}
+button:focus-visible,a:focus-visible{outline:3px solid #E2552F;outline-offset:3px}
+</style>
+</helmet>
+<div style="position: relative; display: flex; flex-wrap: wrap; min-height: 900px; background: #FBF6EE; font-family: Nunito, system-ui, sans-serif; color: #2B2420; font-size: 15px; line-height: 1.5">
+
+  <nav aria-label="Navigation principale" style="flex: 1 1 236px; box-sizing: border-box; background: #FFFFFF; border-right: 1px solid #F0E6D8">
+    <div style="min-height: 900px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: 28px 18px">
+      <a href="Tri.dc.html" aria-label="La Bonne Truffe, accueil" style="display: inline-flex; align-items: center; gap: 10px; padding: 6px 10px 22px 10px; text-decoration: none; color: #2B2420">
+        <svg width="38" height="38" viewBox="0 0 100 100" aria-hidden="true" style="flex-shrink: 0"><rect x="0" y="0" width="100" height="100" rx="22.5" fill="#E2552F"></rect><path d="M50 28 C58 28 64 31 68 35 C77 36 82 42 82 50 C82 66 66 78 50 86 C34 78 18 66 18 50 C18 42 23 36 32 35 C36 31 42 28 50 28 Z" fill="#FFF3E6"></path><ellipse cx="39" cy="50" rx="6" ry="8.5" transform="rotate(-14 39 50)" fill="#E2552F"></ellipse><ellipse cx="61" cy="50" rx="6" ry="8.5" transform="rotate(14 61 50)" fill="#E2552F"></ellipse></svg>
+        <span style="font-family: Fredoka, sans-serif; font-weight: 600; font-size: 21px; line-height: 1.2">La Bonne<br>Truffe</span>
+      </a>
+      <a href="Tri.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border-radius: 14px; background: #FFE3D3; color: #C94A28; text-decoration: none; font-size: 16px; font-weight: 800">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="8.5" cy="5.5" r="2.4"></circle><circle cx="15.5" cy="5.5" r="2.4"></circle><circle cx="4.3" cy="11" r="2.3"></circle><circle cx="19.7" cy="11" r="2.3"></circle><path d="M12 11c-3.6 0-6.6 3.2-6.6 6.4A3.3 3.3 0 0 0 8.7 20.7c1.1 0 2.2-.7 3.3-.7s2.2.7 3.3.7a3.3 3.3 0 0 0 3.3-3.3C18.6 14.2 15.6 11 12 11z"></path></svg>
+        Portées
+      </a>
+      <a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border-radius: 14px; color: #5E4B3F; text-decoration: none; font-size: 16px; font-weight: 700">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+        Suivi
+      </a>
+      <a href="Eleveur.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border-radius: 14px; color: #5E4B3F; text-decoration: none; font-size: 16px; font-weight: 700">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+        Éleveurs
+      </a>
+      <a href="Tri.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border-radius: 14px; color: #5E4B3F; text-decoration: none; font-size: 16px; font-weight: 700">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line><circle cx="9" cy="7" r="2.2" fill="#FFFFFF"></circle><circle cx="15" cy="12" r="2.2" fill="#FFFFFF"></circle><circle cx="7" cy="17" r="2.2" fill="#FFFFFF"></circle></svg>
+        Critères
+      </a>
+      <a href="Tri.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border-radius: 14px; color: #5E4B3F; text-decoration: none; font-size: 16px; font-weight: 700">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1.2" fill="currentColor"></circle></svg>
+        Sources
+      </a>
+      <a href="Tri.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border-radius: 14px; color: #5E4B3F; text-decoration: none; font-size: 16px; font-weight: 700">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        Réglages
+      </a>
+      <div style="flex-grow: 1"></div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; background: #FBF6EE; font-size: 13px; color: #7A6657">
+        <span style="width: 9px; height: 9px; border-radius: 50%; background: #4A6B3B; flex-shrink: 0" aria-hidden="true"></span>
+        <span>Relevé il y a 1 min · 9 sources en ligne</span>
+      </div>
+    </div>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 36px 40px 40px 40px; display: flex; flex-direction: column; gap: 24px">
+    <header style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h1 style="margin: 0; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 36px; line-height: 1.1">Bonjour Léo</h1>
+        <p style="margin: 0; font-size: 17px; color: #7A6657">Six portées te correspondent.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px">
+        <div role="group" aria-label="Filtrer" style="display: flex; gap: 8px">
+          <button type="button" aria-pressed="true" style="min-height: 44px; padding: 0 18px; border: none; border-radius: 999px; font-size: 15px; font-weight: 800; background: #2B2420; color: #FBF6EE">Toutes</button>
+          <button type="button" aria-pressed="false" style="min-height: 44px; padding: 0 18px; border: none; border-radius: 999px; font-size: 15px; font-weight: 800; background: #FFFFFF; color: #5E4B3F; box-shadow: 0 2px 10px rgba(66,43,30,0.06)">Préférées</button>
+          <button type="button" aria-pressed="false" style="min-height: 44px; padding: 0 18px; border: none; border-radius: 999px; font-size: 15px; font-weight: 800; background: #FFFFFF; color: #5E4B3F; box-shadow: 0 2px 10px rgba(66,43,30,0.06)">À naître</button>
+        </div>
+        <button type="button" aria-haspopup="dialog" aria-expanded="true" style="display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 6px; border: none; background: none; font-size: 15px; font-weight: 700; color: #7A6657">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 16-4 4-4-4"></path><path d="M17 20V4"></path><path d="m3 8 4-4 4 4"></path><path d="M7 4v16"></path></svg>
+          Meilleur score
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <div style="display: flex; align-items: center; gap: 14px">
+      <span style="flex-grow: 1; height: 1px; background: #F0E6D8"></span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 2px 10px rgba(66,43,30,0.06); font-size: 14px; font-weight: 800; color: #7A6657">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"></path><path d="m22 10-7.5 7.5L13 16"></path></svg>
+        Tu es à jour
+      </span>
+      <span style="flex-grow: 1; height: 1px; background: #F0E6D8"></span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px">
+      <sc-for list="{{cards}}" as="card" hint-placeholder-count="6">
+        <a href="Main.dc.html" style="display: flex; flex-direction: column; gap: 10px; padding: 12px 12px 16px 12px; border-radius: 26px; background: #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06); text-decoration: none; color: #2B2420">
+          <span style="{{card.tileStyle}}">
+            <img src="{{card.photo}}" alt="" style="{{card.photoStyle}}">
+            <svg width="110" height="110" viewBox="0 0 160 160" aria-hidden="true" style="{{card.svgStyle}}"><path d="M38 62 C18 70 14 112 30 128 C44 142 58 126 56 100 Z" fill="{{card.ear}}"></path><path d="M122 62 C142 70 146 112 130 128 C116 142 102 126 104 100 Z" fill="{{card.ear}}"></path><circle cx="80" cy="78" r="44" fill="{{card.coat}}"></circle><path d="M60 42 C68 26 92 26 100 42 L80 52 Z" fill="{{card.ear}}"></path><ellipse cx="80" cy="97" rx="25" ry="18" fill="{{card.muzzle}}"></ellipse><circle cx="64" cy="74" r="5.5" fill="#2B2420"></circle><circle cx="96" cy="74" r="5.5" fill="#2B2420"></circle><circle cx="52" cy="90" r="6" fill="#F4A7A1" opacity="0.7"></circle><circle cx="108" cy="90" r="6" fill="#F4A7A1" opacity="0.7"></circle><path d="M69 88 Q80 81 91 88 Q91 99 80 105 Q69 99 69 88 Z" fill="#2B2420"></path></svg>
+            <span style="position: absolute; top: 12px; left: 12px; padding: 4px 11px; border-radius: 999px; background: #FFFFFF; font-size: 14px; font-weight: 800; color: #C94A28">{{card.score}} %</span>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 2px; padding: 0 6px">
+            <span style="font-family: Fredoka, sans-serif; font-weight: 600; font-size: 19px; line-height: 1.2">{{card.name}}</span>
+            <span style="font-size: 14px; color: #7A6657">{{card.place}}</span>
+          </span>
+          <span style="display: flex; align-items: center; gap: 8px; padding: 0 6px; font-size: 14px; font-weight: 700; color: #5E4B3F">
+            <span style="padding: 3px 9px; border-radius: 999px; background: #F3EBDF">{{card.colorLabel}}</span>
+            <span>{{card.sexLine}}</span>
+          </span>
+        </a>
+      </sc-for>
+    </div>
+  </main>
+
+  <div style="position: absolute; inset: 0; box-sizing: border-box; padding: 24px; background: rgba(43,36,32,0.42); display: flex; align-items: center; justify-content: center">
+    <div role="dialog" aria-modal="true" aria-labelledby="tri-titre" style="width: 480px; max-width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px; padding: 26px 28px 28px 28px; border-radius: 28px; background: #FBF6EE; box-shadow: 0 24px 64px rgba(43,36,32,0.28)">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h2 id="tri-titre" style="margin: 0; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 26px; line-height: 1.15">Trier les portées</h2>
+          <p style="margin: 0; font-size: 15px; color: #7A6657">L'ordre reste le même jusqu'à ce que tu le changes.</p>
+        </div>
+        <button type="button" aria-label="Fermer" style="width: 44px; height: 44px; flex-shrink: 0; border: none; border-radius: 50%; background: #FFFFFF; box-shadow: 0 2px 10px rgba(66,43,30,0.08); display: inline-flex; align-items: center; justify-content: center; color: #2B2420">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+        </button>
+      </div>
+      <div role="radiogroup" aria-label="Ordre des portées" style="display: flex; flex-direction: column; gap: 10px">
+        <sc-for list="{{sorts}}" as="sort" hint-placeholder-count="5">
+          <button type="button" role="radio" aria-checked="{{sort.checked}}" style="{{sort.rowStyle}}">
+            <span style="display: flex; flex-direction: column">
+              <span style="font-size: 15px; font-weight: 800">{{sort.label}}</span>
+              <span style="font-size: 13px; color: #7A6657">{{sort.description}}</span>
+            </span>
+            <span aria-hidden="true" style="{{sort.markStyle}}">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="{{sort.checkStyle}}"><path d="M20 6L9 17l-5-5"></path></svg>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const gold = { coat: '#E9B363', ear: '#CF8F3A', muzzle: '#F3CF95', tile: '#FBE7CC' };
+    const unknown = { coat: '#6B5A50', ear: '#4A3C34', muzzle: '#B59A86', tile: '#EAE2DA' };
+    const blackTan = { coat: '#3A2F2A', ear: '#2B2420', muzzle: '#C98A4B', tile: '#E9E3F2' };
+    const litters = [
+      { name: "Du Clos de l'Ecotay", place: 'Baguer-Morvan, Ille-et-Vilaine', score: 85, look: gold, colorLabel: 'Gold', sexLine: '4 ♂ · 1 ♀', photo: '/_blob/3b7a194748aa1318196f29a0b20b4a3d' },
+      { name: 'Des Bords de Vilaine', place: 'Redon, Ille-et-Vilaine', score: 85, look: gold, colorLabel: 'Gold', sexLine: '2 ♂ · 3 ♀', photo: '/_blob/d5ac3221e0e154076226596bc454971a' },
+      { name: 'Des Landes de Brocéliande', place: 'Ploërmel · naissance vers le 7 nov.', score: 81, look: gold, colorLabel: 'Gold attendu', sexLine: 'À naître', expected: true },
+      { name: 'De la Ferme Kergaval', place: 'Bédée, Ille-et-Vilaine', score: 65, look: unknown, colorLabel: 'À confirmer', sexLine: '6 ♂ · 3 ♀' },
+      { name: 'Du Mont de la Chenaie', place: 'St Denis D Orques, Sarthe', score: 57, look: unknown, colorLabel: 'À confirmer', sexLine: '1 ♂ · 2 ♀' },
+      { name: 'De Kerlann', place: 'Quimper, Finistère', score: 52, look: blackTan, colorLabel: 'Noir et feu', sexLine: '2 ♂ · 5 ♀' },
+    ];
+    const sortOptions = [
+      { label: 'Meilleur score', description: 'Ce qui te correspond le plus, en premier', checked: true },
+      { label: 'Les plus proches', description: "Depuis chez toi, à vol d'oiseau", checked: false },
+      { label: 'Les moins chères', description: 'Prix inconnu en dernier', checked: false },
+      { label: 'Départ le plus tôt', description: 'Le chiot que tu pourrais ramener en premier', checked: false },
+      { label: 'Départ le plus tard', description: "Si tu n'es pas pressé", checked: false },
+    ];
+    return {
+      cards: litters.map((litter) => ({
+        name: litter.name,
+        place: litter.place,
+        score: String(litter.score),
+        colorLabel: litter.colorLabel,
+        sexLine: litter.sexLine,
+        coat: litter.look.coat,
+        ear: litter.look.ear,
+        muzzle: litter.look.muzzle,
+        photo: litter.photo || '',
+        photoStyle: 'position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 20px; display: ' + (litter.photo ? 'block' : 'none') + ';',
+        svgStyle: 'display: ' + (litter.photo ? 'none' : 'block') + ';',
+        tileStyle: 'position: relative; display: flex; align-items: center; justify-content: center; height: 170px; box-sizing: border-box; border-radius: 20px; background: ' + litter.look.tile + ';' + (litter.expected ? ' border: 3px dashed rgba(201,74,40,0.35);' : ''),
+      })),
+      sorts: sortOptions.map((option) => ({
+        label: option.label,
+        description: option.description,
+        checked: option.checked ? 'true' : 'false',
+        rowStyle: 'display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 0 18px; box-sizing: border-box; border-radius: 18px; background: #FFFFFF; box-shadow: 0 2px 12px rgba(66,43,30,0.06); text-align: left; color: #2B2420; border: 2px solid ' + (option.checked ? '#E2552F' : 'transparent') + ';',
+        markStyle: 'width: 22px; height: 22px; box-sizing: border-box; flex-shrink: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; ' + (option.checked ? 'background: #E2552F;' : 'border: 2px solid #D9CCBE;'),
+        checkStyle: 'display: ' + (option.checked ? 'block' : 'none') + ';',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>
