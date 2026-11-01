@@ -1122,6 +1122,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sources/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Source Activity
+         * @description Return what runs now, wherever it was asked: the Sources page of every device polls it every few seconds.
+         *
+         *     Args:
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The sources the server reads, and where the relay of the desktop app stands.
+         */
+        get: operations["read_source_activity_api_v1_sources_activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sources/{source}/run": {
         parameters: {
             query?: never;
@@ -1133,15 +1160,16 @@ export interface paths {
         put?: never;
         /**
          * Run Source
-         * @description Run a collection now (blocking: about one second per page read).
+         * @description Run a collection now, in the background once the answer is sent; a source that runs already is not run twice.
          *
          *     Args:
          *         source: The source.
+         *         background_tasks: Where the run goes on after the answer.
          *         current_user: The authenticated user.
          *         db: Database session.
          *
          *     Returns:
-         *         The statuses after the run.
+         *         What runs now, the source included.
          *
          *     Raises:
          *         HTTPException: 409 for a source the desktop app reads; 501 for a source this server does not collect.
@@ -1196,10 +1224,14 @@ export interface paths {
         put?: never;
         /**
          * Request Centrale Canine Relay
-         * @description Ask the desktop app of a computer that is on to read the Centrale Canine at its next check, within five minutes.
+         * @description Ask the desktop app of a computer that is on to read the Centrale Canine at its next check, within a minute.
          *
          *     Args:
          *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         What runs now, the request waiting included.
          *
          *     Raises:
          *         HTTPException: 409 when this server reads the Centrale Canine itself.
@@ -1617,6 +1649,39 @@ export interface components {
             website?: string | null;
             /** Notes */
             notes?: string | null;
+        };
+        /**
+         * CentraleCanineRelayActivity
+         * @description Where the relay of the Centrale Canine stands: a computer reading its pages, or a request waiting for one.
+         */
+        CentraleCanineRelayActivity: {
+            /**
+             * Is Relaying
+             * @description A computer reads the Centrale Canine pages now
+             */
+            is_relaying: boolean;
+            /** @description The relayed source being read */
+            source: components["schemas"]["ListingSource"] | null;
+            /**
+             * Pages Read Count
+             * @description Pages of that source read so far
+             */
+            pages_read_count: number;
+            /**
+             * Pages Left Count
+             * @description Pages of that source asked for and not read yet
+             */
+            pages_left_count: number;
+            /**
+             * Is Requested
+             * @description A relay asked from a device waits for the next check of a computer
+             */
+            is_requested: boolean;
+            /**
+             * Is Desktop App On
+             * @description A desktop app called within the last minutes: a computer is on
+             */
+            is_desktop_app_on: boolean;
         };
         /**
          * CentraleCanineRelayAnswer
@@ -2660,6 +2725,19 @@ export interface components {
         SignupRequestRecorded: {
             /** Email */
             email: string;
+        };
+        /**
+         * SourceActivity
+         * @description What runs now, for every device to show its buttons loading, wherever the run was asked.
+         */
+        SourceActivity: {
+            /**
+             * Running Sources
+             * @description Sources the server reads now: a scheduled run of the worker, or a run asked by hand
+             */
+            running_sources: components["schemas"]["ListingSource"][];
+            /** @description The relay by the desktop app; none when the server reads the Centrale Canine itself */
+            relay: components["schemas"]["CentraleCanineRelayActivity"] | null;
         };
         /**
          * SourceRunStatus
@@ -4098,6 +4176,26 @@ export interface operations {
             };
         };
     };
+    read_source_activity_api_v1_sources_activity_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceActivity"];
+                };
+            };
+        };
+    };
     run_source_api_v1_sources__source__run_post: {
         parameters: {
             query?: never;
@@ -4110,12 +4208,12 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SourceStatus"][];
+                    "application/json": components["schemas"]["SourceActivity"];
                 };
             };
             /** @description Validation Error */
@@ -4172,11 +4270,13 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SourceActivity"];
+                };
             };
         };
     };

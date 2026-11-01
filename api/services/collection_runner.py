@@ -3,6 +3,7 @@
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 
@@ -49,6 +50,8 @@ from services.scc_reference_sync import scc_reference_sync
 from services.scc_site_ingestion import scc_site_ingestion_service
 
 logger = logging.getLogger(__name__)
+
+INTERRUPTED_RUN_MESSAGE = "Relevé interrompu : le serveur a redémarré pendant le relevé."
 
 NOTHING_TO_COLLECT_MESSAGE = "Rien à relever : aucun profil actif avec une race et un département connus"
 
@@ -406,6 +409,29 @@ class CollectionRunner:
 
         report.summary, report.grouping = self._finish_run(db, source_run, collect_and_store)
         return report
+
+    @staticmethod
+    def close_interrupted_runs(db: Session, now: datetime) -> int:
+        """
+        Close as failed the runs still « running » that started before now: the process that ran them stopped
+        (a deployment restarts the API and the worker together), and nothing else would ever close them.
+
+        Args:
+            db: Database session; committed.
+            now: Start of the process that calls, naive UTC.
+
+        Returns:
+            How many runs were closed.
+        """
+        interrupted_runs = (
+            db.query(SourceRun).filter(SourceRun.status == SourceRunStatus.RUNNING, SourceRun.started_at < now).all()
+        )
+        for source_run in interrupted_runs:
+            source_run.status = SourceRunStatus.ERROR
+            source_run.finished_at = now
+            source_run.error_message = INTERRUPTED_RUN_MESSAGE
+        db.commit()
+        return len(interrupted_runs)
 
     @staticmethod
     def _open_run(db: Session, source: ListingSource) -> SourceRun:

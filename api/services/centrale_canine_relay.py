@@ -24,6 +24,7 @@ from schemas.centrale_canine_relay import (
     RelayedPageResponse,
     RelayPageRequest,
 )
+from schemas.source_activity import CentraleCanineRelayActivity
 from services import source_status_service
 from services.collection_planner import CollectionPlanner
 from services.collection_runner import collection_runner
@@ -42,6 +43,10 @@ ABANDONED_RELAY_DELAY = timedelta(minutes=2)
 
 # Pages asked per answer: the app calls back often, so that the relay stays alive and the progress shows.
 MAX_PAGE_REQUESTS_PER_ANSWER = 20
+
+# A desktop app checks every fifteen seconds, about once a minute when its window is hidden: silent for that long,
+# its computer is off or asleep.
+DESKTOP_APP_PRESENCE_WINDOW = timedelta(minutes=3)
 
 # The order the sources are relayed in, and how long a run of each stays valid.
 RELAYED_SOURCE_ORDER: tuple[ListingSource, ...] = (
@@ -64,7 +69,10 @@ class RelayLeaseLostError(RuntimeError):
 
 @dataclass
 class RelayLease:
-    """The relay a computer holds: its token, until when, its last call, the source it is on, and the pages read."""
+    """
+    The relay a computer holds: its token, until when, its last call, the source it is on, the pages read, and
+    how far it is in that source (pages read, pages still asked), for the other devices to show.
+    """
 
     token: str
     expires_at: datetime
@@ -72,6 +80,8 @@ class RelayLease:
     source: ListingSource
     is_wanted: bool = False
     responses_by_url: dict[str, RelayedPageResponse] = field(default_factory=dict)
+    pages_read_count: int = 0
+    pages_left_count: int = 0
 
 
 class CentraleCanineRelay:
@@ -81,9 +91,10 @@ class CentraleCanineRelay:
     """
 
     def __init__(self) -> None:
-        """Start without any relay in progress."""
+        """Start without any relay in progress, nor any desktop app seen."""
         self.lease: RelayLease | None = None
         self.is_run_requested = False
+        self.desktop_app_seen_at: datetime | None = None
         self._lock = threading.Lock()
 
     def request_run(self) -> None:
@@ -109,6 +120,7 @@ class CentraleCanineRelay:
             RelayLeaseLostError: When the token is not the one of the relay in progress.
         """
         with self._lock:
+            self.desktop_app_seen_at = now
             if relay_request.relay_token is None:
                 return self._start(db, relay_request.is_requested_by_user, now)
             lease = self.lease
@@ -116,8 +128,42 @@ class CentraleCanineRelay:
                 raise RelayLeaseLostError("Ce relevé a expiré, ou un autre PC l'a repris")
             lease.touched_at = now
             for response in relay_request.responses:
+                if response.url not in lease.responses_by_url:
+                    lease.pages_read_count += 1
                 lease.responses_by_url[response.url] = response
             return self._advance(db, lease, now)
+
+    def activity(self, now: datetime) -> CentraleCanineRelayActivity:
+        """
+        Where the relay stands, for every device to show it. Read without the lock, which a run holds for
+        seconds: each value is read once, and a call landing in between only shifts the picture by one poll.
+
+        Args:
+            now: Current time, naive UTC.
+
+        Returns:
+            The relay in progress, if a computer still calls back, the request waiting, and whether a computer is on.
+        """
+        lease = self.lease
+        seen_at = self.desktop_app_seen_at
+        is_desktop_app_on = seen_at is not None and now - seen_at < DESKTOP_APP_PRESENCE_WINDOW
+        if lease is None or not self._is_alive(lease, now):
+            return CentraleCanineRelayActivity(
+                is_relaying=False,
+                source=None,
+                pages_read_count=0,
+                pages_left_count=0,
+                is_requested=self.is_run_requested,
+                is_desktop_app_on=is_desktop_app_on,
+            )
+        return CentraleCanineRelayActivity(
+            is_relaying=True,
+            source=lease.source,
+            pages_read_count=lease.pages_read_count,
+            pages_left_count=lease.pages_left_count,
+            is_requested=self.is_run_requested,
+            is_desktop_app_on=is_desktop_app_on,
+        )
 
     def _start(self, db: Session, is_requested_by_user: bool, now: datetime) -> CentraleCanineRelayAnswer:
         """
@@ -134,10 +180,7 @@ class CentraleCanineRelay:
             The first pages to read, or why there is nothing to do.
         """
         lease = self.lease
-        is_another_relay_alive = (
-            lease is not None and lease.expires_at > now and now - lease.touched_at < ABANDONED_RELAY_DELAY
-        )
-        if is_another_relay_alive:
+        if lease is not None and self._is_alive(lease, now):
             if is_requested_by_user:
                 self.is_run_requested = True
             return self._answer(CentraleCanineRelayState.BUSY)
@@ -172,6 +215,7 @@ class CentraleCanineRelay:
             unread_page_requests = self._unread_page_requests(db, lease.source, lease, now)
             if unread_page_requests:
                 lease.expires_at = now + RELAY_LEASE_DURATION
+                lease.pages_left_count = len(unread_page_requests)
                 self.lease = lease
                 return CentraleCanineRelayAnswer(
                     state=CentraleCanineRelayState.PAGES_NEEDED,
@@ -192,6 +236,8 @@ class CentraleCanineRelay:
                     source=lease.source,
                 )
             lease.source = next_source
+            lease.pages_read_count = 0
+            lease.pages_left_count = 0
 
     def _unread_page_requests(
         self, db: Session, source: ListingSource, lease: RelayLease, now: datetime
@@ -270,6 +316,21 @@ class CentraleCanineRelay:
             if self._has_something_to_read(db, source, now):
                 return source
         return None
+
+    @staticmethod
+    def _is_alive(lease: RelayLease, now: datetime) -> bool:
+        """
+        Whether the computer holding a relay still calls back: a relay silent for ``ABANDONED_RELAY_DELAY`` is
+        dead (app closed, PC asleep), and the next call takes it over.
+
+        Args:
+            lease: The relay.
+            now: Current time, naive UTC.
+
+        Returns:
+            True while the relay runs.
+        """
+        return lease.expires_at > now and now - lease.touched_at < ABANDONED_RELAY_DELAY
 
     @staticmethod
     def _is_run_due(db: Session, source: ListingSource, now: datetime) -> bool:

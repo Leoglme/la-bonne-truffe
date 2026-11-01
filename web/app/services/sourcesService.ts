@@ -1,4 +1,10 @@
-import type { CentraleCanineRelayAnswer, CentraleCanineRelayRequest, ListingSource, SourceStatus } from '~/types/api'
+import type {
+  CentraleCanineRelayAnswer,
+  CentraleCanineRelayRequest,
+  ListingSource,
+  SourceActivity,
+  SourceStatus,
+} from '~/types/api'
 import { ApiClient } from './api'
 
 /** HTTP client for the /sources API resource. */
@@ -13,13 +19,22 @@ export class SourcesService {
   }
 
   /**
-   * Run a collection now (blocking on the API side).
+   * Fetch what runs now: the sources the server reads, and where the relay of the desktop app stands.
+   *
+   * @returns The activity.
+   */
+  static async readActivity(): Promise<SourceActivity> {
+    return ApiClient.get<SourceActivity>('/api/v1/sources/activity')
+  }
+
+  /**
+   * Run a collection now: the API answers at once, the run goes on in the background.
    *
    * @param source - The source.
-   * @returns The statuses after the run.
+   * @returns What runs now, the source included.
    */
-  static async run(source: ListingSource): Promise<SourceStatus[]> {
-    return ApiClient.post<SourceStatus[]>(`/api/v1/sources/${source}/run`, {})
+  static async run(source: ListingSource): Promise<SourceActivity> {
+    return ApiClient.post<SourceActivity>(`/api/v1/sources/${source}/run`, {})
   }
 
   /**
@@ -33,9 +48,11 @@ export class SourcesService {
   }
 
   /**
-   * Ask the desktop app of a computer that is on to relay the Centrale Canine at its next check.
+   * Ask the desktop app of a computer that is on to relay the Centrale Canine at its next check, within a minute.
+   *
+   * @returns What runs now, the request waiting included.
    */
-  static async requestCentraleCanineRelay(): Promise<void> {
-    await ApiClient.post('/api/v1/sources/centrale_canine/relay-request', {})
+  static async requestCentraleCanineRelay(): Promise<SourceActivity> {
+    return ApiClient.post<SourceActivity>('/api/v1/sources/centrale_canine/relay-request', {})
   }
 }

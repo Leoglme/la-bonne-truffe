@@ -1,17 +1,19 @@
-"""Source routes: state of each source, a run launched by hand, and the relay of the desktop app."""
+"""Source routes: state of each source, what runs now, a run launched by hand, and the relay of the desktop app."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from sqlalchemy.orm import Session, sessionmaker
 
 from core.clock import naive_utc_now
 from core.database import get_db
 from enums.listing_source import ListingSource
 from models.user import User
 from schemas.centrale_canine_relay import CentraleCanineRelayAnswer, CentraleCanineRelayRequest
+from schemas.source_activity import SourceActivity
 from schemas.source_status import SourceStatus
 from services.auth_service import get_current_user
 from services.centrale_canine_relay import RelayLeaseLostError, centrale_canine_relay
-from services.collection_runner import collection_runner
+from services.source_activity_service import SourceActivityService
+from services.source_run_launcher import source_run_launcher
 from services.source_status_service import COLLECTED_SOURCES, DESKTOP_RELAYED_SOURCES, SourceStatusService
 
 router = APIRouter(prefix="/sources", tags=["sources"])
@@ -35,22 +37,42 @@ async def list_sources(
     return SourceStatusService.list_statuses(db)
 
 
-@router.post("/{source}/run", response_model=list[SourceStatus])
-def run_source(
-    source: ListingSource,
+@router.get("/activity", response_model=SourceActivity)
+def read_source_activity(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> list[SourceStatus]:
+) -> SourceActivity:
     """
-    Run a collection now (blocking: about one second per page read).
+    Return what runs now, wherever it was asked: the Sources page of every device polls it every few seconds.
 
     Args:
-        source: The source.
         current_user: The authenticated user.
         db: Database session.
 
     Returns:
-        The statuses after the run.
+        The sources the server reads, and where the relay of the desktop app stands.
+    """
+    return _current_activity(db)
+
+
+@router.post("/{source}/run", response_model=SourceActivity, status_code=status.HTTP_202_ACCEPTED)
+def run_source(
+    source: ListingSource,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SourceActivity:
+    """
+    Run a collection now, in the background once the answer is sent; a source that runs already is not run twice.
+
+    Args:
+        source: The source.
+        background_tasks: Where the run goes on after the answer.
+        current_user: The authenticated user.
+        db: Database session.
+
+    Returns:
+        What runs now, the source included.
 
     Raises:
         HTTPException: 409 for a source the desktop app reads; 501 for a source this server does not collect.
@@ -61,8 +83,10 @@ def run_source(
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Cette source n'est pas relevée par ce serveur"
         )
-    collection_runner.run_source(db, source)
-    return SourceStatusService.list_statuses(db)
+    if source_run_launcher.claim(db, source, naive_utc_now()):
+        session_factory = sessionmaker(bind=db.get_bind(), autoflush=False)
+        background_tasks.add_task(source_run_launcher.run, session_factory, source)
+    return _current_activity(db)
 
 
 @router.post("/centrale_canine/relay", response_model=CentraleCanineRelayAnswer)
@@ -96,13 +120,20 @@ def relay_centrale_canine(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
 
 
-@router.post("/centrale_canine/relay-request", status_code=status.HTTP_204_NO_CONTENT)
-def request_centrale_canine_relay(current_user: User = Depends(get_current_user)) -> None:
+@router.post("/centrale_canine/relay-request", response_model=SourceActivity)
+def request_centrale_canine_relay(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SourceActivity:
     """
-    Ask the desktop app of a computer that is on to read the Centrale Canine at its next check, within five minutes.
+    Ask the desktop app of a computer that is on to read the Centrale Canine at its next check, within a minute.
 
     Args:
         current_user: The authenticated user.
+        db: Database session.
+
+    Returns:
+        What runs now, the request waiting included.
 
     Raises:
         HTTPException: 409 when this server reads the Centrale Canine itself.
@@ -112,3 +143,18 @@ def request_centrale_canine_relay(current_user: User = Depends(get_current_user)
             status_code=status.HTTP_409_CONFLICT, detail="Ce serveur relève lui-même la Centrale Canine"
         )
     centrale_canine_relay.request_run()
+    return _current_activity(db)
+
+
+def _current_activity(db: Session) -> SourceActivity:
+    """
+    What runs now, with the relay of the desktop app when this server lets it read the Centrale Canine.
+
+    Args:
+        db: Database session.
+
+    Returns:
+        The activity.
+    """
+    relay = centrale_canine_relay if DESKTOP_RELAYED_SOURCES else None
+    return SourceActivityService.read(db, relay, naive_utc_now())

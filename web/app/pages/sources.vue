@@ -4,51 +4,55 @@
       <p v-if="sourcesStore.loadError" role="alert" class="m-0 text-[15px] font-bold text-coral-text">
         {{ sourcesStore.loadError }}
       </p>
-      <UiSectionCard v-for="status in sourcesStore.statuses" :key="status.source" class="gap-3">
+      <UiSectionCard v-for="sourceCard in sourceCards" :key="sourceCard.status.source" class="gap-3">
         <span class="flex items-center gap-2.5">
           <span
             class="size-[9px] shrink-0 rounded-full"
-            :class="status.last_status ? SOURCE_RUN_STATUS_DOT_CLASSES[status.last_status] : 'bg-line-strong'"
+            :class="[
+              sourceCard.status.last_status
+                ? SOURCE_RUN_STATUS_DOT_CLASSES[sourceCard.status.last_status]
+                : 'bg-line-strong',
+              { 'animate-pulse': sourceCard.button.isLoading },
+            ]"
             aria-hidden="true"
           />
-          <h2 class="m-0 font-display text-[22px] font-semibold">{{ status.label }}</h2>
+          <h2 class="m-0 font-display text-[22px] font-semibold">{{ sourceCard.status.label }}</h2>
         </span>
-        <p class="m-0 text-[15px] text-ink-muted">{{ buildSourceStatusLine(status) }}</p>
-        <p v-if="status.is_collected_by_desktop_app" class="m-0 text-sm text-ink-muted">
+        <p class="m-0 text-[15px] text-ink-muted">{{ buildSourceStatusLine(sourceCard.status) }}</p>
+        <p v-if="sourceCard.status.is_collected_by_desktop_app" class="m-0 text-sm text-ink-muted">
           Relevée par l’app Windows, quand un PC où elle tourne est allumé.
         </p>
-        <p v-if="status.last_status === 'error' && status.error_message" class="m-0 text-sm text-coral-text">
-          {{ status.error_message }}
-        </p>
         <p
-          v-if="status.is_collected_by_desktop_app && centraleCanineRelayStore.isRelaying"
-          class="m-0 text-sm font-bold text-ink-secondary"
-          aria-live="polite"
+          v-if="sourceCard.status.last_status === 'error' && sourceCard.status.error_message"
+          class="m-0 text-sm text-coral-text"
         >
-          {{ relayProgressLine }}
+          {{ sourceCard.status.error_message }}
+        </p>
+        <p v-if="sourceCard.activityLine" class="m-0 text-sm font-bold text-ink-secondary" aria-live="polite">
+          {{ sourceCard.activityLine }}
         </p>
         <p
-          v-if="status.is_collected_by_desktop_app && centraleCanineRelayStore.lastRelayErrorMessage"
+          v-if="sourceCard.status.is_collected_by_desktop_app && centraleCanineRelayStore.lastRelayErrorMessage"
           class="m-0 text-sm text-coral-text"
         >
           Relais depuis ce PC en échec : {{ centraleCanineRelayStore.lastRelayErrorMessage }}
         </p>
         <p
-          v-if="runErrorSource === status.source && runError"
+          v-if="runErrorSource === sourceCard.status.source && runError"
           role="alert"
           class="m-0 text-sm font-bold text-coral-text"
         >
           {{ runError }}
         </p>
         <UButton
-          v-if="status.is_collected"
+          v-if="sourceCard.status.is_collected"
           size="xl"
           class="mt-1 w-full justify-center md:w-auto md:self-start"
-          :loading="runningSource === status.source"
-          :disabled="runningSource !== null || isRelayRunningHereFor(status)"
-          @click="runNow(status)"
+          :loading="sourceCard.button.isLoading"
+          :disabled="sourceCard.button.isDisabled"
+          @click="runNow(sourceCard.status)"
         >
-          {{ buildRunButtonLabel(status) }}
+          {{ sourceCard.button.label }}
         </UButton>
       </UiSectionCard>
     </div>
@@ -57,13 +61,19 @@
 
 <script lang="ts" setup>
 import type { ComputedRef, Ref } from 'vue'
-import type { CentraleCanineRelayAnswer, ListingSource, SourceRunStatus, SourceStatus } from '~/types/api'
-import type { CentraleCanineRelayProgress } from '~/types/CentraleCanineRelay'
-import { computed, onMounted, ref } from 'vue'
-import { LISTING_SOURCE_LABELS } from '~/constants/litterLabels'
+import type {
+  CentraleCanineRelayAnswer,
+  ListingSource,
+  SourceActivity,
+  SourceRunStatus,
+  SourceStatus,
+} from '~/types/api'
+import type { AskedSourceRun, SourceRunCard, SourceRunContext, SourceRunEndNotice } from '~/types/SourceRun'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { SourcesService } from '~/services/sourcesService'
 import { FrenchDate } from '~/utils/frenchDate'
 import { FrenchText } from '~/utils/frenchText'
+import { SourceRunPresentation } from '~/utils/sourceRunPresentation'
 
 useHead({ title: 'Sources · La Bonne Truffe' })
 
@@ -78,21 +88,27 @@ const SOURCE_RUN_STATUS_DOT_CLASSES: Record<SourceRunStatus, string> = {
   running: 'bg-line-strong',
 }
 
-const runningSource: Ref<ListingSource | null> = ref(null)
+const askingSource: Ref<ListingSource | null> = ref(null)
+const askedRuns: Ref<AskedSourceRun[]> = ref([])
 const runError: Ref<string | null> = ref(null)
 const runErrorSource: Ref<ListingSource | null> = ref(null)
 
-const relayProgressLine: ComputedRef<string> = computed((): string => {
-  const progress: CentraleCanineRelayProgress | null = centraleCanineRelayStore.relayProgress
-  if (progress?.isWaitingForAnotherComputer) {
-    return 'Un autre PC relève la Centrale Canine : ton relevé partira dès qu’il aura fini…'
-  }
-  if (progress === null || progress.source === null) {
-    return 'Relevé en cours depuis ce PC…'
-  }
-  const pages: string = `${progress.pagesReadCount} ${FrenchText.pickForm(progress.pagesReadCount, 'page lue', 'pages lues')} sur ${progress.pagesPlannedCount}`
-  return `Relevé en cours depuis ce PC : ${LISTING_SOURCE_LABELS[progress.source]}, ${pages}.`
-})
+const sourceRunContext: ComputedRef<SourceRunContext> = computed((): SourceRunContext => ({
+  activity: sourcesStore.activity,
+  isDesktopApp: isDesktopApp.value,
+  isRelayingHere: centraleCanineRelayStore.isRelaying,
+  relayProgressHere: centraleCanineRelayStore.relayProgress,
+}))
+const sourceCards: ComputedRef<SourceRunCard[]> = computed((): SourceRunCard[] =>
+  sourcesStore.statuses.map((status: SourceStatus): SourceRunCard =>
+    SourceRunPresentation.buildCard(status, sourceRunContext.value, askingSource.value === status.source),
+  ),
+)
+const underWaySources: ComputedRef<ListingSource[]> = computed((): ListingSource[] =>
+  sourceCards.value
+    .filter((sourceCard: SourceRunCard): boolean => SourceRunPresentation.isUnderWay(sourceCard.phase))
+    .map((sourceCard: SourceRunCard): ListingSource => sourceCard.status.source),
+)
 
 /**
  * Build the line under a source.
@@ -124,52 +140,30 @@ function buildSourceStatusLine(status: SourceStatus): string {
 }
 
 /**
- * Whether the relay of this computer is reading the sources the desktop app relays, which includes this one.
- *
- * @param status - The source status.
- * @returns True while a relay runs here and the source is one of those it reads.
- */
-function isRelayRunningHereFor(status: SourceStatus): boolean {
-  return status.is_collected_by_desktop_app && isDesktopApp.value && centraleCanineRelayStore.isRelaying
-}
-
-/**
- * Build the label of the run button: a source the desktop app reads can only be asked for away from a computer.
- *
- * @param status - The source status.
- * @returns « Relever maintenant », « Demander un relevé », or the label of the run in progress.
- */
-function buildRunButtonLabel(status: SourceStatus): string {
-  if (runningSource.value === status.source || isRelayRunningHereFor(status)) {
-    return 'Relevé en cours…'
-  }
-  if (status.is_collected_by_desktop_app && !isDesktopApp.value) {
-    return 'Demander un relevé'
-  }
-  return 'Relever maintenant'
-}
-
-/**
- * Run a collection now and refresh the statuses: on the server, on this computer, or by asking a computer that is on.
+ * Run a collection now: on the server, from this computer, or by asking a computer that is on. Every device then
+ * sees it run, until it ends.
  *
  * @param status - The source status.
  */
 async function runNow(status: SourceStatus): Promise<void> {
-  runningSource.value = status.source
+  askingSource.value = status.source
   runError.value = null
   runErrorSource.value = status.source
   try {
-    if (!status.is_collected_by_desktop_app) {
-      sourcesStore.statuses = await SourcesService.run(status.source)
-    } else if (isDesktopApp.value) {
+    if (status.is_collected_by_desktop_app && isDesktopApp.value) {
       await relayCentraleCanineNow()
-    } else {
-      await askAComputerToRelayCentraleCanine()
+      return
     }
+    const askedRun: AskedSourceRun = SourceRunPresentation.recordAskedRun(status, sourcesStore.statuses)
+    const activity: SourceActivity = status.is_collected_by_desktop_app
+      ? await SourcesService.requestCentraleCanineRelay()
+      : await SourcesService.run(status.source)
+    sourcesStore.applyActivity(activity)
+    askedRuns.value = [...askedRuns.value, askedRun]
   } catch (error: unknown) {
     runError.value = error instanceof Error ? error.message : 'Relevé impossible'
   } finally {
-    runningSource.value = null
+    askingSource.value = null
   }
 }
 
@@ -179,7 +173,7 @@ async function runNow(status: SourceStatus): Promise<void> {
  */
 async function relayCentraleCanineNow(): Promise<void> {
   if (centraleCanineRelayStore.isRelaying) {
-    runError.value = 'Un relevé est déjà en cours depuis ce PC : il relève les trois sources à la suite.'
+    runError.value = 'Un relevé est déjà en cours depuis ce PC : il relève les sources à la suite.'
     return
   }
   const answer: CentraleCanineRelayAnswer | null = await centraleCanineRelayStore.relay(true)
@@ -204,16 +198,32 @@ async function relayCentraleCanineNow(): Promise<void> {
 }
 
 /**
- * Ask the desktop app of a computer that is on to relay the Centrale Canine at its next check.
+ * Tell this device that a relevé it asked is over: done, failed on some sources, or lost before it ran.
+ *
+ * @param askedRun - The relevé asked from this device.
  */
-async function askAComputerToRelayCentraleCanine(): Promise<void> {
-  await SourcesService.requestCentraleCanineRelay()
-  toast.add({
-    title:
-      'Relevé demandé : un PC allumé avec l’app relèvera les portées, l’annuaire et les fiches dans les 5 minutes.',
-    color: 'success',
-  })
+function announceRunEnd(askedRun: AskedSourceRun): void {
+  const notice: SourceRunEndNotice = SourceRunPresentation.buildRunEndNotice(askedRun, sourcesStore.statuses)
+  toast.add({ title: notice.title, color: notice.color })
 }
 
-onMounted((): Promise<void> => sourcesStore.load())
+watch(underWaySources, (sources: ListingSource[]): void => {
+  const endedRuns: AskedSourceRun[] = askedRuns.value.filter(
+    (askedRun: AskedSourceRun): boolean => !sources.includes(askedRun.source),
+  )
+  if (endedRuns.length === 0) {
+    return
+  }
+  askedRuns.value = askedRuns.value.filter((askedRun: AskedSourceRun): boolean => sources.includes(askedRun.source))
+  endedRuns.forEach((askedRun: AskedSourceRun): void => announceRunEnd(askedRun))
+})
+
+onMounted(async (): Promise<void> => {
+  sourcesStore.startLiveUpdates()
+  await sourcesStore.load()
+})
+
+onUnmounted((): void => {
+  sourcesStore.stopLiveUpdates()
+})
 </script>

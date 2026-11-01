@@ -170,9 +170,20 @@ class CollectionWorker:
         finally:
             db.close()
 
+    def close_interrupted_runs(self) -> None:
+        """At start: close the runs a stopped process left « running », so that no device shows them in progress."""
+        db = SessionLocal()
+        try:
+            closed_count = collection_runner.close_interrupted_runs(db, naive_utc_now())
+            if closed_count:
+                logger.info("%d run(s) interrupted by the last stop closed", closed_count)
+        finally:
+            db.close()
+
     def run(self) -> None:
-        """Bring the schema up to date, then block on the scheduler until interrupted."""
+        """Bring the schema up to date, close the runs the last stop interrupted, then block on the scheduler."""
         MigrationRunner(engine).run()
+        self.close_interrupted_runs()
         scheduler = self.build_scheduler()
         logger.info("Worker started with %d job(s)", len(scheduler.get_jobs()))
         try:

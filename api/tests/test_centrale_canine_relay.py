@@ -14,7 +14,7 @@ from enums.listing_source import ListingSource
 from enums.source_run_status import SourceRunStatus
 from models.source_run import SourceRun
 from models.user import User
-from schemas.centrale_canine_relay import CentraleCanineRelayRequest
+from schemas.centrale_canine_relay import CentraleCanineRelayRequest, RelayedPageResponse
 from seeders.run_seeders import SeederRunner
 from services.auth_service import AuthService
 from services.centrale_canine_relay import CentraleCanineRelay, RelayLeaseLostError
@@ -25,6 +25,7 @@ from tests.centrale_canine_pages import EMPTY_PAGE, RECORDED_DEPARTMENT_TERM_ID,
 
 RELAY_URL = "/api/v1/sources/centrale_canine/relay"
 RELAY_REQUEST_URL = "/api/v1/sources/centrale_canine/relay-request"
+ACTIVITY_URL = "/api/v1/sources/activity"
 
 
 @pytest.fixture
@@ -116,10 +117,21 @@ def test_a_run_asked_from_the_phone_starts_at_the_next_check_of_a_computer(
     db.commit()
 
     request_response = client.post(RELAY_REQUEST_URL, headers=relay_headers)
+    activity_while_waiting = client.get(ACTIVITY_URL, headers=relay_headers).json()
     next_check_answer = client.post(RELAY_URL, json={}, headers=relay_headers).json()
+    activity_once_taken = client.get(ACTIVITY_URL, headers=relay_headers).json()
 
-    assert request_response.status_code == 204
+    assert request_response.status_code == 200
+    assert request_response.json()["relay"]["is_requested"] is True
+    assert (activity_while_waiting["relay"]["is_requested"], activity_while_waiting["relay"]["is_relaying"]) == (
+        True,
+        False,
+    )
     assert next_check_answer["state"] == "pages_needed"
+    assert activity_once_taken["relay"]["is_requested"] is False
+    assert activity_once_taken["relay"]["is_relaying"] is True
+    assert activity_once_taken["relay"]["source"] == "centrale_canine"
+    assert activity_once_taken["relay"]["is_desktop_app_on"] is True
 
 
 def test_a_run_cannot_be_asked_when_the_server_reads_the_centrale_canine_itself(
@@ -169,6 +181,42 @@ def test_a_request_made_while_another_computer_relays_is_kept_for_the_next_check
 
     assert busy.state == "busy"
     assert relay.is_run_requested is True
+
+
+def test_every_device_sees_which_source_a_computer_relays_and_how_far_it_is(
+    db: Session, relay_headers: dict[str, str]
+) -> None:
+    relay = CentraleCanineRelay()
+    started_at = datetime(2026, 11, 1, 9, 0)
+    relay.request_run()
+    asked = relay.activity(started_at)
+
+    first = relay.answer(db, CentraleCanineRelayRequest(), started_at)
+    relaying = relay.activity(started_at + timedelta(seconds=5))
+    two_pages = read_like_the_desktop_app(
+        [page_request.model_dump() for page_request in first.page_requests[:2]], load_recorded_pages()
+    )
+    relay.answer(
+        db,
+        CentraleCanineRelayRequest(
+            relay_token=first.relay_token,
+            responses=[RelayedPageResponse.model_validate(page) for page in two_pages * 2],
+        ),
+        started_at + timedelta(seconds=20),
+    )
+    progressed = relay.activity(started_at + timedelta(seconds=25))
+    gone_silent = relay.activity(started_at + timedelta(minutes=5))
+
+    assert (asked.is_requested, asked.is_relaying, asked.is_desktop_app_on) == (True, False, False)
+    assert (relaying.is_requested, relaying.is_relaying, relaying.is_desktop_app_on) == (False, True, True)
+    assert (relaying.source, relaying.pages_read_count, relaying.pages_left_count) == (
+        ListingSource.CENTRALE_CANINE,
+        0,
+        len(first.page_requests),
+    )
+    assert progressed.pages_read_count == 2
+    assert progressed.pages_left_count >= len(first.page_requests) - 2
+    assert (gone_silent.is_relaying, gone_silent.is_desktop_app_on) == (False, False)
 
 
 def test_a_page_refused_on_the_computer_ends_in_a_failed_run(client: TestClient, relay_headers: dict[str, str]) -> None:

@@ -14,10 +14,13 @@ import { SourcesService } from '~/services/sourcesService'
 import { CentraleCanineRelayRunner } from '~/utils/centraleCanineRelayRunner'
 
 const FIRST_CHECK_DELAY_MS: number = 30_000
-const CHECK_INTERVAL_MS: number = 5 * 60_000
+const CHECK_INTERVAL_MS: number = 15_000
 const LOGIN_PATH: string = '/connexion'
 
-/** Pinia store of the Centrale Canine relay: the desktop app reads it in the background, when a run is due. */
+/**
+ * Pinia store of the Centrale Canine relay: the desktop app checks every fifteen seconds whether a run is due or
+ * asked from another device, and relays it in the background.
+ */
 export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', () => {
   const lastRelayErrorMessage: Ref<string | null> = ref(null)
   const isRelaying: Ref<boolean> = ref(false)
@@ -25,17 +28,41 @@ export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', ()
 
   let nextCheckTimer: ReturnType<typeof setTimeout> | null = null
   let isWatching: boolean = false
+  let relayCall: Promise<CentraleCanineRelayAnswer | null> | null = null
 
   /**
-   * Relay once, after the session check the hidden window never makes by itself; a refused session shows the login screen.
+   * Relay once, after any relay call already under way here: a check of the timer gives way to it, a request of
+   * the user waits for it to end.
    *
    * @param isRequestedByUser - « Relever maintenant »: every source runs, even when its last run is recent.
-   * @returns The last answer of the API, or null when nothing was sent: a relay already runs here, or no session.
+   * @returns The last answer of the API, or null when nothing was sent: a check while a call runs, or no session.
    */
   async function relay(isRequestedByUser: boolean): Promise<CentraleCanineRelayAnswer | null> {
+    while (relayCall !== null) {
+      if (!isRequestedByUser) {
+        return null
+      }
+      await relayCall.catch((): null => null)
+    }
+    relayCall = relayOnce(isRequestedByUser)
+    try {
+      return await relayCall
+    } finally {
+      relayCall = null
+    }
+  }
+
+  /**
+   * Relay once, after the session check the hidden window never makes by itself; a refused session shows the
+   * login screen. The relay shows from its first page to read, so that a check finding nothing due stays unseen.
+   *
+   * @param isRequestedByUser - « Relever maintenant »: every source runs, even when its last run is recent.
+   * @returns The last answer of the API, or null when there is no session.
+   */
+  async function relayOnce(isRequestedByUser: boolean): Promise<CentraleCanineRelayAnswer | null> {
     const userStore: ReturnType<typeof useUserStore> = useUserStore()
 
-    if (isRelaying.value || !userStore.token) {
+    if (!userStore.token) {
       return null
     }
     const hasValidSession: boolean = await userStore.validateSession()
@@ -46,7 +73,6 @@ export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', ()
       }
       return null
     }
-    isRelaying.value = true
     relayProgress.value = null
     try {
       const answer: CentraleCanineRelayAnswer = await CentraleCanineRelayRunner.relay(
@@ -62,6 +88,7 @@ export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', ()
               setTimeout(resolve, milliseconds)
             }),
           reportProgress: (progress: CentraleCanineRelayProgress): void => {
+            isRelaying.value = true
             relayProgress.value = progress
           },
         },
@@ -80,8 +107,11 @@ export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', ()
       }
       throw error
     } finally {
-      isRelaying.value = false
-      relayProgress.value = null
+      if (isRelaying.value) {
+        isRelaying.value = false
+        relayProgress.value = null
+        await useSourcesStore().loadActivity()
+      }
     }
   }
 
@@ -109,7 +139,8 @@ export const useCentraleCanineRelayStore = defineStore('centraleCanineRelay', ()
   }
 
   /**
-   * Start checking every few minutes whether the Centrale Canine run of the hour is due.
+   * Start checking every fifteen seconds whether the Centrale Canine run of the hour is due, or asked from another
+   * device; a hidden window checks about once a minute.
    */
   function startWatching(): void {
     if (isWatching) {
