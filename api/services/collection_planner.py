@@ -1,12 +1,10 @@
 """Builds what a collection run reads, from the active search profiles."""
 
-import re
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 from sqlalchemy.orm import Session
 
-from core.text import without_accents
 from enums.coat_color import CoatColor
 from enums.listing_source import ListingSource
 from models.breed import Breed
@@ -22,7 +20,7 @@ from services.collectors.centrale_canine import (
     SccDepartmentTarget,
     SccVarietyTarget,
 )
-from services.collectors.chiens_de_france import CHIENS_DE_FRANCE_BASE_URL
+from services.collectors.chiens_de_france import CHIENS_DE_FRANCE_BASE_URL, REGION_SLUGS
 from services.collectors.chiens_de_france_sites import SiteCollectionPlan, SiteDirectoryPlan, SiteTarget
 from services.collectors.html_source import (
     BREEDER_SITE_HOST_SUFFIX,
@@ -41,7 +39,6 @@ from services.collectors.scc_sites import SccSiteCollectionPlan, SccSiteTarget
 SITE_DOG_REFRESH_DAYS = 30
 SCC_SITE_REFRESH_DAYS = 30
 SCC_SITES_PER_RUN = 80
-NON_SLUG_CHARACTERS_PATTERN = re.compile(r"[^a-z0-9]+")
 
 
 class CollectionPlanner:
@@ -122,7 +119,7 @@ class CollectionPlanner:
                 Department.code.in_(set(department_codes) | followed_department_codes)
             )
         }
-        region_slugs = sorted({CollectionPlanner._slug_of(region) for region in region_names} - {""})
+        region_slugs = sorted({REGION_SLUGS[region] for region in region_names if region in REGION_SLUGS})
         return SiteDirectoryPlan(
             list_urls=tuple(
                 f"{CHIENS_DE_FRANCE_BASE_URL}/eleveurs/{breed.chiens_de_france_id}/france/{region_slug}"
@@ -162,19 +159,6 @@ class CollectionPlanner:
             .order_by(Breed.id)
             .all()
         )
-
-    @staticmethod
-    def _slug_of(name: str) -> str:
-        """
-        The address form of a region name on Chiens de France.
-
-        Args:
-            name: « Pays de la Loire », « Provence-Alpes-Côte d'Azur ».
-
-        Returns:
-            « pays-de-la-loire », « provence-alpes-cote-d-azur ».
-        """
-        return NON_SLUG_CHARACTERS_PATTERN.sub("-", without_accents(name).lower()).strip("-")
 
     @staticmethod
     def build_scc_breeder_directory_plan(db: Session) -> SccBreederDirectoryPlan:

@@ -20,16 +20,20 @@ from enums.puppy_ad_state import PuppyAdState
 from enums.social_link_origin import SocialLinkOrigin
 from migrations import add_breeder_site_reading_columns, add_dog_parent_colors
 from models.breeder import Breeder
+from models.department import Department
 from models.dog import Dog
 from models.listing import Listing
 from models.litter_group import LitterGroup
+from models.search_profile import SearchProfile
 from models.user import User
 from seeders.run_seeders import SeederRunner
 from services.auth_service import AuthService
 from services.breeder_link_service import BreederLinkService
 from services.breeder_site_ingestion import breeder_site_ingestion_service
 from services.breeder_social_links import BreederSocialLinks
+from services.collection_planner import CollectionPlanner
 from services.collection_runner import collection_runner
+from services.collectors.chiens_de_france import REGION_SLUGS
 from services.collectors.polite_http_client import SourceReadError
 from services.collectors.raw_dog import RawSiteDirectoryEntry
 from services.dog_ingestion import DogIngestionService
@@ -115,6 +119,22 @@ def test_a_name_two_breeders_of_the_postal_code_bear_or_a_known_site_links_nothi
 
     assert linked == []
     assert [twin.chiens_de_france_site_url for twin in twins] == [None, None]
+
+
+def test_the_regional_lists_of_provence_and_la_reunion_are_read_at_the_addresses_of_the_site(
+    db: Session, seeded: dict[str, str]
+) -> None:
+    profile = db.query(SearchProfile).one()
+    profile.department_codes = ["13", "974"]
+    db.commit()
+
+    plan = CollectionPlanner.build_site_directory_plan(db)
+
+    assert plan.list_urls == (
+        "https://www.chiens-de-france.com/eleveurs/cocker-spaniel-anglais/france/provence-alpes-cote-dazur",
+        "https://www.chiens-de-france.com/eleveurs/cocker-spaniel-anglais/france/reunion",
+    )
+    assert {department.region for department in db.query(Department)} <= set(REGION_SLUGS)
 
 
 def test_an_account_found_on_a_site_never_replaces_one_declared_or_added_by_hand() -> None:
