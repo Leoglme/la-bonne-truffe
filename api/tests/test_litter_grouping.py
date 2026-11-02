@@ -378,3 +378,45 @@ def test_a_litter_holding_ads_of_another_mother_on_the_same_source_is_another_li
 
     assert first_litter_ad.litter_group_id == declared.litter_group_id
     assert second_litter_ad.litter_group_id != declared.litter_group_id
+
+
+def test_puppy_ads_born_near_the_birth_a_declared_mating_announces_join_it_and_make_it_born(db: Session) -> None:
+    breeder = seeded_breeder(db)
+    declared = add_listing(
+        db, breeder, ListingSource.CENTRALE_CANINE, "1", ListingKind.LITTER_EXPECTED, "Tropik", None, date(2026, 8, 17)
+    )
+    litter_grouping_service.regroup(db, NOW)
+    puppy_ad = add_listing(
+        db,
+        breeder,
+        ListingSource.CHIENS_DE_FRANCE,
+        "chiot-1",
+        ListingKind.PUPPY_AD,
+        "Tropik Des Vents D'Océan",
+        date(2026, 10, 21),
+        None,
+        1,
+        0,
+    )
+
+    result = litter_grouping_service.regroup(db, NOW)
+
+    assert puppy_ad.litter_group_id == declared.litter_group_id
+    assert result.born_group_ids == [declared.litter_group_id]
+    group = db.get(LitterGroup, declared.litter_group_id)
+    assert group is not None and group.birth_date == date(2026, 10, 21)
+
+
+def test_a_puppy_ad_born_months_after_the_birth_a_mating_announces_is_another_litter(db: Session) -> None:
+    breeder = seeded_breeder(db)
+    declared = add_listing(
+        db, breeder, ListingSource.CENTRALE_CANINE, "1", ListingKind.LITTER_EXPECTED, "Tropik", None, date(2026, 3, 2)
+    )
+    litter_grouping_service.regroup(db, NOW)
+    puppy_ad = add_listing(
+        db, breeder, ListingSource.CHIENS_DE_FRANCE, "chiot-1", ListingKind.PUPPY_AD, "Tropik", date(2026, 10, 21)
+    )
+
+    litter_grouping_service.regroup(db, NOW)
+
+    assert puppy_ad.litter_group_id != declared.litter_group_id

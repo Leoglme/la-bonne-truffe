@@ -2,7 +2,7 @@
 litters, a link pasted by hand, the dogs both sources know, and the migrations that read the colours again."""
 
 from collections.abc import Callable
-from datetime import datetime
+from datetime import date, datetime
 
 import pytest
 from fastapi import HTTPException
@@ -16,10 +16,12 @@ from enums.dog_role import DogRole
 from enums.dog_sex import DogSex
 from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
+from enums.lof_status import LofStatus
 from enums.puppy_ad_state import PuppyAdState
 from enums.social_link_origin import SocialLinkOrigin
 from enums.source_run_status import SourceRunStatus
 from migrations import add_breeder_site_reading_columns, add_dog_parent_colors
+from models.breed import Breed
 from models.breeder import Breeder
 from models.breeder_follow import BreederFollow
 from models.department import Department
@@ -41,6 +43,7 @@ from services.collectors.chiens_de_france import REGION_SLUGS
 from services.collectors.polite_http_client import SourceReadError
 from services.collectors.raw_dog import RawSiteDirectoryEntry
 from services.dog_ingestion import DogIngestionService
+from services.litter_grouping import litter_grouping_service
 from services.litter_query_service import LitterQueryService
 from services.push_service import PushResult, PushService
 from services.source_run_launcher import source_run_launcher
@@ -48,6 +51,7 @@ from tests.centrale_canine_pages import collector_serving, load_recorded_pages
 from tests.chiens_de_france_site_pages import chiens_de_france_site_collector_serving
 
 SITE_URL = "https://elevage-a.chiens-de-france.com"
+SINGLE_LITTER_SITE_URL = "https://elevage-e.chiens-de-france.com"
 BREEDERS_URL = "/api/v1/breeders"
 SITE_FACEBOOK_URL = "https://www.facebook.com/elevage.a.test"
 FOOTER_PAGE = """
@@ -537,3 +541,57 @@ def test_the_litter_shows_its_father_with_his_site_photo_and_one_gold_puppy_in_t
     assert (detail["dam"]["color"], detail["dam"]["carries_gold_by_parents"]) == ("tricolore", True)
     assert detail["gold_puppy_odds"] == 0.5
     assert detail["expected_colors"][0]["puppy_odds"] == 0.5
+
+
+def test_a_followed_litter_to_come_is_pushed_born_with_the_puppies_its_breeders_site_puts_online(
+    client: TestClient, db: Session, seeded: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    push_titles: list[str] = []
+
+    def deliver(
+        _self: PushService, _db: Session, _user_id: int, title: str, *_args: object, **_kwargs: object
+    ) -> PushResult:
+        """Record the title of the push, delivered to one device."""
+        push_titles.append(title)
+        return PushResult(delivered=1)
+
+    monkeypatch.setattr(PushService, "send", deliver)
+    breeder = ferme_des_tests(
+        db, chiens_de_france_site_url=SINGLE_LITTER_SITE_URL, chiens_de_france_site_seen_at=datetime(2026, 11, 1, 6, 40)
+    )
+    declared_mating = Listing(
+        source=ListingSource.CENTRALE_CANINE,
+        external_id="4340787",
+        breed_id=db.query(Breed).one().id,
+        breeder_id=breeder.id,
+        kind=ListingKind.LITTER_EXPECTED,
+        lof_status=LofStatus.LOF,
+        dam_name="Mère de test 35",
+        mating_date=date(2026, 6, 7),
+        department_code="35",
+    )
+    db.add_all([declared_mating, SourceRun(source=ListingSource.CHIENS_DE_FRANCE_SITES, status=SourceRunStatus.OK)])
+    db.commit()
+    litter_grouping_service.regroup(db, datetime(2026, 11, 1, 7, 0))
+    db.commit()
+    followed = client.put(
+        f"/api/v1/litters/{declared_mating.litter_group_id}/follow-up", json={"status": "to_contact"}, headers=seeded
+    )
+    assert followed.status_code == 200
+
+    report = collection_runner.run_followed_breeder_sites(db, chiens_de_france_site_collector_serving())
+
+    assert report is not None
+    db.expire_all()
+    site_ads = db.query(Listing).filter(Listing.source == ListingSource.CHIENS_DE_FRANCE).all()
+    assert len(site_ads) == 3
+    assert {ad.litter_group_id for ad in site_ads} == {declared_mating.litter_group_id}
+    litter = client.get(f"/api/v1/litters/{declared_mating.litter_group_id}", headers=seeded).json()
+    assert litter["birth_date"] == "2026-08-09"
+    assert [listing["puppy_state"] for listing in litter["listings"] if listing["kind"] == "puppy_ad"] == [
+        "reserved",
+        "reserved",
+        "reserved",
+    ]
+    assert len(push_titles) == 1
+    assert push_titles[0].startswith("Portée née")

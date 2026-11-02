@@ -11,17 +11,26 @@ import type {
 } from '~/types/api'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { DEFAULT_BREEDER_FOLLOW } from '~/constants/breederOptions'
+import {
+  BREEDER_FILTER_KEYS,
+  BREEDER_SORT_KEYS,
+  DEFAULT_BREEDER_FILTER_KEY,
+  DEFAULT_BREEDER_FOLLOW,
+  DEFAULT_BREEDER_SORT_KEY,
+} from '~/constants/breederOptions'
 import { BreedersService } from '~/services/breedersService'
 import { BreederPresentation } from '~/utils/breederPresentation'
+import { SavedChoices } from '~/utils/savedChoices'
 
 const SEARCH_SUGGESTIONS_LIMIT: number = 8
+const FILTER_STORAGE_KEY: string = 'lbt-breeder-filter'
+const SORT_STORAGE_KEY: string = 'lbt-breeder-sort'
 
 /** Pinia store of the breeders: the directory list, its filter and sort, the search, and the breeder opened. */
 export const useBreedersStore = defineStore('breeders', () => {
   const cards: Ref<BreederCard[]> = ref([])
-  const selectedFilterKey: Ref<BreederFilter> = ref('all')
-  const selectedSortKey: Ref<BreederSort> = ref('promising')
+  const selectedFilterKey: Ref<BreederFilter> = ref(DEFAULT_BREEDER_FILTER_KEY)
+  const selectedSortKey: Ref<BreederSort> = ref(DEFAULT_BREEDER_SORT_KEY)
   const selectedBreeder: Ref<BreederDetail | null> = ref(null)
   const isLoading: Ref<boolean> = ref(true)
   const loadError: Ref<string | null> = ref(null)
@@ -62,21 +71,31 @@ export const useBreedersStore = defineStore('breeders', () => {
   }
 
   /**
-   * Filter the list.
+   * Take back the filter and sort of the last visit; the store is built on the server, where storage does not exist.
+   */
+  function restoreSavedChoices(): void {
+    selectedFilterKey.value = SavedChoices.read(FILTER_STORAGE_KEY, BREEDER_FILTER_KEYS, DEFAULT_BREEDER_FILTER_KEY)
+    selectedSortKey.value = SavedChoices.read(SORT_STORAGE_KEY, BREEDER_SORT_KEYS, DEFAULT_BREEDER_SORT_KEY)
+  }
+
+  /**
+   * Filter the list and remember the choice for the next visits.
    *
    * @param filterKey - The chip chosen.
    */
   function selectFilter(filterKey: BreederFilter): void {
     selectedFilterKey.value = filterKey
+    SavedChoices.keep(FILTER_STORAGE_KEY, filterKey)
   }
 
   /**
-   * Sort the list.
+   * Sort the list and remember the choice for the next visits.
    *
    * @param sortKey - The sort chosen.
    */
   function selectSort(sortKey: BreederSort): void {
     selectedSortKey.value = sortKey
+    SavedChoices.keep(SORT_STORAGE_KEY, sortKey)
   }
 
   /**
@@ -276,6 +295,7 @@ export const useBreedersStore = defineStore('breeders', () => {
     visibleCards,
     followedCards,
     load,
+    restoreSavedChoices,
     selectFilter,
     selectSort,
     search,

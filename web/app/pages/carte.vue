@@ -104,7 +104,7 @@ watch(
 )
 
 onMounted(async (): Promise<void> => {
-  littersStore.restoreSavedSort()
+  littersStore.restoreSavedChoices()
   if (littersStore.cards.length === 0) {
     await littersStore.load()
   }

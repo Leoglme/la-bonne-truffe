@@ -1,5 +1,5 @@
 import type { Mock } from 'vitest'
-import type { BreederCard, BreederDetail, LitterDetail } from '../app/types/api'
+import type { BreederCard, BreederDetail, LitterCard, LitterDetail } from '../app/types/api'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BreedersService } from '../app/services/breedersService'
@@ -188,5 +188,56 @@ describe('useLittersStore().follow', (): void => {
     await littersStore.follow(LITTER)
 
     expect(littersStore.selectedLitter?.follow_up?.status).toBe('to_contact')
+  })
+})
+
+describe('useLittersStore() choices and search', (): void => {
+  const keptChoices: Map<string, string> = new Map()
+
+  beforeEach((): void => {
+    setActivePinia(createPinia())
+    keptChoices.clear()
+    vi.stubGlobal('useLocationStore', (): { position: null } => ({ position: null }))
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string): string | null => keptChoices.get(key) ?? null,
+      setItem: (key: string, value: string): void => {
+        keptChoices.set(key, value)
+      },
+    })
+  })
+
+  afterEach((): void => {
+    vi.unstubAllGlobals()
+  })
+
+  it('opens on the newest litters, and on the filter and sort chosen at the last visit', (): void => {
+    expect(useLittersStore().selectedSortKey).toBe('newest')
+    useLittersStore().selectFilter('expected')
+    useLittersStore().selectSort('price')
+    setActivePinia(createPinia())
+
+    const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
+    littersStore.restoreSavedChoices()
+
+    expect([littersStore.selectedFilterKey, littersStore.selectedSortKey]).toEqual(['expected', 'price'])
+  })
+
+  it('opens on the default choices when the kept ones are no longer offered', (): void => {
+    keptChoices.set('lbt-litter-filter', 'gone')
+    keptChoices.set('lbt-litter-sort', 'gone')
+    const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
+
+    littersStore.restoreSavedChoices()
+
+    expect([littersStore.selectedFilterKey, littersStore.selectedSortKey]).toEqual(['all', 'newest'])
+  })
+
+  it('lists only the litters the search finds', (): void => {
+    const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
+    littersStore.cards = [LITTER, { ...LITTER, id: 2, name: 'Des Vents d’Océan', town: 'La Grée-Saint-Laurent' }]
+
+    littersStore.searchQuery = 'ocean'
+
+    expect(littersStore.cardsMatchingSearch.map((card: LitterCard): number => card.id)).toEqual([2])
   })
 })

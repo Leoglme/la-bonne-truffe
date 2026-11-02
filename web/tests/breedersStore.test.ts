@@ -92,3 +92,33 @@ describe('useBreedersStore().addLink', (): void => {
     expect(breedersStore.cards[0]?.has_chiens_de_france_site).toBe(true)
   })
 })
+
+describe('useBreedersStore() choices', (): void => {
+  const keptChoices: Map<string, string> = new Map()
+
+  beforeEach((): void => {
+    setActivePinia(createPinia())
+    keptChoices.clear()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string): string | null => keptChoices.get(key) ?? null,
+      setItem: (key: string, value: string): void => {
+        keptChoices.set(key, value)
+      },
+    })
+  })
+
+  afterEach((): void => {
+    vi.unstubAllGlobals()
+  })
+
+  it('opens on the filter and sort chosen at the last visit', (): void => {
+    useBreedersStore().selectFilter('followed')
+    useBreedersStore().selectSort('name')
+    setActivePinia(createPinia())
+
+    const breedersStore: ReturnType<typeof useBreedersStore> = useBreedersStore()
+    breedersStore.restoreSavedChoices()
+
+    expect([breedersStore.selectedFilterKey, breedersStore.selectedSortKey]).toEqual(['followed', 'name'])
+  })
+})

@@ -113,5 +113,8 @@ const subtitle: ComputedRef<string> = computed((): string => {
   return BreederPresentation.buildSubtitle(breedersStore.cards)
 })
 
-onMounted((): Promise<void> => breedersStore.load())
+onMounted(async (): Promise<void> => {
+  breedersStore.restoreSavedChoices()
+  await breedersStore.load()
+})
 </script>

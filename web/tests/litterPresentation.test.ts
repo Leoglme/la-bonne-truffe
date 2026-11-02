@@ -122,3 +122,28 @@ describe('LitterPresentation driving time', (): void => {
     expect(LitterPresentation.buildPlaceLine(NEARBY_LITTER, null, 37)).toBe('Bain-de-Bretagne')
   })
 })
+
+describe('LitterPresentation.matchesSearchQuery', (): void => {
+  const BRITTANY_LITTER: LitterCard = {
+    ...BORN_GOLD_LITTER,
+    name: 'Des Vents d’Océan',
+    place: 'La Grée-Saint-Laurent',
+    town: 'La Grée-Saint-Laurent',
+    department_code: '56',
+    department_name: 'Morbihan',
+  }
+
+  it('keeps a litter whose breeding, town or department hold every word typed, accents and capitals aside', (): void => {
+    expect(LitterPresentation.matchesSearchQuery(BRITTANY_LITTER, 'vents ocean')).toBe(true)
+    expect(LitterPresentation.matchesSearchQuery(BRITTANY_LITTER, 'OCÉAN')).toBe(true)
+    expect(LitterPresentation.matchesSearchQuery(BRITTANY_LITTER, 'gree saint laurent')).toBe(true)
+    expect(LitterPresentation.matchesSearchQuery(BRITTANY_LITTER, 'morbihan')).toBe(true)
+    expect(LitterPresentation.matchesSearchQuery(BRITTANY_LITTER, '56')).toBe(true)
+  })
+
+  it('leaves out a litter missing one word, and keeps every litter while nothing is typed', (): void => {
+    expect(LitterPresentation.matchesSearchQuery(BRITTANY_LITTER, 'vents redon')).toBe(false)
+    expect(LitterPresentation.matchesSearchQuery(BORN_GOLD_LITTER, '')).toBe(true)
+    expect(LitterPresentation.matchesSearchQuery(BORN_GOLD_LITTER, '   ')).toBe(true)
+  })
+})

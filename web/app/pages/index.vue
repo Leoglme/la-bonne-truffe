@@ -26,13 +26,17 @@
             </h1>
             <p class="m-0 text-[15px] text-ink-muted md:text-lg lg:text-[17px]">{{ greetingSubtitle }}</p>
           </div>
-          <div class="hidden shrink-0 flex-col items-end gap-1 lg:flex">
-            <LitterFilterChips />
-            <LitterSortButton />
-          </div>
+          <LitterSearchField class="hidden w-[360px] shrink-0 lg:flex" />
         </div>
 
-        <HomeBornLastNightCard v-if="bornLastNightLitter" :litter="bornLastNightLitter" />
+        <LitterSearchField class="shrink-0 lg:hidden" />
+
+        <div class="hidden shrink-0 flex-col gap-2 lg:flex xl:flex-row xl:items-center xl:justify-between xl:gap-4">
+          <LitterFilterChips />
+          <LitterSortButton />
+        </div>
+
+        <HomeBornLastNightCard v-if="bornLastNightLitter && !isSearching" :litter="bornLastNightLitter" />
 
         <div class="flex shrink-0 flex-col gap-5 md:gap-4">
           <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between lg:hidden">
@@ -45,7 +49,7 @@
             {{ littersStore.loadError }}
           </p>
           <UiEmptyStateCard
-            v-else-if="!littersStore.isLoading && littersStore.visibleCards.length === 0"
+            v-else-if="!littersStore.isLoading && littersStore.cards.length === 0"
             title="La truffe n’a encore rien flairé"
             description="Les portées qui te correspondent s’afficheront ici, les préférées en premier."
           >
@@ -69,9 +73,16 @@
               class="h-[142px] rounded-card-compact md:h-[300px] md:rounded-card"
             />
           </div>
+          <div
+            v-else-if="littersStore.cardsMatchingSearch.length === 0"
+            class="flex items-center gap-4 rounded-card-compact border-2 border-dashed border-line-strong px-[22px] py-5 text-base text-ink-muted"
+          >
+            <UiCustomIcon name="truffle" :size-in-pixels="38" class="shrink-0 text-line-strong" />
+            <span>{{ noMatchingLitterLabel }}</span>
+          </div>
 
           <div class="flex flex-col gap-3.5 md:hidden">
-            <template v-for="litter in littersStore.visibleCards" :key="litter.id">
+            <template v-for="litter in littersStore.cardsMatchingSearch" :key="litter.id">
               <UiUpToDateSeparator v-if="litter.id === firstAlreadySeenLitterId" class="my-1.5" />
               <LitterRowCard
                 :litter="litter"
@@ -80,7 +91,7 @@
             </template>
           </div>
           <div class="hidden grid-cols-2 gap-5 md:grid xl:grid-cols-3 2xl:grid-cols-4">
-            <template v-for="litter in littersStore.visibleCards" :key="litter.id">
+            <template v-for="litter in littersStore.cardsMatchingSearch" :key="litter.id">
               <UiUpToDateSeparator v-if="litter.id === firstAlreadySeenLitterId" class="col-span-full" />
               <LitterGridCard
                 :litter="litter"
@@ -132,12 +143,22 @@ const greetingSubtitle: ComputedRef<string> = computed((): string => {
 const bornLastNightLitter: ComputedRef<LitterCard | null> = computed(
   (): LitterCard | null => littersStore.bornLastNightCards[0] ?? null,
 )
-const firstAlreadySeenLitterId: ComputedRef<number | null> = computed((): number | null =>
-  littersStore.previousVisitAt === null ? null : (littersStore.alreadySeenCards[0]?.id ?? null),
+const firstAlreadySeenLitterId: ComputedRef<number | null> = computed((): number | null => {
+  if (littersStore.previousVisitAt === null) {
+    return null
+  }
+  const firstAlreadySeenLitter: LitterCard | undefined = littersStore.cardsMatchingSearch.find(
+    (litter: LitterCard): boolean => !LitterPresentation.isNew(litter, littersStore.previousVisitAt),
+  )
+  return firstAlreadySeenLitter?.id ?? null
+})
+const isSearching: ComputedRef<boolean> = computed((): boolean => littersStore.searchQuery.trim() !== '')
+const noMatchingLitterLabel: ComputedRef<string> = computed((): string =>
+  isSearching.value ? `Aucune portée pour « ${littersStore.searchQuery.trim()} ».` : 'Aucune portée avec ce filtre.',
 )
 
 onMounted(async (): Promise<void> => {
-  littersStore.restoreSavedSort()
+  littersStore.restoreSavedChoices()
   await Promise.all([littersStore.recordVisit(), littersStore.load()])
 })
 </script>

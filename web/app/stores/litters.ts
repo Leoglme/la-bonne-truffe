@@ -3,21 +3,25 @@ import type { CoatColor, FollowUpCard, LitterCard, LitterDetail, LitterVisit } f
 import type { LitterBrowsingOrigin, LitterFilterKey, LitterSortKey } from '~/types/Litter'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { DEFAULT_LITTER_FILTER_KEY, LITTER_FILTER_KEYS } from '~/constants/litterFilterOptions'
 import { DEFAULT_LITTER_SORT_KEY, LITTER_SORT_KEYS } from '~/constants/litterSortOptions'
 import { LittersService } from '~/services/littersService'
 import { FrenchDate } from '~/utils/frenchDate'
 import { LitterPresentation } from '~/utils/litterPresentation'
 import { LitterSorting } from '~/utils/litterSorting'
+import { SavedChoices } from '~/utils/savedChoices'
 
 const SORT_STORAGE_KEY: string = 'lbt-litter-sort'
+const FILTER_STORAGE_KEY: string = 'lbt-litter-filter'
 
-/** Pinia store of the litters: the home list, its filter and sort, and the litter opened on the detail screen. */
+/** Pinia store of the litters: the home list, its filter, sort and search, and the litter opened on the detail screen. */
 export const useLittersStore = defineStore('litters', () => {
   const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
 
   const cards: Ref<LitterCard[]> = ref([])
-  const selectedFilterKey: Ref<LitterFilterKey> = ref('all')
+  const selectedFilterKey: Ref<LitterFilterKey> = ref(DEFAULT_LITTER_FILTER_KEY)
   const selectedSortKey: Ref<LitterSortKey> = ref(DEFAULT_LITTER_SORT_KEY)
+  const searchQuery: Ref<string> = ref('')
   const selectedLitter: Ref<LitterDetail | null> = ref(null)
   const isLoading: Ref<boolean> = ref(true)
   const loadError: Ref<string | null> = ref(null)
@@ -52,6 +56,12 @@ export const useLittersStore = defineStore('litters', () => {
     ...alreadySeenCards.value,
   ])
 
+  const cardsMatchingSearch: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
+    visibleCards.value.filter((card: LitterCard): boolean =>
+      LitterPresentation.matchesSearchQuery(card, searchQuery.value),
+    ),
+  )
+
   const preferredCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
     cards.value.filter((card: LitterCard): boolean => card.tier === 'preferred'),
   )
@@ -61,27 +71,21 @@ export const useLittersStore = defineStore('litters', () => {
   )
 
   /**
-   * The sort kept from the last visit, the score when none or when storage is unavailable.
-   *
-   * @returns A known sort key.
+   * Take back the filter and sort of the last visit; the store is built on the server, where storage does not exist.
    */
-  function readSavedSortKey(): LitterSortKey {
-    if (!import.meta.client) {
-      return DEFAULT_LITTER_SORT_KEY
-    }
-    try {
-      const savedKey: string | null = localStorage.getItem(SORT_STORAGE_KEY)
-      return LITTER_SORT_KEYS.find((key: LitterSortKey): boolean => key === savedKey) ?? DEFAULT_LITTER_SORT_KEY
-    } catch {
-      return DEFAULT_LITTER_SORT_KEY
-    }
+  function restoreSavedChoices(): void {
+    selectedFilterKey.value = SavedChoices.read(FILTER_STORAGE_KEY, LITTER_FILTER_KEYS, DEFAULT_LITTER_FILTER_KEY)
+    selectedSortKey.value = SavedChoices.read(SORT_STORAGE_KEY, LITTER_SORT_KEYS, DEFAULT_LITTER_SORT_KEY)
   }
 
   /**
-   * Take back the sort of the last visit; the store is built on the server, where storage does not exist.
+   * Filter the home list and remember the choice for the next visits.
+   *
+   * @param filterKey - The chip chosen.
    */
-  function restoreSavedSort(): void {
-    selectedSortKey.value = readSavedSortKey()
+  function selectFilter(filterKey: LitterFilterKey): void {
+    selectedFilterKey.value = filterKey
+    SavedChoices.keep(FILTER_STORAGE_KEY, filterKey)
   }
 
   /**
@@ -91,11 +95,7 @@ export const useLittersStore = defineStore('litters', () => {
    */
   function selectSort(sortKey: LitterSortKey): void {
     selectedSortKey.value = sortKey
-    try {
-      localStorage.setItem(SORT_STORAGE_KEY, sortKey)
-    } catch {
-      return
-    }
+    SavedChoices.keep(SORT_STORAGE_KEY, sortKey)
   }
 
   /**
@@ -220,7 +220,7 @@ export const useLittersStore = defineStore('litters', () => {
    * List the litters a swipe on the detail screen goes through, in the order of the screen it was opened from.
    *
    * @param origin - The follow-up screen, or the home list (also for a litter opened from a notification).
-   * @param litterId - The litter shown, looked for in the whole home list when the filter hides it.
+   * @param litterId - The litter shown, looked for in the whole home list when the filter or the search hides it.
    * @returns The ids of the litters, in screen order.
    */
   async function listBrowsableLitterIds(origin: LitterBrowsingOrigin, litterId: number): Promise<number[]> {
@@ -234,8 +234,8 @@ export const useLittersStore = defineStore('litters', () => {
     if (cards.value.length === 0) {
       await load()
     }
-    const visibleIds: number[] = visibleCards.value.map((card: LitterCard): number => card.id)
-    return visibleIds.includes(litterId) ? visibleIds : cards.value.map((card: LitterCard): number => card.id)
+    const matchingIds: number[] = cardsMatchingSearch.value.map((card: LitterCard): number => card.id)
+    return matchingIds.includes(litterId) ? matchingIds : cards.value.map((card: LitterCard): number => card.id)
   }
 
   /**
@@ -256,7 +256,9 @@ export const useLittersStore = defineStore('litters', () => {
     cards,
     selectedFilterKey,
     selectedSortKey,
-    restoreSavedSort,
+    searchQuery,
+    restoreSavedChoices,
+    selectFilter,
     selectSort,
     selectedLitter,
     isLoading,
@@ -265,6 +267,7 @@ export const useLittersStore = defineStore('litters', () => {
     newCards,
     alreadySeenCards,
     visibleCards,
+    cardsMatchingSearch,
     preferredCards,
     bornLastNightCards,
     load,

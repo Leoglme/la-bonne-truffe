@@ -5,11 +5,12 @@ Rules of docs/03-modele-de-donnees.md, in order, for a listing without group, al
 breeder and breed: the same litter number; the same mating number on the same source (the Centrale Canine
 may declare the birth under a new identifier); for a puppy ad, a puppy ad of the same source born the same
 day of the same mother (such a source lists each puppy apart); a listing of another source born, or
-mated, three days apart at most, thirty when both name the same mother; the single litter of the breeder
-another source says was born the very same day, whatever mother it names (a breeder's site may name another
-of its females; flagged ``is_grouping_probable``); for an ad without birth date, the single litter seen in the
-last sixty days (flagged too). Apart from the very same day, two named mothers that differ never group, and two
-litter listings of the same source are never grouped on a guess: a source lists a litter once.
+mated, three days apart at most, thirty when both name the same mother, or born a week at most from the birth
+the mating of the other announces; the single litter of the breeder another source says was
+born the very same day, whatever mother it names (a breeder's site may name another of its females; flagged
+``is_grouping_probable``); for an ad without birth date, the single litter seen in the last sixty days
+(flagged too). Apart from the very same day, two named mothers that differ never group, and two litter
+listings of the same source are never grouped on a guess: a source lists a litter once.
 """
 
 import re
@@ -27,6 +28,7 @@ GESTATION_DAYS = 63
 LEGAL_HANDOVER_DAYS = 56
 DATE_TOLERANCE_DAYS = 3
 SAME_DAM_TOLERANCE_DAYS = 30
+GESTATION_TOLERANCE_DAYS = 7
 NON_LETTER_OR_DIGIT_PATTERN = re.compile(r"[^a-z0-9]+")
 PROBABLE_GROUPING_WINDOW_DAYS = 60
 
@@ -195,7 +197,9 @@ class LitterGroupingService:
         """
         Whether two listings of the same breeder are one litter by their dates: births compared when both
         are known, else matings. Three days apart at most; thirty when both name the same mother, who
-        cannot have two litters a month apart (two sources often date the mating a few days apart).
+        cannot have two litters a month apart (two sources often date the mating a few days apart). Else the
+        birth of one faces the birth the mating of the other announces, a week apart at most when both name the
+        same mother (a gestation lasts 56 to 70 days), three days otherwise.
 
         Args:
             first: A listing.
@@ -206,12 +210,18 @@ class LitterGroupingService:
         """
         if not LitterGroupingService._has_same_dam(first, second):
             return False
-        tolerance_days = SAME_DAM_TOLERANCE_DAYS if first.dam_name and second.dam_name else DATE_TOLERANCE_DAYS
+        are_both_dams_named = bool(first.dam_name and second.dam_name)
+        tolerance_days = SAME_DAM_TOLERANCE_DAYS if are_both_dams_named else DATE_TOLERANCE_DAYS
         if first.birth_date is not None and second.birth_date is not None:
             return abs((first.birth_date - second.birth_date).days) <= tolerance_days
         if first.mating_date is not None and second.mating_date is not None:
             return abs((first.mating_date - second.mating_date).days) <= tolerance_days
-        return False
+        born_listing, mated_listing = (first, second) if first.birth_date is not None else (second, first)
+        if born_listing.birth_date is None or mated_listing.mating_date is None:
+            return False
+        announced_birth_date = mated_listing.mating_date + timedelta(days=GESTATION_DAYS)
+        gestation_tolerance_days = GESTATION_TOLERANCE_DAYS if are_both_dams_named else DATE_TOLERANCE_DAYS
+        return abs((born_listing.birth_date - announced_birth_date).days) <= gestation_tolerance_days
 
     @staticmethod
     def _has_same_dam(first: Listing, second: Listing) -> bool:

@@ -11,6 +11,8 @@ import { FrenchText } from '~/utils/frenchText'
 
 const MINUTES_PER_HOUR: number = 60
 const NON_BREAKING_SPACE: string = '\u00a0'
+const ACCENT_PATTERN: RegExp = /\p{Diacritic}/gu
+const NON_LETTER_OR_DIGIT_PATTERN: RegExp = /[^a-z0-9]+/g
 const EURO_FORMAT: Intl.NumberFormat = new Intl.NumberFormat('fr-FR', {
   style: 'currency',
   currency: 'EUR',
@@ -333,5 +335,39 @@ export class LitterPresentation {
       return false
     }
     return FrenchDate.parseApiDate(card.first_seen_at).getTime() > previousVisitAt.getTime()
+  }
+
+  /**
+   * Whether every word typed is found in the name, the town or the department of a litter, accents and capitals aside.
+   *
+   * @param card - The litter.
+   * @param query - What was typed in the search of the home list, empty to keep every litter.
+   * @returns True when the litter stays listed.
+   */
+  static matchesSearchQuery(card: LitterCard, query: string): boolean {
+    const searchedWords: string[] = this.foldForSearch(query)
+      .split(' ')
+      .filter((word: string): boolean => word !== '')
+    const searchableText: string = this.foldForSearch(
+      [card.name, card.town, card.department_name, card.department_code]
+        .filter((part: string | null): part is string => part !== null)
+        .join(' '),
+    )
+    return searchedWords.every((word: string): boolean => searchableText.includes(word))
+  }
+
+  /**
+   * Write a text the way the search compares it: lower case, without accents, one space between words.
+   *
+   * @param text - « Des Vents d’Océan ».
+   * @returns « des vents d ocean ».
+   */
+  private static foldForSearch(text: string): string {
+    return text
+      .normalize('NFD')
+      .replace(ACCENT_PATTERN, '')
+      .toLowerCase()
+      .replace(NON_LETTER_OR_DIGIT_PATTERN, ' ')
+      .trim()
   }
 }

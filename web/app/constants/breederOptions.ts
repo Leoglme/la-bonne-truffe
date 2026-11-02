@@ -1,4 +1,11 @@
-import type { BreederFollowStatus, BreederFollowUpdate, CoatColor, SocialLinkOrigin } from '~/types/api'
+import type {
+  BreederFilter,
+  BreederFollowStatus,
+  BreederFollowUpdate,
+  BreederSort,
+  CoatColor,
+  SocialLinkOrigin,
+} from '~/types/api'
 import type {
   BreederChipTone,
   BreederFilterOption,
@@ -18,10 +25,22 @@ export const BREEDER_FILTER_OPTIONS: BreederFilterOption[] = [
   { key: 'active_litter', label: 'Une portée en cours' },
 ]
 
+export const BREEDER_FILTER_KEYS: BreederFilter[] = BREEDER_FILTER_OPTIONS.map(
+  (option: BreederFilterOption): BreederFilter => option.key,
+)
+
+export const DEFAULT_BREEDER_FILTER_KEY: BreederFilter = 'all'
+
 export const BREEDER_SORT_OPTIONS: BreederSortOption[] = [
   { key: 'promising', label: 'Les plus prometteurs d’abord' },
   { key: 'name', label: 'Par nom' },
 ]
+
+export const BREEDER_SORT_KEYS: BreederSort[] = BREEDER_SORT_OPTIONS.map(
+  (option: BreederSortOption): BreederSort => option.key,
+)
+
+export const DEFAULT_BREEDER_SORT_KEY: BreederSort = 'promising'
 
 /** Where the exchange with a breeder stands, as the card and the drawer word it. */
 export const BREEDER_FOLLOW_STATUS_LABELS: Record<BreederFollowStatus, string> = {

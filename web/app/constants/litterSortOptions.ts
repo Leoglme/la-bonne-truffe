@@ -1,14 +1,14 @@
 import type { LitterSortKey, LitterSortOption } from '~/types/Litter'
 
 export const DEFAULT_LITTER_SORT_OPTION: LitterSortOption = {
-  key: 'score',
-  label: 'Meilleur score',
-  description: 'Ce qui te correspond le plus, en premier',
+  key: 'newest',
+  label: 'Les plus récentes',
+  description: 'Les dernières annonces apparues, en premier',
 }
 
 export const LITTER_SORT_OPTIONS: LitterSortOption[] = [
   DEFAULT_LITTER_SORT_OPTION,
-  { key: 'newest', label: 'Les plus récentes', description: 'Les dernières annonces apparues, en premier' },
+  { key: 'score', label: 'Meilleur score', description: 'Ce qui te correspond le plus, en premier' },
   { key: 'distance', label: 'Les plus proches', description: 'Depuis chez toi, à vol d’oiseau' },
   { key: 'price', label: 'Les moins chères', description: 'Prix inconnu en dernier' },
   { key: 'departure_soonest', label: 'Départ le plus tôt', description: 'Le chiot que tu pourrais ramener en premier' },
