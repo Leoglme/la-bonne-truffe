@@ -9,7 +9,7 @@ from selectolax.lexbor import LexborHTMLParser
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-from migrations import add_breeder_links_found_by_hand
+from migrations import add_breeder_links_found_by_hand, add_more_breeder_links_found_by_hand
 from models.breeder import Breeder
 from models.user import User
 from seeders.run_seeders import SeederRunner
@@ -209,3 +209,18 @@ def test_the_links_found_by_hand_fill_the_empty_places_of_their_breeders(db: Ses
         "https://www.facebook.com/colline.declaree",
         {"facebook": "centrale_canine"},
     )
+
+
+def test_the_second_search_gives_the_ads_of_a_breeding_without_a_site(db: Session, engine: Engine) -> None:
+    breeding_without_site = Breeder(display_name="Martin Paul", scc_breeder_id="509530")
+    db.add(breeding_without_site)
+    db.commit()
+
+    add_more_breeder_links_found_by_hand.run_migration(engine)
+
+    db.expire_all()
+    assert (breeding_without_site.website, breeding_without_site.website_photo_url) == (
+        "https://www.uncompagnon.fr/annonce/detail/173222/cocker-anglais-noir-et-feu.html",
+        "https://www.uncompagnon.fr/assets/uploads/announces/173222/1777909922886.jpg",
+    )
+    assert breeding_without_site.site_photo_url == breeding_without_site.website_photo_url

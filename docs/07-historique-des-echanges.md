@@ -211,7 +211,8 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
   - à la main : recherche web sur les 172 élevages les plus utiles (une portée dans l'app, une portée depuis 2025, ou un affixe), puis deux sites Chiens de France, deux sites d'élevages de cockers et cinq pages Facebook ou Instagram (`add_breeder_links_found_by_hand`). Les élevages dont les sites ne montrent plus que d'autres races n'en reçoivent pas ;
   - une photo qui ne se charge plus laisse place à l'illustration, ou aux initiales sur la tuile d'un élevage.
 - **Vérifié** : sur une copie de la base de production, les migrations puis les relevés réels des sites Chiens de France (59 sites, aucun en échec), des mini-sites Centrale Canine (8 vraies galeries) et des sites des élevages donnent 71 cartes d'élevage sur 397 avec une photo, et 18 portées actives sur 22. Un échantillon des 38 nouvelles photos montre des cockers des élevages eux-mêmes. Le repli d'une photo cassée vu dans le navigateur. Tests pytest et vitest, lint, mypy et typecheck.
-- **Reste** : le quota de recherches web de la session a été atteint ; environ 70 des 172 élevages n'ont pas pu être cherchés et seront à reprendre. Quatre portées actives restent sans photo, chez trois élevages sans site trouvé (une page Facebook seulement pour l'un d'eux).
+- **Seconde recherche** (même nuit, une fois le quota de recherches web revenu) : les 75 élevages que la première n'avait pas pu chercher l'ont tous été. Aucun site ne montre de cockers : des élevages d'autres races, des sites morts ou vides. Seules les annonces d'un élevage sans site, sur une portée de cockers d'avril 2026, donnent une photo (`add_more_breeder_links_found_by_hand`). Les autres n'ont aucune page à eux en ligne.
+- **Reste** : quatre portées actives sans photo, chez trois élevages sans site trouvé (une page Facebook seulement pour l'un d'eux).
 
 ## 2 novembre : la cloche ne s'ouvrait plus
 

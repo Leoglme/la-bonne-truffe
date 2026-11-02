@@ -55,6 +55,7 @@ MIGRATION_MODULES: list[tuple[str, str]] = [
     ("reset_scc_site_galleries", "migrations.reset_scc_site_galleries"),
     ("add_breeder_website_photo_columns", "migrations.add_breeder_website_photo_columns"),
     ("add_breeder_links_found_by_hand", "migrations.add_breeder_links_found_by_hand"),
+    ("add_more_breeder_links_found_by_hand", "migrations.add_more_breeder_links_found_by_hand"),
 ]
 
 _NON_MIGRATION_MODULES: set[str] = {"__init__", "run_migrations"}

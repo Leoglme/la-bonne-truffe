@@ -42,26 +42,37 @@ FILLED_COLUMNS: tuple[str, ...] = (
     "website_photo_url",
 )
 SOCIAL_ACCOUNTS_BY_COLUMN: dict[str, str] = {"facebook_url": "facebook", "instagram_url": "instagram"}
+SELECT_BREEDER_SQL = (
+    "SELECT id, social_link_origins, "
+    + ", ".join(FILLED_COLUMNS)
+    + " FROM breeders WHERE scc_breeder_id = :scc_breeder_id"
+)
 
 
 def run_migration(database_engine: Engine) -> None:
     """
-    Fill the empty places of each breeder found. A Chiens de France site also becomes the website of a breeding
-    that has none, as a link pasted by hand does; a photo chosen by hand counts as the reading of the website; the
-    search text is built again at the next search.
+    Fill the empty places of each breeder found.
 
     Args:
         database_engine: Engine of the database to migrate.
     """
+    fill_empty_places(database_engine, LINKS_FOUND_BY_HAND)
+
+
+def fill_empty_places(database_engine: Engine, links_found_by_hand: tuple[dict[str, str], ...]) -> None:
+    """
+    Fill the empty places of the breeders found by their Centrale Canine identifier. A Chiens de France site also
+    becomes the website of a breeding that has none, as a link pasted by hand does; a photo chosen by hand counts as
+    the reading of the website; the search text is built again at the next search.
+
+    Args:
+        database_engine: Engine of the database to migrate.
+        links_found_by_hand: Per breeder, its ``scc_breeder_id`` and the values of ``FILLED_COLUMNS`` found.
+    """
     with database_engine.begin() as connection:
-        for links in LINKS_FOUND_BY_HAND:
+        for links in links_found_by_hand:
             breeder = (
-                connection.execute(
-                    text(
-                        f"SELECT id, social_link_origins, {', '.join(FILLED_COLUMNS)} FROM breeders WHERE scc_breeder_id = :scc_breeder_id"
-                    ),
-                    {"scc_breeder_id": links["scc_breeder_id"]},
-                )
+                connection.execute(text(SELECT_BREEDER_SQL), {"scc_breeder_id": links["scc_breeder_id"]})
                 .mappings()
                 .first()
             )
