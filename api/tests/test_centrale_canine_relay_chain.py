@@ -66,7 +66,7 @@ def answer_like_the_desktop_app(page_requests: list[dict[str, Any]]) -> list[dic
         request = httpx.Request("GET", url)
         if "/eleveurs/" in url.path or url.path.startswith(CLUB_API_PATH):
             response = answer_directory_request(request)
-        elif url.path.endswith(("/api/homepage", "/api/dogs", "/api/general")):
+        elif url.path.endswith(("/api/homepage", "/api/general")):
             response = answer_site_request(request)
         else:
             response = answer_dog_request(request)

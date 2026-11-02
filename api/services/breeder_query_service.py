@@ -364,9 +364,7 @@ class BreederQueryService:
             latitude=breeder.latitude,
             longitude=breeder.longitude,
             logo_url=breeder.logo_url,
-            photo_url=breeder.cover_photo_url
-            or breeder.scc_site_cover_url
-            or next((card.photo_url for card in litters if card.photo_url), None),
+            photo_url=breeder.site_photo_url or next((card.photo_url for card in litters if card.photo_url), None),
             is_selected_breeding=breeder.scc_selection_group == SELECTED_BREEDING_GROUP
             or breeder.is_scc_selected is True,
             is_breed_club_member=breeder.is_breed_club_member is True,

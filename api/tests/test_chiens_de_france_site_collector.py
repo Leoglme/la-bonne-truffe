@@ -11,6 +11,7 @@ from enums.dog_role import DogRole
 from enums.dog_sex import DogSex
 from enums.listing_kind import ListingKind
 from enums.lof_status import LofStatus
+from services.collectors.chiens_de_france import litter_photos_of
 from services.collectors.chiens_de_france_sites import (
     ChiensDeFranceSiteCollector,
     ListedDog,
@@ -23,6 +24,7 @@ from tests.chiens_de_france_site_pages import (
     BROKEN_SITE_SLUG,
     DIRECTORY_LIST_URL,
     EMPTY_SITE_SLUG,
+    OTHER_BREED_SITE_SLUG,
     RECORDED_SITE_SLUG,
     chiens_de_france_site_collector_serving,
     recorded_page,
@@ -286,6 +288,30 @@ def test_site_without_puppy_nor_dog_takes_its_cover_from_its_home_page() -> None
             cover_photo_url=f"{SITE_URL}/media_cdf/photos/eleveurs/0/0/presentations/photo-de-test-18.jpg",
         )
     ]
+
+
+def test_a_site_that_sends_the_breed_to_another_gives_nothing_of_that_other_breed() -> None:
+    plan = SiteCollectionPlan(sites=(site_target(OTHER_BREED_SITE_SLUG),))
+
+    collection = chiens_de_france_site_collector_serving().collect(plan)
+
+    assert (collection.listings, collection.dogs, collection.raw_pages, collection.failed_sites) == ([], [], [], [])
+    assert [facts.cover_photo_url for facts in collection.site_facts] == [None]
+
+
+def test_an_image_without_a_file_is_no_photo() -> None:
+    page = LexborHTMLParser(
+        f"""
+        <div class="boximg">
+          <img src="{SITE_URL}/media_cdf/photos/eleveurs/326/65148/portees/">
+          <img src="{SITE_URL}/media_cdf/photos/eleveurs/326/65148/portees/chiot-1.jpg">
+        </div>
+        <article class="article-main"><img src="{SITE_URL}/media_cdf/photos/eleveurs/326/65148/presentations/"></article>
+        """
+    )
+
+    assert litter_photos_of(page) == (f"{SITE_URL}/media_cdf/photos/eleveurs/326/65148/portees/chiot-1.jpg",)
+    assert ChiensDeFranceSiteCollector.home_cover_photo(page) is None
 
 
 def test_failing_site_is_reported_and_the_next_site_is_still_read() -> None:

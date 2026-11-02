@@ -182,6 +182,39 @@ def test_a_name_two_breeders_of_the_postal_code_bear_or_a_known_site_links_nothi
     assert [twin.chiens_de_france_site_url for twin in twins] == [None, None]
 
 
+def test_an_affix_links_its_breeding_wherever_the_list_places_it_unless_two_breedings_bear_it(
+    db: Session, seeded: dict[str, str]
+) -> None:
+    moved = ferme_des_tests(db, display_name="Martin Anne", affix="Des Landes de l'Élevage E", zip_code="22300")
+    twins = [
+        ferme_des_tests(db, display_name="Martin Paul", affix="Du Clos des Jumeaux", zip_code="56000"),
+        ferme_des_tests(db, display_name="Martin Jean", affix="Du Clos des Jumeaux", zip_code="44000"),
+    ]
+    entry = RawSiteDirectoryEntry("https://elevage-e.chiens-de-france.com", "des landes de l'élevage E", "29870", None)
+    twin_entry = RawSiteDirectoryEntry("https://jumeaux.chiens-de-france.com", "Du Clos Des Jumeaux", "35000", None)
+
+    linked = breeder_site_ingestion_service.link_directory_sites(db, [entry, twin_entry])
+
+    assert linked == [moved.id]
+    assert moved.chiens_de_france_site_url == entry.site_url
+    assert [twin.chiens_de_france_site_url for twin in twins] == [None, None]
+
+
+def test_a_list_naming_a_person_links_the_breeder_of_that_name_in_the_postal_code(
+    db: Session, seeded: dict[str, str]
+) -> None:
+    breeder = ferme_des_tests(db, display_name="Dupont Jean", affix="Elevage du Test", zip_code="72250")
+    namesake_elsewhere = ferme_des_tests(db, display_name="Dupont Paul", zip_code="35000")
+    entry = RawSiteDirectoryEntry("https://dupont-jean.chiens-de-france.com", "Mr Marc Dupont", "72250", None)
+    kennel_entry = RawSiteDirectoryEntry("https://elevage-f.chiens-de-france.com", "Du Moulin du Test", "72250", None)
+
+    linked = breeder_site_ingestion_service.link_directory_sites(db, [entry, kennel_entry])
+
+    assert linked == [breeder.id]
+    assert breeder.chiens_de_france_site_url == entry.site_url
+    assert namesake_elsewhere.chiens_de_france_site_url is None
+
+
 def test_the_regional_lists_of_provence_and_la_reunion_are_read_at_the_addresses_of_the_site(
     db: Session, seeded: dict[str, str]
 ) -> None:

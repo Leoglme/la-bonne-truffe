@@ -33,6 +33,7 @@ from services.collectors.chiens_de_france import (
     THUMBNAIL_PREFIX,
     affix_of,
     french_date_of,
+    is_photo_file,
     litter_photos_of,
 )
 from services.collectors.html_source import (
@@ -314,7 +315,8 @@ class ChiensDeFranceSiteCollector:
 
     def _read_page(self, url: str, collection: SiteCollection) -> LexborHTMLParser | None:
         """
-        Read one page of a site and keep it with the pages of the run.
+        Read one page of a site and keep it with the pages of the run. A site without the breed sends its pages
+        to another breed: such a page counts as missing.
 
         Args:
             url: Page address.
@@ -327,12 +329,28 @@ class ChiensDeFranceSiteCollector:
             SourceReadError: On a network error or any status other than a missing page.
         """
         try:
-            html = self.polite_client.get(url, accept="text/html").text
+            response = self.polite_client.get(url, accept="text/html")
         except SourcePageMissingError as error:
             logger.info("Sites Chiens de France: page missing, skipped: %s", error)
             return None
-        collection.raw_pages.append(HtmlRawPage(url, html))
-        return LexborHTMLParser(html)
+        if self._breed_slug_of(str(response.url)) != self._breed_slug_of(url):
+            logger.info("Sites Chiens de France: page sent to another breed, skipped: %s", response.url)
+            return None
+        collection.raw_pages.append(HtmlRawPage(url, response.text))
+        return LexborHTMLParser(response.text)
+
+    @staticmethod
+    def _breed_slug_of(url: str) -> str:
+        """
+        The breed a page of a site is about.
+
+        Args:
+            url: Page address (« https://elevage-a.chiens-de-france.com/cocker-spaniel-anglais/chiots »).
+
+        Returns:
+            The first segment of its path (« cocker-spaniel-anglais »).
+        """
+        return urlparse(url).path.strip("/").split("/", 1)[0]
 
     @classmethod
     def parse_litters_to_come_page(cls, tree: LexborHTMLParser, site: SiteTarget) -> list[RawListing]:
@@ -578,7 +596,9 @@ class ChiensDeFranceSiteCollector:
                     url=url,
                     name=HtmlAdParser.text_of(box.css_first("div.nom")) or None,
                     status_text=HtmlAdParser.text_of(box.css_first("div.box-chiens-etat")) or None,
-                    photo_url=photo_match.group(1).strip() if photo_match else None,
+                    photo_url=photo_match.group(1).strip()
+                    if photo_match and is_photo_file(photo_match.group(1))
+                    else None,
                 ),
             )
         return list(listed_dogs.values())
@@ -640,7 +660,7 @@ class ChiensDeFranceSiteCollector:
         """
         for image in tree.css("article.article-main img"):
             source = image.attributes.get("data-original") or image.attributes.get("src") or ""
-            if SITE_PHOTO_PATH_PART in source:
+            if SITE_PHOTO_PATH_PART in source and is_photo_file(source):
                 return source
         return None
 
@@ -837,7 +857,7 @@ class ChiensDeFranceSiteCollector:
         photos: dict[str, None] = {}
         for image in box.css("div.boximg img[src]"):
             source = image.attributes.get("src") or ""
-            if LITTER_PHOTO_PATH_PART in source and THUMBNAIL_PREFIX not in source:
+            if LITTER_PHOTO_PATH_PART in source and THUMBNAIL_PREFIX not in source and is_photo_file(source):
                 photos[source] = None
         return tuple(photos)
 
@@ -855,7 +875,7 @@ class ChiensDeFranceSiteCollector:
         photos: dict[str, None] = {}
         for image in tree.css("img[src]"):
             source = image.attributes.get("src") or ""
-            if DOG_PHOTO_PATH_PART in source:
+            if DOG_PHOTO_PATH_PART in source and is_photo_file(source):
                 photos[source] = None
         return tuple(photos)
 

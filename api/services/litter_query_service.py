@@ -520,17 +520,17 @@ class LitterQueryService:
     @staticmethod
     def _breeding_photo(breeder: Breeder | None) -> str | None:
         """
-        The photo a litter shows while none of its ads has one: the cover of its breeding, from its sites.
+        The photo a litter shows while none of its ads has one: the photo of its breeding, from its sites.
 
         Args:
             breeder: The breeder of the litter, None when unknown.
 
         Returns:
-            The cover of the Chiens de France site, else of the Centrale Canine site, else None.
+            The photo its sites give (``Breeder.site_photo_url``), else None.
         """
         if breeder is None:
             return None
-        return breeder.cover_photo_url or breeder.scc_site_cover_url
+        return breeder.site_photo_url
 
     @staticmethod
     def _parent(

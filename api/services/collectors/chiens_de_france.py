@@ -99,9 +99,22 @@ def french_date_of(text: str | None) -> date | None:
         return None
 
 
+def is_photo_file(address: str) -> bool:
+    """
+    Whether an image address names a file: a photo the breeder never sent leaves the folder alone (« …/portees/ »).
+
+    Args:
+        address: The ``src`` of an image.
+
+    Returns:
+        True when the address ends with a file name.
+    """
+    return not address.strip().endswith("/")
+
+
 def litter_photos_of(tree: LexborHTMLParser) -> tuple[str, ...]:
     """
-    The full-size photos of a litter page, without their thumbnails.
+    The full-size photos of a litter page, without their thumbnails nor the images without a file.
 
     Args:
         tree: The parsed page.
@@ -112,7 +125,7 @@ def litter_photos_of(tree: LexborHTMLParser) -> tuple[str, ...]:
     photos: dict[str, None] = {}
     for image in tree.css("img[src]"):
         source = image.attributes.get("src") or ""
-        if LITTER_PHOTO_PATH_PART in source and THUMBNAIL_PREFIX not in source:
+        if LITTER_PHOTO_PATH_PART in source and THUMBNAIL_PREFIX not in source and is_photo_file(source):
             photos[source] = None
     return tuple(photos)
 

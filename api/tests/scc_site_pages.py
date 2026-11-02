@@ -10,6 +10,7 @@ from services.collectors.scc_sites import SccSiteCollector
 # The site of Élevage A: a cover photo, two gallery images, three social accounts and « mon autre site » hosted
 # by Chiens de France. The site of Élevage G declares no link. The site of Élevage F is gone (404).
 SITE_A_COVER_PATH = "/sites/default/files/2025-04/couverture-elevage-a.jpeg"
+GALLERY_NODE_ID = 1311850
 SITE_A_GALLERY_PATHS = ("/sites/default/files/2022-01/galerie-a-1.JPG", "/sites/default/files/2022-01/galerie-a-2.JPG")
 SITE_A_FACEBOOK_PAGE_ID = "100000000000001"
 SITE_A_INSTAGRAM_HANDLE = "elevage.a"
@@ -41,47 +42,40 @@ SITE_F_SLUG = site_slug_of("DU CLOS DE L'ÉLEVAGE F")
 SITE_G_SLUG = site_slug_of("DU CLOS DE L'ÉLEVAGE G")
 
 
-def homepage_page(title: str, cover_path: str | None) -> dict[str, Any]:
+def homepage_page(title: str, cover_path: str | None, gallery_paths: tuple[str, ...] = ()) -> dict[str, Any]:
     """
-    The ``api/homepage`` JSON of a site.
+    The ``api/homepage`` JSON of a site: its cover, and its gallery, a node that lists images of the ``media``
+    block (a document of the site sits among them).
 
     Args:
         title: ``h_main_title``.
         cover_path: ``h_image_uri``, empty when the breeding has no cover.
+        gallery_paths: ``m_image_uri`` of each image of the gallery, none when the site shows no gallery.
 
     Returns:
         The page.
     """
-    return {
-        "main_content": {
-            "h_domain": title.lower().replace(" ", "_"),
-            "h_gallery": [],
-            "h_image_uri": cover_path or "",
-            "h_main_title": title,
-            "h_show_gallery": False,
-            "h_show_news": True,
-            "h_widgets": [],
-        },
-        "cache_tags": ["homepage:1"],
-    }
-
-
-def dogs_page(gallery_paths: tuple[str, ...]) -> dict[str, Any]:
-    """
-    The ``api/dogs`` JSON of a site, whose ``media`` block lists the gallery images.
-
-    Args:
-        gallery_paths: ``m_image_uri`` of each image.
-
-    Returns:
-        The page.
-    """
+    domain = title.lower().replace(" ", "_")
     media: dict[str, Any] = {
         str(150000 + index): {"m_bundle": "gallery_image", "m_id": str(150000 + index), "m_image_uri": path}
         for index, path in enumerate(gallery_paths)
     }
     media["999"] = {"m_bundle": "document", "m_id": "999", "m_image_uri": "/sites/default/files/reglement.pdf"}
-    return {"main_content": {"n_type": "page", "n_title": "Les chiens"}, "media": media}
+    gallery_node = {"n_type": "gallery", "n_domain_access": domain, "n_items": [int(media_id) for media_id in media]}
+    return {
+        "main_content": {
+            "h_domain": domain,
+            "h_gallery": [GALLERY_NODE_ID] if gallery_paths else [],
+            "h_image_uri": cover_path or "",
+            "h_main_title": title,
+            "h_show_gallery": bool(gallery_paths),
+            "h_show_news": True,
+            "h_widgets": [],
+        },
+        "node": {str(GALLERY_NODE_ID): gallery_node} if gallery_paths else {},
+        "media": media,
+        "cache_tags": ["homepage:1"],
+    }
 
 
 def general_page(site_slug: str, socials: dict[str, str] | list[Any], other_site_url: str | None) -> dict[str, Any]:
@@ -121,11 +115,11 @@ def general_page(site_slug: str, socials: dict[str, str] | list[Any], other_site
 def recorded_site_pages() -> dict[str, dict[str, Any]]:
     """The pages of the sites of the tests, by URL path."""
     return {
-        f"/{SITE_A_SLUG}/api/homepage": homepage_page("DU CLOS DE L'ÉLEVAGE A", SITE_A_COVER_PATH),
-        f"/{SITE_A_SLUG}/api/dogs": dogs_page(SITE_A_GALLERY_PATHS),
+        f"/{SITE_A_SLUG}/api/homepage": homepage_page(
+            "DU CLOS DE L'ÉLEVAGE A", SITE_A_COVER_PATH, SITE_A_GALLERY_PATHS
+        ),
         f"/{SITE_A_SLUG}/api/general": general_page(SITE_A_SLUG, SITE_A_SOCIALS, SITE_A_OTHER_SITE_URL),
         f"/{SITE_G_SLUG}/api/homepage": homepage_page("DU CLOS DE L'ÉLEVAGE G", None),
-        f"/{SITE_G_SLUG}/api/dogs": dogs_page(()),
         f"/{SITE_G_SLUG}/api/general": general_page(SITE_G_SLUG, [], None),
     }
 

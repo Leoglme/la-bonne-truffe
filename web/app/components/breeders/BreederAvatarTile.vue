@@ -4,20 +4,28 @@
     :class="[
       props.sizeClass,
       props.textClass,
-      imageUrl ? 'bg-chip' : BreederPresentation.resolveTileClass(props.breeder),
+      shownImageUrl ? 'bg-chip' : BreederPresentation.resolveTileClass(props.breeder),
     ]"
     aria-hidden="true"
   >
-    <img v-if="imageUrl" :src="imageUrl" alt="" loading="lazy" decoding="async" class="size-full object-cover" />
+    <img
+      v-if="shownImageUrl"
+      :src="shownImageUrl"
+      alt=""
+      loading="lazy"
+      decoding="async"
+      class="size-full object-cover"
+      @error="hasImageFailed = true"
+    />
     <template v-else>{{ BreederPresentation.buildInitials(props.breeder.name) }}</template>
   </span>
 </template>
 
 <script lang="ts" setup>
-import type { ComputedRef, PropType } from 'vue'
+import type { ComputedRef, PropType, Ref } from 'vue'
 import type { BreederCard } from '~/types/api'
 import type { BreederAvatarTileProps } from '~/types/BreederAvatarTile'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { BreederPresentation } from '~/utils/breederPresentation'
 
 const props: BreederAvatarTileProps = defineProps({
@@ -26,7 +34,16 @@ const props: BreederAvatarTileProps = defineProps({
   textClass: { type: String, default: 'text-2xl' },
 })
 
+const hasImageFailed: Ref<boolean> = ref(false)
+
 const imageUrl: ComputedRef<string | null> = computed(
   (): string | null => props.breeder.logo_url ?? props.breeder.photo_url,
 )
+const shownImageUrl: ComputedRef<string | null> = computed((): string | null =>
+  hasImageFailed.value ? null : imageUrl.value,
+)
+
+watch(imageUrl, (): void => {
+  hasImageFailed.value = false
+})
 </script>

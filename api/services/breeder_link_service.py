@@ -1,7 +1,7 @@
 """
 Adds a link pasted on a breeder (docs/05, « Ajouter un lien »): its site on Chiens de France, read at once then every
 morning and evening; a Facebook, Instagram or YouTube account; or another site, whose page gives the social accounts at
-its bottom.
+its bottom and the photo it puts forward.
 """
 
 from collections.abc import Callable
@@ -12,6 +12,7 @@ from fastapi import HTTPException, status
 from selectolax.lexbor import LexborHTMLParser
 from sqlalchemy.orm import Session
 
+from core.clock import naive_utc_now
 from core.config import settings
 from enums.breeder_link_kind import BreederLinkKind
 from enums.social_link_origin import SocialLinkOrigin
@@ -21,6 +22,7 @@ from services.breeder_search_text import BreederSearchText
 from services.breeder_social_links import BreederSocialLinks
 from services.collectors.html_source import BREEDER_SITE_HOST_SUFFIX
 from services.collectors.polite_http_client import PoliteHttpClient, SourceReadError
+from services.collectors.site_image_parser import SiteImageParser
 from services.collectors.social_link_parser import (
     FACEBOOK_ACCOUNT,
     INSTAGRAM_ACCOUNT,
@@ -40,11 +42,12 @@ WEBSITE_LINK_LABEL = "Site"
 
 @dataclass(frozen=True)
 class BreederLinkReading:
-    """What a pasted link is, the address kept for it, and the accounts the page of another site gives."""
+    """What a pasted link is, the address kept for it, and the accounts and the photo the page of another site gives."""
 
     kind: BreederLinkKind
     address: str
     social_accounts: dict[str, str] = field(default_factory=dict)
+    photo_url: str | None = None
     is_page_read: bool = False
 
 
@@ -64,7 +67,7 @@ class BreederLinkService:
     def read(self, url: str) -> BreederLinkReading:
         """
         Recognise a link: a site on Chiens de France keeps only its root, a social account its address; for
-        another site, its page is read for the accounts it links.
+        another site, its page is read for the accounts it links and the photo it puts forward.
 
         Args:
             url: The link as pasted, with or without « https:// ».
@@ -88,11 +91,13 @@ class BreederLinkService:
             html = self.page_reader(address)
         except SourceReadError:
             return BreederLinkReading(kind=BreederLinkKind.WEBSITE, address=address)
-        addresses = [(link.attributes.get("href") or "").strip() for link in LexborHTMLParser(html).css("a[href]")]
+        tree = LexborHTMLParser(html)
+        addresses = [(link.attributes.get("href") or "").strip() for link in tree.css("a[href]")]
         return BreederLinkReading(
             kind=BreederLinkKind.WEBSITE,
             address=address,
             social_accounts=SocialLinkParser.accounts_in(addresses),
+            photo_url=SiteImageParser.main_photo(tree, address),
             is_page_read=True,
         )
 
@@ -100,7 +105,8 @@ class BreederLinkService:
         """
         Write a pasted link on the breeder: a Chiens de France site becomes the one the daily runs read; a social
         account replaces the one known; another site becomes the website of the breeding (or one more link) and
-        gives the accounts its page links, where none is known.
+        gives the accounts its page links, where none is known, and its photo, when it is the website of the
+        breeding or the breeding has no photo of a website yet.
 
         Args:
             db: Database session; committed.
@@ -122,11 +128,29 @@ class BreederLinkService:
             self._keep_website(breeder, reading.address)
             for account, address in reading.social_accounts.items():
                 BreederSocialLinks.keep(breeder, account, address, SocialLinkOrigin.BREEDER_SITE)
+            if reading.is_page_read:
+                self._keep_website_photo(breeder, reading)
         else:
             BreederSocialLinks.keep(breeder, reading.kind.value, reading.address, SocialLinkOrigin.ADDED_BY_HAND)
         breeder.search_text = BreederSearchText.build(breeder)
         db.commit()
         return reading
+
+    @staticmethod
+    def _keep_website_photo(breeder: Breeder, reading: BreederLinkReading) -> None:
+        """
+        Keep the photo of a site whose page was read: that of the website of the breeding, which counts as read,
+        or that of one more site while the breeding has no photo of a website.
+
+        Args:
+            breeder: The breeder.
+            reading: The reading of the site.
+        """
+        if breeder.website == reading.address:
+            breeder.website_photo_url = reading.photo_url or breeder.website_photo_url
+            breeder.website_read_at = naive_utc_now()
+        elif breeder.website_photo_url is None:
+            breeder.website_photo_url = reading.photo_url
 
     @staticmethod
     def _keep_website(breeder: Breeder, address: str) -> None:

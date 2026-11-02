@@ -51,6 +51,8 @@ class Breeder(TimestampMixin, Base):
         scc_site_cover_url: Cover photo of the breeder's site at the Centrale Canine (``h_image_uri``).
         scc_site_photos: Gallery images of that site, absolute URLs.
         scc_site_seen_at: Last time that site was read; it rests a month between two readings.
+        website_photo_url: Main photo of the breeding's own website (the image of its shares, else its first photo).
+        website_read_at: Last time that website was read for its photo; a website is read once.
         facebook_url: Facebook page of the breeding, as an address.
         instagram_url: Instagram account of the breeding, as an address.
         youtube_url: YouTube channel of the breeding, as an address.
@@ -99,6 +101,8 @@ class Breeder(TimestampMixin, Base):
     scc_site_cover_url: Mapped[str | None] = mapped_column(String(500))
     scc_site_photos: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     scc_site_seen_at: Mapped[datetime | None]
+    website_photo_url: Mapped[str | None] = mapped_column(String(500))
+    website_read_at: Mapped[datetime | None]
     facebook_url: Mapped[str | None] = mapped_column(String(500))
     instagram_url: Mapped[str | None] = mapped_column(String(500))
     youtube_url: Mapped[str | None] = mapped_column(String(500))
@@ -112,6 +116,19 @@ class Breeder(TimestampMixin, Base):
     def card_name(self) -> str | None:
         """The affix, else the name of the breeding: how the cards, the pushes and the CLI name the breeder."""
         return self.affix or self.display_name
+
+    @property
+    def site_photo_url(self) -> str | None:
+        """
+        The photo the sites of the breeding give: the cover of its Chiens de France site, else the cover then the
+        first photo of the gallery of its Centrale Canine site, else the main photo of its own website.
+        """
+        return (
+            self.cover_photo_url
+            or self.scc_site_cover_url
+            or next(iter(self.scc_site_photos), None)
+            or self.website_photo_url
+        )
 
     def __repr__(self) -> str:
         return f"<Breeder id={self.id} display_name={self.display_name}>"

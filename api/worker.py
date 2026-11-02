@@ -13,6 +13,7 @@ from core.clock import naive_utc_now
 from core.database import SessionLocal, engine
 from enums.listing_source import ListingSource
 from migrations.run_migrations import MigrationRunner
+from services.breeder_website_service import breeder_website_service
 from services.collection_runner import collection_runner
 from services.collectors.chiens_de_france_sites import ChiensDeFranceSiteCollector
 from services.housekeeping_service import housekeeping_service
@@ -50,6 +51,9 @@ DAILY_COLLECTION_TIMES: dict[ListingSource, tuple[tuple[int, ...], int]] = {
 FOLLOWED_BREEDER_SITES_HOURS = "8-22"
 FOLLOWED_BREEDER_SITES_MINUTE = 55
 
+# Minute of every hour at which the websites of the breedings not read yet are read for their photo.
+BREEDER_WEBSITES_MINUTE = 25
+
 # The relayed sources whose silence is worth an alert: those relayed every hour.
 SILENCE_WATCHED_SOURCES: frozenset[ListingSource] = frozenset({ListingSource.CENTRALE_CANINE})
 
@@ -78,7 +82,8 @@ class CollectionWorker:
         Create the scheduler and register the jobs.
 
         One job per collected source runs every hour, a few minutes apart (``COLLECTION_MINUTES``), and the
-        sites of the followed breeders are read again every hour of the day. The evening digest job wakes at
+        sites of the followed breeders are read again every hour of the day, and the websites of the breedings
+        not read yet are read for their photo every hour. The evening digest job wakes at
         minute 0 of every hour and sends the digests whose ``digest_hour`` has come. The follow-up reminders
         are pushed within five minutes of their time. When the Windows app relays a source, an hourly job
         tells Léo once per silence that nobody relays it any more. A nightly job drops the raw pages and the
@@ -112,6 +117,9 @@ class CollectionWorker:
                 minute=FOLLOWED_BREEDER_SITES_MINUTE,
                 id="collect_followed_breeder_sites",
             )
+        scheduler.add_job(
+            self.read_breeder_websites, "cron", minute=BREEDER_WEBSITES_MINUTE, id="read_breeder_websites"
+        )
         scheduler.add_job(self.send_evening_digests, "cron", minute=0, id="send_evening_digests")
         scheduler.add_job(self.send_follow_up_reminders, "cron", minute="*/5", id="send_follow_up_reminders")
         if self.relayed_sources & SILENCE_WATCHED_SOURCES:
@@ -159,6 +167,16 @@ class CollectionWorker:
                     report.source_run.listings_new,
                     report.source_run.listings_changed,
                 )
+        finally:
+            db.close()
+
+    def read_breeder_websites(self) -> None:
+        """Every hour: read the websites of the breedings not read yet, for the photo each puts forward."""
+        db = SessionLocal()
+        try:
+            breeder_ids = breeder_website_service.read_unread_websites(db, naive_utc_now())
+            if breeder_ids:
+                logger.info("Breeder websites read: %d photo(s) found", len(breeder_ids))
         finally:
             db.close()
 

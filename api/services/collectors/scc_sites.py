@@ -1,7 +1,7 @@
 """
 Centrale Canine site collector: the mini-site of a breeding (``/<slug>``, docs/02 « Mini-site SCC d'un élevage »),
-read for its photos (the cover of its home page, the gallery images its « dogs » document carries) and for
-the links its « general » document declares: the social accounts of the breeding, and its other site.
+read for its photos (the cover and the gallery of its home page) and for the links its « general » document
+declares: the social accounts of the breeding, and its other site.
 
 Same access rules as the litters: a browser User-Agent, one request per second, relayed by the desktop app
 when the server is refused.
@@ -82,7 +82,7 @@ class SccSiteCollection:
 
 
 class SccSiteCollector:
-    """Reads the home page, the « dogs » document and the « general » document of each site, politely."""
+    """Reads the home page and the « general » document of each site, politely."""
 
     def __init__(
         self,
@@ -119,19 +119,6 @@ class SccSiteCollector:
         return f"{SCC_BASE_URL}/{site_slug}/api/homepage"
 
     @staticmethod
-    def dogs_url(site_slug: str) -> str:
-        """
-        URL of the JSON of the « dogs » document of a site, which carries the gallery images.
-
-        Args:
-            site_slug: Slug of the site.
-
-        Returns:
-            The URL, query string excluded.
-        """
-        return f"{SCC_BASE_URL}/{site_slug}/api/dogs"
-
-    @staticmethod
     def general_url(site_slug: str) -> str:
         """
         URL of the JSON of the « general » document of a site: its menu, its footer with the social accounts.
@@ -146,7 +133,7 @@ class SccSiteCollector:
 
     def collect(self, plan: SccSiteCollectionPlan) -> SccSiteCollection:
         """
-        Read the home page, then the « dogs » document, then the « general » document of every site of the plan.
+        Read the home page, then the « general » document of every site of the plan.
 
         Args:
             plan: The sites to read.
@@ -166,14 +153,13 @@ class SccSiteCollector:
                 continue
             if not isinstance(homepage.get("main_content"), dict):
                 continue
-            dogs_document = self._fetch(collection, self.dogs_url(target.site_slug))
             general_document = self._fetch(collection, self.general_url(target.site_slug))
             collection.sites.append(
                 RawSccSite(
                     breeder_id=target.breeder_id,
                     site_slug=target.site_slug,
                     cover_photo_url=self.parse_cover(homepage),
-                    photo_urls=self.parse_gallery(dogs_document) if dogs_document is not None else (),
+                    photo_urls=self.parse_gallery(homepage),
                     links=self.parse_links(general_document) if general_document is not None else SccSiteLinks(),
                 )
             )
@@ -198,24 +184,33 @@ class SccSiteCollector:
     @staticmethod
     def parse_gallery(payload: dict[str, Any]) -> tuple[str, ...]:
         """
-        The gallery images a site document carries, each once, the first ``MAX_SITE_PHOTOS`` kept.
+        The images of the gallery a home page shows, each once, the first ``MAX_SITE_PHOTOS`` kept. The « dogs »
+        document is not read for them: every site answers it with the same page of another breeding.
 
         Args:
-            payload: The ``api/dogs`` JSON, whose ``media`` block lists the images of the site.
+            payload: The ``api/homepage`` JSON: ``main_content.h_gallery`` names the gallery nodes of the site, each
+                ``node`` lists its images in ``n_items``, and the ``media`` block gives the address of each image.
 
         Returns:
-            The absolute URLs, in page order.
+            The absolute URLs, in gallery order.
         """
+        main_content = payload.get("main_content")
+        nodes = payload.get("node")
         media = payload.get("media")
-        if not isinstance(media, dict):
+        if not isinstance(main_content, dict) or not isinstance(nodes, dict) or not isinstance(media, dict):
             return ()
+        gallery_ids = main_content.get("h_gallery")
         photos: dict[str, None] = {}
-        for item in media.values():
-            if not isinstance(item, dict) or item.get("m_bundle") != GALLERY_IMAGE_BUNDLE:
-                continue
-            url = scc_absolute_url(SccValueParser.to_text(item.get("m_image_uri")))
-            if url is not None:
-                photos[url] = None
+        for gallery_id in gallery_ids if isinstance(gallery_ids, list) else []:
+            gallery = nodes.get(str(gallery_id))
+            media_ids = gallery.get("n_items") if isinstance(gallery, dict) else None
+            for media_id in media_ids if isinstance(media_ids, list) else []:
+                item = media.get(str(media_id))
+                if not isinstance(item, dict) or item.get("m_bundle") != GALLERY_IMAGE_BUNDLE:
+                    continue
+                url = scc_absolute_url(SccValueParser.to_text(item.get("m_image_uri")))
+                if url is not None:
+                    photos[url] = None
         return tuple(photos)[:MAX_SITE_PHOTOS]
 
     @classmethod

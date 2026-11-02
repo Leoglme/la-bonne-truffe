@@ -5,9 +5,11 @@ from datetime import datetime, timedelta
 import httpx
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
 from enums.source_run_status import SourceRunStatus
+from migrations import reset_scc_site_galleries
 from models.breeder import Breeder
 from models.breeder_follow import BreederFollow
 from models.user import User
@@ -32,7 +34,6 @@ from tests.scc_site_pages import (
     SITE_A_YOUTUBE_CHANNEL_ID,
     SITE_F_SLUG,
     SITE_G_SLUG,
-    dogs_page,
     general_page,
     homepage_page,
     site_collector_serving,
@@ -62,13 +63,31 @@ def breeder_of(db: Session, scc_breeder_id: str) -> Breeder:
     return db.query(Breeder).filter(Breeder.scc_breeder_id == scc_breeder_id).one()
 
 
-def test_the_home_page_gives_the_cover_and_the_dogs_document_the_gallery() -> None:
+def test_the_home_page_gives_the_cover_and_the_gallery() -> None:
     cover = SccSiteCollector.parse_cover(homepage_page("Élevage de test", SITE_A_COVER_PATH))
     no_cover = SccSiteCollector.parse_cover(homepage_page("Élevage de test", None))
-    gallery = SccSiteCollector.parse_gallery(dogs_page((*SITE_A_GALLERY_PATHS, SITE_A_GALLERY_PATHS[0])))
+    gallery = SccSiteCollector.parse_gallery(
+        homepage_page("Élevage de test", None, (*SITE_A_GALLERY_PATHS, SITE_A_GALLERY_PATHS[0]))
+    )
+    no_gallery = SccSiteCollector.parse_gallery(homepage_page("Élevage de test", SITE_A_COVER_PATH))
 
     assert cover == f"{SCC_HOST}{SITE_A_COVER_PATH}"
     assert no_cover is None
+    assert gallery == tuple(f"{SCC_HOST}{path}" for path in SITE_A_GALLERY_PATHS)
+    assert no_gallery == ()
+
+
+def test_only_the_galleries_the_home_page_names_give_photos() -> None:
+    homepage = homepage_page("Élevage de test", None, SITE_A_GALLERY_PATHS)
+    homepage["node"]["2422106"] = {"n_type": "gallery", "n_domain_access": "autre_elevage", "n_items": [150510]}
+    homepage["media"]["150510"] = {
+        "m_bundle": "gallery_image",
+        "m_id": "150510",
+        "m_image_uri": "/sites/default/files/2022-01/16_5.JPG",
+    }
+
+    gallery = SccSiteCollector.parse_gallery(homepage)
+
     assert gallery == tuple(f"{SCC_HOST}{path}" for path in SITE_A_GALLERY_PATHS)
 
 
@@ -99,13 +118,35 @@ def test_a_social_account_is_kept_as_given_or_built_from_its_id_or_its_name() ->
     )
 
 
+def test_the_migration_forgets_the_galleries_of_another_breeding_and_reads_the_sites_again(
+    db: Session, engine: Engine
+) -> None:
+    read = Breeder(
+        display_name="Élevage lu",
+        scc_site_slug="elevage-lu",
+        scc_site_photos=["https://www.centrale-canine.fr/sites/default/files/2022-01/1_8.JPG"],
+        scc_site_seen_at=datetime(2026, 11, 1, 0, 58),
+    )
+    never_read = Breeder(display_name="Élevage jamais lu", scc_site_slug="elevage-jamais-lu")
+    db.add_all([read, never_read])
+    db.commit()
+
+    reset_scc_site_galleries.run_migration(engine)
+
+    db.expire_all()
+    assert [(breeder.scc_site_photos, breeder.scc_site_seen_at) for breeder in (read, never_read)] == [
+        ([], None),
+        ([], None),
+    ]
+
+
 def test_a_page_not_relayed_yet_gives_nothing() -> None:
     assert SccSiteCollector.parse_cover(EMPTY_PAGE) is None
     assert SccSiteCollector.parse_gallery(EMPTY_PAGE) == ()
     assert SccSiteCollector.parse_links(EMPTY_PAGE) == SccSiteLinks()
 
 
-def test_the_collector_reads_the_three_documents_of_a_site_and_reports_a_site_gone() -> None:
+def test_the_collector_reads_the_two_documents_of_a_site_and_reports_a_site_gone() -> None:
     requests: list[httpx.Request] = []
     plan = SccSiteCollectionPlan(
         sites=(SccSiteTarget(breeder_id=1, site_slug=SITE_A_SLUG), SccSiteTarget(breeder_id=2, site_slug=SITE_F_SLUG))
@@ -115,7 +156,6 @@ def test_the_collector_reads_the_three_documents_of_a_site_and_reports_a_site_go
 
     assert [request.url.path for request in requests] == [
         f"/{SITE_A_SLUG}/api/homepage",
-        f"/{SITE_A_SLUG}/api/dogs",
         f"/{SITE_A_SLUG}/api/general",
         f"/{SITE_F_SLUG}/api/homepage",
     ]
@@ -123,7 +163,7 @@ def test_the_collector_reads_the_three_documents_of_a_site_and_reports_a_site_go
     assert collection.sites[0].cover_photo_url == f"{SCC_HOST}{SITE_A_COVER_PATH}"
     assert len(collection.sites[0].photo_urls) == 2
     assert collection.sites[0].links.instagram_url == SITE_A_INSTAGRAM_URL
-    assert collection.pages_read == 4
+    assert collection.pages_read == 3
 
 
 def test_the_planner_takes_the_sites_of_the_directory_breeders_the_followed_ones_first(

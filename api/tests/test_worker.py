@@ -1,4 +1,5 @@
-"""The collection worker: one hourly job per source this machine collects, the digests, the reminders, the silence watch, the nightly housekeeping."""
+"""The collection worker: one hourly job per source this machine collects, the websites of the breedings, the digests, the
+reminders, the silence watch, the nightly housekeeping."""
 
 from enums.listing_source import ListingSource
 from worker import CollectionWorker
@@ -18,6 +19,7 @@ def test_every_collected_source_has_its_hourly_job() -> None:
         "collect_scc_breeders",
         "collect_scc_sites",
         "collect_followed_breeder_sites",
+        "read_breeder_websites",
         "send_evening_digests",
         "send_follow_up_reminders",
         "purge_old_listing_data",
@@ -42,6 +44,15 @@ def test_the_sites_of_the_followed_breeders_are_read_every_hour_of_the_day() -> 
     assert str(job.trigger) == "cron[hour='8-22', minute='55']"
 
 
+def test_the_websites_of_the_breedings_are_read_every_hour() -> None:
+    scheduler = CollectionWorker(frozenset(ListingSource), relayed_sources=frozenset()).build_scheduler()
+
+    job = scheduler.get_job("read_breeder_websites")
+
+    assert job is not None
+    assert str(job.trigger) == "cron[minute='25']"
+
+
 def test_a_skipped_source_has_no_job() -> None:
     worker = CollectionWorker(
         frozenset({ListingSource.CHIENS_DE_FRANCE, ListingSource.CHIOTS_DE_FRANCE}), relayed_sources=frozenset()
@@ -50,6 +61,7 @@ def test_a_skipped_source_has_no_job() -> None:
     assert {job.id for job in worker.build_scheduler().get_jobs()} == {
         "collect_chiens_de_france",
         "collect_chiots_de_france",
+        "read_breeder_websites",
         "send_evening_digests",
         "send_follow_up_reminders",
         "purge_old_listing_data",
@@ -63,6 +75,7 @@ def test_a_source_relayed_by_the_desktop_app_is_watched_for_silence() -> None:
 
     assert {job.id for job in worker.build_scheduler().get_jobs()} == {
         "collect_chiens_de_france",
+        "read_breeder_websites",
         "send_evening_digests",
         "send_follow_up_reminders",
         "alert_silent_sources",

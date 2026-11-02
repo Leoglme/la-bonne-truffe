@@ -22,6 +22,7 @@ NAME_WORDS_LEFT_OUT: frozenset[str] = frozenset(
     {"sarl", "earl", "eurl", "sas", "sasu", "scea", "gaec", "ei", "elevage", "chenil", "de", "du", "des", "d", "la"}
     | {"le", "les", "l", "et", "au", "aux"}
 )
+CIVILITY_WORDS: frozenset[str] = frozenset({"m", "mr", "mme", "mlle", "monsieur", "madame", "mademoiselle"})
 
 
 class BreederSiteIngestionService:
@@ -77,9 +78,11 @@ class BreederSiteIngestionService:
 
     def link_directory_sites(self, db: Session, entries: list[RawSiteDirectoryEntry]) -> list[int]:
         """
-        Give a breeder the site a regional list of Chiens de France names for it: same postal code and the same
-        name once legal forms and articles are left out (« Sarl La Ferme Des Saules » is « La Ferme des Saules »).
-        A site already known, or a name two breeders of the postal code could bear, links nothing.
+        Give a breeder the site a regional list of Chiens de France names for it: the same name in the same postal
+        code once legal forms and articles are left out (« Sarl La Ferme Des Saules » is « La Ferme des Saules »);
+        else the same affix wherever the list places it, the Centrale Canine giving an affix to one breeding only;
+        else, when the list names a person (« Mr Jean Dupont »), one of their names in the same postal code.
+        A site already known, or a name two breeders without a site could bear, links nothing.
 
         Args:
             db: Database session; committed when a breeder got its site.
@@ -96,23 +99,13 @@ class BreederSiteIngestionService:
         }
         linked_breeder_ids: list[int] = []
         for entry in entries:
-            if entry.site_url in known_site_urls or entry.zip_code is None:
+            if entry.site_url in known_site_urls:
                 continue
-            entry_words = self._name_words(entry.name)
-            candidates = [
-                breeder
-                for breeder in breeders
-                if breeder.zip_code == entry.zip_code
-                and breeder.chiens_de_france_site_url is None
-                and any(
-                    self._name_words(name) == entry_words
-                    for name in (breeder.display_name, breeder.affix)
-                    if name and entry_words
-                )
-            ]
-            if len(candidates) != 1:
+            breeder = self._breeder_named_by(
+                entry, [breeder for breeder in breeders if breeder.chiens_de_france_site_url is None]
+            )
+            if breeder is None:
                 continue
-            breeder = candidates[0]
             breeder.chiens_de_france_site_url = entry.site_url
             breeder.search_text = BreederSearchText.build(breeder)
             known_site_urls.add(entry.site_url)
@@ -148,6 +141,45 @@ class BreederSiteIngestionService:
                 for litter in facts.litters_born
             ]
         breeder.chiens_de_france_site_seen_at = now
+
+    @classmethod
+    def _breeder_named_by(cls, entry: RawSiteDirectoryEntry, breeders: list[Breeder]) -> Breeder | None:
+        """
+        The breeder an entry of a regional list names, by its name in the same postal code, then by its affix,
+        then by the name of the person the entry names.
+
+        Args:
+            entry: The entry: a name and a postal code.
+            breeders: The breeders without a site.
+
+        Returns:
+            The breeder, or None when none or several could be.
+        """
+        entry_words = cls._name_words(entry.name)
+        if not entry_words:
+            return None
+        neighbours = [breeder for breeder in breeders if entry.zip_code and breeder.zip_code == entry.zip_code]
+        same_name = [
+            breeder
+            for breeder in neighbours
+            if any(cls._name_words(name) == entry_words for name in (breeder.display_name, breeder.affix) if name)
+        ]
+        if same_name:
+            return same_name[0] if len(same_name) == 1 else None
+        same_affix = [
+            breeder for breeder in breeders if breeder.affix and cls._name_words(breeder.affix) == entry_words
+        ]
+        if same_affix:
+            return same_affix[0] if len(same_affix) == 1 else None
+        person_words = entry_words - CIVILITY_WORDS
+        if person_words == entry_words:
+            return None
+        same_person = [
+            breeder
+            for breeder in neighbours
+            if breeder.display_name and cls._name_words(breeder.display_name) & person_words
+        ]
+        return same_person[0] if len(same_person) == 1 else None
 
     @staticmethod
     def _name_words(name: str) -> frozenset[str]:
