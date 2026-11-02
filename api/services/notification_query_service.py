@@ -7,6 +7,8 @@ from models.notification import Notification
 from schemas.notification import NotificationListResponse, NotificationLitter, NotificationResponse
 from services.litter_query_service import LitterQueryService
 
+LITTER_EVENTS_BY_VALUE: dict[str, MatchEventKind] = {event.value: event for event in MatchEventKind}
+
 
 class NotificationQueryService:
     """Lists the notifications of a user, newest first, with their litters and the unread count."""
@@ -57,7 +59,9 @@ class NotificationQueryService:
     @staticmethod
     def _with_litters(row: Notification, litters: dict[int, NotificationLitter]) -> NotificationResponse:
         """
-        The payload of a notification, with its litter and, for a digest, its litters with their event.
+        The payload of a notification, with its litter and, for a digest, its litters with their event. A digest
+        line about a breeder (« a ajouté des photos à la portée … »), which the digests carried until 01/11/2026,
+        is not a litter event: its body tells it.
 
         Args:
             row: The stored notification.
@@ -69,8 +73,9 @@ class NotificationQueryService:
         digest_litters: list[NotificationLitter] = []
         for entry in row.digest_litters:
             litter = litters.get(entry["litter_group_id"])
-            if litter is not None:
-                digest_litters.append(litter.model_copy(update={"digest_event": MatchEventKind(entry["event"])}))
+            event = LITTER_EVENTS_BY_VALUE.get(entry["event"])
+            if litter is not None and event is not None:
+                digest_litters.append(litter.model_copy(update={"digest_event": event}))
         return NotificationResponse(
             id=row.id,
             kind=row.kind,

@@ -216,6 +216,34 @@ def test_notifications_carry_their_litters(client: TestClient, collected: dict[s
     ]
 
 
+def test_a_digest_line_about_a_breeder_leaves_the_digest_to_its_text(
+    client: TestClient, collected: dict[str, str], db: Session
+) -> None:
+    user = db.query(User).one()
+    gold_group_id = group_id_of(db, GOLD_LITTER_ID)
+    db.add(
+        Notification(
+            user_id=user.id,
+            kind=NotificationKind.EVENING_DIGEST,
+            title="Récap du soir · tes portées suivies",
+            body="Du Clos de l'Élevage A a ajouté des photos à la portée Du Clos de l'Élevage A.",
+            url="/",
+            litter_group_id=gold_group_id,
+            digest_litters=[{"litter_group_id": gold_group_id, "event": "breeder_new_photos"}],
+        )
+    )
+    db.commit()
+
+    response = client.get("/api/v1/notifications", headers=collected)
+
+    assert response.status_code == 200
+    digest = response.json()["items"][0]
+    assert (digest["litters"], digest["body"]) == (
+        [],
+        "Du Clos de l'Élevage A a ajouté des photos à la portée Du Clos de l'Élevage A.",
+    )
+
+
 def test_unknown_litter_is_a_404(client: TestClient, collected: dict[str, str]) -> None:
     assert client.get("/api/v1/litters/9999", headers=collected).status_code == 404
 
