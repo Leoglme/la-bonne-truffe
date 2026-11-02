@@ -36,6 +36,7 @@ function buildCard(id: number, facts: Partial<LitterCard>): LitterCard {
     available_from: null,
     photo_url: null,
     first_seen_at: '2026-10-28T09:00:00',
+    latest_listing_appeared_at: '2026-10-28T09:00:00',
     last_seen_at: '2026-10-30T10:00:00',
     is_active: true,
     sources: ['centrale_canine'],

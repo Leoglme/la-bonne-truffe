@@ -17,6 +17,7 @@ from services.collectors.chiens_de_france_sites import (
     ListedDog,
     SiteCollectionPlan,
     SiteDirectoryPlan,
+    breed_page_of,
 )
 from services.collectors.raw_dog import RawBreederSiteFacts, RawBreederSiteLitter, RawSiteDirectoryEntry
 from services.collectors.raw_listing import RawBreeder
@@ -26,13 +27,16 @@ from tests.chiens_de_france_site_pages import (
     EMPTY_SITE_SLUG,
     OTHER_BREED_SITE_SLUG,
     RECORDED_SITE_SLUG,
+    SINGLE_LITTER_SITE_SLUG,
     chiens_de_france_site_collector_serving,
     recorded_page,
     site_target,
 )
 
 RECORDED_SITE = site_target(RECORDED_SITE_SLUG)
+SINGLE_LITTER_SITE = site_target(SINGLE_LITTER_SITE_SLUG)
 SITE_URL = "https://elevage-a.chiens-de-france.com"
+SINGLE_LITTER_SITE_URL = "https://elevage-e.chiens-de-france.com"
 BREED_URL = f"{SITE_URL}/cocker-spaniel-anglais"
 BREEDER = RawBreeder(source_id="elevage-a", affix="Du Clos de l'Élevage A", website=SITE_URL)
 LISTED_FEMALE = ListedDog(
@@ -103,6 +107,26 @@ def test_litters_for_sale_page_links_each_litter_once_despite_the_trailing_space
     litter_ids = ChiensDeFranceSiteCollector.parse_litters_for_sale_page(parsed("litters_for_sale.html"))
 
     assert litter_ids == ["495610", "494507"]
+
+
+def test_page_of_a_single_litter_for_sale_gives_that_litter_by_its_canonical_address() -> None:
+    litter_ids = ChiensDeFranceSiteCollector.parse_litters_for_sale_page(parsed("single_litter_for_sale_493883.html"))
+
+    assert litter_ids == ["493883"]
+
+
+def test_puppy_shown_by_a_thumbnail_gets_the_full_size_photo_it_opens_and_a_puppy_without_photo_none() -> None:
+    listings = ChiensDeFranceSiteCollector.parse_litter_for_sale_page(
+        parsed("single_litter_for_sale_493883.html"),
+        SINGLE_LITTER_SITE,
+        f"{SINGLE_LITTER_SITE_URL}/cocker-spaniel-anglais/chiots-a-vendre/493883",
+    )
+
+    assert [listing.photos for listing in listings] == [
+        (f"{SINGLE_LITTER_SITE_URL}/media_cdf/photos/eleveurs/0/0/portees/photo-de-test-20.jpg",),
+        (),
+        (f"{SINGLE_LITTER_SITE_URL}/media_cdf/photos/eleveurs/0/0/portees/photo-de-test-21.jpg",),
+    ]
 
 
 def test_litter_for_sale_page_gives_one_puppy_ad_per_puppy_with_its_status_and_price() -> None:
@@ -290,6 +314,23 @@ def test_site_without_puppy_nor_dog_takes_its_cover_from_its_home_page() -> None
     ]
 
 
+def test_site_whose_puppy_list_sends_to_its_single_litter_gives_the_puppies_of_that_litter() -> None:
+    plan = SiteCollectionPlan(sites=(SINGLE_LITTER_SITE,))
+
+    collection = chiens_de_france_site_collector_serving().collect(plan)
+
+    assert [listing.external_id for listing in collection.listings] == [
+        "chiot-2192294",
+        "chiot-2192298",
+        "chiot-2192299",
+    ]
+    assert [(listing.male_count, listing.female_count) for listing in collection.listings] == [(1, 0), (0, 1), (0, 1)]
+    assert [listing.puppies_available for listing in collection.listings] == [0, 0, 0]
+    assert {listing.birth_date for listing in collection.listings} == {date(2026, 8, 9)}
+    assert {listing.dam_name for listing in collection.listings} == {"Mère de test 35 Du Clos de l'Élevage E"}
+    assert collection.failed_sites == []
+
+
 def test_a_site_that_sends_the_breed_to_another_gives_nothing_of_that_other_breed() -> None:
     plan = SiteCollectionPlan(sites=(site_target(OTHER_BREED_SITE_SLUG),))
 
@@ -327,6 +368,18 @@ def test_failing_site_is_reported_and_the_next_site_is_still_read() -> None:
     ]
     assert [facts.breeder_source_id for facts in collection.site_facts] == ["elevage-a"]
     assert len(collection.listings) == 6
+
+
+def test_the_home_of_a_site_leads_to_the_pages_of_the_breed_and_any_other_address_stays() -> None:
+    breed_slug = "cocker-spaniel-anglais"
+
+    assert breed_page_of(SITE_URL, breed_slug) == BREED_URL
+    assert breed_page_of(f"{SITE_URL}/", breed_slug) == BREED_URL
+    assert breed_page_of(f"{SITE_URL}/cavalier-king-charles", breed_slug) == f"{SITE_URL}/cavalier-king-charles"
+    assert breed_page_of("https://www.chiens-de-france.com", breed_slug) == "https://www.chiens-de-france.com"
+    assert breed_page_of("https://www.ferme-des-tests.fr", breed_slug) == "https://www.ferme-des-tests.fr"
+    assert breed_page_of(SITE_URL, "") == SITE_URL
+    assert breed_page_of(None, breed_slug) is None
 
 
 def test_the_menu_of_a_site_gives_its_social_accounts() -> None:

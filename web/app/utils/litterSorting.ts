@@ -18,7 +18,7 @@ export class LitterSorting {
     if (sortKey === 'score') {
       return [...cards]
     }
-    const isDescending: boolean = sortKey === 'departure_latest'
+    const isDescending: boolean = sortKey === 'newest' || sortKey === 'departure_latest'
     return [...cards].sort((first: LitterCard, second: LitterCard): number => {
       const firstMeasure: number | null = this.measureOf(first, sortKey, position)
       const secondMeasure: number | null = this.measureOf(second, sortKey, position)
@@ -38,9 +38,13 @@ export class LitterSorting {
    * @param card - The card.
    * @param sortKey - The sort chosen.
    * @param position - Position of the device.
-   * @returns Kilometres, cents or the departure day as a timestamp; null while unknown.
+   * @returns Kilometres, cents, or the moment its newest listing appeared or the departure day as a timestamp; null
+   *   while unknown.
    */
   private static measureOf(card: LitterCard, sortKey: LitterSortKey, position: DevicePosition | null): number | null {
+    if (sortKey === 'newest') {
+      return FrenchDate.parseApiDate(card.latest_listing_appeared_at).getTime()
+    }
     if (sortKey === 'distance') {
       if (position === null || card.breeder_latitude === null || card.breeder_longitude === null) {
         return null

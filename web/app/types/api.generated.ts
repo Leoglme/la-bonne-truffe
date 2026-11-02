@@ -2148,6 +2148,12 @@ export interface components {
              */
             first_seen_at: string;
             /**
+             * Latest Listing Appeared At
+             * Format: date-time
+             * @description When its newest listing first showed: the litter itself, or a later ad, such as one of a puppy
+             */
+            latest_listing_appeared_at: string;
+            /**
              * Last Seen At
              * Format: date-time
              * @description Last time a source still showed one of its listings
@@ -2243,6 +2249,12 @@ export interface components {
              * Format: date-time
              */
             first_seen_at: string;
+            /**
+             * Latest Listing Appeared At
+             * Format: date-time
+             * @description When its newest listing first showed: the litter itself, or a later ad, such as one of a puppy
+             */
+            latest_listing_appeared_at: string;
             /**
              * Last Seen At
              * Format: date-time
@@ -2566,6 +2578,12 @@ export interface components {
              * Format: date-time
              */
             first_seen_at: string;
+            /**
+             * Latest Listing Appeared At
+             * Format: date-time
+             * @description When its newest listing first showed: the litter itself, or a later ad, such as one of a puppy
+             */
+            latest_listing_appeared_at: string;
             /**
              * Last Seen At
              * Format: date-time

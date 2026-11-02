@@ -38,7 +38,7 @@ from schemas.breeder import (
 from schemas.litter import LitterCard
 from services.breeder_search_text import BreederSearchText
 from services.collection_planner import CollectionPlanner
-from services.collectors.chiens_de_france_sites import LITTERS_BORN_PATH
+from services.collectors.chiens_de_france_sites import LITTERS_BORN_PATH, breed_page_of
 from services.dog_chip import DogChip
 from services.dog_color_inference import DogColorInference
 from services.dog_ingestion import DogIngestionService
@@ -208,13 +208,14 @@ class BreederQueryService:
             .order_by(Dog.role, Dog.full_name, Dog.id)
             .all()
         )
-        site_breed_url = cls._site_breed_url(db, breeder)
+        site_breed_slug = cls._site_breed_slug(db)
+        site_breed_url = breed_page_of(breeder.chiens_de_france_site_url, site_breed_slug) if site_breed_slug else None
         return BreederDetail(
             **card.model_dump(),
             phone_e164=breeder.phone_e164,
             siren=breeder.siren,
-            website=breeder.website,
-            chiens_de_france_site_url=breeder.chiens_de_france_site_url,
+            website=breed_page_of(breeder.website, site_breed_slug),
+            chiens_de_france_site_url=site_breed_url or breeder.chiens_de_france_site_url,
             chiens_de_france_site_seen_at=breeder.chiens_de_france_site_seen_at,
             site_litters=[
                 BreederSiteLitter(
@@ -688,23 +689,17 @@ class BreederQueryService:
         return " ".join(DOG_NAME_WORD_PATTERN.findall(without_accents(name or "").lower()))
 
     @staticmethod
-    def _site_breed_url(db: Session, breeder: Breeder) -> str | None:
+    def _site_breed_slug(db: Session) -> str:
         """
-        The pages of the breeder's site on Chiens de France for the breed of the profiles.
+        The breed of the profiles in the addresses of the breeders' sites on Chiens de France.
 
         Args:
             db: Database session.
-            breeder: The breeder.
 
         Returns:
-            « https://<slug>.chiens-de-france.com/cocker-spaniel-anglais », or None without a site.
+            « cocker-spaniel-anglais », empty without an active profile of a breed these sites know.
         """
-        if breeder.chiens_de_france_site_url is None:
-            return None
-        breed_slugs = CollectionPlanner.breeder_site_breed_slugs(db)
-        if not breed_slugs:
-            return None
-        return f"{breeder.chiens_de_france_site_url.rstrip('/')}/{breed_slugs[0]}"
+        return next(iter(CollectionPlanner.breeder_site_breed_slugs(db)), "")
 
     @staticmethod
     def _follow_payload(db: Session, follow: BreederFollow) -> BreederFollowResponse:

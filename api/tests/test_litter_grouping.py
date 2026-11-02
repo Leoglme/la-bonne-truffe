@@ -309,3 +309,72 @@ def test_two_matings_of_a_breeder_stay_apart(db: Session) -> None:
     litter_grouping_service.regroup(db, NOW)
 
     assert first_mating.litter_group_id != second_mating.litter_group_id
+
+
+def test_puppy_ads_born_the_very_day_of_a_single_litter_join_it_whatever_mother_they_name(db: Session) -> None:
+    breeder = seeded_breeder(db)
+    born_on = date(2026, 8, 9)
+    declared = add_listing(
+        db, breeder, ListingSource.CENTRALE_CANINE, "1", ListingKind.LITTER_BORN, "Saphir", born_on, None, 4, 2
+    )
+    add_listing(
+        db, breeder, ListingSource.CENTRALE_CANINE, "2", ListingKind.LITTER_BORN, "Tacita", date(2026, 8, 4), None, 5, 4
+    )
+    expected = add_listing(
+        db,
+        breeder,
+        ListingSource.CENTRALE_CANINE,
+        "3",
+        ListingKind.LITTER_EXPECTED,
+        "Sentiment",
+        None,
+        date(2026, 6, 19),
+    )
+    litter_grouping_service.regroup(db, NOW)
+    male = add_listing(
+        db, breeder, ListingSource.CHIENS_DE_FRANCE, "chiot-1", ListingKind.PUPPY_AD, "Sentiment", born_on, None, 1, 0
+    )
+    female = add_listing(
+        db, breeder, ListingSource.CHIENS_DE_FRANCE, "chiot-2", ListingKind.PUPPY_AD, "Sentiment", born_on, None, 0, 1
+    )
+
+    litter_grouping_service.regroup(db, NOW)
+
+    assert {male.litter_group_id, female.litter_group_id} == {declared.litter_group_id}
+    assert expected.litter_group_id != declared.litter_group_id
+    group = db.get(LitterGroup, declared.litter_group_id)
+    assert group is not None and group.is_grouping_probable
+
+
+def test_an_ad_naming_another_mother_stays_apart_from_two_litters_born_its_day(db: Session) -> None:
+    breeder = seeded_breeder(db)
+    born_on = date(2026, 8, 9)
+    first = add_listing(db, breeder, ListingSource.CENTRALE_CANINE, "1", ListingKind.LITTER_BORN, "Mère 1", born_on)
+    second = add_listing(db, breeder, ListingSource.CENTRALE_CANINE, "2", ListingKind.LITTER_BORN, "Mère 2", born_on)
+    litter_grouping_service.regroup(db, NOW)
+    puppy_ad = add_listing(
+        db, breeder, ListingSource.CHIENS_DE_FRANCE, "chiot-1", ListingKind.PUPPY_AD, "Mère 3", born_on, None, 1, 0
+    )
+
+    litter_grouping_service.regroup(db, NOW)
+
+    assert puppy_ad.litter_group_id not in {first.litter_group_id, second.litter_group_id}
+
+
+def test_a_litter_holding_ads_of_another_mother_on_the_same_source_is_another_litter(db: Session) -> None:
+    breeder = seeded_breeder(db)
+    born_on = date(2026, 8, 9)
+    declared = add_listing(db, breeder, ListingSource.CENTRALE_CANINE, "1", ListingKind.LITTER_BORN, "Mère 1", born_on)
+    litter_grouping_service.regroup(db, NOW)
+    first_litter_ad = add_listing(
+        db, breeder, ListingSource.CHIENS_DE_FRANCE, "chiot-1", ListingKind.PUPPY_AD, "Mère 1", born_on, None, 1, 0
+    )
+    litter_grouping_service.regroup(db, NOW)
+    second_litter_ad = add_listing(
+        db, breeder, ListingSource.CHIENS_DE_FRANCE, "chiot-2", ListingKind.PUPPY_AD, "Mère 2", born_on, None, 0, 1
+    )
+
+    litter_grouping_service.regroup(db, NOW)
+
+    assert first_litter_ad.litter_group_id == declared.litter_group_id
+    assert second_litter_ad.litter_group_id != declared.litter_group_id

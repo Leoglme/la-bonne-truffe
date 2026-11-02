@@ -5,9 +5,11 @@ Rules of docs/03-modele-de-donnees.md, in order, for a listing without group, al
 breeder and breed: the same litter number; the same mating number on the same source (the Centrale Canine
 may declare the birth under a new identifier); for a puppy ad, a puppy ad of the same source born the same
 day of the same mother (such a source lists each puppy apart); a listing of another source born, or
-mated, three days apart at most, thirty when both name the same mother; for an ad without birth date,
-the single litter seen in the last sixty days (flagged ``is_grouping_probable``). Two named mothers that differ never group, and two litter
-listings of the same source are never grouped on a guess: a source lists a litter once.
+mated, three days apart at most, thirty when both name the same mother; the single litter of the breeder
+another source says was born the very same day, whatever mother it names (a breeder's site may name another
+of its females; flagged ``is_grouping_probable``); for an ad without birth date, the single litter seen in the
+last sixty days (flagged too). Apart from the very same day, two named mothers that differ never group, and two
+litter listings of the same source are never grouped on a guess: a source lists a litter once.
 """
 
 import re
@@ -138,6 +140,13 @@ class LitterGroupingService:
             if LitterGroupingService._have_close_dates(other, listing):
                 return db.get(LitterGroup, other.litter_group_id)
 
+        same_day_group_id = LitterGroupingService._single_litter_born_the_same_day(listing, grouped_listings_of_breeder)
+        if same_day_group_id is not None:
+            same_day_group = db.get(LitterGroup, same_day_group_id)
+            if same_day_group is not None:
+                same_day_group.is_grouping_probable = True
+            return same_day_group
+
         if listing.kind != ListingKind.PUPPY_AD or listing.birth_date is not None:
             return None
         recent_group_ids = {
@@ -151,6 +160,35 @@ class LitterGroupingService:
         if group is not None:
             group.is_grouping_probable = True
         return group
+
+    @staticmethod
+    def _single_litter_born_the_same_day(listing: Listing, grouped_listings_of_breeder: list[Listing]) -> int | None:
+        """
+        The single litter of the breeder that another source says was born the very day of the listing, whatever
+        mother it names: a breeder's site may name another of its females than the Centrale Canine. A litter that
+        already holds a listing of the same source naming another mother is another litter.
+
+        Args:
+            listing: Listing without group.
+            grouped_listings_of_breeder: The grouped listings of its breeder and breed.
+
+        Returns:
+            The group id, or None without a birth day, or when no litter, or several, were born that day.
+        """
+        if listing.birth_date is None:
+            return None
+        born_that_day_group_ids = {
+            other.litter_group_id
+            for other in grouped_listings_of_breeder
+            if other.source != listing.source and other.birth_date == listing.birth_date
+        }
+        other_litter_group_ids = {
+            other.litter_group_id
+            for other in grouped_listings_of_breeder
+            if other.source == listing.source and not LitterGroupingService._has_same_dam(other, listing)
+        }
+        candidate_group_ids = born_that_day_group_ids - other_litter_group_ids
+        return candidate_group_ids.pop() if len(candidate_group_ids) == 1 else None
 
     @staticmethod
     def _have_close_dates(first: Listing, second: Listing) -> bool:

@@ -44,6 +44,7 @@ from schemas.litter import (
     LitterSourceListing,
 )
 from schemas.notification import NotificationLitter
+from services.collectors.chiens_de_france_sites import breed_page_of
 from services.dog_chip import DogChip
 from services.dog_ingestion import DogIngestionService
 from services.genetic_screening import GeneticScreeningReader
@@ -195,6 +196,7 @@ class LitterQueryService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portée introuvable")
         listings = facts.listings_by_group.get(group.id, [])
         breeder = facts.breeders_by_id.get(group.breeder_id) if group.breeder_id is not None else None
+        breed = facts.breeds_by_id.get(group.breed_id)
         follow_up = facts.follow_ups_by_group.get(group.id)
         photos = list(dict.fromkeys(photo for listing in listings for photo in listing.photos))
 
@@ -213,7 +215,9 @@ class LitterQueryService:
             mating_date=group.mating_date,
             sire=cls._parent_with_dog(sire, sire_dog, site_photos_by_chip),
             dam=cls._parent_with_dog(dam, dam_dog, site_photos_by_chip),
-            breeder=cls._breeder(breeder) if breeder is not None else None,
+            breeder=cls._breeder(breeder, breed.chiens_de_france_id if breed is not None else None)
+            if breeder is not None
+            else None,
             photos=photos,
             puppies=[
                 LitterPuppy(
@@ -507,6 +511,7 @@ class LitterQueryService:
             photo_url=next((photo for listing in listings for photo in listing.photos), None)
             or cls._breeding_photo(breeder),
             first_seen_at=group.first_seen_at,
+            latest_listing_appeared_at=max(listing.first_seen_at for listing in listings),
             last_seen_at=max(listing.last_seen_at for listing in listings),
             is_active=group.is_active,
             sources=list(dict.fromkeys(listing.source for listing in listings)),
@@ -671,12 +676,13 @@ class LitterQueryService:
         return max(arrivals, default=None)
 
     @staticmethod
-    def _breeder(breeder: Breeder) -> LitterBreeder:
+    def _breeder(breeder: Breeder, site_breed_slug: str | None) -> LitterBreeder:
         """
         The breeder payload.
 
         Args:
             breeder: The breeder.
+            site_breed_slug: The breed of the litter in the addresses of the Chiens de France sites, None when unknown.
 
         Returns:
             What is known of it.
@@ -689,7 +695,7 @@ class LitterQueryService:
             city=breeder.city,
             phone_e164=breeder.phone_e164,
             siren=breeder.siren,
-            website=breeder.website,
+            website=breed_page_of(breeder.website, site_breed_slug or ""),
             is_selected_breeding=group == SELECTED_BREEDING_GROUP,
             has_affix=(group in GROUPS_WITH_AFFIX) if group is not None else (True if breeder.affix else None),
             is_breed_club_member=breeder.is_breed_club_member is True,

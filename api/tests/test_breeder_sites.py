@@ -330,7 +330,7 @@ def test_the_routes_preview_then_add_a_pasted_site_and_read_it_at_once(
         "social_accounts": [],
         "is_page_read": False,
     }
-    assert detail["chiens_de_france_site_url"] == SITE_URL
+    assert detail["chiens_de_france_site_url"] == f"{SITE_URL}/cocker-spaniel-anglais"
     assert reads == [breeder.id]
     assert (facebook["facebook_url"], facebook["social_link_origins"]) == (
         SITE_FACEBOOK_URL,
@@ -414,6 +414,27 @@ def test_the_detail_shows_a_dog_both_sources_know_once_and_the_gold_litters_only
     assert detail["site_litters_url"] == f"{SITE_URL}/cocker-spaniel-anglais/chiots-vendus"
     assert detail["site_dogs_url"] == f"{SITE_URL}/cocker-spaniel-anglais"
     assert detail["color_shares"] == [{"color": "gold", "litters_count": 1}]
+
+
+def test_the_site_of_a_breeding_opens_at_the_pages_of_the_breed_and_not_at_its_first_breed(
+    client: TestClient, db: Session, seeded: dict[str, str]
+) -> None:
+    collection_runner.run_centrale_canine(db, collector_serving(load_recorded_pages()))
+    group = db.query(LitterGroup).order_by(LitterGroup.id).first()
+    assert group is not None and group.breeder_id is not None
+    breeder = db.get(Breeder, group.breeder_id)
+    assert breeder is not None
+    breeder.chiens_de_france_site_url = SITE_URL
+    breeder.website = SITE_URL
+    db.commit()
+
+    breeder_detail = client.get(f"{BREEDERS_URL}/{breeder.id}", headers=seeded).json()
+    litter_detail = client.get(f"/api/v1/litters/{group.id}", headers=seeded).json()
+
+    breed_pages_url = f"{SITE_URL}/cocker-spaniel-anglais"
+    assert breeder_detail["chiens_de_france_site_url"] == breed_pages_url
+    assert breeder_detail["website"] == breed_pages_url
+    assert litter_detail["breeder"]["website"] == breed_pages_url
 
 
 def test_the_puppy_of_an_ad_is_told_available_reserved_or_sold() -> None:

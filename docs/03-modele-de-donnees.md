@@ -87,9 +87,10 @@ Whoof donne les couleurs et les marques de la robe (`blanc`, `noir`, rouané, fe
 2. même `mating_number` sur la même source : la Centrale Canine peut déclarer la naissance sous un nouvel identifiant, le numéro de saillie reste ;
 3. pour une annonce de chiot (`puppy_ad`, un chiot par annonce), une autre annonce de chiot de la même source née le même jour de la même mère : Chiens de France publie chaque chiot à part ;
 4. une annonce d'une autre source née, ou saillie, à trois jours près ; à trente jours près quand les deux nomment la même mère, qui ne peut pas avoir deux portées à un mois d'écart (deux sources datent souvent la saillie à quelques jours d'écart) ;
-5. pour une annonce sans date de naissance, une seule portée candidate vue dans les soixante derniers jours, avec le drapeau `grouping_probable`.
+5. la seule portée de l'éleveur qu'une autre source dit née **le même jour**, quelle que soit la mère qu'elle nomme, avec le drapeau `grouping_probable` : le site d'un élevage peut nommer une autre de ses lices que la Centrale Canine (ajouté le 02/11/2026, site des Vents d'Océan : la portée du 9 août y a pour mère Sentiment, Saphir à la Centrale Canine, dont la saillie tombe 63 jours avant). Une portée qui porte déjà une annonce de la même source nommant une autre mère est une autre portée ;
+6. pour une annonce sans date de naissance, une seule portée candidate vue dans les soixante derniers jours, avec le drapeau `grouping_probable`.
 
-Deux mères nommées différemment ne sont jamais regroupées. Les noms se comparent en minuscules, sans accents ni ponctuation, et l'un peut contenir l'autre : une source ajoute parfois les titres de la mère devant (« CH. ») ou l'affixe de l'élevage derrière. Sinon on crée un groupe.
+Hors du même jour de naissance (règle 5), deux mères nommées différemment ne sont jamais regroupées. Les noms se comparent en minuscules, sans accents ni ponctuation, et l'un peut contenir l'autre : une source ajoute parfois les titres de la mère devant (« CH. ») ou l'affixe de l'élevage derrière. Sinon on crée un groupe.
 
 **Mâles et femelles d'un groupe** : ceux de la portée née déclarée à la Centrale Canine, même quand l'annonce d'une autre source a été vue avant ; sinon ceux qu'une annonce de portée dit encore disponibles (Chiots de France) ; sinon le nombre de chiots de chaque sexe que proposent ses annonces de chiot, un chiot par annonce (Chiens de France). Le prix est le plus bas des annonces actives.
 

@@ -37,6 +37,7 @@ function buildCard(id: number, facts: Partial<LitterCard>): LitterCard {
     available_from: null,
     photo_url: null,
     first_seen_at: '2026-10-28T09:00:00',
+    latest_listing_appeared_at: '2026-10-28T09:00:00',
     last_seen_at: '2026-10-30T10:00:00',
     is_active: true,
     sources: ['centrale_canine'],
@@ -53,8 +54,20 @@ const CARDS: LitterCard[] = [
     breeder_latitude: 47.65,
     breeder_longitude: -2.76,
   }),
-  buildCard(2, { price_cents: null, available_from: '2026-11-30', breeder_latitude: 48.1, breeder_longitude: -1.7 }),
-  buildCard(3, { price_cents: 120000, available_from: null, breeder_latitude: null, breeder_longitude: null }),
+  buildCard(2, {
+    price_cents: null,
+    available_from: '2026-11-30',
+    breeder_latitude: 48.1,
+    breeder_longitude: -1.7,
+    latest_listing_appeared_at: '2026-11-02T18:00:00',
+  }),
+  buildCard(3, {
+    price_cents: 120000,
+    available_from: null,
+    breeder_latitude: null,
+    breeder_longitude: null,
+    latest_listing_appeared_at: '2026-10-31T07:00:00',
+  }),
 ]
 
 /**
@@ -70,6 +83,10 @@ function idsOf(cards: LitterCard[]): number[] {
 describe('LitterSorting.sort', (): void => {
   it('keeps the order of the API for the score', (): void => {
     expect(idsOf(LitterSorting.sort(CARDS, 'score', RENNES))).toEqual([1, 2, 3])
+  })
+
+  it('puts first the litter whose newest listing appeared last', (): void => {
+    expect(idsOf(LitterSorting.sort(CARDS, 'newest', RENNES))).toEqual([2, 3, 1])
   })
 
   it('puts the closest first and the litters without a position last', (): void => {

@@ -30,6 +30,7 @@ const EXPECTED_GOLD_LITTER: LitterCard = {
   available_from: null,
   photo_url: null,
   first_seen_at: '2026-09-05T09:00:00',
+  latest_listing_appeared_at: '2026-09-05T09:00:00',
   last_seen_at: '2026-11-01T10:00:00',
   is_active: true,
   sources: ['centrale_canine'],

@@ -86,6 +86,28 @@ DAM_ROLE = "Mère"
 LOF_YES = "oui"
 
 
+def breed_page_of(address: str | None, breed_slug: str) -> str | None:
+    """
+    The pages of a breed on a breeder site hosted by Chiens de France: the home of such a site sends to the first
+    breed of the breeding, often another breed than the one looked for. Any other address is kept as it is.
+
+    Args:
+        address: A site address (« https://elevage-a.chiens-de-france.com »), None when unknown.
+        breed_slug: The breed in the addresses of the sites (« cocker-spaniel-anglais »), empty when unknown.
+
+    Returns:
+        « https://elevage-a.chiens-de-france.com/cocker-spaniel-anglais » for the home of such a site, the address
+        otherwise.
+    """
+    if address is None or not breed_slug:
+        return address
+    parsed_address = urlparse(address.strip())
+    host = parsed_address.netloc.lower()
+    if not host.endswith(BREEDER_SITE_HOST_SUFFIX) or host == MAIN_SITE_HOST or parsed_address.path.strip("/"):
+        return address
+    return f"{parsed_address.scheme or 'https'}://{host}/{breed_slug}"
+
+
 @dataclass(frozen=True)
 class SiteTarget:
     """
@@ -397,16 +419,17 @@ class ChiensDeFranceSiteCollector:
     def parse_litters_for_sale_page(tree: LexborHTMLParser) -> list[str]:
         """
         The litters for sale a page links (``/chiots-a-vendre/<id>``); the site writes some of these links
-        with a trailing space.
+        with a trailing space. A site with a single litter for sale sends « Chiots disponibles » straight to the
+        page of that litter, which links to no litter: its canonical address gives the litter then.
 
         Args:
-            tree: The parsed « Nos portées » list.
+            tree: The parsed « Nos portées » list, or the page of the single litter for sale.
 
         Returns:
             The litter ids, in page order, each once.
         """
         litter_ids: dict[str, None] = {}
-        for link in tree.css("a[href]"):
+        for link in tree.css('link[rel="canonical"][href], a[href]'):
             link_match = LITTER_FOR_SALE_LINK_PATTERN.search((link.attributes.get("href") or "").strip())
             if link_match is not None:
                 litter_ids[link_match.group(1)] = None
@@ -846,17 +869,18 @@ class ChiensDeFranceSiteCollector:
     @staticmethod
     def _puppy_photos(box: LexborNode) -> tuple[str, ...]:
         """
-        The full-size photos of the carousel of one puppy box.
+        The full-size photos of one puppy box: those of its carousel, or the photo its thumbnail opens when the
+        site shows a single thumbnail per puppy.
 
         Args:
             box: The ``div.box-chiot`` of the puppy.
 
         Returns:
-            Photo URLs, in carousel order, each once; empty when the box ties no photo to the puppy.
+            Photo URLs, in page order, each once; empty when the box ties no photo to the puppy.
         """
         photos: dict[str, None] = {}
-        for image in box.css("div.boximg img[src]"):
-            source = image.attributes.get("src") or ""
+        for node in box.css("div.boximg a[href], div.boximg img[src]"):
+            source = node.attributes.get("href") or node.attributes.get("src") or ""
             if LITTER_PHOTO_PATH_PART in source and THUMBNAIL_PREFIX not in source and is_photo_file(source):
                 photos[source] = None
         return tuple(photos)

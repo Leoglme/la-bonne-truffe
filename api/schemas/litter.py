@@ -55,6 +55,9 @@ class LitterCard(BaseModel):
     available_from: date | None
     photo_url: str | None
     first_seen_at: datetime
+    latest_listing_appeared_at: datetime = Field(
+        description="When its newest listing first showed: the litter itself, or a later ad, such as one of a puppy"
+    )
     last_seen_at: datetime = Field(description="Last time a source still showed one of its listings")
     is_active: bool
     sources: list[ListingSource]

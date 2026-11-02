@@ -50,6 +50,7 @@ const LITTER: LitterDetail = {
   available_from: '2026-12-24',
   photo_url: null,
   first_seen_at: '2026-10-30T09:00:00',
+  latest_listing_appeared_at: '2026-10-30T09:00:00',
   last_seen_at: '2026-11-01T06:40:00',
   is_active: true,
   sources: ['centrale_canine', 'chiens_de_france_sites'],

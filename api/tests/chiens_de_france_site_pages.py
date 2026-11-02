@@ -15,6 +15,8 @@ EMPTY_SITE_SLUG = "elevage-b"
 BROKEN_SITE_SLUG = "elevage-c"
 OTHER_BREED_SITE_SLUG = "elevage-d"
 OTHER_BREED_PATH = "/siberian-husky"
+SINGLE_LITTER_SITE_SLUG = "elevage-e"
+SINGLE_LITTER_PATH = f"/{BREED_SLUG}/chiots-a-vendre/493883"
 
 RECORDED_PAGES_BY_PATH: dict[str, str] = {
     f"/{BREED_SLUG}/saillies": "litters_to_come.html",
@@ -30,6 +32,8 @@ EMPTY_SITE_PAGES_BY_PATH: dict[str, str] = {
     f"/{BREED_SLUG}/saillies": "litters_to_come_empty.html",
     f"/{BREED_SLUG}": "home.html",
 }
+
+SINGLE_LITTER_SITE_PAGES_BY_PATH: dict[str, str] = {SINGLE_LITTER_PATH: "single_litter_for_sale_493883.html"}
 
 MAIN_SITE_SLUG = "www"
 DIRECTORY_LIST_PATH = f"/eleveurs/{BREED_SLUG}/france/bretagne"
@@ -80,8 +84,10 @@ def chiens_de_france_site_collector_serving(
     """
     A collector that gets the recorded pages of ``elevage-a``, the empty litter list and the home page of
     ``elevage-b``, the regional list of Brittany on the main site, a 500 for every page of ``elevage-c``, the
-    husky pages of ``elevage-d`` (which sends the cocker pages there, like a site without the breed) and a 404 for
-    any other page (the site has none). It does not wait between pages: the pauses it would make are recorded.
+    husky pages of ``elevage-d`` (which sends the cocker pages there, like a site without the breed), the single
+    litter for sale of ``elevage-e`` (whose « Chiots disponibles » sends there, like a site with one litter for
+    sale) and a 404 for any other page (the site has none). It does not wait between pages: the pauses it would
+    make are recorded.
 
     Args:
         requests: Filled with every request sent, when given.
@@ -110,9 +116,12 @@ def chiens_de_france_site_collector_serving(
             return httpx.Response(302, headers={"Location": f"https://{slug}{SITE_HOST_SUFFIX}{OTHER_BREED_PATH}"})
         if slug == OTHER_BREED_SITE_SLUG:
             return httpx.Response(200, text=recorded_page("home.html"))
+        if slug == SINGLE_LITTER_SITE_SLUG and request.url.path == f"/{BREED_SLUG}/chiots":
+            return httpx.Response(302, headers={"Location": f"https://{slug}{SITE_HOST_SUFFIX}{SINGLE_LITTER_PATH}"})
         pages_by_path = {
             RECORDED_SITE_SLUG: RECORDED_PAGES_BY_PATH,
             EMPTY_SITE_SLUG: EMPTY_SITE_PAGES_BY_PATH,
+            SINGLE_LITTER_SITE_SLUG: SINGLE_LITTER_SITE_PAGES_BY_PATH,
             MAIN_SITE_SLUG: MAIN_SITE_PAGES_BY_PATH,
         }
         file_name = pages_by_path.get(slug, {}).get(request.url.path)

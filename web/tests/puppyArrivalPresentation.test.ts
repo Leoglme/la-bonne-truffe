@@ -28,6 +28,7 @@ const RESERVED_LITTER: LitterDetail = {
   available_from: '2026-12-22',
   photo_url: null,
   first_seen_at: '2026-10-28T09:00:00',
+  latest_listing_appeared_at: '2026-10-28T09:00:00',
   last_seen_at: '2026-10-30T10:00:00',
   is_active: true,
   sources: ['centrale_canine'],

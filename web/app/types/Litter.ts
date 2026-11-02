@@ -7,7 +7,7 @@ export type LitterFilterOption = {
   label: string
 }
 
-export type LitterSortKey = 'score' | 'distance' | 'price' | 'departure_soonest' | 'departure_latest'
+export type LitterSortKey = 'score' | 'newest' | 'distance' | 'price' | 'departure_soonest' | 'departure_latest'
 
 export type LitterSortOption = {
   key: LitterSortKey

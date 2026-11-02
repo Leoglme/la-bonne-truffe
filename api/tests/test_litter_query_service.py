@@ -89,3 +89,32 @@ def test_the_parents_take_the_rating_of_the_centrale_canine_even_when_another_so
 
     assert detail.sire is not None and (detail.sire.name, detail.sire.rating) == ("Père de test", 4)
     assert detail.dam is not None and (detail.dam.name, detail.dam.rating) == ("Mère de test", 3)
+
+
+def test_a_later_puppy_ad_dates_the_newest_listing_of_its_litter(db: Session) -> None:
+    SeederRunner.run(db)
+    breeder = Breeder(affix="Du Clos de test", department_code="35")
+    db.add(breeder)
+    db.flush()
+    group = LitterGroup(
+        breed_id=db.query(Breed).one().id,
+        breeder_id=breeder.id,
+        birth_date=date(2026, 9, 1),
+        first_seen_at=SEEN_AT,
+        last_seen_at=SEEN_AT,
+    )
+    db.add(group)
+    db.flush()
+    add_listing_of_group(
+        db, group, ListingSource.CENTRALE_CANINE, ListingKind.LITTER_BORN, sire_rating=4, dam_name="Mère de test"
+    )
+    puppy_ad = add_listing_of_group(
+        db, group, ListingSource.CHIENS_DE_FRANCE, ListingKind.PUPPY_AD, sire_rating=None, dam_name=None
+    )
+    puppy_ad_seen_at = datetime(2026, 11, 2, 18, 0)
+    puppy_ad.first_seen_at = puppy_ad_seen_at
+    db.commit()
+
+    detail = LitterQueryService.detail(db, db.query(User).one().id, group.id)
+
+    assert (detail.first_seen_at, detail.latest_listing_appeared_at) == (SEEN_AT, puppy_ad_seen_at)
