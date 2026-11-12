@@ -65,6 +65,7 @@ class RawListing:
     kind: ListingKind
     lof_status: LofStatus
     external_url: str | None = None
+    breeder_site_page_url: str | None = None
     litter_number: str | None = None
     mating_number: str | None = None
     mating_date: date | None = None

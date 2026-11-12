@@ -20,7 +20,7 @@ from enums.lof_status import LofStatus
 from enums.puppy_ad_state import PuppyAdState
 from enums.social_link_origin import SocialLinkOrigin
 from enums.source_run_status import SourceRunStatus
-from migrations import add_breeder_site_reading_columns, add_dog_parent_colors
+from migrations import add_breeder_site_reading_columns, add_dog_parent_colors, add_listing_breeder_site_page_url
 from models.breed import Breed
 from models.breeder import Breeder
 from models.breeder_follow import BreederFollow
@@ -113,6 +113,9 @@ def test_the_morning_run_gives_a_breeder_its_site_from_the_regional_list_then_re
     detail = LitterQueryService.detail(db, user.id, puppy_ad.litter_group_id)
     assert detail.photos_added_at is not None
     assert {listing.puppy_state for listing in detail.listings} >= {PuppyAdState.AVAILABLE, PuppyAdState.RESERVED}
+    assert f"{SITE_URL}/cocker-spaniel-anglais/chiots-a-vendre/495610#:~:text=2199888" in {
+        listing.external_url for listing in detail.listings
+    }
 
 
 def test_a_site_read_for_the_first_time_records_its_breeders_alerts_without_sending_them(
@@ -479,6 +482,40 @@ def test_the_dog_migration_reads_the_colours_again_and_plans_the_parents(db: Ses
     db.expire_all()
     assert (parent.color, parent.e_locus, parent.fetched_at) == (CoatColor.TRICOLORE, "E/e", None)
     assert (site_dog.color, site_dog.fetched_at) == (CoatColor.GOLD, read_at)
+
+
+def test_the_listing_migration_gives_the_listings_read_on_a_breeder_site_their_page_there(
+    db: Session, engine: Engine
+) -> None:
+    SeederRunner.run(db)
+    breed = db.query(Breed).one()
+    litter_page_url = f"{SITE_URL}/cocker-spaniel-anglais/chiots-a-vendre/495610"
+    mating_page_url = f"{SITE_URL}/cocker-spaniel-anglais/saillie/495662"
+
+    def chiens_de_france_listing(external_id: str, kind: ListingKind, raw_json: dict[str, object]) -> Listing:
+        """A Chiens de France listing as a reading left it."""
+        return Listing(
+            source=ListingSource.CHIENS_DE_FRANCE,
+            external_id=external_id,
+            breed_id=breed.id,
+            kind=kind,
+            raw_json=raw_json,
+        )
+
+    puppy_read_on_site = chiens_de_france_listing("chiot-2199888", ListingKind.PUPPY_AD, {"site_url": litter_page_url})
+    mating_read_on_site = chiens_de_france_listing(
+        "saillie-495662", ListingKind.LITTER_EXPECTED, {"site_url": mating_page_url}
+    )
+    puppy_read_on_main_site = chiens_de_france_listing("chiot-2199887", ListingKind.PUPPY_AD, {"price": "A vendre"})
+    db.add_all([puppy_read_on_site, mating_read_on_site, puppy_read_on_main_site])
+    db.commit()
+
+    add_listing_breeder_site_page_url.run_migration(engine)
+
+    db.expire_all()
+    assert puppy_read_on_site.breeder_site_page_url == f"{litter_page_url}#:~:text=2199888"
+    assert mating_read_on_site.breeder_site_page_url == mating_page_url
+    assert puppy_read_on_main_site.breeder_site_page_url is None
 
 
 def test_the_breeder_migration_marks_the_known_accounts_as_declared_at_the_centrale_canine(

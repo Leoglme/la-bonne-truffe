@@ -111,6 +111,14 @@ describe('GoldGeneticsPresentation.buildGenotypeExplanation', (): void => {
   })
 })
 
+describe('GoldGeneticsPresentation.isEveryPuppyGold', (): void => {
+  it('tells a litter whose parents only give the gold', (): void => {
+    expect(GoldGeneticsPresentation.isEveryPuppyGold(1)).toBe(true)
+    expect(GoldGeneticsPresentation.isEveryPuppyGold(0.5)).toBe(false)
+    expect(GoldGeneticsPresentation.isEveryPuppyGold(null)).toBe(false)
+  })
+})
+
 describe('GoldGeneticsPresentation.buildPuppyOddsLine', (): void => {
   it('words the odds when only some puppies can be gold', (): void => {
     expect(GoldGeneticsPresentation.buildPuppyOddsLine(0.5)).toBe('Gold possible : un chiot sur deux')

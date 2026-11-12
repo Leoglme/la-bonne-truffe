@@ -164,7 +164,8 @@ class ListingIngestionService:
     @classmethod
     def _apply_content(cls, listing: Listing, raw_listing: RawListing, known_department_codes: set[str]) -> None:
         """
-        Copy what the source says onto the stored listing.
+        Copy what the source says onto the stored listing. The page on the breeder's site stays when a reading of
+        the main site, which does not know it, comes after the reading of that site.
 
         Args:
             listing: Listing to update.
@@ -172,6 +173,9 @@ class ListingIngestionService:
             known_department_codes: Seeded department codes (foreign key targets).
         """
         listing.external_url = raw_listing.external_url
+        listing.breeder_site_page_url = known_or_current(
+            raw_listing.breeder_site_page_url, listing.breeder_site_page_url
+        )
         listing.kind = raw_listing.kind
         listing.lof_status = raw_listing.lof_status
         listing.litter_number = raw_listing.litter_number

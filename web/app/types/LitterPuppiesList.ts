@@ -1,6 +1,6 @@
-import type { LitterSourceListing } from '~/types/api'
+import type { LitterDetail } from '~/types/api'
 
 export type LitterPuppiesListProps = {
-  listings: LitterSourceListing[]
+  litter: LitterDetail
   isInWideLayout: boolean
 }

@@ -1,4 +1,5 @@
 import type {
+  CoatColor,
   DogSex,
   ListingSource,
   LitterBreeder,
@@ -25,6 +26,7 @@ import {
 import { MAX_PARENT_RATING, PARENT_RATING_LABELS } from '~/constants/parentRatings'
 import { FrenchDate } from '~/utils/frenchDate'
 import { FrenchText } from '~/utils/frenchText'
+import { GoldGeneticsPresentation } from '~/utils/goldGeneticsPresentation'
 import { LitterPresentation } from '~/utils/litterPresentation'
 
 const UNKNOWN_FACT_LABEL: string = 'À confirmer'
@@ -171,13 +173,17 @@ export class LitterDetailPresentation {
   }
 
   /**
-   * Build the rows of « Les chiots »: one per puppy ad, its photo, its sex and where it stands.
+   * Build the rows of « Les chiots »: one per puppy ad, its photo, its sex and where it stands. A puppy whose ad
+   * gives no colour takes the gold when both parents only give the gold.
    *
-   * @param listings - The listings of the litter.
+   * @param litter - The litter.
    * @returns « Chiot 1 · mâle · Disponible · 1 400 € »…, in the order of the API.
    */
-  static buildPuppyLines(listings: LitterSourceListing[]): LitterPuppyLine[] {
-    const puppyAds: LitterSourceListing[] = this.listPuppyAds(listings)
+  static buildPuppyLines(litter: LitterDetail): LitterPuppyLine[] {
+    const puppyAds: LitterSourceListing[] = this.listPuppyAds(litter.listings)
+    const everyPuppyColor: CoatColor | null = GoldGeneticsPresentation.isEveryPuppyGold(litter.gold_puppy_odds ?? null)
+      ? 'gold'
+      : null
     return puppyAds.map((listing: LitterSourceListing, puppyIndex: number): LitterPuppyLine => {
       const sex: DogSex = this.readPuppySex(listing)
       const onlyColor: LitterColor | undefined = listing.colors.length === 1 ? listing.colors[0] : undefined
@@ -187,7 +193,7 @@ export class LitterDetailPresentation {
         label: this.buildPuppyLabel(puppyIndex, puppyAds.length),
         sex,
         sexLabel: sex === 'unknown' ? null : PUPPY_SEX_LABELS[sex].toLowerCase(),
-        color: onlyColor?.color ?? null,
+        color: onlyColor?.color ?? everyPuppyColor,
         stateLabel: this.buildPuppyStateLabel(listing, sex),
         isAvailable: listing.puppy_state === 'available',
         photoUrl: listing.photos[0] ?? null,
@@ -415,7 +421,8 @@ export class LitterDetailPresentation {
   }
 
   /**
-   * Build the « Vu sur » line of the puppy ads of a source: how many puppies it shows, and a link to the first ad.
+   * Build the « Vu sur » line of the puppy ads of a source: how many puppies it shows, and a link to the page of the
+   * litter that holds the first ad.
    *
    * @param key - Key of the line.
    * @param source - The source.
@@ -435,12 +442,11 @@ export class LitterDetailPresentation {
       photographedCount > 0
         ? `${photographedCount} ${FrenchText.pickForm(photographedCount, 'chiot en photo', 'chiots en photo')}`
         : `${puppyAds.length} ${FrenchText.pickForm(puppyAds.length, 'annonce de chiot', 'annonces de chiots')}`
-    const firstLink: LitterSourceListing | undefined = puppyAds.find(
-      (listing: LitterSourceListing): boolean => listing.external_url !== null,
-    )
+    const firstPuppyAdUrl: string | null =
+      puppyAds.find((listing: LitterSourceListing): boolean => listing.external_url !== null)?.external_url ?? null
     return {
       key,
-      href: firstLink?.external_url ?? null,
+      href: firstPuppyAdUrl === null ? null : this.buildLitterPageUrl(firstPuppyAdUrl),
       label: 'Vu sur',
       description: this.joinKnownParts([
         LISTING_SOURCE_LABELS[source],
@@ -450,6 +456,18 @@ export class LitterDetailPresentation {
       thumbnailUrl: null,
       isGone,
     }
+  }
+
+  /**
+   * Find the page of a litter from the address of one of its puppy ads: a breeder's site shows every puppy of a
+   * litter on one page, and the address of a puppy points at its number with a fragment (« #:~:text=2211562 »).
+   *
+   * @param puppyAdUrl - The address of a puppy ad.
+   * @returns The address without its fragment: the page of the whole litter on a breeder's site, the page of the
+   *   puppy on a site that gives each puppy its own.
+   */
+  private static buildLitterPageUrl(puppyAdUrl: string): string {
+    return puppyAdUrl.split('#')[0] ?? puppyAdUrl
   }
 
   /**

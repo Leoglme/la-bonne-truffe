@@ -245,7 +245,7 @@ class LitterQueryService:
                 LitterSourceListing(
                     source=listing.source,
                     kind=listing.kind,
-                    external_url=listing.external_url,
+                    external_url=listing.breeder_site_page_url or listing.external_url,
                     litter_number=listing.litter_number,
                     last_seen_at=listing.last_seen_at,
                     is_active=listing.is_active,

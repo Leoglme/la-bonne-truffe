@@ -44,7 +44,7 @@
 
 <script lang="ts" setup>
 import type { ComputedRef, PropType } from 'vue'
-import type { LitterSourceListing } from '~/types/api'
+import type { LitterDetail } from '~/types/api'
 import type { LitterPuppyLine } from '~/types/Litter'
 import type { LitterPuppiesListProps } from '~/types/LitterPuppiesList'
 import { computed } from 'vue'
@@ -52,16 +52,16 @@ import { PUPPY_SEX_TEXT_CLASSES } from '~/constants/litterLabels'
 import { LitterDetailPresentation } from '~/utils/litterDetailPresentation'
 
 const props: LitterPuppiesListProps = defineProps({
-  listings: { type: Array as PropType<LitterSourceListing[]>, required: true },
+  litter: { type: Object as PropType<LitterDetail>, required: true },
   isInWideLayout: { type: Boolean, default: false },
 })
 
 const PUPPY_ILLUSTRATION_SIZE_IN_PIXELS: number = 48
 
 const puppyLines: ComputedRef<LitterPuppyLine[]> = computed((): LitterPuppyLine[] =>
-  LitterDetailPresentation.buildPuppyLines(props.listings),
+  LitterDetailPresentation.buildPuppyLines(props.litter),
 )
 const caption: ComputedRef<string | null> = computed((): string | null =>
-  LitterDetailPresentation.buildPuppiesCaption(props.listings, new Date()),
+  LitterDetailPresentation.buildPuppiesCaption(props.litter.listings, new Date()),
 )
 </script>

@@ -110,7 +110,7 @@
               + {{ hiddenPhotoCount }}
             </button>
           </div>
-          <LitterPuppiesList :listings="litter.listings" class="shrink-0" />
+          <LitterPuppiesList :litter="litter" class="shrink-0" />
           <LitterReasonsCard :litter="litter" class="shrink-0" />
           <LitterParentsList :litter="litter" class="shrink-0" />
           <LitterGoldOddsCard :litter="litter" class="shrink-0" />
@@ -202,7 +202,7 @@
           </span>
         </LitterTileFrame>
         <LitterCallConfirmation :litter="litter" is-in-wide-layout />
-        <LitterPuppiesList :listings="litter.listings" is-in-wide-layout />
+        <LitterPuppiesList :litter="litter" is-in-wide-layout />
         <LitterReasonsCard :litter="litter" />
         <LitterParentsList :litter="litter" is-in-wide-layout />
         <LitterGoldOddsCard :litter="litter" />

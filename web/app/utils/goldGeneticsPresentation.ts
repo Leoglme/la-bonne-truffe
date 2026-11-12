@@ -55,6 +55,16 @@ export class GoldGeneticsPresentation {
   }
 
   /**
+   * Tell whether the parents make every puppy of a litter gold.
+   *
+   * @param odds - Share of gold puppies the parents give, null while unknown.
+   * @returns True when both parents only give the gold.
+   */
+  static isEveryPuppyGold(odds: number | null): boolean {
+    return odds !== null && odds >= 1
+  }
+
+  /**
    * Word the odds of gold puppies in the row of a litter, when only some of its puppies can be gold.
    *
    * @param odds - Share of gold puppies the parents give, null while unknown.
@@ -79,7 +89,7 @@ export class GoldGeneticsPresentation {
     if (odds === null || odds <= 0) {
       return null
     }
-    if (odds >= 1) {
+    if (this.isEveryPuppyGold(odds)) {
       return {
         figure: 'Tous',
         figureCaption: 'gold',

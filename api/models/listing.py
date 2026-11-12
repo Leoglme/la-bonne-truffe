@@ -24,6 +24,9 @@ class Listing(TimestampMixin, Base):
         source: ``ListingSource`` value.
         external_id: Identifier on the source.
         external_url: Public page of the listing on the source.
+        breeder_site_page_url: Page of the listing on the breeder's own site at the source, read from that site: the
+            page of a mating, or the page of a litter pointed at one of its puppies (``#:~:text=<number>``). The main
+            site of Chiens de France has no page for the ads a breeder only shows on its own site.
         breed_id: Breed.
         breeder_id: Breeder, once matched.
         litter_group_id: Real litter the listing belongs to, once grouped.
@@ -67,6 +70,7 @@ class Listing(TimestampMixin, Base):
     source: Mapped[ListingSource] = mapped_column(str_enum_column(ListingSource), nullable=False, index=True)
     external_id: Mapped[str] = mapped_column(String(80), nullable=False)
     external_url: Mapped[str | None] = mapped_column(String(500))
+    breeder_site_page_url: Mapped[str | None] = mapped_column(String(500))
     breed_id: Mapped[int] = mapped_column(ForeignKey("breeds.id"), nullable=False, index=True)
     breeder_id: Mapped[int | None] = mapped_column(ForeignKey("breeders.id", ondelete="SET NULL"), index=True)
     litter_group_id: Mapped[int | None] = mapped_column(ForeignKey("litter_groups.id", ondelete="SET NULL"), index=True)

@@ -84,6 +84,7 @@ PARENT_ROLES: tuple[str, ...] = ("Père", "Mère")
 SIRE_ROLE = "Père"
 DAM_ROLE = "Mère"
 LOF_YES = "oui"
+TEXT_FRAGMENT_PREFIX = "#:~:text="
 
 
 def breed_page_of(address: str | None, breed_slug: str) -> str | None:
@@ -106,6 +107,22 @@ def breed_page_of(address: str | None, breed_slug: str) -> str | None:
     if not host.endswith(BREEDER_SITE_HOST_SUFFIX) or host == MAIN_SITE_HOST or parsed_address.path.strip("/"):
         return address
     return f"{parsed_address.scheme or 'https'}://{host}/{breed_slug}"
+
+
+def puppy_place_on_litter_page(litter_page_url: str, puppy_number: str) -> str:
+    """
+    The address that opens the page of a litter on a breeder site at one of its puppies. The site gives no puppy a
+    page of its own, and the main site has none for a puppy the breeder only shows on its site (``/chiot/<n>`` sends
+    to the regional list): a text fragment makes the browser scroll to the number of the puppy and mark it.
+
+    Args:
+        litter_page_url: The page of the litter (« …/cocker-spaniel-anglais/chiots-a-vendre/498070 »).
+        puppy_number: The number of the puppy on Chiens de France (« 2211562 »).
+
+    Returns:
+        « …/cocker-spaniel-anglais/chiots-a-vendre/498070#:~:text=2211562 ».
+    """
+    return f"{litter_page_url}{TEXT_FRAGMENT_PREFIX}{puppy_number}"
 
 
 @dataclass(frozen=True)
@@ -377,8 +394,9 @@ class ChiensDeFranceSiteCollector:
     @classmethod
     def parse_litters_to_come_page(cls, tree: LexborHTMLParser, site: SiteTarget) -> list[RawListing]:
         """
-        Read the « Portées à venir » list: one litter to come per mating, each linked to its page on the
-        main site (``/saillie/<id>``) so that both collectors describe the same listing.
+        Read the « Portées à venir » list: one litter to come per mating, each named by its page on the main
+        site (``/saillie/<id>``) so that both collectors describe the same listing, and linked to its page on the
+        breeder's site, which the main site may not have.
 
         Args:
             tree: The parsed list.
@@ -406,6 +424,7 @@ class ChiensDeFranceSiteCollector:
                     kind=ListingKind.LITTER_EXPECTED,
                     lof_status=LofStatus.LOF,
                     external_url=f"{CHIENS_DE_FRANCE_BASE_URL}/saillie/{litter_id}",
+                    breeder_site_page_url=site_page_url,
                     mating_date=french_date_of(headline),
                     sire_name=parents.get(SIRE_ROLE),
                     dam_name=parents.get(DAM_ROLE),
@@ -438,13 +457,13 @@ class ChiensDeFranceSiteCollector:
     @classmethod
     def parse_litter_for_sale_page(cls, tree: LexborHTMLParser, site: SiteTarget, page_url: str) -> list[RawListing]:
         """
-        Read the page of a litter for sale: one puppy ad per puppy box, each linked to its page on the main
-        site (``/chiot/<n>``), with the facts of the litter table shared by all.
+        Read the page of a litter for sale: one puppy ad per puppy box, each named by its page on the main site
+        (``/chiot/<n>``), linked to its place on this page, with the facts of the litter table shared by all.
 
         Args:
             tree: The parsed litter page.
             site: The site it belongs to.
-            page_url: Address of the page, kept in ``raw_json``.
+            page_url: Address of the page, kept in ``raw_json`` and pointed at each puppy.
 
         Returns:
             One listing per puppy, in page order.
@@ -475,6 +494,7 @@ class ChiensDeFranceSiteCollector:
                     kind=ListingKind.PUPPY_AD,
                     lof_status=LofStatus.LOF if is_lof else LofStatus.UNKNOWN,
                     external_url=f"{CHIENS_DE_FRANCE_BASE_URL}/chiot/{puppy_number}",
+                    breeder_site_page_url=puppy_place_on_litter_page(page_url, puppy_number),
                     litter_number=WHITESPACE_PATTERN.sub("", litter_code) if litter_code else None,
                     birth_date=birth_date,
                     male_count=male_count,

@@ -1,4 +1,5 @@
-import type { LitterDetail, LitterSourceListing } from '../app/types/api'
+import type { CoatColor, LitterDetail, LitterSourceListing } from '../app/types/api'
+import type { LitterPuppyLine } from '../app/types/Litter'
 import { describe, expect, it } from 'vitest'
 import { LitterDetailPresentation } from '../app/utils/litterDetailPresentation'
 
@@ -19,10 +20,12 @@ const BIRTH_DECLARATION: LitterSourceListing = {
   price_cents: null,
 }
 
+const LITTER_PAGE_URL: string = 'https://elevage-a.chiens-de-france.com/cocker-spaniel-anglais/chiots-a-vendre/495610'
+
 const MALE_PUPPY_AD: LitterSourceListing = {
   source: 'chiens_de_france',
   kind: 'puppy_ad',
-  external_url: 'https://elevage-a.chiens-de-france.com/cocker-spaniel-anglais/chiots-a-vendre/495610',
+  external_url: `${LITTER_PAGE_URL}#:~:text=2199888`,
   litter_number: null,
   last_seen_at: '2026-11-01T06:40:00',
   is_active: true,
@@ -36,6 +39,7 @@ const MALE_PUPPY_AD: LitterSourceListing = {
 
 const FEMALE_PUPPY_AD: LitterSourceListing = {
   ...MALE_PUPPY_AD,
+  external_url: `${LITTER_PAGE_URL}#:~:text=2199889`,
   male_count: 0,
   female_count: 1,
   colors: [{ color: 'bleu_rouan', confidence: 'certain' }],
@@ -140,7 +144,7 @@ describe('LitterDetailPresentation.buildPhotoBadge', (): void => {
 })
 
 describe('LitterDetailPresentation.buildListingLines', (): void => {
-  it('gathers the puppy ads of a source in one line of « Vu sur »', (): void => {
+  it('gathers the puppy ads of a source in one line of « Vu sur », linked to the page of the litter', (): void => {
     expect(LitterDetailPresentation.buildListingLines(LITTER)).toMatchObject([
       {
         description: 'Centrale Canine · déclaration de naissance',
@@ -148,15 +152,26 @@ describe('LitterDetailPresentation.buildListingLines', (): void => {
       },
       {
         description: 'Chiens de France · 2 chiots en photo',
-        href: 'https://elevage-a.chiens-de-france.com/cocker-spaniel-anglais/chiots-a-vendre/495610',
+        href: LITTER_PAGE_URL,
       },
     ])
+  })
+
+  it('links the puppy ads of a site that gives each puppy its own page to the first one', (): void => {
+    const puppyPageUrl: string = 'https://www.chiens-de-france.com/chiot/2199888'
+
+    expect(
+      LitterDetailPresentation.buildListingLines({
+        ...LITTER,
+        listings: [{ ...MALE_PUPPY_AD, external_url: puppyPageUrl }],
+      }),
+    ).toMatchObject([{ href: puppyPageUrl }])
   })
 })
 
 describe('LitterDetailPresentation.buildPuppyLines', (): void => {
   it('names each puppy, its sex and where it stands', (): void => {
-    expect(LitterDetailPresentation.buildPuppyLines(LITTER.listings)).toMatchObject([
+    expect(LitterDetailPresentation.buildPuppyLines(LITTER)).toMatchObject([
       { label: 'Chiot 1', sexLabel: 'mâle', color: 'gold', stateLabel: 'Disponible · 1\u202f400\u00a0€' },
       { label: 'Chiot 2', sexLabel: 'femelle', color: 'bleu_rouan', stateLabel: 'Réservée' },
       { label: 'Chiot 3', sexLabel: 'femelle', color: 'bleu_rouan', stateLabel: 'Vendue' },
@@ -165,8 +180,26 @@ describe('LitterDetailPresentation.buildPuppyLines', (): void => {
 
   it('says when an ad that told nothing is gone', (): void => {
     expect(
-      LitterDetailPresentation.buildPuppyLines([{ ...MALE_PUPPY_AD, puppy_state: null, is_active: false }])[0],
+      LitterDetailPresentation.buildPuppyLines({
+        ...LITTER,
+        listings: [{ ...MALE_PUPPY_AD, puppy_state: null, is_active: false }],
+      })[0],
     ).toMatchObject({ label: 'Chiot', stateLabel: 'Plus en ligne', isGone: true })
+  })
+
+  it('links each puppy to its place on the page of its litter', (): void => {
+    expect(LitterDetailPresentation.buildPuppyLines(LITTER)[0]?.href).toBe(`${LITTER_PAGE_URL}#:~:text=2199888`)
+  })
+
+  it('draws in gold a puppy whose ad tells no colour when both parents only give the gold', (): void => {
+    const listings: LitterSourceListing[] = [{ ...MALE_PUPPY_AD, colors: [] }, FEMALE_PUPPY_AD]
+    const readColors: (goldPuppyOdds: number) => (CoatColor | null)[] = (goldPuppyOdds: number): (CoatColor | null)[] =>
+      LitterDetailPresentation.buildPuppyLines({ ...LITTER, listings, gold_puppy_odds: goldPuppyOdds }).map(
+        (line: LitterPuppyLine): CoatColor | null => line.color,
+      )
+
+    expect(readColors(1)).toEqual(['gold', 'bleu_rouan'])
+    expect(readColors(0.5)).toEqual([null, 'bleu_rouan'])
   })
 })
 

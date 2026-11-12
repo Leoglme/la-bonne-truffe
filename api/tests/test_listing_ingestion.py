@@ -6,7 +6,9 @@ from datetime import date, datetime, timedelta
 from sqlalchemy.orm import Session
 
 from core.clock import naive_utc_now
+from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
+from enums.lof_status import LofStatus
 from models.breed import Breed
 from models.breeder import Breeder
 from models.listing import Listing
@@ -127,3 +129,30 @@ def test_a_coeur_de_cocker_ad_joins_the_breeder_of_the_centrale_canine_by_affix_
 
     assert db.query(Listing).one().breeder_id == known_breeder.id
     assert db.query(Breeder).count() == 1
+
+
+def test_a_reading_of_the_main_site_keeps_the_page_the_breeder_site_gave_without_counting_a_change(db: Session) -> None:
+    SeederRunner.run(db)
+    breed = db.query(Breed).one()
+    main_site_url = "https://www.chiens-de-france.com/chiot/2199888"
+    site_page_url = (
+        "https://elevage-a.chiens-de-france.com/cocker-spaniel-anglais/chiots-a-vendre/495610#:~:text=2199888"
+    )
+    main_site_ad = RawListing(
+        source=ListingSource.CHIENS_DE_FRANCE,
+        external_id="chiot-2199888",
+        breed_id=breed.id,
+        kind=ListingKind.PUPPY_AD,
+        lof_status=LofStatus.LOF,
+        external_url=main_site_url,
+    )
+    site_ad = replace(main_site_ad, breeder_site_page_url=site_page_url)
+
+    listing_ingestion_service.ingest(db, ListingSource.CHIENS_DE_FRANCE, [site_ad], set(), naive_utc_now())
+    summary = listing_ingestion_service.ingest(
+        db, ListingSource.CHIENS_DE_FRANCE, [main_site_ad], set(), naive_utc_now()
+    )
+
+    listing = db.query(Listing).one()
+    assert (listing.external_url, listing.breeder_site_page_url) == (main_site_url, site_page_url)
+    assert summary.changed_listing_ids == []

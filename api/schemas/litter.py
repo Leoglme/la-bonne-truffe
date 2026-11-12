@@ -115,7 +115,10 @@ class LitterSourceListing(BaseModel):
 
     source: ListingSource
     kind: ListingKind
-    external_url: str | None
+    external_url: str | None = Field(
+        description="Page of the listing: on the breeder's own site when it was read there (for a puppy, the page of "
+        "its litter pointed at its number), else on the main site of the source"
+    )
     litter_number: str | None
     last_seen_at: datetime
     is_active: bool

@@ -2431,7 +2431,10 @@ export interface components {
         LitterSourceListing: {
             source: components["schemas"]["ListingSource"];
             kind: components["schemas"]["ListingKind"];
-            /** External Url */
+            /**
+             * External Url
+             * @description Page of the listing: on the breeder's own site when it was read there (for a puppy, the page of its litter pointed at its number), else on the main site of the source
+             */
             external_url: string | null;
             /** Litter Number */
             litter_number: string | null;

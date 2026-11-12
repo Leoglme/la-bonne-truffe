@@ -83,6 +83,10 @@ def test_litters_to_come_page_gives_one_litter_per_mating_with_its_date_and_pare
         "https://www.chiens-de-france.com/saillie/495662",
         "https://www.chiens-de-france.com/saillie/495668",
     ]
+    assert [listing.breeder_site_page_url for listing in listings] == [
+        f"{BREED_URL}/saillie/495662",
+        f"{BREED_URL}/saillie/495668",
+    ]
     assert {(listing.kind, listing.lof_status) for listing in listings} == {
         (ListingKind.LITTER_EXPECTED, LofStatus.LOF)
     }
@@ -143,6 +147,7 @@ def test_litter_for_sale_page_gives_one_puppy_ad_per_puppy_with_its_status_and_p
         "chiot-2199887",
     ]
     assert listings[0].external_url == "https://www.chiens-de-france.com/chiot/2199888"
+    assert listings[0].breeder_site_page_url == f"{page_url}#:~:text=2199888"
     assert [listing.puppies_available for listing in listings] == [1, 0, 0, 0]
     assert [(listing.male_count, listing.female_count) for listing in listings] == [(1, 0), (1, 0), (0, 1), (1, 0)]
     assert [listing.price_cents for listing in listings] == [140000, None, None, None]
