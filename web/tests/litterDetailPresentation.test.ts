@@ -215,3 +215,11 @@ describe('LitterDetailPresentation.buildPuppiesCaption', (): void => {
     expect(LitterDetailPresentation.buildPuppiesCaption([BIRTH_DECLARATION], NOW)).toBeNull()
   })
 })
+
+describe('LitterDetailPresentation.resolvePrimaryAction', (): void => {
+  it('opens the page of the litter when the breeder has no phone and a puppy ad comes first', (): void => {
+    expect(
+      LitterDetailPresentation.resolvePrimaryAction({ ...LITTER, listings: [MALE_PUPPY_AD, BIRTH_DECLARATION] }),
+    ).toEqual({ href: LITTER_PAGE_URL, label: 'Voir sur Chiens de France', isCall: false })
+  })
+})

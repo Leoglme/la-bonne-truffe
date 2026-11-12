@@ -328,7 +328,10 @@ export class LitterDetailPresentation {
     )
     if (sourceListing?.external_url) {
       return {
-        href: sourceListing.external_url,
+        href:
+          sourceListing.kind === 'puppy_ad'
+            ? this.buildLitterPageUrl(sourceListing.external_url)
+            : sourceListing.external_url,
         label: LISTING_SOURCE_LINK_LABELS[sourceListing.source],
         isCall: false,
       }
