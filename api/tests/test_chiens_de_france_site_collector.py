@@ -221,6 +221,36 @@ def test_dog_page_gives_the_sex_the_colour_the_chip_and_the_rating() -> None:
     assert dog.photos == (f"{SITE_URL}/media_cdf/photos/chiens/2020_04/photo-de-test-3.png",)
 
 
+def test_dog_page_showing_a_gallery_gives_the_photo_it_shares_then_the_photos_of_its_gallery() -> None:
+    listed_female = ListedDog("1479070", f"{BREED_URL}/chien/1479070", "Chien de test 41", None, None)
+
+    dog = ChiensDeFranceSiteCollector.parse_dog_page(parsed("dog_1479070.html"), RECORDED_SITE, listed_female)
+
+    assert (dog.full_name, dog.sex, dog.identifier, dog.rating) == (
+        "Chien de test 41",
+        DogSex.FEMALE,
+        "250000000000007",
+        1,
+    )
+    assert dog.photos == (
+        f"{SITE_URL}/media_cdf/photos/chiens/2026_11/photo-de-test-41.jpg",
+        "https://www.chiens-de-france.com/photo/eleveurs/0/0/album/photo-de-test-42.jpg",
+        "https://www.chiens-de-france.com/photo/eleveurs/0/0/album/photo-de-test-43.jpg",
+    )
+
+
+def test_dog_page_without_photo_takes_the_photo_of_its_list() -> None:
+    list_photo_url = f"{SITE_URL}/media_cdf/photos/chiens/2026_11/photo-de-test-46.jpg"
+    listed_stud = ListedDog("1386355", f"{BREED_URL}/chien/1386355", "Père de test 11", None, list_photo_url)
+    tree = LexborHTMLParser(
+        "<article class='article-main'><h2>PÈRE DE TEST 11</h2><h3>mâle né le 04/12/2022</h3></article>"
+    )
+
+    dog = ChiensDeFranceSiteCollector.parse_dog_page(tree, RECORDED_SITE, listed_stud)
+
+    assert dog.photos == (list_photo_url,)
+
+
 def test_stud_without_status_row_takes_the_state_of_its_list() -> None:
     listed_stud = ListedDog("1386355", f"{BREED_URL}/chien/1386355", "Père de test 11", "Disponible pour saillie", None)
     tree = LexborHTMLParser(

@@ -20,7 +20,12 @@ from enums.lof_status import LofStatus
 from enums.puppy_ad_state import PuppyAdState
 from enums.social_link_origin import SocialLinkOrigin
 from enums.source_run_status import SourceRunStatus
-from migrations import add_breeder_site_reading_columns, add_dog_parent_colors, add_listing_breeder_site_page_url
+from migrations import (
+    add_breeder_site_reading_columns,
+    add_dog_parent_colors,
+    add_listing_breeder_site_page_url,
+    reread_site_dogs_without_photo,
+)
 from models.breed import Breed
 from models.breeder import Breeder
 from models.breeder_follow import BreederFollow
@@ -482,6 +487,34 @@ def test_the_dog_migration_reads_the_colours_again_and_plans_the_parents(db: Ses
     db.expire_all()
     assert (parent.color, parent.e_locus, parent.fetched_at) == (CoatColor.TRICOLORE, "E/e", None)
     assert (site_dog.color, site_dog.fetched_at) == (CoatColor.GOLD, read_at)
+
+
+def test_the_migration_plans_again_the_site_dogs_read_without_a_photo(db: Session, engine: Engine) -> None:
+    read_at = datetime(2026, 11, 12, 18, 0)
+    site_dog_without_photo = Dog(
+        source=ListingSource.CHIENS_DE_FRANCE, external_id="1479070", role=DogRole.REPRODUCER, fetched_at=read_at
+    )
+    site_dog_with_photo = Dog(
+        source=ListingSource.CHIENS_DE_FRANCE,
+        external_id="1212400",
+        role=DogRole.REPRODUCER,
+        photos=[f"{SITE_URL}/media_cdf/photos/chiens/2020_04/photo-de-test-3.png"],
+        fetched_at=read_at,
+    )
+    parent_without_photo = Dog(
+        source=ListingSource.CENTRALE_CANINE, external_id="7000301", role=DogRole.PARENT, fetched_at=read_at
+    )
+    db.add_all([site_dog_without_photo, site_dog_with_photo, parent_without_photo])
+    db.commit()
+
+    reread_site_dogs_without_photo.run_migration(engine)
+
+    db.expire_all()
+    assert [dog.fetched_at for dog in (site_dog_without_photo, site_dog_with_photo, parent_without_photo)] == [
+        None,
+        read_at,
+        read_at,
+    ]
 
 
 def test_the_listing_migration_gives_the_listings_read_on_a_breeder_site_their_page_there(

@@ -58,6 +58,7 @@ MIGRATION_MODULES: list[tuple[str, str]] = [
     ("add_more_breeder_links_found_by_hand", "migrations.add_more_breeder_links_found_by_hand"),
     ("add_listing_breeder_site_page_url", "migrations.add_listing_breeder_site_page_url"),
     ("add_listing_available_from", "migrations.add_listing_available_from"),
+    ("reread_site_dogs_without_photo", "migrations.reread_site_dogs_without_photo"),
 ]
 
 _NON_MIGRATION_MODULES: set[str] = {"__init__", "run_migrations"}

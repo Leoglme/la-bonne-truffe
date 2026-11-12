@@ -77,9 +77,12 @@ BREEDING_COUNTS_PATTERN = re.compile(r"(\d+)\s+femelles?\s+reproductrices?.*?(\d
 REGISTERED_ON_PATTERN = re.compile(r"Inscrit sur chiens-de-france\.com depuis le\s+(\d{1,2}[./]\d{1,2}[./]\d{4})")
 RATING_PATTERN = re.compile(r"^\s*(\d+)")
 BACKGROUND_IMAGE_PATTERN = re.compile(r"url\(\s*['\"]?([^'\")]+)")
+GALLERY_SCRIPT_MARKER = "PhotoGallery("
+GALLERY_PHOTO_PATTERN = re.compile(r"url:\s*['\"]([^'\"]+)['\"]")
 
 SITE_AFFIX_SELECTORS: tuple[str, ...] = ("span.affixe-supp", "#pied a.affixe")
 DOG_PHOTO_PATH_PART = "media_cdf/photos/chiens/"
+ALBUM_PHOTO_PATH_PART = "/album/"
 SITE_PHOTO_PATH_PART = "media_cdf/photos/"
 PARENT_ROLES: tuple[str, ...] = ("Père", "Mère")
 SIRE_ROLE = "Père"
@@ -653,7 +656,7 @@ class ChiensDeFranceSiteCollector:
     def parse_dog_page(cls, tree: LexborHTMLParser, site: SiteTarget, listed_dog: ListedDog) -> RawDog:
         """
         Read the page of a reproducer: its title, its « née le » line, its table (Sexe, Couleur, Puce,
-        Cotation, Statut), its parents and its photos.
+        Cotation, Statut), its parents and its photos, or the photo of its list when the page shows none.
 
         Args:
             tree: The parsed dog page.
@@ -689,7 +692,7 @@ class ChiensDeFranceSiteCollector:
             rating=int(rating_match.group(1)) if rating_match else None,
             sire_external_id=parents[SIRE_ROLE].external_id if SIRE_ROLE in parents else None,
             dam_external_id=parents[DAM_ROLE].external_id if DAM_ROLE in parents else None,
-            photos=cls._dog_photos(tree),
+            photos=cls._dog_photos(tree) or ((listed_dog.photo_url,) if listed_dog.photo_url else ()),
             availability_text=facts.get("Statut") or listed_dog.status_text,
         )
 
@@ -925,20 +928,32 @@ class ChiensDeFranceSiteCollector:
     @staticmethod
     def _dog_photos(tree: LexborHTMLParser) -> tuple[str, ...]:
         """
-        The photos of the dog itself (``media_cdf/photos/chiens/``), not those of its parents.
+        The photos of the dog itself, not those of its parents: its main photo (``media_cdf/photos/chiens/``), an
+        image of the page or, on the pages that show a gallery instead, the image the page gives to share
+        (``og:image``); then the photos of that gallery, which a script of the page lists (``…/album/…``).
 
         Args:
             tree: The parsed dog page.
 
         Returns:
-            Photo URLs, in page order, each once.
+            Photo URLs, the main photo first, each once.
         """
-        photos: dict[str, None] = {}
-        for image in tree.css("img[src]"):
-            source = image.attributes.get("src") or ""
-            if DOG_PHOTO_PATH_PART in source and is_photo_file(source):
-                photos[source] = None
-        return tuple(photos)
+        shared_image = tree.css_first('meta[property="og:image"]')
+        main_addresses = [shared_image.attributes.get("content") or ""] if shared_image is not None else []
+        main_addresses.extend(image.attributes.get("src") or "" for image in tree.css("img[src]"))
+        gallery_addresses = [
+            address
+            for script in tree.css("script")
+            if GALLERY_SCRIPT_MARKER in script.text()
+            for address in GALLERY_PHOTO_PATTERN.findall(script.text())
+        ]
+        main_photos = [
+            address for address in main_addresses if DOG_PHOTO_PATH_PART in address and is_photo_file(address)
+        ]
+        gallery_photos = [
+            address for address in gallery_addresses if ALBUM_PHOTO_PATH_PART in address and is_photo_file(address)
+        ]
+        return tuple(dict.fromkeys(main_photos + gallery_photos))
 
     @classmethod
     def _registered_on(cls, pages: Sequence[HtmlRawPage]) -> date | None:
