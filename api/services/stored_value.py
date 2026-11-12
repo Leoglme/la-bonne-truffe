@@ -1,9 +1,9 @@
 """How every ingestion refreshes a field: the value a source gives now, or the stored one when it gives none."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import TypeVar
 
-StoredValue = TypeVar("StoredValue", str, bool, int, float, datetime)
+StoredValue = TypeVar("StoredValue", str, bool, int, float, datetime, date)
 
 
 def known_or_current(new_value: StoredValue | None, current_value: StoredValue | None) -> StoredValue | None:

@@ -55,6 +55,17 @@ describe('LitterPresentation price and sighting', (): void => {
     expect(LitterPresentation.buildPriceLabel({ ...BORN_GOLD_LITTER, price_cents: 140_000 })).toBe('1\u202f400\u00a0€')
   })
 
+  it('writes the lowest and the highest price when the puppies do not all ask the same', (): void => {
+    const litterFrom1600Euros: LitterCard = { ...BORN_GOLD_LITTER, price_cents: 160_000 }
+
+    expect(LitterPresentation.buildPriceLabel({ ...litterFrom1600Euros, highest_price_cents: 165_000 })).toBe(
+      '1\u202f600\u00a0à\u00a01\u202f650\u00a0€',
+    )
+    expect(LitterPresentation.buildPriceLabel({ ...litterFrom1600Euros, highest_price_cents: 160_000 })).toBe(
+      '1\u202f600\u00a0€',
+    )
+  })
+
   it('says since when a litter is gone from its sources', (): void => {
     expect(LitterPresentation.buildGoneSinceLabel(BORN_GOLD_LITTER)).toBeNull()
     expect(LitterPresentation.buildGoneSinceLabel({ ...BORN_GOLD_LITTER, is_active: false })).toBe(

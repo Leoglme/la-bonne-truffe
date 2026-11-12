@@ -280,13 +280,37 @@ class LitterGroupingService:
             else None
         )
         reference_birth: date | None = group.birth_date or group.expected_birth_date
-        group.available_from = reference_birth + timedelta(days=LEGAL_HANDOVER_DAYS) if reference_birth else None
+        legal_handover_day = reference_birth + timedelta(days=LEGAL_HANDOVER_DAYS) if reference_birth else None
+        group.available_from = LitterGroupingService._departure_day(listings, legal_handover_day)
         group.first_seen_at = min(listing.first_seen_at for listing in listings)
         group.last_seen_at = max(listing.last_seen_at for listing in listings)
         group.is_active = any(listing.is_active for listing in listings)
         group.puppies_available = LitterGroupingService._puppies_still_offered(listings)
         if group.breeder_id is None:
             group.breeder_id = next((listing.breeder_id for listing in listings if listing.breeder_id), None)
+
+    @staticmethod
+    def _departure_day(listings: list[Listing], legal_handover_day: date | None) -> date | None:
+        """
+        The day the puppies of a litter may leave: the earliest day its ads still online announce (those of every
+        ad once all are gone), else the legal handover age. A breeder often keeps its puppies longer than the law
+        asks; a day announced before the legal age is a slip, and the legal age stands.
+
+        Args:
+            listings: Every listing of the group.
+            legal_handover_day: Birth (or expected birth) + 56 days, None while neither is known.
+
+        Returns:
+            The departure day, or None while no ad announces one and the birth is unknown.
+        """
+        announced_days = [
+            (listing.available_from, listing.is_active) for listing in listings if listing.available_from is not None
+        ]
+        days_still_online = [day for day, is_online in announced_days if is_online]
+        announced_day = min(days_still_online or [day for day, _ in announced_days], default=None)
+        if announced_day is None or (legal_handover_day is not None and announced_day < legal_handover_day):
+            return legal_handover_day
+        return announced_day
 
     @staticmethod
     def _puppies_still_offered(listings: list[Listing]) -> int | None:

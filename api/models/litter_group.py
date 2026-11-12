@@ -21,7 +21,8 @@ class LitterGroup(TimestampMixin, Base):
         birth_date: Declared birth date.
         expected_birth_date: Mating date + 63 days while the birth is not declared.
         mating_date: Declared mating date.
-        available_from: Birth (or expected birth) + 56 days, the legal handover age.
+        available_from: Day the puppies may leave: the day its ads announce when they give one, else the birth (or
+            expected birth) + 56 days, the legal handover age.
         is_active: False once every listing is gone, or six months after the birth.
         is_grouping_probable: True when listings were grouped on a guess (no birth date, single candidate).
         confirmed_colors: Canonical colours confirmed by hand after a call; they override every source.

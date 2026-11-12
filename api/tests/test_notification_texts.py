@@ -25,6 +25,7 @@ GOLD_PUPPY_ADS_IN_53 = LitterSnapshot(
     female_count=0,
     puppies_available=2,
     price_cents=None,
+    highest_price_cents=None,
     appeared_on=date(2026, 10, 28),
     birth_date=date(2026, 9, 14),
     expected_birth_date=None,

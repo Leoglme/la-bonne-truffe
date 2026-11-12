@@ -168,6 +168,24 @@ def test_litter_for_sale_page_gives_one_puppy_ad_per_puppy_with_its_status_and_p
     assert listings[0].raw_json["site_url"] == page_url
 
 
+def test_litter_for_sale_page_gives_each_puppy_the_day_its_title_says_the_puppies_may_leave() -> None:
+    listings = ChiensDeFranceSiteCollector.parse_litter_for_sale_page(
+        parsed("litter_for_sale_495610.html"), RECORDED_SITE, f"{BREED_URL}/chiots-a-vendre/495610"
+    )
+    single_litter_listings = ChiensDeFranceSiteCollector.parse_litter_for_sale_page(
+        parsed("single_litter_for_sale_493883.html"),
+        SINGLE_LITTER_SITE,
+        f"{SINGLE_LITTER_SITE_URL}/cocker-spaniel-anglais/chiots-a-vendre/493883",
+    )
+
+    assert {(listing.birth_date, listing.available_from) for listing in listings} == {
+        (date(2026, 8, 28), date(2026, 10, 30))
+    }
+    assert {(listing.birth_date, listing.available_from) for listing in single_litter_listings} == {
+        (date(2026, 8, 9), date(2026, 11, 2))
+    }
+
+
 def test_litter_for_sale_page_counts_the_breeding_females_and_the_litters_of_the_year() -> None:
     counts = ChiensDeFranceSiteCollector.breeding_counts(parsed("litter_for_sale_495610.html"))
 

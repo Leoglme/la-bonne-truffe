@@ -156,3 +156,22 @@ def test_a_reading_of_the_main_site_keeps_the_page_the_breeder_site_gave_without
     listing = db.query(Listing).one()
     assert (listing.external_url, listing.breeder_site_page_url) == (main_site_url, site_page_url)
     assert summary.changed_listing_ids == []
+
+
+def test_a_reading_without_the_departure_day_keeps_the_day_an_earlier_reading_gave(db: Session) -> None:
+    SeederRunner.run(db)
+    breed = db.query(Breed).one()
+    ad_without_day = RawListing(
+        source=ListingSource.CHIENS_DE_FRANCE,
+        external_id="chiot-1",
+        breed_id=breed.id,
+        kind=ListingKind.PUPPY_AD,
+        lof_status=LofStatus.LOF,
+        birth_date=date(2026, 11, 12),
+    )
+    ad_with_day = replace(ad_without_day, available_from=date(2027, 1, 23))
+
+    listing_ingestion_service.ingest(db, ListingSource.CHIENS_DE_FRANCE, [ad_with_day], set(), naive_utc_now())
+    listing_ingestion_service.ingest(db, ListingSource.CHIENS_DE_FRANCE, [ad_without_day], set(), naive_utc_now())
+
+    assert db.query(Listing).one().available_from == date(2027, 1, 23)

@@ -72,6 +72,7 @@ LITTER_TO_COME_LINK_PATTERN = re.compile(r"/saillie/(\d+)$")
 LITTER_FOR_SALE_LINK_PATTERN = re.compile(r"/chiots-a-vendre/(\d+)$")
 DOG_LINK_PATTERN = re.compile(r"/chien/(\d+)$")
 PUPPY_NUMBER_PATTERN = re.compile(r"n°\s*(\d+)", re.IGNORECASE)
+AVAILABLE_FROM_PATTERN = re.compile(r"partir du\s+(\d{1,2}[./]\d{1,2}[./]\d{4})", re.IGNORECASE)
 BREEDING_COUNTS_PATTERN = re.compile(r"(\d+)\s+femelles?\s+reproductrices?.*?(\d+)\s+portées?", re.DOTALL)
 REGISTERED_ON_PATTERN = re.compile(r"Inscrit sur chiens-de-france\.com depuis le\s+(\d{1,2}[./]\d{1,2}[./]\d{4})")
 RATING_PATTERN = re.compile(r"^\s*(\d+)")
@@ -458,7 +459,8 @@ class ChiensDeFranceSiteCollector:
     def parse_litter_for_sale_page(cls, tree: LexborHTMLParser, site: SiteTarget, page_url: str) -> list[RawListing]:
         """
         Read the page of a litter for sale: one puppy ad per puppy box, each named by its page on the main site
-        (``/chiot/<n>``), linked to its place on this page, with the facts of the litter table shared by all.
+        (``/chiot/<n>``), linked to its place on this page, with the facts of the litter table and the day its title
+        says the puppies may leave shared by all.
 
         Args:
             tree: The parsed litter page.
@@ -472,9 +474,9 @@ class ChiensDeFranceSiteCollector:
         breeder = cls._breeder(site, affix_of(facts.get("Affixe")) or cls._site_affix(tree))
         parents = cls._parents(tree)
         litter_code = facts.get("Code Portée")
-        birth_date = french_date_of(facts.get("Date de naissance")) or french_date_of(
-            HtmlAdParser.text_of(tree.css_first("article h3"))
-        )
+        headline = HtmlAdParser.text_of(tree.css_first("article h3"))
+        birth_date = french_date_of(facts.get("Date de naissance")) or french_date_of(headline)
+        available_from = cls._available_from(headline)
         is_lof = facts.get("Portée inscrite LOF", "").lower().startswith(LOF_YES)
         published_at = cls._published_at(facts.get("Annonce créer le"))
         page_photos = litter_photos_of(tree)
@@ -497,6 +499,7 @@ class ChiensDeFranceSiteCollector:
                     breeder_site_page_url=puppy_place_on_litter_page(page_url, puppy_number),
                     litter_number=WHITESPACE_PATTERN.sub("", litter_code) if litter_code else None,
                     birth_date=birth_date,
+                    available_from=available_from,
                     male_count=male_count,
                     female_count=female_count,
                     puppies_available=cls._puppies_available(status_text),
@@ -815,6 +818,20 @@ class ChiensDeFranceSiteCollector:
         if published_on is None:
             return None
         return datetime(published_on.year, published_on.month, published_on.day)
+
+    @staticmethod
+    def _available_from(headline: str) -> date | None:
+        """
+        The day the title of a litter page says the puppies may leave.
+
+        Args:
+            headline: « Chiots nés le 12/11/2026 disponibles à partir du 23/01/2027 ».
+
+        Returns:
+            The day after « à partir du », or None when the title gives none.
+        """
+        available_from_match = AVAILABLE_FROM_PATTERN.search(headline)
+        return french_date_of(available_from_match.group(1)) if available_from_match else None
 
     @staticmethod
     def _sex_counts(status_text: str) -> tuple[int | None, int | None]:

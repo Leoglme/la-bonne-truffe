@@ -37,6 +37,8 @@ class Listing(TimestampMixin, Base):
             the birth declaration.
         mating_date: Mating date.
         birth_date: Birth date.
+        available_from: Day the ad says the puppies may leave, when it gives one (« disponibles à partir du … » on
+            Chiens de France); kept when a later reading of the same listing does not give it.
         male_count: Number of males at birth (0 before the birth at the Centrale Canine).
         female_count: Number of females at birth.
         puppies_available: Puppies still available, when the ad says so.
@@ -82,6 +84,7 @@ class Listing(TimestampMixin, Base):
     mating_number: Mapped[str | None] = mapped_column(String(40))
     mating_date: Mapped[date | None]
     birth_date: Mapped[date | None]
+    available_from: Mapped[date | None]
     male_count: Mapped[int | None]
     female_count: Mapped[int | None]
     puppies_available: Mapped[int | None]

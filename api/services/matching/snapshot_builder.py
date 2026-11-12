@@ -82,6 +82,7 @@ class LitterSnapshotBuilder:
         department_code = cls.department_code_of(listings)
         registered_puppies = puppies or []
         male_count, female_count = cls._sex_counts(group, active_listings, registered_puppies)
+        known_prices = [listing.price_cents for listing in active_listings if listing.price_cents is not None]
 
         return LitterSnapshot(
             group_id=group.id,
@@ -95,9 +96,8 @@ class LitterSnapshotBuilder:
             male_count=male_count,
             female_count=female_count,
             puppies_available=group.puppies_available,
-            price_cents=min(
-                (listing.price_cents for listing in active_listings if listing.price_cents is not None), default=None
-            ),
+            price_cents=min(known_prices, default=None),
+            highest_price_cents=max(known_prices, default=None),
             appeared_on=cls._appeared_on(group, listings),
             birth_date=group.birth_date,
             expected_birth_date=group.expected_birth_date,

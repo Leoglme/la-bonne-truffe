@@ -165,7 +165,8 @@ class ListingIngestionService:
     def _apply_content(cls, listing: Listing, raw_listing: RawListing, known_department_codes: set[str]) -> None:
         """
         Copy what the source says onto the stored listing. The page on the breeder's site stays when a reading of
-        the main site, which does not know it, comes after the reading of that site.
+        the main site, which does not know it, comes after the reading of that site; so does the day the ad says the
+        puppies may leave, which one page of a source may give and another not.
 
         Args:
             listing: Listing to update.
@@ -182,6 +183,7 @@ class ListingIngestionService:
         listing.mating_number = raw_listing.mating_number
         listing.mating_date = raw_listing.mating_date
         listing.birth_date = raw_listing.birth_date
+        listing.available_from = known_or_current(raw_listing.available_from, listing.available_from)
         listing.male_count = raw_listing.male_count
         listing.female_count = raw_listing.female_count
         listing.puppies_available = raw_listing.puppies_available

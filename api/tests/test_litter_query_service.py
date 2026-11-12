@@ -118,3 +118,32 @@ def test_a_later_puppy_ad_dates_the_newest_listing_of_its_litter(db: Session) ->
     detail = LitterQueryService.detail(db, db.query(User).one().id, group.id)
 
     assert (detail.first_seen_at, detail.latest_listing_appeared_at) == (SEEN_AT, puppy_ad_seen_at)
+
+
+def test_a_litter_whose_puppies_ask_two_prices_gives_its_lowest_and_its_highest(db: Session) -> None:
+    SeederRunner.run(db)
+    breeder = Breeder(affix="Du Clos de test", department_code="35")
+    db.add(breeder)
+    db.flush()
+    group = LitterGroup(
+        breed_id=db.query(Breed).one().id,
+        breeder_id=breeder.id,
+        birth_date=date(2026, 9, 1),
+        first_seen_at=SEEN_AT,
+        last_seen_at=SEEN_AT,
+    )
+    db.add(group)
+    db.flush()
+    male_ad = add_listing_of_group(
+        db, group, ListingSource.CHIENS_DE_FRANCE, ListingKind.PUPPY_AD, sire_rating=None, dam_name=None
+    )
+    male_ad.price_cents = 160_000
+    female_ad = add_listing_of_group(
+        db, group, ListingSource.CHIOTS_DE_FRANCE, ListingKind.PUPPY_AD, sire_rating=None, dam_name=None
+    )
+    female_ad.price_cents = 165_000
+    db.commit()
+
+    detail = LitterQueryService.detail(db, db.query(User).one().id, group.id)
+
+    assert (detail.price_cents, detail.highest_price_cents) == (160_000, 165_000)

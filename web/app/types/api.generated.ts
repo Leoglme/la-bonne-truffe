@@ -2134,11 +2134,19 @@ export interface components {
              * @description Lowest price of the active listings, null while no source gives one
              */
             price_cents: number | null;
+            /**
+             * Highest Price Cents
+             * @description Highest price of the active listings, the same as the lowest when all ask one price
+             */
+            highest_price_cents?: number | null;
             /** Birth Date */
             birth_date: string | null;
             /** Expected Birth Date */
             expected_birth_date: string | null;
-            /** Available From */
+            /**
+             * Available From
+             * @description Day the puppies may leave: the day the ads announce, else the birth (or expected birth) + 56 days
+             */
             available_from: string | null;
             /** Photo Url */
             photo_url: string | null;
@@ -2236,11 +2244,19 @@ export interface components {
              * @description Lowest price of the active listings, null while no source gives one
              */
             price_cents: number | null;
+            /**
+             * Highest Price Cents
+             * @description Highest price of the active listings, the same as the lowest when all ask one price
+             */
+            highest_price_cents?: number | null;
             /** Birth Date */
             birth_date: string | null;
             /** Expected Birth Date */
             expected_birth_date: string | null;
-            /** Available From */
+            /**
+             * Available From
+             * @description Day the puppies may leave: the day the ads announce, else the birth (or expected birth) + 56 days
+             */
             available_from: string | null;
             /** Photo Url */
             photo_url: string | null;
@@ -2568,11 +2584,19 @@ export interface components {
              * @description Lowest price of the active listings, null while no source gives one
              */
             price_cents: number | null;
+            /**
+             * Highest Price Cents
+             * @description Highest price of the active listings, the same as the lowest when all ask one price
+             */
+            highest_price_cents?: number | null;
             /** Birth Date */
             birth_date: string | null;
             /** Expected Birth Date */
             expected_birth_date: string | null;
-            /** Available From */
+            /**
+             * Available From
+             * @description Day the puppies may leave: the day the ads announce, else the birth (or expected birth) + 56 days
+             */
             available_from: string | null;
             /** Photo Url */
             photo_url: string | null;

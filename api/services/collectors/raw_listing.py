@@ -70,6 +70,7 @@ class RawListing:
     mating_number: str | None = None
     mating_date: date | None = None
     birth_date: date | None = None
+    available_from: date | None = None
     male_count: int | None = None
     female_count: int | None = None
     puppies_available: int | None = None

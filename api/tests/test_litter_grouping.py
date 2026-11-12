@@ -30,6 +30,7 @@ def add_listing(
     female_count: int | None = None,
     puppies_available: int | None = None,
     mating_number: str | None = None,
+    available_from: date | None = None,
 ) -> Listing:
     """
     Store a listing of the cocker for a breeder.
@@ -47,6 +48,7 @@ def add_listing(
         female_count: Females, if known.
         puppies_available: Puppies still offered, if the ad says.
         mating_number: Mating declaration number on the source, if given.
+        available_from: Day the ad says the puppies may leave, if it gives one.
 
     Returns:
         The listing, flushed.
@@ -65,6 +67,7 @@ def add_listing(
         female_count=female_count,
         puppies_available=puppies_available,
         mating_number=mating_number,
+        available_from=available_from,
         first_seen_at=NOW,
         last_seen_at=NOW,
     )
@@ -420,3 +423,85 @@ def test_a_puppy_ad_born_months_after_the_birth_a_mating_announces_is_another_li
     litter_grouping_service.regroup(db, NOW)
 
     assert puppy_ad.litter_group_id != declared.litter_group_id
+
+
+def departure_day_after_regrouping(db: Session, listing: Listing) -> date | None:
+    """
+    Regroup the listings, then give the day the litter of a listing may leave.
+
+    Args:
+        db: Database session.
+        listing: A listing of the litter.
+
+    Returns:
+        The departure day of its group.
+    """
+    litter_grouping_service.regroup(db, NOW)
+    group = db.get(LitterGroup, listing.litter_group_id)
+    assert group is not None
+    return group.available_from
+
+
+def test_a_litter_leaves_the_day_its_ads_announce_rather_than_at_the_legal_age(db: Session) -> None:
+    breeder = seeded_breeder(db)
+    born_on = date(2026, 11, 12)
+    declared = add_listing(db, breeder, ListingSource.CENTRALE_CANINE, "1", ListingKind.LITTER_BORN, "Mère 1", born_on)
+
+    assert departure_day_after_regrouping(db, declared) == date(2027, 1, 7)
+
+    add_listing(
+        db,
+        breeder,
+        ListingSource.CHIENS_DE_FRANCE,
+        "chiot-1",
+        ListingKind.PUPPY_AD,
+        "Mère 1",
+        born_on,
+        available_from=date(2027, 1, 23),
+    )
+
+    assert departure_day_after_regrouping(db, declared) == date(2027, 1, 23)
+
+
+def test_a_day_announced_before_the_legal_age_gives_way_to_the_legal_age(db: Session) -> None:
+    breeder = seeded_breeder(db)
+    puppy_ad = add_listing(
+        db,
+        breeder,
+        ListingSource.CHIENS_DE_FRANCE,
+        "chiot-1",
+        ListingKind.PUPPY_AD,
+        "Mère 1",
+        date(2026, 11, 12),
+        available_from=date(2026, 12, 20),
+    )
+
+    assert departure_day_after_regrouping(db, puppy_ad) == date(2027, 1, 7)
+
+
+def test_the_day_of_an_ad_gone_offline_gives_way_to_the_day_the_ads_still_online_announce(db: Session) -> None:
+    breeder = seeded_breeder(db)
+    born_on = date(2026, 11, 12)
+    sold_puppy_ad = add_listing(
+        db,
+        breeder,
+        ListingSource.CHIENS_DE_FRANCE,
+        "chiot-1",
+        ListingKind.PUPPY_AD,
+        "Mère 1",
+        born_on,
+        available_from=date(2027, 1, 23),
+    )
+    sold_puppy_ad.is_active = False
+    add_listing(
+        db,
+        breeder,
+        ListingSource.CHIENS_DE_FRANCE,
+        "chiot-2",
+        ListingKind.PUPPY_AD,
+        "Mère 1",
+        born_on,
+        available_from=date(2027, 1, 30),
+    )
+
+    assert departure_day_after_regrouping(db, sold_puppy_ad) == date(2027, 1, 30)

@@ -80,6 +80,9 @@ class LitterSnapshot:
     ``name`` is the one the cards show, so a notification names the litter as the app does.
 
     ``gold_puppy_odds`` is the share of gold puppies the genotypes of the parents give, when they tell it.
+
+    ``price_cents`` is the lowest price of the active listings, the one a price ceiling is compared to;
+    ``highest_price_cents`` the highest, the same when every puppy is at one price.
     """
 
     group_id: int
@@ -94,6 +97,7 @@ class LitterSnapshot:
     female_count: int | None
     puppies_available: int | None
     price_cents: int | None
+    highest_price_cents: int | None
     appeared_on: date
     birth_date: date | None
     expected_birth_date: date | None

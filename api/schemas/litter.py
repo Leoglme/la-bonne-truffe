@@ -50,9 +50,14 @@ class LitterCard(BaseModel):
         description="Puppies still offered across the active listings, null while no source tells"
     )
     price_cents: int | None = Field(description="Lowest price of the active listings, null while no source gives one")
+    highest_price_cents: int | None = Field(
+        default=None, description="Highest price of the active listings, the same as the lowest when all ask one price"
+    )
     birth_date: date | None
     expected_birth_date: date | None
-    available_from: date | None
+    available_from: date | None = Field(
+        description="Day the puppies may leave: the day the ads announce, else the birth (or expected birth) + 56 days"
+    )
     photo_url: str | None
     first_seen_at: datetime
     latest_listing_appeared_at: datetime = Field(

@@ -18,6 +18,7 @@ const EURO_FORMAT: Intl.NumberFormat = new Intl.NumberFormat('fr-FR', {
   currency: 'EUR',
   maximumFractionDigits: 0,
 })
+const EURO_AMOUNT_FORMAT: Intl.NumberFormat = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 })
 
 /** How a litter reads on screen: colours, sexes, place, coat of the illustration; an unknown fact stays unknown. */
 export class LitterPresentation {
@@ -166,13 +167,18 @@ export class LitterPresentation {
    * Write the price of a litter, when a source gives one.
    *
    * @param card - The litter.
-   * @returns « 1 400 € », or null while unknown.
+   * @returns « 1 400 € », « 1 600 à 1 650 € » when its puppies ask different prices, or null while unknown.
    */
   static buildPriceLabel(card: LitterCard): string | null {
     if (card.price_cents === null) {
       return null
     }
-    return this.formatPrice(card.price_cents)
+    const highestPriceCents: number | null = card.highest_price_cents ?? null
+    if (highestPriceCents === null || highestPriceCents <= card.price_cents) {
+      return this.formatPrice(card.price_cents)
+    }
+    const lowestAmount: string = EURO_AMOUNT_FORMAT.format(card.price_cents / 100)
+    return `${lowestAmount}${NON_BREAKING_SPACE}à${NON_BREAKING_SPACE}${this.formatPrice(highestPriceCents)}`
   }
 
   /**

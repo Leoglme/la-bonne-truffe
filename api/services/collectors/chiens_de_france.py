@@ -325,6 +325,7 @@ class ChiensDeFranceCollector:
             external_url=listed_ad.url,
             litter_number=WHITESPACE_PATTERN.sub("", litter_code) if litter_code else None,
             birth_date=french_date_of(cls._birth_date_text(tree)),
+            available_from=french_date_of(headline_facts.get("Disponibilité")),
             male_count=int(is_male) if has_known_sex else None,
             female_count=int(is_female) if has_known_sex else None,
             puppies_available=cls._puppies_available(price_text),

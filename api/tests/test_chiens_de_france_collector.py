@@ -35,6 +35,7 @@ def test_puppy_page_gives_one_puppy_its_litter_code_and_its_breeder() -> None:
     assert (listing.kind, listing.lof_status) == (ListingKind.PUPPY_AD, LofStatus.LOF)
     assert listing.litter_number == "LOF-2026024873-2026-13"
     assert listing.birth_date == date(2026, 8, 28)
+    assert listing.available_from == date(2026, 10, 30)
     assert (listing.male_count, listing.female_count, listing.puppies_available) == (1, 0, 1)
     assert listing.price_cents == 140000
     assert (listing.zip_code, listing.city, listing.department_code) == ("35140", "Saint-Aubin-du-Cormier", "35")

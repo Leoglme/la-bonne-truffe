@@ -48,6 +48,7 @@ GOLD_BORN_IN_35 = LitterSnapshot(
     female_count=3,
     puppies_available=None,
     price_cents=None,
+    highest_price_cents=None,
     appeared_on=date(2026, 10, 24),
     birth_date=date(2026, 10, 27),
     expected_birth_date=None,

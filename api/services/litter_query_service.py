@@ -505,6 +505,7 @@ class LitterQueryService:
             has_confirmed_sexes=group.confirmed_male_count is not None,
             puppies_available=snapshot.puppies_available,
             price_cents=snapshot.price_cents,
+            highest_price_cents=snapshot.highest_price_cents,
             birth_date=group.birth_date,
             expected_birth_date=group.expected_birth_date,
             available_from=group.available_from,
