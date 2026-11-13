@@ -43,6 +43,7 @@ SITE_URL = "https://elevage-a.chiens-de-france.com"
 SINGLE_LITTER_SITE_URL = "https://elevage-e.chiens-de-france.com"
 BREED_URL = f"{SITE_URL}/cocker-spaniel-anglais"
 BREEDER = RawBreeder(source_id="elevage-a", affix="Du Clos de l'Élevage A", website=SITE_URL)
+NEWS_PHOTO_URL = f"{SITE_URL}/media_cdf/photos/eleveurs/0/0/actualites/photo-de-test-50.jpg"
 LISTED_FEMALE = ListedDog(
     external_id="1212400",
     url=f"{BREED_URL}/chien/1212400",
@@ -352,13 +353,34 @@ def test_news_that_cannot_be_read_do_not_stop_the_reading_of_the_site() -> None:
     assert [dog.external_id for dog in collection.dogs] == ["1212400"]
 
 
-def test_news_page_gives_each_post_with_its_title_the_text_under_it_and_its_day() -> None:
+def test_news_page_gives_each_post_with_its_title_the_text_under_it_its_day_and_its_photo() -> None:
     news_posts = ChiensDeFranceSiteCollector.parse_news_page(parsed("news.html"))
 
     assert news_posts == [
-        SiteNewsPost("Chiots LOF Noirs feu disponibles à la réservation", "", date(2026, 9, 2)),
-        SiteNewsPost("Une belle journée d'exposition", "Texte de test de l'actualité.", date(2026, 6, 14)),
+        SiteNewsPost("Chiots LOF Noirs feu disponibles à la réservation", "", date(2026, 9, 2), NEWS_PHOTO_URL),
+        SiteNewsPost(
+            "Une belle journée d'exposition",
+            "Texte de test de l'actualité.",
+            date(2026, 6, 14),
+            f"{SITE_URL}/media_cdf/photos/eleveurs/0/0/actualites/photo-de-test-51.jpg",
+        ),
     ]
+
+
+def test_a_puppy_whose_ad_shows_no_photo_takes_the_photos_of_the_posts_about_its_litter() -> None:
+    litter_without_photo = [replace(puppy_ad, photos=()) for puppy_ad in RECORDED_LITTER[:2]]
+    later_photo_url = f"{SITE_URL}/media_cdf/photos/eleveurs/0/0/actualites/photo-de-test-52.jpg"
+    news_posts = [
+        SiteNewsPost("Les bébés sont nés", "", date(2026, 8, 29), NEWS_PHOTO_URL),
+        SiteNewsPost("Les chiots ont trois semaines", "", date(2026, 9, 18), later_photo_url),
+        SiteNewsPost("Une belle journée d'exposition", "", date(2026, 9, 20), "https://example.test/exposition.jpg"),
+    ]
+
+    puppy_ads = ChiensDeFranceSiteCollector.puppy_ads_told_by_news([litter_without_photo], news_posts)
+    puppy_ads_with_photos = ChiensDeFranceSiteCollector.puppy_ads_told_by_news([RECORDED_LITTER], news_posts)
+
+    assert {puppy_ad.photos for puppy_ad in puppy_ads} == {(later_photo_url, NEWS_PHOTO_URL)}
+    assert puppy_ads_with_photos == RECORDED_LITTER
 
 
 def test_a_post_speaks_of_the_last_litter_born_before_it_and_the_last_post_has_the_last_word() -> None:
@@ -368,7 +390,7 @@ def test_a_post_speaks_of_the_last_litter_born_before_it_and_the_last_post_has_t
         SiteNewsPost("Chiots noirs feu disponibles", "", date(2026, 9, 2)),
     ]
 
-    puppy_ads = ChiensDeFranceSiteCollector.color_puppies_from_news([older_litter, RECORDED_LITTER], news_posts)
+    puppy_ads = ChiensDeFranceSiteCollector.puppy_ads_told_by_news([older_litter, RECORDED_LITTER], news_posts)
 
     assert [puppy_ad.colors for puppy_ad in puppy_ads[:2]] == [(), ()]
     assert {puppy_ad.colors for puppy_ad in puppy_ads[2:]} == {
@@ -379,7 +401,7 @@ def test_a_post_speaks_of_the_last_litter_born_before_it_and_the_last_post_has_t
 def test_a_post_naming_several_colours_gives_the_puppies_possible_colours() -> None:
     news_posts = [SiteNewsPost("Naissance", "Des chiots golden et des chiots noir et feu", date(2026, 8, 30))]
 
-    puppy_ads = ChiensDeFranceSiteCollector.color_puppies_from_news([RECORDED_LITTER], news_posts)
+    puppy_ads = ChiensDeFranceSiteCollector.puppy_ads_told_by_news([RECORDED_LITTER], news_posts)
 
     assert {puppy_ad.colors for puppy_ad in puppy_ads} == {
         (
@@ -397,7 +419,7 @@ def test_a_post_tells_no_colour_before_the_birth_long_after_it_or_when_it_is_not
         SiteNewsPost("Les chiots grandissent bien", "", date(2026, 9, 5)),
     ]
 
-    puppy_ads = ChiensDeFranceSiteCollector.color_puppies_from_news([RECORDED_LITTER], news_posts)
+    puppy_ads = ChiensDeFranceSiteCollector.puppy_ads_told_by_news([RECORDED_LITTER], news_posts)
 
     assert puppy_ads == RECORDED_LITTER
 
@@ -476,16 +498,29 @@ def test_site_whose_puppy_list_sends_to_its_single_litter_gives_the_puppies_of_t
 
     collection = chiens_de_france_site_collector_serving().collect(plan)
 
-    assert [listing.external_id for listing in collection.listings] == [
-        "chiot-2192294",
-        "chiot-2192298",
-        "chiot-2192299",
-    ]
-    assert [(listing.male_count, listing.female_count) for listing in collection.listings] == [(1, 0), (0, 1), (0, 1)]
-    assert [listing.puppies_available for listing in collection.listings] == [0, 0, 0]
-    assert {listing.birth_date for listing in collection.listings} == {date(2026, 8, 9)}
-    assert {listing.dam_name for listing in collection.listings} == {"Mère de test 35 Du Clos de l'Élevage E"}
+    puppy_ads = [listing for listing in collection.listings if listing.kind == ListingKind.PUPPY_AD]
+    assert [puppy_ad.external_id for puppy_ad in puppy_ads] == ["chiot-2192294", "chiot-2192298", "chiot-2192299"]
+    assert [(puppy_ad.male_count, puppy_ad.female_count) for puppy_ad in puppy_ads] == [(1, 0), (0, 1), (0, 1)]
+    assert [puppy_ad.puppies_available for puppy_ad in puppy_ads] == [0, 0, 0]
+    assert {puppy_ad.birth_date for puppy_ad in puppy_ads} == {date(2026, 8, 9)}
+    assert {puppy_ad.dam_name for puppy_ad in puppy_ads} == {"Mère de test 35 Du Clos de l'Élevage E"}
     assert collection.failed_sites == []
+
+
+def test_site_whose_future_litters_send_to_its_single_mating_gives_that_litter_to_come() -> None:
+    plan = SiteCollectionPlan(sites=(SINGLE_LITTER_SITE,))
+
+    collection = chiens_de_france_site_collector_serving().collect(plan)
+
+    litters_to_come = [listing for listing in collection.listings if listing.kind == ListingKind.LITTER_EXPECTED]
+    assert [litter.external_id for litter in litters_to_come] == ["saillie-496471"]
+    assert litters_to_come[0].external_url == "https://www.chiens-de-france.com/saillie/496471"
+    assert litters_to_come[0].breeder_site_page_url == f"{SINGLE_LITTER_SITE_URL}/cocker-spaniel-anglais/saillie/496471"
+    assert litters_to_come[0].mating_date == date(2026, 6, 7)
+    assert (litters_to_come[0].sire_name, litters_to_come[0].dam_name) == (
+        "Père de test 34",
+        "Mère de test 35 Du Clos de l'Élevage E",
+    )
 
 
 def test_a_site_that_sends_the_breed_to_another_gives_nothing_of_that_other_breed() -> None:

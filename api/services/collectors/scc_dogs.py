@@ -23,11 +23,12 @@ from services.collectors.breeder_contact_parser import BreederContactParser
 from services.collectors.centrale_canine import (
     SCC_BASE_URL,
     SCC_BROWSER_USER_AGENT,
+    CentraleCanineError,
     SccJsonPage,
     fetch_json_page,
     scc_absolute_url,
 )
-from services.collectors.polite_http_client import PoliteHttpClient
+from services.collectors.polite_http_client import PoliteHttpClient, SourcePageMissingError
 from services.collectors.raw_dog import RawDog
 from services.collectors.scc_value_parser import SccValueParser
 from services.dog_color_inference import DogColorInference
@@ -141,7 +142,8 @@ class SccDogCollector:
 
     def collect(self, plan: SccDogCollectionPlan) -> SccDogCollection:
         """
-        Read the litters of the plan, then the dogs each one names, until the budget of pages is spent.
+        Read the litters of the plan, then the dogs each one names, until the budget of pages is spent. A page
+        that is gone (a litter withdrawn, a dog removed) is skipped, and the next one is read all the same.
 
         Args:
             plan: Litters to read, in priority order, and the budget.
@@ -150,20 +152,23 @@ class SccDogCollector:
             The litter details and the dogs found, with the raw pages.
 
         Raises:
-            CentraleCanineError: When a page cannot be read; the run fails as a whole.
+            CentraleCanineError: When a page cannot be read for another reason than being gone; the run fails as
+                a whole.
         """
         collection = SccDogCollection()
         for target in plan.litters:
             if collection.pages_read >= plan.page_budget:
                 break
-            detail = self.parse_litter_detail(self._fetch(collection, self.litter_url(target.scc_litter_id)), target)
+            litter_page = self._fetch(collection, self.litter_url(target.scc_litter_id))
+            detail = self.parse_litter_detail(litter_page, target) if litter_page is not None else None
             if detail is None:
                 continue
             collection.litter_details.append(detail)
             for dog_id, role in self._dog_pages_of(detail, target):
                 if collection.pages_read >= plan.page_budget:
                     break
-                dog = self.parse_dog(self._fetch(collection, self.dog_url(dog_id)), role, detail.group_id)
+                dog_page = self._fetch(collection, self.dog_url(dog_id))
+                dog = self.parse_dog(dog_page, role, detail.group_id) if dog_page is not None else None
                 if dog is not None:
                     collection.dogs.append(dog)
         return collection
@@ -190,7 +195,7 @@ class SccDogCollector:
                 pages.setdefault(puppy.dog_id, DogRole.PUPPY)
         return [(dog_id, role) for dog_id, role in pages.items() if dog_id not in target.fresh_dog_ids]
 
-    def _fetch(self, collection: SccDogCollection, url: str) -> dict[str, Any]:
+    def _fetch(self, collection: SccDogCollection, url: str) -> dict[str, Any] | None:
         """
         Read one JSON page and count it.
 
@@ -199,12 +204,19 @@ class SccDogCollector:
             url: Address to read.
 
         Returns:
-            The decoded JSON object.
+            The decoded JSON object, or None when the page is gone (404).
 
         Raises:
-            CentraleCanineError: When the page cannot be read or is not a JSON object.
+            CentraleCanineError: When the page cannot be read for another reason, or is not a JSON object.
         """
-        payload = fetch_json_page(self.polite_client, url, {"_format": "json"})
+        try:
+            payload = fetch_json_page(self.polite_client, url, {"_format": "json"})
+        except CentraleCanineError as error:
+            if isinstance(error.__cause__, SourcePageMissingError):
+                logger.info("Centrale Canine: page gone, skipped: %s", url)
+                collection.pages_read += 1
+                return None
+            raise
         collection.pages_read += 1
         collection.raw_pages.append(SccJsonPage(url, payload))
         return payload

@@ -30,6 +30,7 @@ from tests.scc_dog_pages import (
     GOLD_LITTER_SCC_ID,
     GOLD_MOTHER_DOG_ID,
     GOLD_PUPPY_IDS,
+    answer_dog_request,
     dog_collector_serving,
     dog_page,
     recorded_litter_pages,
@@ -124,6 +125,37 @@ def test_the_collector_reads_the_litter_then_its_dogs_within_the_budget() -> Non
         f"/api/dog/{GOLD_FATHER_DOG_ID}",
         f"/api/dog/{GOLD_MOTHER_DOG_ID}",
     ]
+
+
+def test_a_litter_or_a_dog_page_that_is_gone_is_skipped_and_the_next_one_is_read() -> None:
+    withdrawn_litter_scc_id = "999999"
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        """
+        Serve the recorded pages, and a 404 for a withdrawn litter and for the father of the gold litter.
+
+        Args:
+            request: The collector's request.
+
+        Returns:
+            The JSON page, or a 404.
+        """
+        gone_paths = (f"/api/litter/{withdrawn_litter_scc_id}", f"/api/dog/{GOLD_FATHER_DOG_ID}")
+        return httpx.Response(404) if request.url.path.endswith(gone_paths) else answer_dog_request(request)
+
+    collector = SccDogCollector(
+        http_client=httpx.Client(transport=httpx.MockTransport(answer)), sleep=lambda _seconds: None
+    )
+    withdrawn_litter = SccLitterTarget(
+        group_id=1, scc_litter_id=withdrawn_litter_scc_id, read_parents=True, read_puppies=True
+    )
+    gold_litter = SccLitterTarget(group_id=2, scc_litter_id=GOLD_LITTER_SCC_ID, read_parents=True, read_puppies=False)
+
+    collection = collector.collect(SccDogCollectionPlan(litters=(withdrawn_litter, gold_litter), page_budget=60))
+
+    assert [detail.scc_litter_id for detail in collection.litter_details] == [GOLD_LITTER_SCC_ID]
+    assert [dog.external_id for dog in collection.dogs] == [GOLD_MOTHER_DOG_ID]
+    assert collection.pages_read == 4
 
 
 def test_a_fresh_parent_is_not_read_again() -> None:

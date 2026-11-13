@@ -654,7 +654,12 @@ def test_a_followed_litter_to_come_is_pushed_born_with_the_puppies_its_breeders_
     assert report is not None
     db.expire_all()
     site_ads = db.query(Listing).filter(Listing.source == ListingSource.CHIENS_DE_FRANCE).all()
-    assert len(site_ads) == 3
+    assert sorted(ad.external_id for ad in site_ads) == [
+        "chiot-2192294",
+        "chiot-2192298",
+        "chiot-2192299",
+        "saillie-496471",
+    ]
     assert {ad.litter_group_id for ad in site_ads} == {declared_mating.litter_group_id}
     litter = client.get(f"/api/v1/litters/{declared_mating.litter_group_id}", headers=seeded).json()
     assert litter["birth_date"] == "2026-08-09"

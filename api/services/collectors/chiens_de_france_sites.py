@@ -21,7 +21,6 @@ from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from core.config import settings
 from core.text import without_accents
-from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
 from enums.dog_role import DogRole
 from enums.dog_sex import DogSex
@@ -207,11 +206,22 @@ class LinkedParent:
 
 @dataclass(frozen=True)
 class SiteNewsPost:
-    """A post of the « Actualités » page of a site: its title, the text under it, the day it was published."""
+    """A post of the « Actualités » page of a site: its title, the text under it, its day and its photo."""
 
     title: str
     summary: str
     published_on: date
+    photo_url: str | None = None
+
+    @property
+    def told_text(self) -> str:
+        """
+        Everything the post writes.
+
+        Returns:
+            Its title, then the text under it.
+        """
+        return f"{self.title} {self.summary}"
 
 
 class ChiensDeFranceSiteCollector:
@@ -326,7 +336,7 @@ class ChiensDeFranceSiteCollector:
                 if breeding_counts == (None, None):
                     breeding_counts = self.breeding_counts(litter_tree)
             news_posts = self._news_posts(breed_url, collection) if any(litters_for_sale) else []
-            collection.listings.extend(self.color_puppies_from_news(litters_for_sale, news_posts))
+            collection.listings.extend(self.puppy_ads_told_by_news(litters_for_sale, news_posts))
 
         litters_born: tuple[RawBreederSiteLitter, ...] | None = None
         litters_born_tree = self._read_page(f"{breed_url}/{LITTERS_BORN_PATH}", collection)
@@ -436,10 +446,11 @@ class ChiensDeFranceSiteCollector:
         """
         Read the « Portées à venir » list: one litter to come per mating, each named by its page on the main
         site (``/saillie/<id>``) so that both collectors describe the same listing, and linked to its page on the
-        breeder's site, which the main site may not have.
+        breeder's site, which the main site may not have. A site with a single mating sends « Futures portées »
+        straight to the page of that mating, which lists none: its canonical address gives the mating then.
 
         Args:
-            tree: The parsed list.
+            tree: The parsed list, or the page of the single mating.
             site: The site it belongs to.
 
         Returns:
@@ -452,27 +463,62 @@ class ChiensDeFranceSiteCollector:
             link_match = LITTER_TO_COME_LINK_PATTERN.search(site_page_url)
             if link_match is None:
                 continue
-            litter_id = link_match.group(1)
             headline = HtmlAdParser.text_of(link.css_first("p.port"))
-            parents = cls._listed_parents(link)
             listings.setdefault(
-                litter_id,
-                RawListing(
-                    source=ListingSource.CHIENS_DE_FRANCE,
-                    external_id=f"saillie-{litter_id}",
-                    breed_id=site.breed_id,
-                    kind=ListingKind.LITTER_EXPECTED,
-                    lof_status=LofStatus.LOF,
-                    external_url=f"{CHIENS_DE_FRANCE_BASE_URL}/saillie/{litter_id}",
-                    breeder_site_page_url=site_page_url,
-                    mating_date=french_date_of(headline),
-                    sire_name=parents.get(SIRE_ROLE),
-                    dam_name=parents.get(DAM_ROLE),
-                    breeder=breeder,
-                    raw_json={"headline": headline, "parents": parents, "site_url": site_page_url},
+                link_match.group(1),
+                cls._litter_to_come(
+                    site, breeder, link_match.group(1), site_page_url, headline, cls._listed_parents(link)
                 ),
             )
-        return list(listings.values())
+        if listings:
+            return list(listings.values())
+
+        canonical_link = tree.css_first('link[rel="canonical"][href]')
+        single_mating_url = (canonical_link.attributes.get("href") or "").strip() if canonical_link is not None else ""
+        single_mating_match = LITTER_TO_COME_LINK_PATTERN.search(single_mating_url)
+        if single_mating_match is None:
+            return []
+        headline = HtmlAdParser.text_of(tree.css_first("article h3"))
+        parents = {role: parent.name for role, parent in cls._parents(tree).items()}
+        return [cls._litter_to_come(site, breeder, single_mating_match.group(1), single_mating_url, headline, parents)]
+
+    @staticmethod
+    def _litter_to_come(
+        site: SiteTarget,
+        breeder: RawBreeder,
+        litter_id: str,
+        site_page_url: str,
+        headline: str,
+        parents: dict[str, str],
+    ) -> RawListing:
+        """
+        The litter to come a mating announces on a breeder's site.
+
+        Args:
+            site: The site it belongs to.
+            breeder: The breeder of the site.
+            litter_id: The identifier of the mating, the same on the main site.
+            site_page_url: The page of the mating on the breeder's site.
+            headline: Its title, which holds the day of the mating (« saillie le 28/08/2026 »).
+            parents: « Père » and « Mère » → name, for those shown.
+
+        Returns:
+            The listing.
+        """
+        return RawListing(
+            source=ListingSource.CHIENS_DE_FRANCE,
+            external_id=f"saillie-{litter_id}",
+            breed_id=site.breed_id,
+            kind=ListingKind.LITTER_EXPECTED,
+            lof_status=LofStatus.LOF,
+            external_url=f"{CHIENS_DE_FRANCE_BASE_URL}/saillie/{litter_id}",
+            breeder_site_page_url=site_page_url,
+            mating_date=french_date_of(headline),
+            sire_name=parents.get(SIRE_ROLE),
+            dam_name=parents.get(DAM_ROLE),
+            breeder=breeder,
+            raw_json={"headline": headline, "parents": parents, "site_url": site_page_url},
+        )
 
     @staticmethod
     def parse_litters_for_sale_page(tree: LexborHTMLParser) -> list[str]:
@@ -561,8 +607,8 @@ class ChiensDeFranceSiteCollector:
     @staticmethod
     def parse_news_page(tree: LexborHTMLParser) -> list[SiteNewsPost]:
         """
-        Read the « Actualités » list of the year: one post per box, with its title, the text under it and the day
-        it was published.
+        Read the « Actualités » list of the year: one post per box, with its title, the text under it, the day it
+        was published and its photo.
 
         Args:
             tree: The parsed list.
@@ -576,48 +622,75 @@ class ChiensDeFranceSiteCollector:
             published_on = french_date_of(HtmlAdParser.text_of(box.css_first("div.actu-alaune-date")))
             if title and published_on is not None:
                 summary = HtmlAdParser.text_of(box.css_first("div.actu-alaune-txt"))
-                news_posts.append(SiteNewsPost(title, summary, published_on))
+                image = box.css_first("div.actu-alaune-img img[src]")
+                photo_url = (image.attributes.get("src") or "").strip() if image is not None else ""
+                news_posts.append(
+                    SiteNewsPost(title, summary, published_on, photo_url if is_photo_file(photo_url) else None)
+                )
         return news_posts
 
     @classmethod
-    def color_puppies_from_news(
+    def puppy_ads_told_by_news(
         cls, litters_for_sale: list[list[RawListing]], news_posts: list[SiteNewsPost]
     ) -> list[RawListing]:
         """
-        Give the puppies of a litter the colour a post of the site tells: the page of a litter never names it, a
-        post such as « Chiots LOF noirs feu disponibles à la réservation » does. One colour named is certain,
-        several are possible ones, and the last post that speaks of a litter has the last word.
+        Give the puppies of a litter what the posts of the site tell of them. The page of a litter never names
+        their colour, a post such as « Chiots LOF noirs feu disponibles à la réservation » does; and a post often
+        shows the newborn litter before the ad has any photo.
 
         Args:
             litters_for_sale: The puppy ads of each litter for sale of the site.
             news_posts: The posts of the site.
 
         Returns:
-            Every puppy ad, in the order given, those of a litter a post speaks of carrying its colours.
+            Every puppy ad, in the order given, those of a litter a post speaks of carrying what it tells.
         """
-        told_by_litter_index: dict[int, tuple[tuple[CoatColor, ...], str]] = {}
+        posts_by_litter_index: dict[int, list[SiteNewsPost]] = {}
         for news_post in sorted(news_posts, key=lambda news_post: news_post.published_on):
-            told_text = f"{news_post.title} {news_post.summary}"
-            colors = DogColorInference.colors_named_in(told_text)
-            if not colors or PUPPY_WORDS_PATTERN.search(without_accents(told_text).lower()) is None:
+            if PUPPY_WORDS_PATTERN.search(without_accents(news_post.told_text).lower()) is None:
                 continue
             litter_index = cls._litter_a_post_speaks_of(litters_for_sale, news_post.published_on)
             if litter_index is not None:
-                told_by_litter_index[litter_index] = (colors, news_post.title)
+                posts_by_litter_index.setdefault(litter_index, []).append(news_post)
 
-        puppy_ads: list[RawListing] = []
-        for litter_index, litter_puppy_ads in enumerate(litters_for_sale):
-            told = told_by_litter_index.get(litter_index)
-            if told is None:
-                puppy_ads.extend(litter_puppy_ads)
-                continue
-            colors, title = told
+        return [
+            cls._puppy_ad_told_by_posts(puppy_ad, posts_by_litter_index.get(litter_index, []))
+            for litter_index, litter_puppy_ads in enumerate(litters_for_sale)
+            for puppy_ad in litter_puppy_ads
+        ]
+
+    @staticmethod
+    def _puppy_ad_told_by_posts(puppy_ad: RawListing, litter_posts: list[SiteNewsPost]) -> RawListing:
+        """
+        One puppy ad with what the posts about its litter tell: the colours of the last post that names some, one
+        colour being certain and several possible ones; and the photos of the posts when the ad shows none.
+
+        Args:
+            puppy_ad: The ad as the page of its litter gives it.
+            litter_posts: The posts that speak of its litter, the oldest first.
+
+        Returns:
+            The ad, unchanged when the posts tell nothing more.
+        """
+        told_puppy_ad = puppy_ad
+        colors_of_posts = [DogColorInference.colors_named_in(news_post.told_text) for news_post in litter_posts]
+        posts_naming_a_colour = [
+            (news_post, colors) for news_post, colors in zip(litter_posts, colors_of_posts, strict=True) if colors
+        ]
+        if posts_naming_a_colour:
+            last_post, colors = posts_naming_a_colour[-1]
             confidence = ColorConfidence.CERTAIN if len(colors) == 1 else ColorConfidence.AMBIGUOUS
-            color_readings = tuple(ColorReading(color, confidence) for color in colors)
-            puppy_ads.extend(
-                replace(puppy_ad, colors=color_readings, color_text=title) for puppy_ad in litter_puppy_ads
+            told_puppy_ad = replace(
+                told_puppy_ad,
+                colors=tuple(ColorReading(color, confidence) for color in colors),
+                color_text=last_post.title,
             )
-        return puppy_ads
+        post_photos = tuple(
+            dict.fromkeys(news_post.photo_url for news_post in reversed(litter_posts) if news_post.photo_url)
+        )
+        if post_photos and not told_puppy_ad.photos:
+            told_puppy_ad = replace(told_puppy_ad, photos=post_photos)
+        return told_puppy_ad
 
     @staticmethod
     def _litter_a_post_speaks_of(litters_for_sale: list[list[RawListing]], published_on: date) -> int | None:

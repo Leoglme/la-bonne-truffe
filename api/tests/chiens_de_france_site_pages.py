@@ -17,6 +17,7 @@ OTHER_BREED_SITE_SLUG = "elevage-d"
 OTHER_BREED_PATH = "/siberian-husky"
 SINGLE_LITTER_SITE_SLUG = "elevage-e"
 SINGLE_LITTER_PATH = f"/{BREED_SLUG}/chiots-a-vendre/493883"
+SINGLE_MATING_PATH = f"/{BREED_SLUG}/saillie/496471"
 
 RECORDED_PAGES_BY_PATH: dict[str, str] = {
     f"/{BREED_SLUG}/saillies": "litters_to_come.html",
@@ -34,7 +35,10 @@ EMPTY_SITE_PAGES_BY_PATH: dict[str, str] = {
     f"/{BREED_SLUG}": "home.html",
 }
 
-SINGLE_LITTER_SITE_PAGES_BY_PATH: dict[str, str] = {SINGLE_LITTER_PATH: "single_litter_for_sale_493883.html"}
+SINGLE_LITTER_SITE_PAGES_BY_PATH: dict[str, str] = {
+    SINGLE_LITTER_PATH: "single_litter_for_sale_493883.html",
+    SINGLE_MATING_PATH: "single_litter_to_come_496471.html",
+}
 
 MAIN_SITE_SLUG = "www"
 DIRECTORY_LIST_PATH = f"/eleveurs/{BREED_SLUG}/france/bretagne"
@@ -119,6 +123,8 @@ def chiens_de_france_site_collector_serving(
             return httpx.Response(200, text=recorded_page("home.html"))
         if slug == SINGLE_LITTER_SITE_SLUG and request.url.path == f"/{BREED_SLUG}/chiots":
             return httpx.Response(302, headers={"Location": f"https://{slug}{SITE_HOST_SUFFIX}{SINGLE_LITTER_PATH}"})
+        if slug == SINGLE_LITTER_SITE_SLUG and request.url.path == f"/{BREED_SLUG}/saillies":
+            return httpx.Response(302, headers={"Location": f"https://{slug}{SITE_HOST_SUFFIX}{SINGLE_MATING_PATH}"})
         pages_by_path = {
             RECORDED_SITE_SLUG: RECORDED_PAGES_BY_PATH,
             EMPTY_SITE_SLUG: EMPTY_SITE_PAGES_BY_PATH,
