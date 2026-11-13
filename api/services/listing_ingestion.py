@@ -4,14 +4,19 @@ import json
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from enum import StrEnum
+from urllib.parse import urlparse
 
 from sqlalchemy.orm import Session
 
 from enums.listing_source import ListingSource
 from models.breeder import Breeder
+from models.breeder_follow import BreederFollow
 from models.department import Department
+from models.dog import Dog
+from models.follow_up import FollowUp
 from models.listing import Listing
 from models.listing_change import ListingChange
+from models.litter_group import LitterGroup
 from services.breeder_contact_writer import apply_breeder_contact
 from services.breeder_matcher import BreederMatcher
 from services.breeder_search_text import BreederSearchText
@@ -147,6 +152,8 @@ class ListingIngestionService:
             if was_active and not is_active_now:
                 summary.deactivated_listing_ids.append(listing.id)
             if breeder_id is not None:
+                if listing.breeder_id is not None and listing.breeder_id != breeder_id:
+                    self._leave_former_breeder(db, listing, breeder_id)
                 listing.breeder_id = breeder_id
             listing.last_seen_at = now
             listing.missed_run_count = 0
@@ -208,6 +215,66 @@ class ListingIngestionService:
         listing.description = raw_listing.description
         listing.published_at = raw_listing.published_at
         listing.raw_json = raw_listing.raw_json
+
+    @staticmethod
+    def _leave_former_breeder(db: Session, listing: Listing, breeder_id: int) -> None:
+        """
+        Take a listing away from the breeder an earlier run gave it, now that a rule finds its real one: the ad of
+        a seller it only knew by a site was stored under a nameless breeder, and its litter beside the real one.
+        The listing leaves its group, unless the litter is followed, so that the next regrouping finds the litter
+        of its breeder; a nameless breeder left with nothing is removed.
+
+        Args:
+            db: Database session.
+            listing: The listing, still pointing at its former breeder.
+            breeder_id: The breeder a rule now finds.
+        """
+        former_breeder_id = listing.breeder_id
+        former_group = db.get(LitterGroup, listing.litter_group_id) if listing.litter_group_id is not None else None
+        if former_group is not None:
+            is_followed = db.query(FollowUp).filter(FollowUp.litter_group_id == former_group.id).first() is not None
+            if not is_followed:
+                listing.litter_group_id = None
+            if former_group.breeder_id == former_breeder_id:
+                former_group.breeder_id = breeder_id
+        listing.breeder_id = breeder_id
+        db.flush()
+
+        former_breeder = db.get(Breeder, former_breeder_id)
+        if former_breeder is None:
+            return
+        is_named = any(
+            (
+                former_breeder.affix,
+                former_breeder.display_name,
+                former_breeder.siren,
+                former_breeder.scc_breeder_id,
+                former_breeder.scc_user_id,
+            )
+        )
+        is_still_used = any(
+            db.query(model).filter(model.breeder_id == former_breeder_id).first() is not None
+            for model in (Listing, LitterGroup, Dog, BreederFollow)
+        )
+        if not is_named and not former_breeder.is_manual and not is_still_used:
+            db.delete(former_breeder)
+            db.flush()
+
+    @staticmethod
+    def _chiens_de_france_site_of(website: str | None) -> str | None:
+        """
+        The breeder's own site on Chiens de France, when its website is one.
+
+        Args:
+            website: The website a source gives (« https://elevage-a.chiens-de-france.com/cocker-spaniel-anglais »).
+
+        Returns:
+            « https://elevage-a.chiens-de-france.com », or None for any other address.
+        """
+        host = urlparse((website or "").strip()).netloc.lower()
+        if not host.endswith(BREEDER_SITE_HOST_SUFFIX) or host == f"www{BREEDER_SITE_HOST_SUFFIX}":
+            return None
+        return f"https://{host}"
 
     @staticmethod
     def _is_born_recently_enough_to_follow(birth_date: date | None, oldest_active_birth: date) -> bool:
@@ -306,6 +373,7 @@ class ListingIngestionService:
             return None
         department_code = raw_listing.department_code if raw_listing.department_code in known_department_codes else None
         affix_key = BreederContactParser.affix_key(raw_breeder.affix)
+        chiens_de_france_site_url = cls._chiens_de_france_site_of(raw_breeder.website)
 
         known_breeder_id = breeder_ids_by_source_id.get(raw_breeder.source_id)
         breeder = db.get(Breeder, known_breeder_id) if known_breeder_id is not None else None
@@ -317,6 +385,7 @@ class ListingIngestionService:
                 phone_e164=raw_breeder.phone_e164,
                 affix_key=affix_key,
                 department_code=department_code,
+                chiens_de_france_site_url=chiens_de_france_site_url,
             )
         if breeder is None and current_breeder_id is not None:
             breeder = db.get(Breeder, current_breeder_id)
@@ -346,10 +415,9 @@ class ListingIngestionService:
         breeder.website = known_or_current(raw_breeder.website, breeder.website)
         breeder.scc_selection_group = known_or_current(raw_breeder.selection_group, breeder.scc_selection_group)
         breeder.is_breed_club_member = known_or_current(raw_breeder.is_breed_club_member, breeder.is_breed_club_member)
-        if source == ListingSource.CHIENS_DE_FRANCE and raw_breeder.website:
+        if source in (ListingSource.CHIENS_DE_FRANCE, ListingSource.CHIOTS_DE_FRANCE):
             breeder.chiens_de_france_site_url = known_or_current(
-                raw_breeder.website if raw_breeder.website.endswith(BREEDER_SITE_HOST_SUFFIX) else None,
-                breeder.chiens_de_france_site_url,
+                chiens_de_france_site_url, breeder.chiens_de_france_site_url
             )
         breeder.search_text = BreederSearchText.build(breeder)
         db.flush()

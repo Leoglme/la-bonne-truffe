@@ -118,11 +118,13 @@ export class LitterPresentation {
    * Write when a litter was born, or when it is due.
    *
    * @param litter - The litter.
-   * @returns « Née le 27 oct. », « À naître vers le 7 nov. », or null while the birth is unknown.
+   * @param now - Current time.
+   * @returns « Née le 27 oct. », « À naître vers le 7 nov. », « Attendue le 5 oct., naissance pas encore déclarée »,
+   *   or null while the birth is unknown.
    */
-  static buildBirthFact(litter: LitterCard): string | null {
+  static buildBirthFact(litter: LitterCard, now: Date = new Date()): string | null {
     if (litter.kind === 'litter_expected') {
-      const expectedBirthPhrase: string = FollowUpPresentation.buildExpectedBirthPhrase(litter)
+      const expectedBirthPhrase: string = FollowUpPresentation.buildExpectedBirthPhrase(litter, now)
       return expectedBirthPhrase.charAt(0).toUpperCase() + expectedBirthPhrase.slice(1)
     }
     if (litter.birth_date === null) {
@@ -267,12 +269,15 @@ export class LitterPresentation {
    * @param card - The litter.
    * @param position - Position of the device, null while unknown.
    * @param drivingMinutes - Minutes of driving to the breeding, null when unknown or not wanted on this card.
-   * @returns « Redon · à 32 km · 35 min », « Ploërmel · naissance vers le 7 nov. », « Ancenis · non LOF ».
+   * @param now - Current time.
+   * @returns « Redon · à 32 km · 35 min », « Ploërmel · naissance vers le 7 nov. », « Sarzeau · attendue le 5 oct. »,
+   *   « Ancenis · non LOF ».
    */
   static buildPlaceLine(
     card: LitterCard,
     position: DevicePosition | null,
     drivingMinutes: number | null = null,
+    now: Date = new Date(),
   ): string {
     const parts: string[] = [this.buildPlace(card)]
     const distanceLabel: string | null = this.buildDistanceLabel(card, position)
@@ -283,8 +288,12 @@ export class LitterPresentation {
       parts.push(this.buildDrivingTimeLabel(drivingMinutes))
     }
     if (card.kind === 'litter_expected' && card.expected_birth_date) {
-      const expectedBirthDay: Date = FrenchDate.parseDay(card.expected_birth_date)
-      parts.push(`naissance vers le ${FrenchDate.formatDayAndShortMonth(expectedBirthDay)}`)
+      const expectedBirthDay: string = FrenchDate.formatDayAndShortMonth(FrenchDate.parseDay(card.expected_birth_date))
+      parts.push(
+        FollowUpPresentation.isBirthOverdue(card, now)
+          ? `attendue le ${expectedBirthDay}`
+          : `naissance vers le ${expectedBirthDay}`,
+      )
     }
     if (card.lof_status === 'non_lof') {
       parts.push('non LOF')

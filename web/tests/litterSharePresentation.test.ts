@@ -53,7 +53,9 @@ describe('LitterSharePresentation', (): void => {
       expected_birth_date: '2026-07-07',
     }
 
-    expect(LitterSharePresentation.buildSummaryLine(expectedLitter)).toBe('À naître vers le 7 juil.')
+    expect(LitterSharePresentation.buildSummaryLine(expectedLitter, new Date(2026, 5, 20))).toBe(
+      'À naître vers le 7 juil.',
+    )
   })
 
   it('names who shared the litter', (): void => {

@@ -699,7 +699,9 @@ export class BreederPresentation {
   private static buildCurrentLitterLine(litter: LitterCard, now: Date): BreederLitterStatusLine {
     const parts: string[] = []
     const isBornLastNight: boolean = LitterPresentation.isBornLastNight(litter, now)
-    parts.push(isBornLastNight ? 'Née cette nuit' : (LitterPresentation.buildBirthFact(litter) ?? 'Portée en cours'))
+    parts.push(
+      isBornLastNight ? 'Née cette nuit' : (LitterPresentation.buildBirthFact(litter, now) ?? 'Portée en cours'),
+    )
     const details: string[] = []
     if (LitterPresentation.hasKnownColors(litter.colors)) {
       details.push(LitterPresentation.buildColorLabel(litter.colors, true).toLowerCase())

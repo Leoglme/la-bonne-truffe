@@ -70,6 +70,7 @@ import type {
 } from '~/types/api'
 import type { AskedSourceRun, SourceRunCard, SourceRunContext, SourceRunEndNotice } from '~/types/SourceRun'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { SOURCE_RUN_COUNT_FORMS } from '~/constants/litterLabels'
 import { SourcesService } from '~/services/sourcesService'
 import { FrenchDate } from '~/utils/frenchDate'
 import { FrenchText } from '~/utils/frenchText'
@@ -114,7 +115,7 @@ const underWaySources: ComputedRef<ListingSource[]> = computed((): ListingSource
  * Build the line under a source.
  *
  * @param status - The source status.
- * @returns « Relevé il y a 12 min · 19 portées vues », or why there is none.
+ * @returns « Relevé il y a 12 min · 19 portées vues », « … · 461 éleveurs vus », or why there is none.
  */
 function buildSourceStatusLine(status: SourceStatus): string {
   if (!status.is_collected) {
@@ -136,7 +137,8 @@ function buildSourceStatusLine(status: SourceStatus): string {
     return `Dernier relevé en échec, ${timeSinceRun}.`
   }
   const seenCount: number = status.listings_seen ?? 0
-  return `Relevé ${timeSinceRun} · ${seenCount} ${FrenchText.pickForm(seenCount, 'portée vue', 'portées vues')}`
+  const [singularForm, pluralForm]: [string, string] = SOURCE_RUN_COUNT_FORMS[status.source]
+  return `Relevé ${timeSinceRun} · ${seenCount} ${FrenchText.pickForm(seenCount, singularForm, pluralForm)}`
 }
 
 /**

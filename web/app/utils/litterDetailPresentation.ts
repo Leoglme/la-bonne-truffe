@@ -24,6 +24,7 @@ import {
   PUPPY_SEX_LABELS,
 } from '~/constants/litterLabels'
 import { MAX_PARENT_RATING, PARENT_RATING_LABELS } from '~/constants/parentRatings'
+import { FollowUpPresentation } from '~/utils/followUpPresentation'
 import { FrenchDate } from '~/utils/frenchDate'
 import { FrenchText } from '~/utils/frenchText'
 import { GoldGeneticsPresentation } from '~/utils/goldGeneticsPresentation'
@@ -116,11 +117,12 @@ export class LitterDetailPresentation {
    * Build the three key facts.
    *
    * @param litter - The litter.
+   * @param now - Current time.
    * @returns Birth (or expected birth), puppies, departure.
    */
-  static buildKeyFacts(litter: LitterCard): LitterKeyFact[] {
+  static buildKeyFacts(litter: LitterCard, now: Date = new Date()): LitterKeyFact[] {
     return [
-      this.buildBirthFact(litter),
+      this.buildBirthFact(litter, now),
       { key: 'puppies', label: 'Chiots' },
       this.buildApproximateDayFact('departure', 'Départ', litter.available_from),
     ]
@@ -477,9 +479,23 @@ export class LitterDetailPresentation {
    * Build the birth fact: the expected day for a litter to come, the birth day otherwise.
    *
    * @param litter - The litter.
-   * @returns « Naissance vers le 7 nov. » or « Née le 27 octobre ».
+   * @param now - Current time.
+   * @returns « Naissance vers le 7 nov. », « Attendue le 5 octobre » once that day is past, or « Née le 27 octobre ».
    */
-  private static buildBirthFact(litter: LitterCard): LitterDayFact {
+  private static buildBirthFact(litter: LitterCard, now: Date): LitterDayFact {
+    if (
+      litter.kind === 'litter_expected' &&
+      litter.expected_birth_date &&
+      FollowUpPresentation.isBirthOverdue(litter, now)
+    ) {
+      const expectedBirthDay: Date = FrenchDate.parseDay(litter.expected_birth_date)
+      return {
+        key: 'birth',
+        label: 'Attendue le',
+        value: FrenchDate.formatDayAndLongMonth(expectedBirthDay),
+        compactValue: FrenchDate.formatDayAndShortMonth(expectedBirthDay),
+      }
+    }
     if (litter.kind === 'litter_expected') {
       return this.buildApproximateDayFact('birth', 'Naissance', litter.expected_birth_date)
     }

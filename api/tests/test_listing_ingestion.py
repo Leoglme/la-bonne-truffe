@@ -15,12 +15,14 @@ from models.breed import Breed
 from models.breeder import Breeder
 from models.listing import Listing
 from models.listing_change import ListingChange
+from models.litter_group import LitterGroup
 from seeders.run_seeders import SeederRunner
 from services.collectors.breeder_contact_parser import BreederContactParser
 from services.collectors.chiots_de_france import ChiotsDeFranceCollector, ListedLitterAd
 from services.collectors.html_source import HtmlBreedTarget, HtmlCollectionPlan, HtmlDepartmentTarget
 from services.collectors.raw_listing import ColorReading, RawBreeder, RawListing
 from services.listing_ingestion import BORN_LITTER_ACTIVE_DAYS, listing_ingestion_service
+from services.litter_grouping import litter_grouping_service
 from tests.chiots_de_france_pages import recorded_page
 from tests.coeur_de_cocker_pages import coeur_de_cocker_collector_serving
 
@@ -194,3 +196,41 @@ def test_a_reading_that_says_nothing_of_the_colour_keeps_the_colours_an_earlier_
     assert listing.colors == [{"color": "noir_et_feu", "confidence": "certain"}]
     assert listing.color_text == "Chiots noirs feu disponibles"
     assert db.query(ListingChange).filter(ListingChange.field == "colors").count() == 0
+
+
+def test_an_ad_that_only_links_the_site_of_a_known_breeder_joins_that_breeder(db: Session) -> None:
+    site_url = "https://elevage-a.chiens-de-france.com"
+    ad_of_a_seller_known_by_its_site = replace(
+        private_seller_ad(db), breeder=RawBreeder(source_id="annonce-487726", website=site_url)
+    )
+    known_breeder = Breeder(affix="Du Clos de test A", chiens_de_france_site_url=site_url)
+    db.add(known_breeder)
+    db.commit()
+
+    listing_ingestion_service.ingest(
+        db, ListingSource.CHIOTS_DE_FRANCE, [ad_of_a_seller_known_by_its_site], {"72"}, naive_utc_now()
+    )
+
+    assert db.query(Breeder).count() == 1
+    assert db.query(Listing).one().breeder_id == known_breeder.id
+
+
+def test_an_ad_stored_under_a_nameless_breeder_moves_to_its_real_breeder_and_leaves_its_litter(db: Session) -> None:
+    site_url = "https://elevage-a.chiens-de-france.com"
+    ad = replace(private_seller_ad(db), breeder=RawBreeder(source_id="annonce-487726", website=site_url))
+    listing_ingestion_service.ingest(db, ListingSource.CHIOTS_DE_FRANCE, [ad], {"72"}, naive_utc_now())
+    litter_grouping_service.regroup(db, naive_utc_now())
+    nameless_breeder_id = db.query(Listing).one().breeder_id
+    db.query(Breeder).filter(Breeder.id == nameless_breeder_id).update({"chiens_de_france_site_url": None})
+    real_breeder = Breeder(affix="Du Clos de test A", chiens_de_france_site_url=site_url)
+    db.add(real_breeder)
+    db.commit()
+    lone_group_id = db.query(Listing).one().litter_group_id
+
+    listing_ingestion_service.ingest(db, ListingSource.CHIOTS_DE_FRANCE, [ad], {"72"}, naive_utc_now())
+
+    listing = db.query(Listing).one()
+    assert (listing.breeder_id, listing.litter_group_id) == (real_breeder.id, None)
+    assert db.get(Breeder, nameless_breeder_id) is None
+    lone_group = db.get(LitterGroup, lone_group_id)
+    assert lone_group is not None and lone_group.breeder_id == real_breeder.id

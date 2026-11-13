@@ -3,6 +3,7 @@ import type { FollowUpReminderChip } from '~/types/FollowUp'
 import { FrenchDate } from '~/utils/frenchDate'
 
 const WEEKDAY_REMINDER_DAY_LIMIT: number = 6
+const EXPECTED_BIRTH_MARGIN_IN_DAYS: number = 3
 
 /** How the follow-up screen words a followed litter. */
 export class FollowUpPresentation {
@@ -62,16 +63,35 @@ export class FollowUpPresentation {
   }
 
   /**
+   * Whether a litter to come should be born by now while no source has declared its birth.
+   *
+   * @param litter - The litter.
+   * @param now - Current time.
+   * @returns True once its expected birth is more than a few days old.
+   */
+  static isBirthOverdue(litter: LitterCard, now: Date): boolean {
+    if (litter.kind !== 'litter_expected' || litter.expected_birth_date === null) {
+      return false
+    }
+    const expectedBirthDay: Date = FrenchDate.parseDay(litter.expected_birth_date)
+    return FrenchDate.countDaysAgo(expectedBirthDay, now) > EXPECTED_BIRTH_MARGIN_IN_DAYS
+  }
+
+  /**
    * Build the expected birth of a followed litter to come, for the line under its name.
    *
    * @param litter - The followed litter.
-   * @returns « à naître vers le 7 nov. » or « à naître ».
+   * @param now - Current time.
+   * @returns « à naître vers le 7 nov. », « à naître », or « attendue le 5 oct., naissance pas encore déclarée ».
    */
-  static buildExpectedBirthPhrase(litter: LitterCard): string {
+  static buildExpectedBirthPhrase(litter: LitterCard, now: Date = new Date()): string {
     if (litter.expected_birth_date === null) {
       return 'à naître'
     }
-    const expectedBirthDay: Date = FrenchDate.parseDay(litter.expected_birth_date)
-    return `à naître vers le ${FrenchDate.formatDayAndShortMonth(expectedBirthDay)}`
+    const expectedBirthDay: string = FrenchDate.formatDayAndShortMonth(FrenchDate.parseDay(litter.expected_birth_date))
+    if (this.isBirthOverdue(litter, now)) {
+      return `attendue le ${expectedBirthDay}, naissance pas encore déclarée`
+    }
+    return `à naître vers le ${expectedBirthDay}`
   }
 }

@@ -80,7 +80,9 @@ Whoof donne les couleurs et les marques de la robe (`blanc`, `noir`, rouané, fe
 
 ## Le dédoublonnage
 
-**Éleveur** (dans cet ordre, on s'arrête au premier qui matche) : même `siren` ; sinon même identifiant Centrale Canine ; sinon même `phone_e164` ; sinon même `affix_normalized` **et** même `department_code`. Sinon l'annonce garde l'éleveur qu'elle avait au relevé précédent (un particulier sans SIREN, téléphone ni affixe), et une annonce nouvelle crée le sien.
+**Éleveur** (dans cet ordre, on s'arrête au premier qui matche) : même `siren` ; sinon même identifiant Centrale Canine ; sinon même site Chiens de France (`chiens_de_france_site_url`, ajouté le 13/11/2026) ; sinon même `phone_e164` ; sinon même `affix_normalized` **et** même `department_code`. Sinon l'annonce garde l'éleveur qu'elle avait au relevé précédent (un particulier sans SIREN, téléphone ni affixe), et une annonce nouvelle crée le sien.
+
+Le site sert pour les annonces de Chiots de France, qui ne nomment personne mais lient le site Chiens de France de l'élevage : sans cette règle, l'annonce `496277` créait un « Éleveur sans nom » et une seconde portée « Portée de Remember me… », affichée « couleur pas encore connue » à côté de la vraie, que ses couleurs faisaient ignorer. Une annonce déjà rangée sous un tel éleveur le quitte au relevé suivant : elle sort de son groupe (sauf portée suivie) pour que le regroupement retrouve la portée de son élevage, et l'éleveur sans nom resté sans rien est supprimé (`ListingIngestionService._leave_former_breeder`).
 
 **Portée**, toujours chez le même éleveur et pour la même race, dans cet ordre (`api/services/litter_grouping.py`, règles complétées le 28/10/2026 avec Chiens de France et le 30/10/2026 avec le numéro de saillie) :
 1. même `litter_number`, quelle que soit la source ;

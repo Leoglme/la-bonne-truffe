@@ -8,11 +8,12 @@ export class LitterSharePresentation {
    * Build the line under the name in the share drawer.
    *
    * @param litter - The litter.
+   * @param now - Current time.
    * @returns « Née le 27 oct. · gold · 2 mâles, 3 femelles », the unknown parts left out.
    */
-  static buildSummaryLine(litter: LitterCard): string {
+  static buildSummaryLine(litter: LitterCard, now: Date = new Date()): string {
     const parts: string[] = []
-    const birthFact: string | null = LitterPresentation.buildBirthFact(litter)
+    const birthFact: string | null = LitterPresentation.buildBirthFact(litter, now)
     if (birthFact !== null) {
       parts.push(birthFact)
     }
@@ -41,10 +42,11 @@ export class LitterSharePresentation {
    * Build the birth line above the name on the shared page.
    *
    * @param litter - The litter.
+   * @param now - Current time.
    * @returns « NÉE LE 27 OCT. », « À NAÎTRE VERS LE 7 NOV. », or null while the birth is unknown.
    */
-  static buildBirthLabel(litter: LitterCard): string | null {
-    return LitterPresentation.buildBirthFact(litter)?.toUpperCase() ?? null
+  static buildBirthLabel(litter: LitterCard, now: Date = new Date()): string | null {
+    return LitterPresentation.buildBirthFact(litter, now)?.toUpperCase() ?? null
   }
 
   /**

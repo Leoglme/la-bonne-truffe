@@ -20,6 +20,7 @@ import type { ComputedRef, PropType } from 'vue'
 import type { LitterCard } from '~/types/api'
 import type { LitterSexCountsProps } from '~/types/LitterSexCounts'
 import { computed } from 'vue'
+import { FollowUpPresentation } from '~/utils/followUpPresentation'
 import { FrenchText } from '~/utils/frenchText'
 
 const props: LitterSexCountsProps = defineProps({
@@ -30,7 +31,7 @@ const maleCount: ComputedRef<number> = computed((): number => props.litter.male_
 const femaleCount: ComputedRef<number> = computed((): number => props.litter.female_count ?? 0)
 const unknownSexesLabel: ComputedRef<string | null> = computed((): string | null => {
   if (props.litter.kind === 'litter_expected') {
-    return 'À naître'
+    return FollowUpPresentation.isBirthOverdue(props.litter, new Date()) ? 'Pas encore déclarée' : 'À naître'
   }
   if (props.litter.male_count === null || props.litter.female_count === null) {
     return 'Sexes à confirmer'

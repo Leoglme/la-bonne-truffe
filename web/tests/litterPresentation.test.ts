@@ -38,12 +38,15 @@ describe('LitterPresentation.buildBirthFact', (): void => {
   it('says when a litter was born, or when it is due', (): void => {
     expect(LitterPresentation.buildBirthFact(BORN_GOLD_LITTER)).toBe('Née le 27 oct.')
     expect(
-      LitterPresentation.buildBirthFact({
-        ...BORN_GOLD_LITTER,
-        kind: 'litter_expected',
-        birth_date: null,
-        expected_birth_date: '2026-11-07',
-      }),
+      LitterPresentation.buildBirthFact(
+        {
+          ...BORN_GOLD_LITTER,
+          kind: 'litter_expected',
+          birth_date: null,
+          expected_birth_date: '2026-11-07',
+        },
+        new Date(2026, 10, 1, 10),
+      ),
     ).toBe('À naître vers le 7 nov.')
     expect(LitterPresentation.buildBirthFact({ ...BORN_GOLD_LITTER, birth_date: null })).toBeNull()
   })
@@ -177,5 +180,30 @@ describe('LitterPresentation.resolveIllustrationCoat', (): void => {
         { color: 'noir', confidence: 'certain' },
       ]),
     ).toBe('inconnue')
+  })
+})
+
+describe('a litter to come whose expected birth is past', (): void => {
+  const EXPECTED_LITTER: LitterCard = {
+    ...BORN_GOLD_LITTER,
+    kind: 'litter_expected',
+    birth_date: null,
+    expected_birth_date: '2026-10-05',
+  }
+
+  it('is still to be born a few days after the expected day, then waits for its birth to be declared', (): void => {
+    const threeDaysAfter: Date = new Date(2026, 9, 8, 10)
+    const fiveWeeksAfter: Date = new Date(2026, 10, 13, 10)
+
+    expect(LitterPresentation.buildBirthFact(EXPECTED_LITTER, threeDaysAfter)).toBe('À naître vers le 5 oct.')
+    expect(LitterPresentation.buildBirthFact(EXPECTED_LITTER, fiveWeeksAfter)).toBe(
+      'Attendue le 5 oct., naissance pas encore déclarée',
+    )
+    expect(LitterPresentation.buildPlaceLine(EXPECTED_LITTER, null, null, threeDaysAfter)).toBe(
+      'Redon · naissance vers le 5 oct.',
+    )
+    expect(LitterPresentation.buildPlaceLine(EXPECTED_LITTER, null, null, fiveWeeksAfter)).toBe(
+      'Redon · attendue le 5 oct.',
+    )
   })
 })

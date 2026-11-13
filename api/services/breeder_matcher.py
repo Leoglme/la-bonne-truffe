@@ -17,10 +17,12 @@ class BreederMatcher:
         affix_key: str | None,
         department_code: str | None,
         scc_user_id: str | None = None,
+        chiens_de_france_site_url: str | None = None,
     ) -> Breeder | None:
         """
         Match a breeder in the order of docs/03: SIREN, then the Centrale Canine breeder identifier, then its
-        directory user identifier, then the phone, then the affix in the same department.
+        directory user identifier, then its own site on Chiens de France, then the phone, then the affix in the
+        same department.
 
         Args:
             db: Database session.
@@ -30,6 +32,8 @@ class BreederMatcher:
             affix_key: Normalized affix, for the last rule.
             department_code: Department of the breeding, for the last rule.
             scc_user_id: Centrale Canine directory user identifier (``u_id``), if any.
+            chiens_de_france_site_url: The breeder's own site on Chiens de France, which an ad may link while it
+                names no one (« https://elevage-a.chiens-de-france.com »), if any.
 
         Returns:
             The existing breeder, or None for a breeder never seen.
@@ -44,6 +48,10 @@ class BreederMatcher:
                 return breeder
         if scc_user_id is not None:
             breeder = db.query(Breeder).filter(Breeder.scc_user_id == scc_user_id).first()
+            if breeder is not None:
+                return breeder
+        if chiens_de_france_site_url is not None:
+            breeder = db.query(Breeder).filter(Breeder.chiens_de_france_site_url == chiens_de_france_site_url).first()
             if breeder is not None:
                 return breeder
         if phone_e164 is not None:
