@@ -70,7 +70,7 @@ Historique des notifications envoyées, pour l'écran « cloche » et l'idempote
 
 Même liste pour toutes les sources, en snake_case : `gold`, `noir`, `noir_et_feu`, `marron`, `marron_et_feu`, `bleu_rouan`, `orange_rouan`, `marron_rouan`, `tricolore`, `particolore`, `zibeline`, `inconnue`.
 
-Chaque couleur d'une annonce porte une **confiance** : `certain` (variété SCC non ambiguë, ou texte libre explicite), `ambiguous` (paquet SCC qui couvre plusieurs couleurs), `confirmed` (confirmée à la main par Léo après un appel, elle gagne toujours).
+Chaque couleur d'une annonce porte une **confiance** : `certain` (variété SCC non ambiguë, ou texte libre explicite), `ambiguous` (paquet SCC qui couvre plusieurs couleurs), `confirmed` (confirmée à la main par Léo après un appel, elle gagne toujours). La variété SCC d'une portée est celle de sa mère (`02`) : même `certain`, elle passe après ce qu'écrivent les annonces et ce que donnent les parents (`04`).
 
 Correspondance SCC pour le cocker anglais (identifiants lus dans `litters.filters.variety` le 28/10/2026) : `158` → `[gold]` certain ; `159` → `[noir, noir_et_feu, marron, marron_et_feu]` ambigu ; `317` « autres couleurs » → `[bleu_rouan, orange_rouan, marron_rouan, tricolore, particolore]` ambigu. Une base seedée avant cette date porte `317` pour le gold : le seeder corrige l'identifiant et les couleurs d'une variété existante, retrouvée par son libellé.
 

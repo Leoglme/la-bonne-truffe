@@ -166,7 +166,8 @@ class ListingIngestionService:
         """
         Copy what the source says onto the stored listing. The page on the breeder's site stays when a reading of
         the main site, which does not know it, comes after the reading of that site; so does the day the ad says the
-        puppies may leave, which one page of a source may give and another not.
+        puppies may leave, which one page of a source may give and another not; so do the colours a post of the
+        breeder's site told, when a later reading says nothing of the colour.
 
         Args:
             listing: Listing to update.
@@ -188,8 +189,10 @@ class ListingIngestionService:
         listing.female_count = raw_listing.female_count
         listing.puppies_available = raw_listing.puppies_available
         listing.variety_source_id = raw_listing.variety_source_id
-        listing.colors = [color.as_json() for color in raw_listing.colors]
-        listing.color_text = raw_listing.color_text
+        does_reading_tell_the_colour = bool(raw_listing.colors) or raw_listing.color_text is not None
+        if does_reading_tell_the_colour or not listing.colors:
+            listing.colors = [color.as_json() for color in raw_listing.colors]
+            listing.color_text = raw_listing.color_text
         listing.price_cents = raw_listing.price_cents
         listing.department_code = (
             raw_listing.department_code if raw_listing.department_code in known_department_codes else None

@@ -22,6 +22,7 @@ RECORDED_PAGES_BY_PATH: dict[str, str] = {
     f"/{BREED_SLUG}/saillies": "litters_to_come.html",
     f"/{BREED_SLUG}/chiots": "litters_for_sale.html",
     f"/{BREED_SLUG}/chiots-a-vendre/495610": "litter_for_sale_495610.html",
+    f"/{BREED_SLUG}/actualites": "news.html",
     f"/{BREED_SLUG}/chiots-vendus": "litters_born.html",
     f"/{BREED_SLUG}/chiens/femelles": "females.html",
     f"/{BREED_SLUG}/chiens/etalons": "studs.html",

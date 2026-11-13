@@ -12,7 +12,7 @@ import logging
 import re
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from urllib.parse import urlparse
 
@@ -21,6 +21,8 @@ from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from core.config import settings
 from core.text import without_accents
+from enums.coat_color import CoatColor
+from enums.color_confidence import ColorConfidence
 from enums.dog_role import DogRole
 from enums.dog_sex import DogSex
 from enums.listing_kind import ListingKind
@@ -49,7 +51,7 @@ from services.collectors.raw_dog import (
     RawDog,
     RawSiteDirectoryEntry,
 )
-from services.collectors.raw_listing import RawBreeder, RawListing
+from services.collectors.raw_listing import ColorReading, RawBreeder, RawListing
 from services.collectors.social_link_parser import (
     FACEBOOK_ACCOUNT,
     INSTAGRAM_ACCOUNT,
@@ -64,6 +66,7 @@ LITTERS_TO_COME_PATH = "saillies"
 LITTERS_FOR_SALE_PATH = "chiots"
 LITTER_FOR_SALE_PATH = "chiots-a-vendre"
 LITTERS_BORN_PATH = "chiots-vendus"
+NEWS_PATH = "actualites"
 DOG_LIST_PATHS: tuple[str, ...] = ("chiens/femelles", "chiens/males", "chiens/etalons")
 MAIN_SITE_HOST = "www.chiens-de-france.com"
 ZIP_CODE_PATTERN = re.compile(r"\b(\d{5})\b")
@@ -77,6 +80,8 @@ BREEDING_COUNTS_PATTERN = re.compile(r"(\d+)\s+femelles?\s+reproductrices?.*?(\d
 REGISTERED_ON_PATTERN = re.compile(r"Inscrit sur chiens-de-france\.com depuis le\s+(\d{1,2}[./]\d{1,2}[./]\d{4})")
 RATING_PATTERN = re.compile(r"^\s*(\d+)")
 BACKGROUND_IMAGE_PATTERN = re.compile(r"url\(\s*['\"]?([^'\")]+)")
+PUPPY_WORDS_PATTERN = re.compile(r"\b(?:chiots?|bebes?|portees?|naissances?)\b")
+DAYS_A_POST_SPEAKS_OF_A_LITTER = 70
 GALLERY_SCRIPT_MARKER = "PhotoGallery("
 GALLERY_PHOTO_PATTERN = re.compile(r"url:\s*['\"]([^'\"]+)['\"]")
 
@@ -200,6 +205,15 @@ class LinkedParent:
     external_id: str | None
 
 
+@dataclass(frozen=True)
+class SiteNewsPost:
+    """A post of the « Actualités » page of a site: its title, the text under it, the day it was published."""
+
+    title: str
+    summary: str
+    published_on: date
+
+
 class ChiensDeFranceSiteCollector:
     """Reads the pages of each breeder site of a plan, then each litter and each dog they link."""
 
@@ -301,15 +315,18 @@ class ChiensDeFranceSiteCollector:
         if litters_for_sale_tree is not None:
             social_accounts = social_accounts or self.parse_social_links(litters_for_sale_tree)
             photo_urls.extend(litter_photos_of(litters_for_sale_tree))
+            litters_for_sale: list[list[RawListing]] = []
             for litter_id in self.parse_litters_for_sale_page(litters_for_sale_tree):
                 litter_url = f"{breed_url}/{LITTER_FOR_SALE_PATH}/{litter_id}"
                 litter_tree = self._read_page(litter_url, collection)
                 if litter_tree is None:
                     continue
-                collection.listings.extend(self.parse_litter_for_sale_page(litter_tree, site, litter_url))
+                litters_for_sale.append(self.parse_litter_for_sale_page(litter_tree, site, litter_url))
                 photo_urls.extend(litter_photos_of(litter_tree))
                 if breeding_counts == (None, None):
                     breeding_counts = self.breeding_counts(litter_tree)
+            news_posts = self._news_posts(breed_url, collection) if any(litters_for_sale) else []
+            collection.listings.extend(self.color_puppies_from_news(litters_for_sale, news_posts))
 
         litters_born: tuple[RawBreederSiteLitter, ...] | None = None
         litters_born_tree = self._read_page(f"{breed_url}/{LITTERS_BORN_PATH}", collection)
@@ -381,6 +398,25 @@ class ChiensDeFranceSiteCollector:
             return None
         collection.raw_pages.append(HtmlRawPage(url, response.text))
         return LexborHTMLParser(response.text)
+
+    def _news_posts(self, breed_url: str, collection: SiteCollection) -> list[SiteNewsPost]:
+        """
+        The posts of the « Actualités » page of a site. They only add the colour of the puppies: when the page
+        cannot be read, the reading of the site goes on without them.
+
+        Args:
+            breed_url: The pages of the breed on the site.
+            collection: Where the page is kept.
+
+        Returns:
+            The posts, empty when the site has no such page or when it cannot be read.
+        """
+        try:
+            news_tree = self._read_page(f"{breed_url}/{NEWS_PATH}", collection)
+        except SourceReadError as error:
+            logger.warning("Sites Chiens de France: news not read %s: %s", breed_url, error)
+            return []
+        return self.parse_news_page(news_tree) if news_tree is not None else []
 
     @staticmethod
     def _breed_slug_of(url: str) -> str:
@@ -521,6 +557,97 @@ class ChiensDeFranceSiteCollector:
                 )
             )
         return listings
+
+    @staticmethod
+    def parse_news_page(tree: LexborHTMLParser) -> list[SiteNewsPost]:
+        """
+        Read the « Actualités » list of the year: one post per box, with its title, the text under it and the day
+        it was published.
+
+        Args:
+            tree: The parsed list.
+
+        Returns:
+            The posts, in page order; a box without a title or a day is left out.
+        """
+        news_posts: list[SiteNewsPost] = []
+        for box in tree.css("a.actu-box"):
+            title = HtmlAdParser.text_of(box.css_first("div.actu-alaune-h1"))
+            published_on = french_date_of(HtmlAdParser.text_of(box.css_first("div.actu-alaune-date")))
+            if title and published_on is not None:
+                summary = HtmlAdParser.text_of(box.css_first("div.actu-alaune-txt"))
+                news_posts.append(SiteNewsPost(title, summary, published_on))
+        return news_posts
+
+    @classmethod
+    def color_puppies_from_news(
+        cls, litters_for_sale: list[list[RawListing]], news_posts: list[SiteNewsPost]
+    ) -> list[RawListing]:
+        """
+        Give the puppies of a litter the colour a post of the site tells: the page of a litter never names it, a
+        post such as « Chiots LOF noirs feu disponibles à la réservation » does. One colour named is certain,
+        several are possible ones, and the last post that speaks of a litter has the last word.
+
+        Args:
+            litters_for_sale: The puppy ads of each litter for sale of the site.
+            news_posts: The posts of the site.
+
+        Returns:
+            Every puppy ad, in the order given, those of a litter a post speaks of carrying its colours.
+        """
+        told_by_litter_index: dict[int, tuple[tuple[CoatColor, ...], str]] = {}
+        for news_post in sorted(news_posts, key=lambda news_post: news_post.published_on):
+            told_text = f"{news_post.title} {news_post.summary}"
+            colors = DogColorInference.colors_named_in(told_text)
+            if not colors or PUPPY_WORDS_PATTERN.search(without_accents(told_text).lower()) is None:
+                continue
+            litter_index = cls._litter_a_post_speaks_of(litters_for_sale, news_post.published_on)
+            if litter_index is not None:
+                told_by_litter_index[litter_index] = (colors, news_post.title)
+
+        puppy_ads: list[RawListing] = []
+        for litter_index, litter_puppy_ads in enumerate(litters_for_sale):
+            told = told_by_litter_index.get(litter_index)
+            if told is None:
+                puppy_ads.extend(litter_puppy_ads)
+                continue
+            colors, title = told
+            confidence = ColorConfidence.CERTAIN if len(colors) == 1 else ColorConfidence.AMBIGUOUS
+            color_readings = tuple(ColorReading(color, confidence) for color in colors)
+            puppy_ads.extend(
+                replace(puppy_ad, colors=color_readings, color_text=title) for puppy_ad in litter_puppy_ads
+            )
+        return puppy_ads
+
+    @staticmethod
+    def _litter_a_post_speaks_of(litters_for_sale: list[list[RawListing]], published_on: date) -> int | None:
+        """
+        The litter a post about puppies speaks of: the last one born before it, while its puppies are still there.
+
+        Args:
+            litters_for_sale: The puppy ads of each litter for sale of the site.
+            published_on: The day the post was published.
+
+        Returns:
+            The place of the litter among those given; None when no litter fits, or when two born the same day do.
+        """
+        birth_by_litter_index = {
+            litter_index: litter_puppy_ads[0].birth_date
+            for litter_index, litter_puppy_ads in enumerate(litters_for_sale)
+            if litter_puppy_ads and litter_puppy_ads[0].birth_date is not None
+        }
+        births_before_the_post = {
+            litter_index: birth_date
+            for litter_index, birth_date in birth_by_litter_index.items()
+            if 0 <= (published_on - birth_date).days <= DAYS_A_POST_SPEAKS_OF_A_LITTER
+        }
+        if not births_before_the_post:
+            return None
+        last_birth = max(births_before_the_post.values())
+        last_born_litter_indexes = [
+            litter_index for litter_index, birth_date in births_before_the_post.items() if birth_date == last_birth
+        ]
+        return last_born_litter_indexes[0] if len(last_born_litter_indexes) == 1 else None
 
     @classmethod
     def breeding_counts(cls, tree: LexborHTMLParser) -> tuple[int | None, int | None]:

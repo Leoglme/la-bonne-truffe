@@ -231,7 +231,9 @@ class LitterSnapshotBuilder:
     ) -> tuple[ColorReading, ...]:
         """
         Confirmed colours win; then the colours of the registered puppies; then a colour the parents make
-        certain; then the certain colours of every source; then what the parents make possible; then the bundle.
+        certain; then the certain colours an ad states itself; then what the parents make possible; then a bundle
+        an ad states; then the variety of the Centrale Canine, which is the one of the mother whatever the father
+        is: a gold mother and a black and tan father are filed under « rouge et doré ».
 
         Args:
             group: The group, holding the colours confirmed by hand and those its parents imply.
@@ -255,15 +257,46 @@ class LitterSnapshotBuilder:
         inferred = [reading for reading in expected if reading.confidence == ColorConfidence.INFERRED]
         if inferred:
             return cls._unique_colors(inferred)
-        readings = [
+        ads_stating_a_colour = [listing for listing in listings if listing.variety_source_id is None]
+        litters_filed_under_a_variety = [listing for listing in listings if listing.variety_source_id is not None]
+        stated_readings = cls._color_readings(ads_stating_a_colour)
+        certain_stated_readings = cls._certain_readings(stated_readings)
+        if certain_stated_readings:
+            return cls._unique_colors(certain_stated_readings)
+        if expected or stated_readings:
+            return cls._unique_colors(expected or stated_readings)
+        variety_readings = cls._color_readings(litters_filed_under_a_variety)
+        return cls._unique_colors(cls._certain_readings(variety_readings) or variety_readings)
+
+    @staticmethod
+    def _color_readings(listings: list[Listing]) -> list[ColorReading]:
+        """
+        The colours listings hold, in listing order.
+
+        Args:
+            listings: Listings of a group.
+
+        Returns:
+            One reading per colour of each listing.
+        """
+        return [
             ColorReading(CoatColor(entry["color"]), ColorConfidence(entry["confidence"]))
             for listing in listings
             for entry in listing.colors
         ]
-        certain = [reading for reading in readings if reading.confidence != ColorConfidence.AMBIGUOUS]
-        if certain:
-            return cls._unique_colors(certain)
-        return cls._unique_colors(expected or readings)
+
+    @staticmethod
+    def _certain_readings(readings: list[ColorReading]) -> list[ColorReading]:
+        """
+        The readings a source is sure of.
+
+        Args:
+            readings: Colour readings.
+
+        Returns:
+            Those that are not a bundle of possible colours.
+        """
+        return [reading for reading in readings if reading.confidence != ColorConfidence.AMBIGUOUS]
 
     @staticmethod
     def _unique_colors(readings: list[ColorReading]) -> tuple[ColorReading, ...]:

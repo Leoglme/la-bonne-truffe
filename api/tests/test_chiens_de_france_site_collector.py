@@ -1,5 +1,6 @@
 """ChiensDeFranceSiteCollector: real (anonymized) pages of a breeder site, the reading order, a failing site, politeness."""
 
+from dataclasses import replace
 from datetime import date, datetime
 
 import httpx
@@ -7,6 +8,7 @@ from selectolax.lexbor import LexborHTMLParser
 
 from core.config import settings
 from enums.coat_color import CoatColor
+from enums.color_confidence import ColorConfidence
 from enums.dog_role import DogRole
 from enums.dog_sex import DogSex
 from enums.listing_kind import ListingKind
@@ -17,15 +19,17 @@ from services.collectors.chiens_de_france_sites import (
     ListedDog,
     SiteCollectionPlan,
     SiteDirectoryPlan,
+    SiteNewsPost,
     breed_page_of,
 )
 from services.collectors.raw_dog import RawBreederSiteFacts, RawBreederSiteLitter, RawSiteDirectoryEntry
-from services.collectors.raw_listing import RawBreeder
+from services.collectors.raw_listing import ColorReading, RawBreeder, RawListing
 from tests.chiens_de_france_site_pages import (
     BROKEN_SITE_SLUG,
     DIRECTORY_LIST_URL,
     EMPTY_SITE_SLUG,
     OTHER_BREED_SITE_SLUG,
+    RECORDED_PAGES_BY_PATH,
     RECORDED_SITE_SLUG,
     SINGLE_LITTER_SITE_SLUG,
     chiens_de_france_site_collector_serving,
@@ -51,6 +55,7 @@ RECORDED_SITE_PATHS = [
     "/cocker-spaniel-anglais/chiots",
     "/cocker-spaniel-anglais/chiots-a-vendre/495610",
     "/cocker-spaniel-anglais/chiots-a-vendre/494507",
+    "/cocker-spaniel-anglais/actualites",
     "/cocker-spaniel-anglais/chiots-vendus",
     "/cocker-spaniel-anglais/chiens/femelles",
     "/cocker-spaniel-anglais/chiens/males",
@@ -73,6 +78,11 @@ def parsed(file_name: str) -> LexborHTMLParser:
         The parsed page.
     """
     return LexborHTMLParser(recorded_page(file_name))
+
+
+RECORDED_LITTER: list[RawListing] = ChiensDeFranceSiteCollector.parse_litter_for_sale_page(
+    parsed("litter_for_sale_495610.html"), RECORDED_SITE, f"{BREED_URL}/chiots-a-vendre/495610"
+)
 
 
 def test_litters_to_come_page_gives_one_litter_per_mating_with_its_date_and_parents() -> None:
@@ -290,12 +300,106 @@ def test_collect_reads_the_pages_in_order_then_each_litter_and_each_dog_and_skip
         f"{BREED_URL}/saillies",
         f"{BREED_URL}/chiots",
         f"{BREED_URL}/chiots-a-vendre/495610",
+        f"{BREED_URL}/actualites",
         f"{BREED_URL}/chiots-vendus",
         f"{BREED_URL}/chiens/femelles",
         f"{BREED_URL}/chiens/etalons",
         f"{BREED_URL}/chien/1212400",
     ]
     assert collection.failed_sites == []
+
+
+def test_collect_gives_the_puppies_of_a_litter_the_colour_a_post_of_the_site_tells() -> None:
+    plan = SiteCollectionPlan(sites=(RECORDED_SITE,))
+
+    collection = chiens_de_france_site_collector_serving().collect(plan)
+
+    puppy_ads = [listing for listing in collection.listings if listing.kind == ListingKind.PUPPY_AD]
+    assert {puppy_ad.colors for puppy_ad in puppy_ads} == {
+        (ColorReading(CoatColor.NOIR_ET_FEU, ColorConfidence.CERTAIN),)
+    }
+    assert {puppy_ad.color_text for puppy_ad in puppy_ads} == {"Chiots LOF Noirs feu disponibles à la réservation"}
+
+
+def test_news_that_cannot_be_read_do_not_stop_the_reading_of_the_site() -> None:
+    def answer(request: httpx.Request) -> httpx.Response:
+        """
+        Serve the recorded pages of the site, and an error for its news.
+
+        Args:
+            request: The collector's request.
+
+        Returns:
+            The page, a 500 for the news or a 404.
+        """
+        if request.url.path.endswith("/actualites"):
+            return httpx.Response(500)
+        file_name = RECORDED_PAGES_BY_PATH.get(request.url.path)
+        return httpx.Response(200, text=recorded_page(file_name)) if file_name else httpx.Response(404)
+
+    collector = ChiensDeFranceSiteCollector(
+        http_client=httpx.Client(transport=httpx.MockTransport(answer)),
+        sleep=lambda _seconds: None,
+        monotonic_clock=lambda: 0.0,
+    )
+
+    collection = collector.collect(SiteCollectionPlan(sites=(RECORDED_SITE,)))
+
+    puppy_ads = [listing for listing in collection.listings if listing.kind == ListingKind.PUPPY_AD]
+    assert collection.failed_sites == []
+    assert len(puppy_ads) == 4
+    assert {puppy_ad.colors for puppy_ad in puppy_ads} == {()}
+    assert [dog.external_id for dog in collection.dogs] == ["1212400"]
+
+
+def test_news_page_gives_each_post_with_its_title_the_text_under_it_and_its_day() -> None:
+    news_posts = ChiensDeFranceSiteCollector.parse_news_page(parsed("news.html"))
+
+    assert news_posts == [
+        SiteNewsPost("Chiots LOF Noirs feu disponibles à la réservation", "", date(2026, 9, 2)),
+        SiteNewsPost("Une belle journée d'exposition", "Texte de test de l'actualité.", date(2026, 6, 14)),
+    ]
+
+
+def test_a_post_speaks_of_the_last_litter_born_before_it_and_the_last_post_has_the_last_word() -> None:
+    older_litter = [replace(puppy_ad, birth_date=date(2026, 7, 19)) for puppy_ad in RECORDED_LITTER[:2]]
+    news_posts = [
+        SiteNewsPost("Nos bébés sont nés", "Quatre chiots dorés", date(2026, 8, 29)),
+        SiteNewsPost("Chiots noirs feu disponibles", "", date(2026, 9, 2)),
+    ]
+
+    puppy_ads = ChiensDeFranceSiteCollector.color_puppies_from_news([older_litter, RECORDED_LITTER], news_posts)
+
+    assert [puppy_ad.colors for puppy_ad in puppy_ads[:2]] == [(), ()]
+    assert {puppy_ad.colors for puppy_ad in puppy_ads[2:]} == {
+        (ColorReading(CoatColor.NOIR_ET_FEU, ColorConfidence.CERTAIN),)
+    }
+
+
+def test_a_post_naming_several_colours_gives_the_puppies_possible_colours() -> None:
+    news_posts = [SiteNewsPost("Naissance", "Des chiots golden et des chiots noir et feu", date(2026, 8, 30))]
+
+    puppy_ads = ChiensDeFranceSiteCollector.color_puppies_from_news([RECORDED_LITTER], news_posts)
+
+    assert {puppy_ad.colors for puppy_ad in puppy_ads} == {
+        (
+            ColorReading(CoatColor.GOLD, ColorConfidence.AMBIGUOUS),
+            ColorReading(CoatColor.NOIR_ET_FEU, ColorConfidence.AMBIGUOUS),
+        )
+    }
+
+
+def test_a_post_tells_no_colour_before_the_birth_long_after_it_or_when_it_is_not_about_puppies() -> None:
+    news_posts = [
+        SiteNewsPost("Chiots golden attendus", "", date(2026, 8, 20)),
+        SiteNewsPost("Chiots golden disponibles", "", date(2026, 12, 1)),
+        SiteNewsPost("Notre étalon noir et feu est disponible pour saillie", "", date(2026, 9, 2)),
+        SiteNewsPost("Les chiots grandissent bien", "", date(2026, 9, 5)),
+    ]
+
+    puppy_ads = ChiensDeFranceSiteCollector.color_puppies_from_news([RECORDED_LITTER], news_posts)
+
+    assert puppy_ads == RECORDED_LITTER
 
 
 def test_collect_gives_the_facts_of_the_site_with_its_first_litter_photo_as_cover() -> None:

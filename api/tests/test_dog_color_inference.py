@@ -34,6 +34,22 @@ def test_a_colour_code_becomes_a_canonical_colour(code: str | None, color: CoatC
     assert DogColorInference.canonical_color(code) == color
 
 
+@pytest.mark.parametrize(
+    ("sentence", "colors"),
+    [
+        ("Chiots LOF Noirs feu disponibles à la réservation", (CoatColor.NOIR_ET_FEU,)),
+        ("Naissance de nos bébés : 2 mâles noir & feu et 3 femelles dorées", (CoatColor.NOIR_ET_FEU, CoatColor.GOLD)),
+        ("Chiots golden et chiots noirs disponibles", (CoatColor.GOLD, CoatColor.NOIR)),
+        ("Une portée de bleus rouans et de tricolores", (CoatColor.BLEU_ROUAN, CoatColor.TRICOLORE)),
+        ("Chiots chocolat et feu, chiots noire et blanche", (CoatColor.MARRON_ET_FEU, CoatColor.PARTICOLORE)),
+        ("Chiots disponibles à la réservation", ()),
+        ("", ()),
+    ],
+)
+def test_a_sentence_names_each_of_its_colours_once(sentence: str, colors: tuple[CoatColor, ...]) -> None:
+    assert DogColorInference.colors_named_in(sentence) == colors
+
+
 def test_the_e_locus_is_read_among_the_health_codes() -> None:
     assert DogColorInference.e_locus_of(("FN-1.1", "PRCD-1.1", "LocE-e/e")) == "e/e"
     assert DogColorInference.e_locus_of(["LocE-E/e"]) == "E/e"

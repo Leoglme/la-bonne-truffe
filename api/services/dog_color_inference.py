@@ -52,6 +52,22 @@ PLAIN_TEXT_COLORS: tuple[tuple[tuple[str, ...], CoatColor], ...] = (
     (("marron", "chocolat", "foie", "liver", "brown"), CoatColor.MARRON),
 )
 
+# The most specific colour first: « noirs feu » must be read before « noirs ».
+SENTENCE_COLOR_PATTERNS: tuple[tuple[re.Pattern[str], CoatColor], ...] = (
+    (re.compile(r"\b(?:bleus? rouans?|blue roans?)\b"), CoatColor.BLEU_ROUAN),
+    (re.compile(r"\boranges? (?:rouans?|roans?)\b"), CoatColor.ORANGE_ROUAN),
+    (re.compile(r"\b(?:(?:marrons?|chocolats?|foie) rouans?|liver roans?)\b"), CoatColor.MARRON_ROUAN),
+    (re.compile(r"\btricolores?\b"), CoatColor.TRICOLORE),
+    (re.compile(r"\bzibelines?\b"), CoatColor.ZIBELINE),
+    (re.compile(r"\b(?:noire?s?(?: et)? feux?|black (?:and|et) tan)\b"), CoatColor.NOIR_ET_FEU),
+    (re.compile(r"\b(?:(?:marrons?|chocolats?|foie)(?: et)? feux?|liver (?:and|et) tan)\b"), CoatColor.MARRON_ET_FEU),
+    (re.compile(r"\b(?:particolores?|(?:noire?s?|marrons?|oranges?) et blanc(?:he)?s?)\b"), CoatColor.PARTICOLORE),
+    (re.compile(r"\b(?:golden|golds?|dorees?|dores?|rouges?|fauves?)\b"), CoatColor.GOLD),
+    (re.compile(r"\bnoire?s?\b"), CoatColor.NOIR),
+    (re.compile(r"\b(?:marrons?|chocolats?)\b"), CoatColor.MARRON),
+)
+SENTENCE_SEPARATOR_PATTERN = re.compile(r"[^a-z0-9]+")
+
 
 @dataclass(frozen=True)
 class ParentColorFacts:
@@ -157,6 +173,26 @@ class DogColorInference:
         if tokens and all(token.endswith(".") or token in TAN_TOKENS for token in tokens):
             return tokens[0] in GOLD_TOKENS or tokens[0].startswith("f.")
         return cls._color_of_plain_text(lowered) in GOLD_COAT_COLORS
+
+    @staticmethod
+    def colors_named_in(sentence: str) -> tuple[CoatColor, ...]:
+        """
+        The colours a sentence names, each read once and never twice from the same words: « noirs feu » is black
+        and tan, not black.
+
+        Args:
+            sentence: A title or a text written by a breeder (« Chiots LOF noirs feu disponibles à la réservation »).
+
+        Returns:
+            The colours, in the order the sentence names them; empty when it names none.
+        """
+        words = SENTENCE_SEPARATOR_PATTERN.sub(" ", without_accents(sentence).lower().replace("&", " et ")).strip()
+        place_by_color: dict[CoatColor, int] = {}
+        for pattern, color in SENTENCE_COLOR_PATTERNS:
+            for color_match in pattern.finditer(words):
+                place_by_color.setdefault(color, color_match.start())
+            words = pattern.sub(lambda color_match: " " * len(color_match.group()), words)
+        return tuple(sorted(place_by_color, key=lambda color: place_by_color[color]))
 
     @staticmethod
     def e_locus_of(health_codes: tuple[str, ...] | list[str]) -> str | None:

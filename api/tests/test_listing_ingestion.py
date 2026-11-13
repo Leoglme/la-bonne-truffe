@@ -6,6 +6,8 @@ from datetime import date, datetime, timedelta
 from sqlalchemy.orm import Session
 
 from core.clock import naive_utc_now
+from enums.coat_color import CoatColor
+from enums.color_confidence import ColorConfidence
 from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
 from enums.lof_status import LofStatus
@@ -17,7 +19,7 @@ from seeders.run_seeders import SeederRunner
 from services.collectors.breeder_contact_parser import BreederContactParser
 from services.collectors.chiots_de_france import ChiotsDeFranceCollector, ListedLitterAd
 from services.collectors.html_source import HtmlBreedTarget, HtmlCollectionPlan, HtmlDepartmentTarget
-from services.collectors.raw_listing import RawBreeder, RawListing
+from services.collectors.raw_listing import ColorReading, RawBreeder, RawListing
 from services.listing_ingestion import BORN_LITTER_ACTIVE_DAYS, listing_ingestion_service
 from tests.chiots_de_france_pages import recorded_page
 from tests.coeur_de_cocker_pages import coeur_de_cocker_collector_serving
@@ -175,3 +177,20 @@ def test_a_reading_without_the_departure_day_keeps_the_day_an_earlier_reading_ga
     listing_ingestion_service.ingest(db, ListingSource.CHIENS_DE_FRANCE, [ad_without_day], set(), naive_utc_now())
 
     assert db.query(Listing).one().available_from == date(2027, 1, 23)
+
+
+def test_a_reading_that_says_nothing_of_the_colour_keeps_the_colours_an_earlier_one_gave(db: Session) -> None:
+    ad_without_colour = replace(private_seller_ad(db), colors=(), color_text=None)
+    ad_with_its_colour = replace(
+        ad_without_colour,
+        colors=(ColorReading(CoatColor.NOIR_ET_FEU, ColorConfidence.CERTAIN),),
+        color_text="Chiots noirs feu disponibles",
+    )
+
+    listing_ingestion_service.ingest(db, ListingSource.CHIOTS_DE_FRANCE, [ad_with_its_colour], {"72"}, naive_utc_now())
+    listing_ingestion_service.ingest(db, ListingSource.CHIOTS_DE_FRANCE, [ad_without_colour], {"72"}, naive_utc_now())
+
+    listing = db.query(Listing).one()
+    assert listing.colors == [{"color": "noir_et_feu", "confidence": "certain"}]
+    assert listing.color_text == "Chiots noirs feu disponibles"
+    assert db.query(ListingChange).filter(ListingChange.field == "colors").count() == 0
