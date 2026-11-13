@@ -37,19 +37,33 @@ export const COCKER_COAT_PALETTES: Record<CockerCoat, CockerCoatPalette> = {
     tileClass: 'bg-neutral-pastel',
     chipTextClass: 'text-ink-secondary',
   },
-  inconnue: {
+  autre: {
     coat: '#6B5A50',
     ear: '#4A3C34',
     muzzle: '#B59A86',
     tileClass: 'bg-neutral-pastel',
     chipTextClass: 'text-ink-secondary',
   },
+  inconnue: {
+    coat: '#CFC3B6',
+    ear: '#B9AB9C',
+    muzzle: '#E9E1D8',
+    tileClass: 'bg-chip',
+    chipTextClass: 'text-ink-secondary',
+  },
 }
 
-export const ILLUSTRATED_COATS: Partial<Record<CoatColor, CockerCoat>> = {
+export const ILLUSTRATED_COATS: Record<CoatColor, CockerCoat> = {
   gold: 'gold',
   noir_et_feu: 'noir_et_feu',
   noir: 'noir',
   marron: 'marron',
   bleu_rouan: 'bleu_rouan',
+  marron_et_feu: 'autre',
+  orange_rouan: 'autre',
+  marron_rouan: 'autre',
+  tricolore: 'autre',
+  particolore: 'autre',
+  zibeline: 'autre',
+  inconnue: 'inconnue',
 }

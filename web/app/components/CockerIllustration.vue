@@ -26,6 +26,12 @@
       fill="none"
       stroke-linecap="round"
     />
+    <template v-if="shouldShowQuestionMark">
+      <circle cx="126" cy="120" r="28" fill="#FFFFFF" stroke="#F3EBDF" stroke-width="5" />
+      <text x="126" y="134" text-anchor="middle" fill="#5E4B3F" class="font-display text-[40px] font-bold select-none">
+        ?
+      </text>
+    </template>
   </svg>
 </template>
 
@@ -49,9 +55,13 @@ const props: CockerIllustrationProps = defineProps({
 })
 
 const palette: ComputedRef<CockerCoatPalette> = computed((): CockerCoatPalette => COCKER_COAT_PALETTES[props.coat])
+const shouldShowQuestionMark: ComputedRef<boolean> = computed((): boolean => props.coat === 'inconnue')
 const accessibleLabel: ComputedRef<string> = computed((): string => {
   if (props.coat === 'inconnue') {
     return 'Chiot cocker, couleur à confirmer'
+  }
+  if (props.coat === 'autre') {
+    return 'Chiot cocker'
   }
   return `Chiot cocker ${COAT_COLOR_LABELS[props.coat].toLowerCase()}`
 })

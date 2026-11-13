@@ -5,7 +5,7 @@
     subtitle="Un lien pour changer de mot de passe ne sert qu’une fois et finit par expirer. Demande-en un nouveau, il arrive tout de suite."
   >
     <template #visual>
-      <AuthIllustrationVisual coat="inconnue" badge-icon-name="i-lucide-clock" height-class="h-[200px] md:h-[420px]" />
+      <AuthIllustrationVisual coat="autre" badge-icon-name="i-lucide-clock" height-class="h-[200px] md:h-[420px]" />
     </template>
 
     <div class="flex flex-col gap-2.5 md:gap-3">

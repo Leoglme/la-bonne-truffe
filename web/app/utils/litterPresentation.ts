@@ -33,7 +33,7 @@ export class LitterPresentation {
     if (colors.length !== 1 || firstColor === undefined || firstColor.confidence === 'ambiguous') {
       return 'inconnue'
     }
-    return ILLUSTRATED_COATS[firstColor.color] ?? 'inconnue'
+    return ILLUSTRATED_COATS[firstColor.color]
   }
 
   /**

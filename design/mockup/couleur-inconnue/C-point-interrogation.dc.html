@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Les chiots, tête avec point d’interrogation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Nunito:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+sc-for{display:contents}
+</style>
+</helmet>
+<div style="width: 900px; height: 560px; box-sizing: border-box; padding: 40px; background: #FBF6EE; font-family: 'Nunito', system-ui, sans-serif; line-height: 1.5; color: #2B2420; display: flex; flex-direction: column; gap: 36px">
+<section style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 2px">
+<h2 style="margin: 0; font-family: 'Fredoka', 'Nunito', sans-serif; font-size: 20px; font-weight: 600">Les chiots</h2>
+<span style="font-size: 14px; font-weight: 700; color: #9A897B">Sur Chiens de France, aujourd’hui</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+<sc-for list="{{ puppies }}" as="puppy" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 16px; border-radius: 20px; background: #FFFFFF; padding: 10px 18px 10px 10px; box-shadow: 0 2px 12px rgba(66, 43, 30, 0.06)">
+<span style="display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 72px; height: 72px; border-radius: 16px; background: #F3EBDF">
+<svg width="48" height="48" viewBox="0 0 160 160" aria-hidden="true">
+<path d="M38 62 C18 70 14 112 30 128 C44 142 58 126 56 100 Z" fill="#B9AB9C"></path>
+<path d="M122 62 C142 70 146 112 130 128 C116 142 102 126 104 100 Z" fill="#B9AB9C"></path>
+<circle cx="80" cy="78" r="44" fill="#CFC3B6"></circle>
+<path d="M60 42 C68 26 92 26 100 42 L80 52 Z" fill="#B9AB9C"></path>
+<ellipse cx="80" cy="97" rx="25" ry="18" fill="#E9E1D8"></ellipse>
+<circle cx="64" cy="74" r="5.5" fill="#2B2420"></circle>
+<circle cx="96" cy="74" r="5.5" fill="#2B2420"></circle>
+<circle cx="66" cy="72" r="1.8" fill="#FFFFFF"></circle>
+<circle cx="98" cy="72" r="1.8" fill="#FFFFFF"></circle>
+<circle cx="52" cy="90" r="6" fill="#F4A7A1" opacity="0.7"></circle>
+<circle cx="108" cy="90" r="6" fill="#F4A7A1" opacity="0.7"></circle>
+<path d="M69 88 Q80 81 91 88 Q91 99 80 105 Q69 99 69 88 Z" fill="#2B2420"></path>
+<circle cx="75" cy="89" r="2" fill="#FFFFFF" opacity="0.55"></circle>
+<path d="M80 105 Q80 111 73 112 M80 105 Q80 111 87 112" fill="none" stroke="#2B2420" style="stroke-width: 2.2; stroke-linecap: round"></path>
+<circle cx="126" cy="120" r="28" fill="#FFFFFF" stroke="#F3EBDF" style="stroke-width: 5"></circle>
+<text x="126" y="134" fill="#5E4B3F" style="font-family: 'Fredoka', 'Nunito', sans-serif; font-size: 40px; font-weight: 700; text-anchor: middle">?</text>
+</svg>
+</span>
+<span style="display: flex; flex-direction: column; min-width: 0; flex-grow: 1">
+<span style="font-size: 17px; font-weight: 800">{{ puppy.label }} · <span style="color: {{ puppy.sexColor }}">{{ puppy.sexLabel }}</span></span>
+<span style="font-size: 15px; font-weight: {{ puppy.stateWeight }}; color: {{ puppy.stateColor }}">{{ puppy.stateLabel }}</span>
+</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C94A28" aria-hidden="true" style="flex-shrink: 0; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round">
+<path d="M15 3h6v6"></path>
+<path d="M10 14 21 3"></path>
+<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+</svg>
+</div>
+</sc-for>
+</div>
+</section>
+<div style="display: flex; align-items: flex-end; gap: 32px">
+<div style="display: flex; flex-direction: column; gap: 12px; flex-grow: 1; min-width: 0">
+<span style="font-size: 14px; font-weight: 700; color: #7A6657">À côté des couleurs connues</span>
+<div style="display: flex; gap: 14px">
+<sc-for list="{{ coats }}" as="coat" hint-placeholder-count="5">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; width: 72px">
+<span style="display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; border-radius: 16px; background: {{ coat.tile }}">
+<svg width="48" height="48" viewBox="0 0 160 160" aria-hidden="true">
+<path d="M38 62 C18 70 14 112 30 128 C44 142 58 126 56 100 Z" fill="{{ coat.ear }}"></path>
+<path d="M122 62 C142 70 146 112 130 128 C116 142 102 126 104 100 Z" fill="{{ coat.ear }}"></path>
+<circle cx="80" cy="78" r="44" fill="{{ coat.coat }}"></circle>
+<path d="M60 42 C68 26 92 26 100 42 L80 52 Z" fill="{{ coat.ear }}"></path>
+<ellipse cx="80" cy="97" rx="25" ry="18" fill="{{ coat.muzzle }}"></ellipse>
+<circle cx="64" cy="74" r="5.5" fill="#2B2420"></circle>
+<circle cx="96" cy="74" r="5.5" fill="#2B2420"></circle>
+<circle cx="66" cy="72" r="1.8" fill="#FFFFFF"></circle>
+<circle cx="98" cy="72" r="1.8" fill="#FFFFFF"></circle>
+<circle cx="52" cy="90" r="6" fill="#F4A7A1" opacity="0.7"></circle>
+<circle cx="108" cy="90" r="6" fill="#F4A7A1" opacity="0.7"></circle>
+<path d="M69 88 Q80 81 91 88 Q91 99 80 105 Q69 99 69 88 Z" fill="#2B2420"></path>
+<circle cx="75" cy="89" r="2" fill="#FFFFFF" opacity="0.55"></circle>
+<path d="M80 105 Q80 111 73 112 M80 105 Q80 111 87 112" fill="none" stroke="#2B2420" style="stroke-width: 2.2; stroke-linecap: round"></path>
+</svg>
+</span>
+<span style="font-size: 13px; font-weight: 700; color: #7A6657; white-space: nowrap">{{ coat.name }}</span>
+</div>
+</sc-for>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; width: 72px; margin-left: 10px">
+<span style="display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; border-radius: 16px; background: #F3EBDF">
+<svg width="48" height="48" viewBox="0 0 160 160" aria-hidden="true">
+<path d="M38 62 C18 70 14 112 30 128 C44 142 58 126 56 100 Z" fill="#B9AB9C"></path>
+<path d="M122 62 C142 70 146 112 130 128 C116 142 102 126 104 100 Z" fill="#B9AB9C"></path>
+<circle cx="80" cy="78" r="44" fill="#CFC3B6"></circle>
+<path d="M60 42 C68 26 92 26 100 42 L80 52 Z" fill="#B9AB9C"></path>
+<ellipse cx="80" cy="97" rx="25" ry="18" fill="#E9E1D8"></ellipse>
+<circle cx="64" cy="74" r="5.5" fill="#2B2420"></circle>
+<circle cx="96" cy="74" r="5.5" fill="#2B2420"></circle>
+<circle cx="66" cy="72" r="1.8" fill="#FFFFFF"></circle>
+<circle cx="98" cy="72" r="1.8" fill="#FFFFFF"></circle>
+<circle cx="52" cy="90" r="6" fill="#F4A7A1" opacity="0.7"></circle>
+<circle cx="108" cy="90" r="6" fill="#F4A7A1" opacity="0.7"></circle>
+<path d="M69 88 Q80 81 91 88 Q91 99 80 105 Q69 99 69 88 Z" fill="#2B2420"></path>
+<circle cx="75" cy="89" r="2" fill="#FFFFFF" opacity="0.55"></circle>
+<path d="M80 105 Q80 111 73 112 M80 105 Q80 111 87 112" fill="none" stroke="#2B2420" style="stroke-width: 2.2; stroke-linecap: round"></path>
+<circle cx="126" cy="120" r="28" fill="#FFFFFF" stroke="#F3EBDF" style="stroke-width: 5"></circle>
+<text x="126" y="134" fill="#5E4B3F" style="font-family: 'Fredoka', 'Nunito', sans-serif; font-size: 40px; font-weight: 700; text-anchor: middle">?</text>
+</svg>
+</span>
+<span style="font-size: 13px; font-weight: 800; color: #2B2420; white-space: nowrap">Inconnue</span>
+</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; justify-content: center; width: 168px; height: 160px; border-radius: 22px; background: #F3EBDF; flex-shrink: 0">
+<svg width="132" height="132" viewBox="0 0 160 160" role="img" aria-label="Tête de chiot claire avec un point d’interrogation, couleur inconnue">
+<path d="M38 62 C18 70 14 112 30 128 C44 142 58 126 56 100 Z" fill="#B9AB9C"></path>
+<path d="M122 62 C142 70 146 112 130 128 C116 142 102 126 104 100 Z" fill="#B9AB9C"></path>
+<circle cx="80" cy="78" r="44" fill="#CFC3B6"></circle>
+<path d="M60 42 C68 26 92 26 100 42 L80 52 Z" fill="#B9AB9C"></path>
+<ellipse cx="80" cy="97" rx="25" ry="18" fill="#E9E1D8"></ellipse>
+<circle cx="64" cy="74" r="5.5" fill="#2B2420"></circle>
+<circle cx="96" cy="74" r="5.5" fill="#2B2420"></circle>
+<circle cx="66" cy="72" r="1.8" fill="#FFFFFF"></circle>
+<circle cx="98" cy="72" r="1.8" fill="#FFFFFF"></circle>
+<circle cx="52" cy="90" r="6" fill="#F4A7A1" opacity="0.7"></circle>
+<circle cx="108" cy="90" r="6" fill="#F4A7A1" opacity="0.7"></circle>
+<path d="M69 88 Q80 81 91 88 Q91 99 80 105 Q69 99 69 88 Z" fill="#2B2420"></path>
+<circle cx="75" cy="89" r="2" fill="#FFFFFF" opacity="0.55"></circle>
+<path d="M80 105 Q80 111 73 112 M80 105 Q80 111 87 112" fill="none" stroke="#2B2420" style="stroke-width: 2.2; stroke-linecap: round"></path>
+<circle cx="126" cy="120" r="24" fill="#FFFFFF" stroke="#F3EBDF" style="stroke-width: 4"></circle>
+<text x="126" y="132" fill="#5E4B3F" style="font-family: 'Fredoka', 'Nunito', sans-serif; font-size: 34px; font-weight: 700; text-anchor: middle">?</text>
+</svg>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":900,"height":560}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+puppies: [
+{ label: 'Chiot 1', sexLabel: 'mâle', sexColor: '#3F7FC7', stateLabel: 'Disponible', stateWeight: 700, stateColor: '#5E4B3F' },
+{ label: 'Chiot 2', sexLabel: 'femelle', sexColor: '#E05D9B', stateLabel: 'Disponible', stateWeight: 700, stateColor: '#5E4B3F' },
+{ label: 'Chiot 3', sexLabel: 'femelle', sexColor: '#E05D9B', stateLabel: 'Réservée', stateWeight: 500, stateColor: '#7A6657' },
+{ label: 'Chiot 4', sexLabel: 'femelle', sexColor: '#E05D9B', stateLabel: 'Réservée', stateWeight: 500, stateColor: '#7A6657' }
+],
+coats: [
+{ name: 'Gold', coat: '#E9B363', ear: '#CF8F3A', muzzle: '#F3CF95', tile: '#FBE7CC' },
+{ name: 'Noir', coat: '#2F2724', ear: '#1E1816', muzzle: '#4A3C34', tile: '#EAE2DA' },
+{ name: 'Noir et feu', coat: '#3A2F2A', ear: '#2B2420', muzzle: '#C98A4B', tile: '#E9E3F2' },
+{ name: 'Marron', coat: '#7B5033', ear: '#5E3A22', muzzle: '#A97A55', tile: '#EAE2DA' },
+{ name: 'Bleu rouan', coat: '#8B8F99', ear: '#4E525C', muzzle: '#D9DBE0', tile: '#EAE2DA' }
+]
+};
+}
+}
+</script>
+</body>
+</html>

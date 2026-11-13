@@ -51,7 +51,7 @@
     </template>
 
     <template v-else>
-      <AuthIllustrationVisual coat="inconnue" badge-icon-name="i-lucide-clock" height-class="h-[220px] md:h-[360px]" />
+      <AuthIllustrationVisual coat="autre" badge-icon-name="i-lucide-clock" height-class="h-[220px] md:h-[360px]" />
       <div class="flex flex-col gap-1">
         <h1 class="m-0 font-display text-[30px] leading-[1.1] font-semibold md:text-[40px]">Ce lien ne marche plus</h1>
         <p class="m-0 text-[15px] text-ink-muted md:text-lg">

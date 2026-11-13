@@ -11,12 +11,12 @@ export const MAIN_COLOR_ROWS: CriteriaColorRow[] = [
 ]
 
 export const OTHER_COLOR_ROWS: CriteriaColorRow[] = [
-  { color: 'marron_et_feu', coat: 'inconnue' },
-  { color: 'orange_rouan', coat: 'inconnue' },
-  { color: 'marron_rouan', coat: 'inconnue' },
-  { color: 'tricolore', coat: 'inconnue' },
-  { color: 'particolore', coat: 'inconnue' },
-  { color: 'zibeline', coat: 'inconnue' },
+  { color: 'marron_et_feu', coat: 'autre' },
+  { color: 'orange_rouan', coat: 'autre' },
+  { color: 'marron_rouan', coat: 'autre' },
+  { color: 'tricolore', coat: 'autre' },
+  { color: 'particolore', coat: 'autre' },
+  { color: 'zibeline', coat: 'autre' },
 ]
 
 export const ALL_COLOR_ROWS: CriteriaColorRow[] = [...MAIN_COLOR_ROWS, ...OTHER_COLOR_ROWS]

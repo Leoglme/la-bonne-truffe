@@ -32,7 +32,7 @@ const props: DogPortraitProps = defineProps({
 })
 
 const coat: ComputedRef<CockerCoat> = computed((): CockerCoat =>
-  props.color === null ? 'inconnue' : (ILLUSTRATED_COATS[props.color] ?? 'inconnue'),
+  props.color === null ? 'inconnue' : ILLUSTRATED_COATS[props.color],
 )
 const tileClass: ComputedRef<string> = computed((): string => COCKER_COAT_PALETTES[coat.value].tileClass)
 </script>

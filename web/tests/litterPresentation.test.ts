@@ -158,3 +158,24 @@ describe('LitterPresentation.matchesSearchQuery', (): void => {
     expect(LitterPresentation.matchesSearchQuery(BORN_GOLD_LITTER, '   ')).toBe(true)
   })
 })
+
+describe('LitterPresentation.resolveIllustrationCoat', (): void => {
+  it('draws the coat of a single certain colour, and the « autre » coat when that colour has no drawing', (): void => {
+    expect(LitterPresentation.resolveIllustrationCoat([{ color: 'gold', confidence: 'certain' }])).toBe('gold')
+    expect(LitterPresentation.resolveIllustrationCoat([{ color: 'marron_et_feu', confidence: 'certain' }])).toBe(
+      'autre',
+    )
+  })
+
+  it('draws the question mark coat while the colour is not known for sure', (): void => {
+    expect(LitterPresentation.resolveIllustrationCoat([])).toBe('inconnue')
+    expect(LitterPresentation.resolveIllustrationCoat([{ color: 'noir', confidence: 'ambiguous' }])).toBe('inconnue')
+    expect(LitterPresentation.resolveIllustrationCoat([{ color: 'inconnue', confidence: 'certain' }])).toBe('inconnue')
+    expect(
+      LitterPresentation.resolveIllustrationCoat([
+        { color: 'gold', confidence: 'certain' },
+        { color: 'noir', confidence: 'certain' },
+      ]),
+    ).toBe('inconnue')
+  })
+})
