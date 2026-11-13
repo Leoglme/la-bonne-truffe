@@ -198,6 +198,10 @@ describe('BreederPresentation.buildLitterStatusLine', (): void => {
       text: 'À naître vers le 7 nov. · gold',
       tone: 'hot',
     })
+    expect(BreederPresentation.buildLitterStatusLine(BREEDER, new Date(2027, 0, 15, 10))).toEqual({
+      text: 'Attendue le 7 nov., naissance pas encore déclarée · gold',
+      tone: 'normal',
+    })
     expect(BreederPresentation.buildLitterStatusLine({ ...BREEDER, current_litter: BORN_GOLD_LITTER }, NOW)).toEqual({
       text: 'Née le 14 sept. · gold, 1 chiot dispo',
       tone: 'normal',

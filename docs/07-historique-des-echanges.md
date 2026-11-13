@@ -281,3 +281,18 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
   - la couleur d'une portée suit un nouvel ordre : ce qu'une annonce écrit de certain, puis ce que les parents rendent possible, puis la variété de la mère, qui reste le repli tant que les parents ne sont pas lus (`04`). Tout passer en « à confirmer » aurait retiré « préférée », et sa notification, aux portées gold dont les parents ne sont pas encore lus ;
   - le relevé des sites d'élevage lit la page « Actualités » d'un site qui a une portée en vente, et donne aux chiots la couleur qu'une actualité nomme (`02`). Une lecture suivante sans couleur ne l'efface pas.
 - **Vérifié** : le vrai site lu par le relevé, sur une copie de la base locale mise dans l'état de la production : avant, « 81 %, préférée, Gold » ; après, quatre chiots dessinés en noir et feu, « Noir et feu », « 61 %, acceptable ». Tests pytest (toute la suite), ruff et mypy. En production, la portée change au prochain relevé du site de l'élevage.
+
+## 13 novembre (soir) : le grand tour de l'app
+
+- **Demandé** : faire le tour de toutes les pages, des portées et des éleveurs, comparer avec ce qu'on trouve sur le web, corriger les bugs, les incohérences et les manques, et rendre un compte rendu en PDF avec des captures.
+- **Méthode** : le Chrome de Léo n'étant pas relié, la production n'a pas été ouverte. Un relevé complet et frais de toutes les sources a été fait en local, sur une copie de la base, avec le code de la production : 79 portées déclarées, 122 annonces de chiots, 60 sites d'élevage, 455 éleveurs de l'annuaire, puis les parents à la Centrale Canine. Les écrans ont été parcourus sur cette copie, à 1440 px et sur iPhone.
+- **Constaté et corrigé** :
+  - sur huit portées « préférées, gold », trois ne l'étaient pas : Les As de Jade et Des Douces Folies d'Asie sont noir et feu (leurs actualités le disent), Du Clos de l'Ecotay a un père noir et feu porteur du gold. Les deux corrections du jour (ordre des couleurs, robe lue dans les actualités) les rangent juste : il reste quatre préférées (`02`, `04`) ;
+  - un site qui n'annonce qu'une saillie n'était pas lu : sa page « Futures portées » renvoie sur la saillie (`02`) ;
+  - la lecture des parents et des chiots à la Centrale Canine échouait en entier dès qu'une fiche avait disparu : aucune fiche lue cette heure-là, pour aucune portée (`05`) ;
+  - une annonce de Chiots de France, qui ne nomme personne mais lie le site de l'élevage, créait un « Éleveur sans nom » et une seconde portée, affichée alors que la vraie était ignorée pour ses couleurs (`03`) ;
+  - une saillie dont la naissance attendue est passée depuis des semaines s'affichait encore « À naître vers le 5 oct. », en corail sur la carte de l'élevage (`06`) ;
+  - la page Sources écrivait « 461 portées vues » pour l'annuaire des éleveurs (`06`) ;
+  - la photo d'une actualité (la portée à quelques jours) devient celle d'une portée dont les annonces n'en ont pas : Les As de Jade montrait un adulte gold de l'élevage au-dessus de quatre chiots noir et feu (`02`).
+- **Vérifié** : chaque correction rejouée sur la copie avec les vrais sites ; tests pytest (toute la suite) et vitest, ruff, mypy, lint et typecheck. Non vérifié en production.
+- **Laissé à décider** : remonter « Les chiots » au-dessus de « Après ton appel » sur la fiche d'une portée ; confirmer une couleur chiot par chiot ; lire la robe sur les photos.

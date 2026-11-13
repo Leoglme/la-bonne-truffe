@@ -39,6 +39,7 @@ import { COAT_COLOR_LABELS } from '~/constants/coatColorLabels'
 import { LINK_LOGOS_BY_DOMAIN } from '~/constants/linkLogos'
 import { UNKNOWN_PLACE_LABEL } from '~/constants/litterLabels'
 import { CrowFliesDistance } from '~/utils/crowFliesDistance'
+import { FollowUpPresentation } from '~/utils/followUpPresentation'
 import { FrenchDate } from '~/utils/frenchDate'
 import { FrenchText } from '~/utils/frenchText'
 import { GoldGeneticsPresentation } from '~/utils/goldGeneticsPresentation'
@@ -720,6 +721,8 @@ export class BreederPresentation {
     const isRecentBirth: boolean =
       litter.birth_date !== null &&
       FrenchDate.countDaysAgo(FrenchDate.parseDay(litter.birth_date), now) <= HOT_BIRTH_AGE_DAYS
-    return { text: parts.join(' · '), tone: litter.kind === 'litter_expected' || isRecentBirth ? 'hot' : 'normal' }
+    const isBirthStillToCome: boolean =
+      litter.kind === 'litter_expected' && !FollowUpPresentation.isBirthOverdue(litter, now)
+    return { text: parts.join(' · '), tone: isBirthStillToCome || isRecentBirth ? 'hot' : 'normal' }
   }
 }

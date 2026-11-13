@@ -1,6 +1,7 @@
 import type { DogSex, ListingKind, ListingSource, LofStatus, MatchFlag, MatchTier, PuppyAdState } from '~/types/api'
 import type { FrenchGender } from '~/types/FrenchText'
 import type { BreedingQualityChip, LitterInfoChipLabels } from '~/types/LitterInfoChips'
+import type { SourceRunCountForms } from '~/types/SourceRun'
 
 export const TIER_LABELS: Record<MatchTier, string> = {
   preferred: 'préférée',
@@ -29,17 +30,16 @@ export const LISTING_SOURCE_LABELS: Record<ListingSource, string> = {
   chiens_de_france_sites: 'Sites d’élevage (Chiens de France)',
 }
 
-/** What one run of a source counts, in the singular then the plural: « 461 éleveurs vus ». */
-export const SOURCE_RUN_COUNT_FORMS: Record<ListingSource, [string, string]> = {
-  centrale_canine: ['portée vue', 'portées vues'],
-  chiens_de_france: ['annonce vue', 'annonces vues'],
-  chiots_de_france: ['annonce vue', 'annonces vues'],
-  whoof: ['annonce vue', 'annonces vues'],
-  coeur_de_cocker: ['annonce vue', 'annonces vues'],
-  scc_breeders: ['éleveur vu', 'éleveurs vus'],
-  scc_sites: ['site lu', 'sites lus'],
-  scc_dogs: ['fiche de chien lue', 'fiches de chiens lues'],
-  chiens_de_france_sites: ['annonce ou chien vu', 'annonces et chiens vus'],
+export const SOURCE_RUN_COUNT_FORMS: Record<ListingSource, SourceRunCountForms> = {
+  centrale_canine: { singularForm: 'portée vue', pluralForm: 'portées vues' },
+  chiens_de_france: { singularForm: 'annonce vue', pluralForm: 'annonces vues' },
+  chiots_de_france: { singularForm: 'annonce vue', pluralForm: 'annonces vues' },
+  whoof: { singularForm: 'annonce vue', pluralForm: 'annonces vues' },
+  coeur_de_cocker: { singularForm: 'annonce vue', pluralForm: 'annonces vues' },
+  scc_breeders: { singularForm: 'éleveur vu', pluralForm: 'éleveurs vus' },
+  scc_sites: { singularForm: 'site lu', pluralForm: 'sites lus' },
+  scc_dogs: { singularForm: 'fiche de chien lue', pluralForm: 'fiches de chiens lues' },
+  chiens_de_france_sites: { singularForm: 'annonce ou chien vu', pluralForm: 'annonces et chiens vus' },
 }
 
 export const LISTING_SOURCE_LINK_LABELS: Record<ListingSource, string> = {

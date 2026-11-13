@@ -68,7 +68,13 @@ import type {
   SourceRunStatus,
   SourceStatus,
 } from '~/types/api'
-import type { AskedSourceRun, SourceRunCard, SourceRunContext, SourceRunEndNotice } from '~/types/SourceRun'
+import type {
+  AskedSourceRun,
+  SourceRunCard,
+  SourceRunContext,
+  SourceRunCountForms,
+  SourceRunEndNotice,
+} from '~/types/SourceRun'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { SOURCE_RUN_COUNT_FORMS } from '~/constants/litterLabels'
 import { SourcesService } from '~/services/sourcesService'
@@ -137,7 +143,7 @@ function buildSourceStatusLine(status: SourceStatus): string {
     return `Dernier relevé en échec, ${timeSinceRun}.`
   }
   const seenCount: number = status.listings_seen ?? 0
-  const [singularForm, pluralForm]: [string, string] = SOURCE_RUN_COUNT_FORMS[status.source]
+  const { singularForm, pluralForm }: SourceRunCountForms = SOURCE_RUN_COUNT_FORMS[status.source]
   return `Relevé ${timeSinceRun} · ${seenCount} ${FrenchText.pickForm(seenCount, singularForm, pluralForm)}`
 }
 

@@ -243,7 +243,7 @@ class ListingIngestionService:
         former_breeder = db.get(Breeder, former_breeder_id)
         if former_breeder is None:
             return
-        is_named = any(
+        is_former_breeder_named = any(
             (
                 former_breeder.affix,
                 former_breeder.display_name,
@@ -252,11 +252,11 @@ class ListingIngestionService:
                 former_breeder.scc_user_id,
             )
         )
-        is_still_used = any(
+        is_former_breeder_still_used = any(
             db.query(model).filter(model.breeder_id == former_breeder_id).first() is not None
             for model in (Listing, LitterGroup, Dog, BreederFollow)
         )
-        if not is_named and not former_breeder.is_manual and not is_still_used:
+        if not is_former_breeder_named and not former_breeder.is_manual and not is_former_breeder_still_used:
             db.delete(former_breeder)
             db.flush()
 

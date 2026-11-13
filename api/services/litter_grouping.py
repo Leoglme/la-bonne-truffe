@@ -235,13 +235,16 @@ class LitterGroupingService:
             second: Another listing.
 
         Returns:
-            False only when both mothers are named and neither name holds the other.
+            False only when both mothers are named and neither name holds every word of the other, in order: a
+            source may leave out her second name (« Tahiti Robyroc du Domaine… », « Tahiti Du Domaine… »).
         """
         if not first.dam_name or not second.dam_name:
             return True
-        first_words = f" {LitterGroupingService._name_key(first.dam_name)} "
-        second_words = f" {LitterGroupingService._name_key(second.dam_name)} "
-        return first_words in second_words or second_words in first_words
+        first_words = LitterGroupingService._name_key(first.dam_name).split()
+        second_words = LitterGroupingService._name_key(second.dam_name).split()
+        shorter_name_words, longer_name_words = sorted((first_words, second_words), key=len)
+        words_left_of_the_longer_name = iter(longer_name_words)
+        return all(word in words_left_of_the_longer_name for word in shorter_name_words)
 
     @staticmethod
     def _name_key(name: str) -> str:

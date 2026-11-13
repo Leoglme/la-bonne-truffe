@@ -39,3 +39,8 @@ export type SourceRunEndNotice = {
   title: string
   color: 'success' | 'error' | 'neutral'
 }
+
+export type SourceRunCountForms = {
+  singularForm: string
+  pluralForm: string
+}
