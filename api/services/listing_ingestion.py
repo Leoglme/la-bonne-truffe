@@ -10,9 +10,7 @@ from sqlalchemy.orm import Session
 
 from enums.listing_source import ListingSource
 from models.breeder import Breeder
-from models.breeder_follow import BreederFollow
 from models.department import Department
-from models.dog import Dog
 from models.follow_up import FollowUp
 from models.listing import Listing
 from models.listing_change import ListingChange
@@ -23,7 +21,9 @@ from services.breeder_search_text import BreederSearchText
 from services.collectors.breeder_contact_parser import BreederContactParser
 from services.collectors.html_source import BREEDER_SITE_HOST_SUFFIX
 from services.collectors.raw_listing import RawListing
+from services.litter_grouping import GESTATION_DAYS, LEGAL_HANDOVER_DAYS
 from services.stored_value import known_or_current
+from services.unused_breeder_remover import remove_breeder_left_with_nothing
 
 # Fields whose change is history worth keeping (« les sexes sont apparus », « la portée est née »).
 TRACKED_FIELDS: tuple[str, ...] = (
@@ -59,6 +59,10 @@ MISSED_RUNS_BEFORE_INACTIVE = 2
 # A born litter older than this is no longer followed.
 BORN_LITTER_ACTIVE_DAYS = 183
 
+# A mating whose litter was due this long ago, with no birth declared since, is no longer a litter to come: born on
+# its due day, the puppies would already be leaving their mother.
+UNDECLARED_LITTER_ACTIVE_DAYS = LEGAL_HANDOVER_DAYS
+
 ColumnValue = str | int | float | bool | date | datetime | StrEnum | list[str] | list[dict[str, str]] | None
 
 
@@ -91,7 +95,8 @@ class ListingIngestionService:
     ) -> IngestionSummary:
         """
         Store a run: new listings, changed fields, listings that disappeared from the departments read, and
-        listings of a litter born too long ago, kept inactive whether or not their ad is still online.
+        listings of a litter born too long ago, or due long ago and never declared born, kept inactive whether or
+        not their ad is still online.
 
         Args:
             db: Database session; committed at the end.
@@ -109,7 +114,7 @@ class ListingIngestionService:
         known_department_codes = {code for (code,) in db.query(Department.code)}
         latest_by_external_id = {raw_listing.external_id: raw_listing for raw_listing in raw_listings}
         summary.seen_count = len(latest_by_external_id)
-        oldest_active_birth = (now - timedelta(days=BORN_LITTER_ACTIVE_DAYS)).date()
+        today = now.date()
 
         for raw_listing in latest_by_external_id.values():
             listing = (
@@ -133,7 +138,7 @@ class ListingIngestionService:
                     breeder_id=breeder_id,
                     first_seen_at=now,
                     last_seen_at=now,
-                    is_active=self._is_born_recently_enough_to_follow(raw_listing.birth_date, oldest_active_birth),
+                    is_active=self._is_recent_enough_to_follow(raw_listing.birth_date, raw_listing.mating_date, today),
                 )
                 self._apply_content(listing, raw_listing, known_department_codes)
                 db.add(listing)
@@ -145,7 +150,7 @@ class ListingIngestionService:
             was_active = listing.is_active
             self._apply_content(listing, raw_listing, known_department_codes)
             has_changed = self._record_changes(db, listing.id, values_before, self._tracked_values(listing), now)
-            is_active_now = self._is_born_recently_enough_to_follow(listing.birth_date, oldest_active_birth)
+            is_active_now = self._is_recent_enough_to_follow(listing.birth_date, listing.mating_date, today)
             if was_active != is_active_now:
                 self._record_activity_change(db, listing.id, is_active_now, now)
                 has_changed = True
@@ -222,7 +227,7 @@ class ListingIngestionService:
         Take a listing away from the breeder an earlier run gave it, now that a rule finds its real one: the ad of
         a seller it only knew by a site was stored under a nameless breeder, and its litter beside the real one.
         The listing leaves its group, unless the litter is followed, so that the next regrouping finds the litter
-        of its breeder; a nameless breeder left with nothing is removed.
+        of its breeder; the former breeder is removed once nothing names it any more.
 
         Args:
             db: Database session.
@@ -239,26 +244,8 @@ class ListingIngestionService:
                 former_group.breeder_id = breeder_id
         listing.breeder_id = breeder_id
         db.flush()
-
-        former_breeder = db.get(Breeder, former_breeder_id)
-        if former_breeder is None:
-            return
-        is_former_breeder_named = any(
-            (
-                former_breeder.affix,
-                former_breeder.display_name,
-                former_breeder.siren,
-                former_breeder.scc_breeder_id,
-                former_breeder.scc_user_id,
-            )
-        )
-        is_former_breeder_still_used = any(
-            db.query(model).filter(model.breeder_id == former_breeder_id).first() is not None
-            for model in (Listing, LitterGroup, Dog, BreederFollow)
-        )
-        if not is_former_breeder_named and not former_breeder.is_manual and not is_former_breeder_still_used:
-            db.delete(former_breeder)
-            db.flush()
+        if former_breeder_id is not None:
+            remove_breeder_left_with_nothing(db, former_breeder_id)
 
     @staticmethod
     def _chiens_de_france_site_of(website: str | None) -> str | None:
@@ -277,18 +264,26 @@ class ListingIngestionService:
         return f"https://{host}"
 
     @staticmethod
-    def _is_born_recently_enough_to_follow(birth_date: date | None, oldest_active_birth: date) -> bool:
+    def _is_recent_enough_to_follow(birth_date: date | None, mating_date: date | None, today: date) -> bool:
         """
-        Whether a litter is still worth following: not born yet, or born after the oldest birth still followed.
+        Whether a litter is still worth following: born ``BORN_LITTER_ACTIVE_DAYS`` ago at most; or not declared
+        born, and due (the mating + 63 days) ``UNDECLARED_LITTER_ACTIVE_DAYS`` ago at most: a breeder's site may
+        show a mating for years. A listing that dates neither stays.
 
         Args:
             birth_date: Birth of the litter, None before it or when unknown.
-            oldest_active_birth: Day before which a birth is too old (``BORN_LITTER_ACTIVE_DAYS``).
+            mating_date: Mating that announces the litter, when the source dates it.
+            today: Day of the run.
 
         Returns:
             True when the listing stays active.
         """
-        return birth_date is None or birth_date >= oldest_active_birth
+        if birth_date is not None:
+            return birth_date >= today - timedelta(days=BORN_LITTER_ACTIVE_DAYS)
+        if mating_date is None:
+            return True
+        due_day = mating_date + timedelta(days=GESTATION_DAYS)
+        return due_day >= today - timedelta(days=UNDECLARED_LITTER_ACTIVE_DAYS)
 
     @classmethod
     def _tracked_values(cls, listing: Listing) -> dict[str, str | None]:

@@ -51,6 +51,7 @@ from services.matching.match_refresh import match_refresh_service
 from services.notifier import notifier_service
 from services.scc_reference_sync import scc_reference_sync
 from services.scc_site_ingestion import scc_site_ingestion_service
+from services.split_litter_merger import split_litter_merger
 
 logger = logging.getLogger(__name__)
 
@@ -507,9 +508,9 @@ class CollectionRunner:
         first_site_read_breeder_ids: frozenset[int] = frozenset(),
     ) -> tuple[IngestionSummary, GroupingResult]:
         """
-        Collect and store, then regroup, score and notify, and record the outcome on the run line: a crash in
-        the grouping or the matching fails the run, and the next run finds the births again; after a failure,
-        send the « source en panne » alert when it is due.
+        Collect and store, then join the litters left in two groups, regroup, score and notify, and record the
+        outcome on the run line: a crash in the grouping or the matching fails the run, and the next run finds
+        the births again; after a failure, send the « source en panne » alert when it is due.
 
         Args:
             db: Database session.
@@ -526,6 +527,7 @@ class CollectionRunner:
             summary = collect_and_store()
             should_notify = CollectionRunner._has_succeeded_before(db, source_run)
             now = naive_utc_now()
+            split_litter_merger.merge(db)
             grouping = litter_grouping_service.regroup(db, now)
             match_refresh_service.refresh(
                 db,

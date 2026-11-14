@@ -149,3 +149,18 @@ def test_a_parent_that_does_not_carry_the_gold_rules_it_out() -> None:
 def test_nothing_is_said_without_both_parents_or_without_a_gold_one() -> None:
     assert DogColorInference.expected_colors(ParentColorFacts(CoatColor.GOLD), None) == ()
     assert DogColorInference.expected_colors(ParentColorFacts(CoatColor.NOIR), ParentColorFacts(CoatColor.MARRON)) == ()
+
+
+def test_two_parents_with_white_never_announce_a_solid_gold_even_when_both_carry_it() -> None:
+    expected = DogColorInference.expected_colors(
+        ParentColorFacts(CoatColor.PARTICOLORE, e_locus="E/e"), ParentColorFacts(CoatColor.TRICOLORE, e_locus="E/e")
+    )
+    with_a_solid_parent = DogColorInference.expected_colors(
+        ParentColorFacts(CoatColor.NOIR, e_locus="E/e"), ParentColorFacts(CoatColor.PARTICOLORE, e_locus="E/e")
+    )
+
+    assert [(color.color, color.confidence, color.puppy_odds) for color in expected] == [
+        (CoatColor.PARTICOLORE, ColorConfidence.AMBIGUOUS, None),
+        (CoatColor.TRICOLORE, ColorConfidence.AMBIGUOUS, None),
+    ]
+    assert with_a_solid_parent[0].color == CoatColor.GOLD

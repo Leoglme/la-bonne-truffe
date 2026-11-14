@@ -3,6 +3,7 @@
 from dataclasses import replace
 from datetime import date, datetime, timedelta
 
+import pytest
 from sqlalchemy.orm import Session
 
 from core.clock import naive_utc_now
@@ -17,12 +18,13 @@ from models.listing import Listing
 from models.listing_change import ListingChange
 from models.litter_group import LitterGroup
 from seeders.run_seeders import SeederRunner
+from services import listing_ingestion
 from services.collectors.breeder_contact_parser import BreederContactParser
 from services.collectors.chiots_de_france import ChiotsDeFranceCollector, ListedLitterAd
 from services.collectors.html_source import HtmlBreedTarget, HtmlCollectionPlan, HtmlDepartmentTarget
 from services.collectors.raw_listing import ColorReading, RawBreeder, RawListing
 from services.listing_ingestion import BORN_LITTER_ACTIVE_DAYS, listing_ingestion_service
-from services.litter_grouping import litter_grouping_service
+from services.litter_grouping import LEGAL_HANDOVER_DAYS, litter_grouping_service
 from tests.chiots_de_france_pages import recorded_page
 from tests.coeur_de_cocker_pages import coeur_de_cocker_collector_serving
 
@@ -106,6 +108,28 @@ def test_a_litter_already_too_old_when_first_seen_is_stored_inactive(db: Session
 
     assert db.query(Listing).one().is_active is False
     assert db.query(ListingChange).count() == 0
+
+
+def test_a_mating_whose_litter_was_due_long_ago_stays_inactive_until_a_birth_is_declared(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(listing_ingestion, "UNDECLARED_LITTER_ACTIVE_DAYS", LEGAL_HANDOVER_DAYS)
+    mating = replace(
+        private_seller_ad(db), kind=ListingKind.LITTER_EXPECTED, birth_date=None, mating_date=date(2026, 8, 1)
+    )
+    due_day = datetime(2026, 10, 3, 12, 0)
+    last_run_it_counts = due_day + timedelta(days=LEGAL_HANDOVER_DAYS)
+    late_run = last_run_it_counts + timedelta(days=1)
+
+    listing_ingestion_service.ingest(db, ListingSource.CHIOTS_DE_FRANCE, [mating], {"72"}, last_run_it_counts)
+    was_active_while_it_could_be_to_come = db.query(Listing).one().is_active
+    listing_ingestion_service.ingest(db, ListingSource.CHIOTS_DE_FRANCE, [mating], {"72"}, late_run)
+    was_active_once_overdue = db.query(Listing).one().is_active
+    declared_born = replace(mating, kind=ListingKind.LITTER_BORN, birth_date=date(2026, 10, 5))
+    listing_ingestion_service.ingest(db, ListingSource.CHIOTS_DE_FRANCE, [declared_born], {"72"}, late_run)
+
+    assert (was_active_while_it_could_be_to_come, was_active_once_overdue) == (True, False)
+    assert db.query(Listing).one().is_active is True
 
 
 def test_a_coeur_de_cocker_ad_joins_the_breeder_of_the_centrale_canine_by_affix_and_department(db: Session) -> None:

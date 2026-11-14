@@ -28,6 +28,17 @@ GOLD_TOKENS: frozenset[str] = frozenset(
     {"f.", "f.or.", "f.cl.", "f.fo.", "fau.", "rou.", "gol.", "or.", "ora.", "cit."}
 )
 GOLD_COAT_COLORS: frozenset[CoatColor] = frozenset({CoatColor.GOLD, CoatColor.ORANGE_ROUAN})
+
+# The coats with white. The solid coat is dominant: two parents with white only give puppies with white.
+WHITE_MARKED_COLORS: frozenset[CoatColor] = frozenset(
+    {
+        CoatColor.BLEU_ROUAN,
+        CoatColor.ORANGE_ROUAN,
+        CoatColor.MARRON_ROUAN,
+        CoatColor.TRICOLORE,
+        CoatColor.PARTICOLORE,
+    }
+)
 BLACK_TOKENS: frozenset[str] = frozenset({"noi."})
 BROWN_TOKENS: frozenset[str] = frozenset({"mar.", "cho.", "foi."})
 TAN_TOKENS: frozenset[str] = frozenset({"fau.", "feu", "feu."})
@@ -222,8 +233,9 @@ class DogColorInference:
     @classmethod
     def expected_colors(cls, sire: ParentColorFacts | None, dam: ParentColorFacts | None) -> tuple[ExpectedColor, ...]:
         """
-        The colours a couple of parents implies, by the E locus: two ``e/e`` parents only give gold puppies, a gold
-        parent and a carrier one gold puppy in two, two carriers one in four.
+        The colours a couple of parents implies. Two parents with white in their coat only give puppies with white,
+        never a solid gold, whatever their E locus. Else the E locus tells: two ``e/e`` parents only give gold
+        puppies, a gold parent and a carrier one gold puppy in two, two carriers one in four.
 
         Args:
             sire: What is known of the father, None while his page is not read.
@@ -234,6 +246,12 @@ class DogColorInference:
         """
         if sire is None or dam is None:
             return ()
+        if sire.color in WHITE_MARKED_COLORS and dam.color in WHITE_MARKED_COLORS:
+            reason = "Pas de gold uni : les deux parents ont du blanc dans leur robe, leurs chiots en auront aussi"
+            return tuple(
+                ExpectedColor(parent_color, ColorConfidence.AMBIGUOUS, reason)
+                for parent_color in dict.fromkeys((sire.color, dam.color))
+            )
         sire_genotype, dam_genotype = sire.genotype, dam.genotype
         if sire_genotype == GOLD_GENOTYPE and dam_genotype == GOLD_GENOTYPE:
             return (

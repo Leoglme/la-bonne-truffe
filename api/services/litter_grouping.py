@@ -117,30 +117,9 @@ class LitterGroupingService:
             .all()
         )
 
-        if listing.litter_number:
-            for other in grouped_listings_of_breeder:
-                if other.litter_number == listing.litter_number:
-                    return db.get(LitterGroup, other.litter_group_id)
-
-        if listing.mating_number:
-            for other in grouped_listings_of_breeder:
-                if other.source == listing.source and other.mating_number == listing.mating_number:
-                    return db.get(LitterGroup, other.litter_group_id)
-
-        if listing.kind == ListingKind.PUPPY_AD and listing.birth_date is not None:
-            for other in grouped_listings_of_breeder:
-                if (
-                    other.source == listing.source
-                    and other.kind == ListingKind.PUPPY_AD
-                    and other.birth_date == listing.birth_date
-                    and LitterGroupingService._has_same_dam(other, listing)
-                ):
-                    return db.get(LitterGroup, other.litter_group_id)
-
-        other_sources = [other for other in grouped_listings_of_breeder if other.source != listing.source]
-        for other in other_sources:
-            if LitterGroupingService._have_close_dates(other, listing):
-                return db.get(LitterGroup, other.litter_group_id)
+        sure_group_id = LitterGroupingService.group_id_by_sure_rule(listing, grouped_listings_of_breeder)
+        if sure_group_id is not None:
+            return db.get(LitterGroup, sure_group_id)
 
         same_day_group_id = LitterGroupingService._single_litter_born_the_same_day(listing, grouped_listings_of_breeder)
         if same_day_group_id is not None:
@@ -153,8 +132,9 @@ class LitterGroupingService:
             return None
         recent_group_ids = {
             other.litter_group_id
-            for other in other_sources
-            if other.last_seen_at >= now - timedelta(days=PROBABLE_GROUPING_WINDOW_DAYS)
+            for other in grouped_listings_of_breeder
+            if other.source != listing.source
+            and other.last_seen_at >= now - timedelta(days=PROBABLE_GROUPING_WINDOW_DAYS)
         }
         if len(recent_group_ids) != 1:
             return None
@@ -162,6 +142,44 @@ class LitterGroupingService:
         if group is not None:
             group.is_grouping_probable = True
         return group
+
+    @staticmethod
+    def group_id_by_sure_rule(listing: Listing, grouped_listings_of_breeder: list[Listing]) -> int | None:
+        """
+        The group a listing belongs to by a rule that is no guess: the litter number, the mating number on its
+        source, a puppy ad of its source born the same day of the same mother, or the dates of another source.
+
+        Args:
+            listing: The listing to place.
+            grouped_listings_of_breeder: The grouped listings of its breeder and breed it may join.
+
+        Returns:
+            The group id, or None when no such rule places the listing.
+        """
+        if listing.litter_number:
+            for other in grouped_listings_of_breeder:
+                if other.litter_number == listing.litter_number:
+                    return other.litter_group_id
+
+        if listing.mating_number:
+            for other in grouped_listings_of_breeder:
+                if other.source == listing.source and other.mating_number == listing.mating_number:
+                    return other.litter_group_id
+
+        if listing.kind == ListingKind.PUPPY_AD and listing.birth_date is not None:
+            for other in grouped_listings_of_breeder:
+                if (
+                    other.source == listing.source
+                    and other.kind == ListingKind.PUPPY_AD
+                    and other.birth_date == listing.birth_date
+                    and LitterGroupingService._has_same_dam(other, listing)
+                ):
+                    return other.litter_group_id
+
+        for other in grouped_listings_of_breeder:
+            if other.source != listing.source and LitterGroupingService._have_close_dates(other, listing):
+                return other.litter_group_id
+        return None
 
     @staticmethod
     def _single_litter_born_the_same_day(listing: Listing, grouped_listings_of_breeder: list[Listing]) -> int | None:
@@ -222,6 +240,43 @@ class LitterGroupingService:
         announced_birth_date = mated_listing.mating_date + timedelta(days=GESTATION_DAYS)
         gestation_tolerance_days = GESTATION_TOLERANCE_DAYS if are_both_dams_named else DATE_TOLERANCE_DAYS
         return abs((born_listing.birth_date - announced_birth_date).days) <= gestation_tolerance_days
+
+    @staticmethod
+    def may_be_one_litter(first: Listing, second: Listing) -> bool:
+        """
+        Whether nothing tells apart two listings of a breeder: the same mother when both name one, births and
+        matings within the tolerance of ``_have_close_dates`` when both date them, and, on one source, the same
+        litter number, mating number and birth day (a source gives a litter one number and one birth).
+
+        Args:
+            first: A listing.
+            second: Another listing of the same breeder and breed.
+
+        Returns:
+            False when what they say cannot be true of one litter.
+        """
+        if not LitterGroupingService._has_same_dam(first, second):
+            return False
+        if first.source == second.source:
+            facts_a_source_gives_once = (
+                (first.litter_number, second.litter_number),
+                (first.mating_number, second.mating_number),
+                (first.birth_date, second.birth_date),
+            )
+            if any(
+                first_fact and second_fact and first_fact != second_fact
+                for first_fact, second_fact in facts_a_source_gives_once
+            ):
+                return False
+        are_both_dams_named = bool(first.dam_name and second.dam_name)
+        tolerance_days = SAME_DAM_TOLERANCE_DAYS if are_both_dams_named else DATE_TOLERANCE_DAYS
+        return all(
+            first_day is None or second_day is None or abs((first_day - second_day).days) <= tolerance_days
+            for first_day, second_day in (
+                (first.birth_date, second.birth_date),
+                (first.mating_date, second.mating_date),
+            )
+        )
 
     @staticmethod
     def _has_same_dam(first: Listing, second: Listing) -> bool:

@@ -117,6 +117,7 @@ def test_migrations_create_every_table_and_record_themselves(tmp_path: Path) -> 
         "add_listing_breeder_site_page_url",
         "add_listing_available_from",
         "reread_site_dogs_without_photo",
+        "refresh_expected_colors_of_litters",
     ]
     assert runner.run() == []
     tables = set(inspect(database_engine).get_table_names())
