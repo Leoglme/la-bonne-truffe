@@ -5,4 +5,5 @@ export type LitterRowCardProps = {
   isNew: boolean
   drivingMinutes: number | null
   isGoldPuppyOddsShown: boolean
+  isAmongBreederLitters: boolean
 }

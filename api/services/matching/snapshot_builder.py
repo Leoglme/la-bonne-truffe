@@ -12,6 +12,7 @@ from enums.dog_sex import DogSex
 from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
 from enums.lof_status import LofStatus
+from enums.puppy_ad_state import PuppyAdState
 from models.breed import Breed
 from models.breeder import Breeder
 from models.department import Department
@@ -20,6 +21,7 @@ from models.listing import Listing
 from models.litter_group import LitterGroup
 from services.collectors.raw_listing import ColorReading
 from services.matching.criteria import LitterSnapshot
+from services.puppy_ad_state_reader import PuppyAdStateReader
 
 
 class LitterSnapshotBuilder:
@@ -237,7 +239,8 @@ class LitterSnapshotBuilder:
         cls, group: LitterGroup, listings: list[Listing], puppies: list[Dog]
     ) -> tuple[ColorReading, ...]:
         """
-        Confirmed colours win; then the colours of the registered puppies; then a colour the parents make
+        Confirmed colours win; then the colours noted by hand of the puppies still offered, so that a litter
+        whose gold puppies are reserved is no longer matched as gold; then the colours of the registered puppies; then a colour the parents make
         certain; then the certain colours an ad states itself; then what the parents make possible; then a bundle
         an ad states; then the variety of the Centrale Canine, which is the one of the mother whatever the father
         is: a gold mother and a black and tan father are filed under « rouge et doré ».
@@ -252,6 +255,9 @@ class LitterSnapshotBuilder:
         """
         if group.confirmed_colors:
             return tuple(ColorReading(CoatColor(color), ColorConfidence.CONFIRMED) for color in group.confirmed_colors)
+        noted_puppy_readings = cls._colors_of_offered_puppies_noted_by_hand(listings)
+        if noted_puppy_readings:
+            return noted_puppy_readings
         puppy_readings = [
             ColorReading(puppy.color, ColorConfidence.CERTAIN) for puppy in puppies if puppy.color != CoatColor.INCONNUE
         ]
@@ -274,6 +280,24 @@ class LitterSnapshotBuilder:
             return cls._unique_colors(expected or stated_readings)
         variety_readings = cls._color_readings(litters_filed_under_a_variety)
         return cls._unique_colors(cls._certain_readings(variety_readings) or variety_readings)
+
+    @staticmethod
+    def _colors_of_offered_puppies_noted_by_hand(listings: list[Listing]) -> tuple[ColorReading, ...]:
+        """
+        The colours noted by hand of the puppies their ads still offer.
+
+        Args:
+            listings: Active listings of a group.
+
+        Returns:
+            Each colour once, confirmed; empty while no puppy still offered has a noted colour.
+        """
+        noted_colors = [
+            listing.confirmed_color
+            for listing in listings
+            if listing.confirmed_color is not None and PuppyAdStateReader.state_of(listing) == PuppyAdState.AVAILABLE
+        ]
+        return tuple(ColorReading(color, ColorConfidence.CONFIRMED) for color in dict.fromkeys(noted_colors))
 
     @staticmethod
     def _color_readings(listings: list[Listing]) -> list[ColorReading]:

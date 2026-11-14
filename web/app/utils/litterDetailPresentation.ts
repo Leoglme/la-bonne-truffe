@@ -175,8 +175,8 @@ export class LitterDetailPresentation {
   }
 
   /**
-   * Build the rows of « Les chiots »: one per puppy ad, its photo, its sex and where it stands. A puppy whose ad
-   * gives no colour takes the gold when both parents only give the gold.
+   * Build the rows of « Les chiots »: one per puppy ad, its photo, its sex, its colour and where it stands. Its colour
+   * is the one noted by hand, else the one its ad gives for sure, else the gold when both parents only give the gold.
    *
    * @param litter - The litter.
    * @returns « Chiot 1 · mâle · Disponible · 1 400 € »…, in the order of the API.
@@ -189,13 +189,20 @@ export class LitterDetailPresentation {
     return puppyAds.map((listing: LitterSourceListing, puppyIndex: number): LitterPuppyLine => {
       const sex: DogSex = this.readPuppySex(listing)
       const onlyColor: LitterColor | undefined = listing.colors.length === 1 ? listing.colors[0] : undefined
+      const statedColor: CoatColor | null =
+        onlyColor !== undefined && onlyColor.confidence !== 'ambiguous' && onlyColor.color !== 'inconnue'
+          ? onlyColor.color
+          : null
+      const notedColor: CoatColor | null = listing.confirmed_color ?? null
       return {
         key: `${listing.source}-${puppyIndex}`,
+        listingId: listing.id,
         href: listing.external_url,
         label: this.buildPuppyLabel(puppyIndex, puppyAds.length),
         sex,
         sexLabel: sex === 'unknown' ? null : PUPPY_SEX_LABELS[sex].toLowerCase(),
-        color: onlyColor?.color ?? everyPuppyColor,
+        color: notedColor ?? onlyColor?.color ?? everyPuppyColor,
+        knownColor: notedColor ?? statedColor ?? everyPuppyColor,
         stateLabel: this.buildPuppyStateLabel(listing, sex),
         isAvailable: listing.puppy_state === 'available',
         photoUrl: listing.photos[0] ?? null,

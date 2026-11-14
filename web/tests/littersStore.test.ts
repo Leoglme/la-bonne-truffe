@@ -240,4 +240,12 @@ describe('useLittersStore() choices and search', (): void => {
 
     expect(littersStore.cardsMatchingSearch.map((card: LitterCard): number => card.id)).toEqual([2])
   })
+
+  it('leaves a dismissed litter out of the home list, the map and the count of preferred litters', (): void => {
+    const littersStore: ReturnType<typeof useLittersStore> = useLittersStore()
+    littersStore.cards = [LITTER, { ...LITTER, id: 2, follow_up_status: 'dismissed' }]
+
+    expect(littersStore.visibleCards.map((card: LitterCard): number => card.id)).toEqual([1])
+    expect(littersStore.preferredCards.map((card: LitterCard): number => card.id)).toEqual([1])
+  })
 })

@@ -93,6 +93,12 @@ def test_the_detail_tells_the_litters_the_colours_and_the_dogs_of_the_breeding(
     assert detail["name"] == name_of(gold_breeder)
     assert detail["scc_breeder_id"] == GOLD_BREEDER_SCC_ID
     assert len(detail["litters"]) == 3
+    births = [
+        (litter["is_active"], litter["birth_date"] or litter["expected_birth_date"] or "")
+        for litter in detail["litters"]
+    ]
+    assert len(set(births)) == 3
+    assert births == sorted(births, reverse=True)
     assert detail["color_shares"] == [{"color": "gold", "litters_count": 3}]
     assert detail["gold_litters_count"] == 3
     assert (detail["follow"], detail["is_followed"]) == (None, False)

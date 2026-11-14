@@ -223,7 +223,7 @@ def test_the_run_stores_the_photos_and_the_links_and_rests_the_sites_for_a_month
     assert card_a["photo_url"] == f"{SCC_HOST}{SITE_A_COVER_PATH}"
 
 
-def test_a_litter_without_a_photo_shows_the_cover_of_its_breeding(
+def test_a_litter_without_a_photo_no_longer_shows_the_cover_of_its_breeding(
     client: TestClient, db: Session, directory_collected: dict[str, str]
 ) -> None:
     collection_runner.run_scc_sites(db, site_collector_serving())
@@ -231,5 +231,6 @@ def test_a_litter_without_a_photo_shows_the_cover_of_its_breeding(
 
     detail = client.get(f"/api/v1/breeders/{breeder_a_id}", headers=directory_collected).json()
 
+    assert detail["photo_url"] == f"{SCC_HOST}{SITE_A_COVER_PATH}"
     assert detail["litters"]
-    assert all(litter["photo_url"] == f"{SCC_HOST}{SITE_A_COVER_PATH}" for litter in detail["litters"])
+    assert all((litter["photo_url"], litter["photo_source"]) == (None, None) for litter in detail["litters"])

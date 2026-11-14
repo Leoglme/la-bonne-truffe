@@ -1,4 +1,13 @@
-import type { DogSex, ListingKind, ListingSource, LofStatus, MatchFlag, MatchTier, PuppyAdState } from '~/types/api'
+import type {
+  DogSex,
+  ListingKind,
+  ListingSource,
+  LitterPhotoSource,
+  LofStatus,
+  MatchFlag,
+  MatchTier,
+  PuppyAdState,
+} from '~/types/api'
 import type { FrenchGender } from '~/types/FrenchText'
 import type { BreedingQualityChip, LitterInfoChipLabels } from '~/types/LitterInfoChips'
 import type { SourceRunCountForms } from '~/types/SourceRun'
@@ -11,6 +20,13 @@ export const TIER_LABELS: Record<MatchTier, string> = {
 }
 
 export const UNEVALUATED_TIER_LABEL: string = 'à évaluer'
+
+/** What a litter photo says when it shows a parent: a litter without photo of its own shows its mother, else its father. */
+export const LITTER_PHOTO_SOURCE_LABELS: Record<LitterPhotoSource, string | null> = {
+  listing: null,
+  dam: 'Photo de la mère',
+  sire: 'Photo du père',
+}
 
 export const LISTING_KIND_LABELS: Record<ListingKind, string> = {
   litter_expected: 'déclaration de saillie',

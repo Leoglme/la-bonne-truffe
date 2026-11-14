@@ -9,6 +9,13 @@ export type DevicePosition = GeographicPoint & {
 
 export type DeviceLocationPermission = 'unknown' | 'granted' | 'denied' | 'unavailable'
 
+export type DeviceLocationLaunchFacts = {
+  savedPermission: DeviceLocationPermission
+  hasSavedPosition: boolean
+  isPositionStale: boolean
+  devicePermissionState: PermissionState | null
+}
+
 export type MapAppKey = 'apple_maps' | 'google_maps' | 'waze'
 
 export type MapAppLink = {

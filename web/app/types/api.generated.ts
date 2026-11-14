@@ -604,6 +604,36 @@ export interface paths {
         patch: operations["confirm_litter_colors_api_v1_litters__litter_id__colors_patch"];
         trace?: never;
     };
+    "/api/v1/litters/{litter_id}/puppies/{listing_id}/color": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Confirm Puppy Color
+         * @description Note the colour of one puppy of a litter, from its photo or after a call.
+         *
+         *     Args:
+         *         litter_id: The litter.
+         *         listing_id: The ad of the puppy.
+         *         payload: Its colour, empty to go back to what its ad says.
+         *         current_user: The authenticated user.
+         *         db: Database session.
+         *
+         *     Returns:
+         *         The updated detail.
+         */
+        patch: operations["confirm_puppy_color_api_v1_litters__litter_id__puppies__listing_id__color_patch"];
+        trace?: never;
+    };
     "/api/v1/litters/{litter_id}/sexes": {
         parameters: {
             query?: never;
@@ -2150,6 +2180,8 @@ export interface components {
             available_from: string | null;
             /** Photo Url */
             photo_url: string | null;
+            /** @description Where photo_url comes from: an ad of the litter, else its mother, else its father on a site */
+            photo_source?: components["schemas"]["LitterPhotoSource"] | null;
             /**
              * First Seen At
              * Format: date-time
@@ -2260,6 +2292,8 @@ export interface components {
             available_from: string | null;
             /** Photo Url */
             photo_url: string | null;
+            /** @description Where photo_url comes from: an ad of the litter, else its mother, else its father on a site */
+            photo_source?: components["schemas"]["LitterPhotoSource"] | null;
             /**
              * First Seen At
              * Format: date-time
@@ -2315,6 +2349,11 @@ export interface components {
              * @description The colours the parents imply, and why
              */
             expected_colors?: components["schemas"]["LitterExpectedColor"][];
+            /**
+             * Gold Exclusion Reason
+             * @description Why the parents give no gold puppy, as « Les chances de gold » writes it
+             */
+            gold_exclusion_reason?: string | null;
             /**
              * Photos Added At
              * @description Last time new photos reached one of its listings, naive UTC
@@ -2384,6 +2423,12 @@ export interface components {
             photo_url?: string | null;
         };
         /**
+         * LitterPhotoSource
+         * @description An ad of the litter, else a parent: a litter without photo shows its mother, else its father.
+         * @enum {string}
+         */
+        LitterPhotoSource: "listing" | "dam" | "sire";
+        /**
          * LitterPuppy
          * @description A registered puppy of a litter, read at the Centrale Canine.
          */
@@ -2445,6 +2490,8 @@ export interface components {
          * @description The litter as one source shows it (« Vu sur »); for a puppy ad, one puppy of the litter.
          */
         LitterSourceListing: {
+            /** Id */
+            id: number;
             source: components["schemas"]["ListingSource"];
             kind: components["schemas"]["ListingKind"];
             /**
@@ -2473,6 +2520,8 @@ export interface components {
             puppy_state?: components["schemas"]["PuppyAdState"] | null;
             /** Price Cents */
             price_cents?: number | null;
+            /** @description Colour of the puppy of a puppy ad, noted by hand from its photo or after a call */
+            confirmed_color?: components["schemas"]["CoatColor"] | null;
         };
         /**
          * LitterVisit
@@ -2600,6 +2649,8 @@ export interface components {
             available_from: string | null;
             /** Photo Url */
             photo_url: string | null;
+            /** @description Where photo_url comes from: an ad of the litter, else its mother, else its father on a site */
+            photo_source?: components["schemas"]["LitterPhotoSource"] | null;
             /**
              * First Seen At
              * Format: date-time
@@ -2764,6 +2815,13 @@ export interface components {
              * Format: date
              */
             arrival_on: string;
+        };
+        /**
+         * PuppyColorConfirmation
+         * @description The colour of one puppy, noted by hand; empty to go back to what its ad says.
+         */
+        PuppyColorConfirmation: {
+            color?: components["schemas"]["CoatColor"] | null;
         };
         /**
          * PushKeys
@@ -3733,6 +3791,42 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ColorConfirmation"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LitterDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_puppy_color_api_v1_litters__litter_id__puppies__listing_id__color_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                litter_id: number;
+                listing_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PuppyColorConfirmation"];
             };
         };
         responses: {

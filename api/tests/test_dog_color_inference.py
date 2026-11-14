@@ -182,6 +182,28 @@ def test_two_parents_with_white_never_announce_a_solid_gold_even_when_both_carry
         (CoatColor.TRICOLORE, ColorConfidence.AMBIGUOUS, None),
     ]
     assert with_a_solid_parent[0].color == CoatColor.GOLD
+    assert DogColorInference.gold_exclusion_of([color.as_json() for color in expected]) == (
+        "Le père et la mère portent le gold, mais tous deux ont du blanc dans leur robe : un chiot sur quatre peut "
+        "naître orange avec du blanc, aucun ne sera gold uni."
+    )
+
+
+def test_the_gold_card_tells_why_no_puppy_will_be_gold() -> None:
+    def exclusion(sire: ParentColorFacts, dam: ParentColorFacts) -> str | None:
+        return DogColorInference.gold_exclusion_of(
+            [color.as_json() for color in DogColorInference.expected_colors(sire, dam)]
+        )
+
+    assert exclusion(ParentColorFacts(CoatColor.BLEU_ROUAN), ParentColorFacts(CoatColor.PARTICOLORE)) == (
+        "Les deux parents ont du blanc dans leur robe, leurs chiots en auront aussi, aucun ne sera gold uni."
+    )
+    assert exclusion(ParentColorFacts(CoatColor.GOLD), ParentColorFacts(CoatColor.NOIR, e_locus="E/E")) == (
+        "Un parent est gold, mais l’autre, noir, testé E/E, ne transmet pas le gold : aucun chiot ne sera gold."
+    )
+    assert exclusion(ParentColorFacts(CoatColor.NOIR, e_locus="E/E"), ParentColorFacts(CoatColor.NOIR_ET_FEU)) == (
+        "Le père, testé E/E, ne transmet pas le gold : aucun chiot ne sera gold."
+    )
+    assert exclusion(ParentColorFacts(CoatColor.GOLD), ParentColorFacts(CoatColor.NOIR, e_locus="E/e")) is None
 
 
 def test_a_parent_tested_e_e_rules_out_the_gold_even_without_a_gold_parent() -> None:

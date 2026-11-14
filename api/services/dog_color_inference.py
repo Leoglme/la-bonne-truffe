@@ -6,6 +6,7 @@ Pure functions, no database: the collectors and the snapshot builder call them.
 """
 
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 from core.text import without_accents
@@ -21,6 +22,14 @@ NON_CARRIER_GENOTYPE = "E/E"
 GOLD_PUPPY_ODDS_OF_GOLD_COUPLE = 1.0
 GOLD_PUPPY_ODDS_WITH_ONE_CARRIER = 0.5
 GOLD_PUPPY_ODDS_OF_TWO_CARRIERS = 0.25
+GOLD_CARRYING_GENOTYPES = (GOLD_GENOTYPE, CARRIER_GENOTYPE)
+NO_GOLD_REASON_PREFIX = "Pas de gold : "
+NO_SOLID_GOLD_REASON_PREFIX = "Pas de gold uni : "
+ORANGE_WITH_WHITE_PHRASES = {
+    GOLD_PUPPY_ODDS_OF_GOLD_COUPLE: "tous leurs chiots naîtront orange avec du blanc",
+    GOLD_PUPPY_ODDS_WITH_ONE_CARRIER: "un chiot sur deux peut naître orange avec du blanc",
+    GOLD_PUPPY_ODDS_OF_TWO_CARRIERS: "un chiot sur quatre peut naître orange avec du blanc",
+}
 
 # LOF Select writes the colour in abbreviations (« F.Or. »), which breeders copy without their dots (« F.OR »).
 COLOR_WORD_PATTERN = re.compile(r"[a-z]+")
@@ -328,7 +337,8 @@ class DogColorInference:
                 ExpectedColor(
                     other_parent.color,
                     ColorConfidence.AMBIGUOUS,
-                    f"Pas de gold : l’autre parent, {other_label}, ne transmet pas le gold",
+                    f"{NO_GOLD_REASON_PREFIX}un parent est gold, mais l’autre, {other_label}, testé E/E, ne transmet "
+                    "pas le gold",
                 ),
             )
         if other_genotype == CARRIER_GENOTYPE:
@@ -360,9 +370,9 @@ class DogColorInference:
         if not parent_colors:
             return ()
         if sire.genotype == NON_CARRIER_GENOTYPE:
-            reason = "Pas de gold : le père, testé E/E, ne transmet pas le gold"
+            reason = f"{NO_GOLD_REASON_PREFIX}le père, testé E/E, ne transmet pas le gold"
         elif dam.genotype == NON_CARRIER_GENOTYPE:
-            reason = "Pas de gold : la mère, testée E/E, ne transmet pas le gold"
+            reason = f"{NO_GOLD_REASON_PREFIX}la mère, testée E/E, ne transmet pas le gold"
         elif sire.has_brown_coat and dam.has_brown_coat:
             reason = "Pas de noir : les deux parents sont marron, leurs chiots le seront aussi"
         else:
@@ -372,7 +382,8 @@ class DogColorInference:
     @staticmethod
     def _colors_of_two_parents_with_white(sire: ParentColorFacts, dam: ParentColorFacts) -> tuple[ExpectedColor, ...]:
         """
-        The colours of two parents that both have white in their coat: their puppies have white too.
+        The colours of two parents that both have white in their coat: their puppies have white too, so the ones with
+        two « e » are orange with white, never a solid gold.
 
         Args:
             sire: The father.
@@ -381,7 +392,17 @@ class DogColorInference:
         Returns:
             The colours of the parents, each once.
         """
-        reason = "Pas de gold uni : les deux parents ont du blanc dans leur robe, leurs chiots en auront aussi"
+        orange_odds = DogColorInference.odds_of_two_gold_alleles(sire.genotype, dam.genotype)
+        if orange_odds is None:
+            reason = (
+                f"{NO_SOLID_GOLD_REASON_PREFIX}les deux parents ont du blanc dans leur robe, leurs chiots en auront "
+                "aussi"
+            )
+        else:
+            reason = (
+                f"{NO_SOLID_GOLD_REASON_PREFIX}le père et la mère portent le gold, mais tous deux ont du blanc dans "
+                f"leur robe : {ORANGE_WITH_WHITE_PHRASES[orange_odds]}"
+            )
         return tuple(
             ExpectedColor(parent_color, ColorConfidence.AMBIGUOUS, reason)
             for parent_color in dict.fromkeys((sire.color, dam.color))
@@ -406,6 +427,47 @@ class DogColorInference:
             if parent_color not in (CoatColor.INCONNUE, CoatColor.GOLD):
                 expected.append(ExpectedColor(parent_color, ColorConfidence.AMBIGUOUS, reason))
         return tuple(expected)
+
+    @staticmethod
+    def odds_of_two_gold_alleles(sire_genotype: str | None, dam_genotype: str | None) -> float | None:
+        """
+        The share of puppies that get an « e » from each parent, when both parents carry it.
+
+        Args:
+            sire_genotype: The E locus genotype of the father, when known.
+            dam_genotype: The one of the mother, when known.
+
+        Returns:
+            1, 0.5 or 0.25, or None when a parent is not known to carry the « e ».
+        """
+        if sire_genotype not in GOLD_CARRYING_GENOTYPES or dam_genotype not in GOLD_CARRYING_GENOTYPES:
+            return None
+        gold_parents_count = [sire_genotype, dam_genotype].count(GOLD_GENOTYPE)
+        if gold_parents_count == 2:
+            return GOLD_PUPPY_ODDS_OF_GOLD_COUPLE
+        return GOLD_PUPPY_ODDS_WITH_ONE_CARRIER if gold_parents_count == 1 else GOLD_PUPPY_ODDS_OF_TWO_CARRIERS
+
+    @staticmethod
+    def gold_exclusion_of(expected_colors: Sequence[Mapping[str, object]]) -> str | None:
+        """
+        The sentence of « Les chances de gold » when the parents of a litter give it no gold puppy.
+
+        Args:
+            expected_colors: The colours the parents imply, as ``LitterGroup.expected_colors`` keeps them.
+
+        Returns:
+            « La mère, testée E/E, ne transmet pas le gold : aucun chiot ne sera gold. », or None when the parents do
+            not rule the gold out.
+        """
+        for entry in expected_colors:
+            reason = str(entry.get("reason", ""))
+            if reason.startswith(NO_SOLID_GOLD_REASON_PREFIX):
+                cause = reason.removeprefix(NO_SOLID_GOLD_REASON_PREFIX)
+                return f"{cause[:1].upper()}{cause[1:]}, aucun ne sera gold uni."
+            if reason.startswith(NO_GOLD_REASON_PREFIX):
+                cause = reason.removeprefix(NO_GOLD_REASON_PREFIX)
+                return f"{cause[:1].upper()}{cause[1:]} : aucun chiot ne sera gold."
+        return None
 
     @staticmethod
     def _gold_parent_and_other(

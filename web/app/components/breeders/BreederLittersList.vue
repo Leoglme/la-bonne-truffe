@@ -6,7 +6,13 @@
     </p>
     <template v-else>
       <div :class="props.isInWideLayout ? 'grid grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-3' : 'contents'">
-        <LitterRowCard v-for="litter in shownLitters" :key="litter.id" :litter="litter" is-gold-puppy-odds-shown />
+        <LitterRowCard
+          v-for="litter in shownLitters"
+          :key="litter.id"
+          :litter="litter"
+          is-gold-puppy-odds-shown
+          is-among-breeder-litters
+        />
       </div>
       <button
         v-if="hiddenLittersCount > 0"

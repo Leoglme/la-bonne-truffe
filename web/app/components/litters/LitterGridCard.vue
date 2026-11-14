@@ -4,7 +4,12 @@
     class="flex flex-col gap-3 rounded-card bg-card px-3.5 pt-3.5 pb-[18px] text-ink no-underline shadow-card hover:text-ink lg:gap-2.5 lg:rounded-[26px]"
   >
     <LitterTileFrame :litter="props.litter" class="h-[200px] rounded-tile lg:h-[170px] lg:rounded-[20px]">
-      <LitterVisual :litter="props.litter" :illustration-size-in-pixels="132" illustration-class="lg:size-[110px]" />
+      <LitterVisual
+        :litter="props.litter"
+        :illustration-size-in-pixels="132"
+        illustration-class="lg:size-[110px]"
+        photo-source-label-class="bottom-3.5 left-3.5 px-3 py-[5px] text-sm lg:bottom-3 lg:left-3 lg:px-[11px] lg:py-1 lg:text-[13px]"
+      />
       <span
         class="absolute top-3.5 left-3.5 rounded-full bg-card px-3 py-[5px] text-[15px] leading-normal font-extrabold text-coral-text lg:top-3 lg:left-3 lg:px-[11px] lg:py-1 lg:text-sm"
       >

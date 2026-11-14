@@ -10,15 +10,14 @@ from fastapi import HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from core.text import without_accents
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
 from enums.dog_role import DogRole
 from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
+from enums.litter_photo_source import LitterPhotoSource
 from enums.match_flag import MatchFlag
 from enums.match_tier import MatchTier
-from enums.puppy_ad_state import PuppyAdState
 from models.breed import Breed
 from models.breeder import Breeder
 from models.department import Department
@@ -46,17 +45,16 @@ from schemas.litter import (
 from schemas.notification import NotificationLitter
 from services.collectors.chiens_de_france_sites import breed_page_of
 from services.dog_chip import DogChip
+from services.dog_color_inference import DogColorInference
 from services.dog_ingestion import DogIngestionService
 from services.dog_name import DogName
 from services.genetic_screening import GeneticScreeningReader
 from services.matching.snapshot_builder import LitterSnapshotBuilder
+from services.puppy_ad_state_reader import PuppyAdStateReader
 
 SELECTED_BREEDING_GROUP = 1
 GROUPS_WITH_AFFIX = (1, 2)
 PHOTOS_FIELD = "photos"
-SOLD_STATUS_WORDS: tuple[str, ...] = ("vendu", "adopte")
-RESERVED_STATUS_WORD = "reserv"
-AVAILABLE_STATUS_WORD = "disponible"
 
 
 class LitterSort(StrEnum):
@@ -76,12 +74,13 @@ class LitterCardFacts:
     departments_by_code: dict[str, Department] = field(default_factory=dict)
     follow_ups_by_group: dict[int, FollowUp] = field(default_factory=dict)
     puppies_by_group: dict[int, list[Dog]] = field(default_factory=dict)
+    parent_photos_by_dog_id: dict[int, str] = field(default_factory=dict)
 
     @classmethod
     def load(cls, db: Session, user_id: int, groups: list[LitterGroup]) -> Self:
         """
-        Load the listings, breeds, breeders, departments, registered puppies and the user's follow-ups of some
-        groups.
+        Load the listings, breeds, breeders, departments, registered puppies, the user's follow-ups of some groups,
+        and the photos of the parents of those without a photo of their own.
 
         Args:
             db: Database session.
@@ -133,7 +132,76 @@ class LitterCardFacts:
         ):
             if puppy.litter_group_id is not None:
                 facts.puppies_by_group.setdefault(puppy.litter_group_id, []).append(puppy)
+        facts.parent_photos_by_dog_id = cls._parent_photos_of_groups_without_photo(db, groups, facts.listings_by_group)
         return facts
+
+    @classmethod
+    def _parent_photos_of_groups_without_photo(
+        cls, db: Session, groups: list[LitterGroup], listings_by_group: dict[int, list[Listing]]
+    ) -> dict[int, str]:
+        """
+        The photo of each parent of the groups none of whose listings has a photo: its own, else the one a
+        breeder's site shows of it.
+
+        Args:
+            db: Database session.
+            groups: The groups.
+            listings_by_group: Their listings.
+
+        Returns:
+            Photo URL by parent dog id.
+        """
+        parent_ids = {
+            dog_id
+            for group in groups
+            if not any(listing.photos for listing in listings_by_group.get(group.id, []))
+            for dog_id in (group.dam_dog_id, group.sire_dog_id)
+            if dog_id is not None
+        }
+        if not parent_ids:
+            return {}
+        parents = db.query(Dog).filter(Dog.id.in_(parent_ids)).order_by(Dog.id).all()
+        photos_by_parent_id = cls.site_photos_of_parents(db, parents)
+        for parent in parents:
+            if parent.photos:
+                photos_by_parent_id[parent.id] = parent.photos[0]
+        return photos_by_parent_id
+
+    @staticmethod
+    def site_photos_of_parents(db: Session, parents: list[Dog]) -> dict[int, str]:
+        """
+        The first photo the breeders' sites on Chiens de France show of each parent: the dog of the same chip, else
+        of the same full name, since the Centrale Canine knows some dogs by a tattoo and some sites give no chip.
+
+        Args:
+            db: Database session.
+            parents: The parents read at the Centrale Canine.
+
+        Returns:
+            Photo URL by parent dog id, for the parents a site shows with a photo.
+        """
+        if not parents:
+            return {}
+        photos_by_chip: dict[str, str] = {}
+        photos_by_name: dict[str, str] = {}
+        for site_dog in db.query(Dog).filter(Dog.source == ListingSource.CHIENS_DE_FRANCE).order_by(Dog.id):
+            if not site_dog.photos:
+                continue
+            chip = DogChip.key_of(site_dog.identifier)
+            if chip is not None:
+                photos_by_chip.setdefault(chip, site_dog.photos[0])
+            name = DogName.key_of(site_dog.full_name or site_dog.name)
+            if name:
+                photos_by_name.setdefault(name, site_dog.photos[0])
+        photos_by_parent_id: dict[int, str] = {}
+        for parent in parents:
+            chip = DogChip.key_of(parent.identifier)
+            photo = (photos_by_chip.get(chip) if chip is not None else None) or photos_by_name.get(
+                DogName.key_of(parent.full_name or parent.name)
+            )
+            if photo is not None:
+                photos_by_parent_id[parent.id] = photo
+        return photos_by_parent_id
 
 
 class LitterQueryService:
@@ -209,7 +277,9 @@ class LitterQueryService:
         dam = cls._parent(listings, lambda listing: listing.dam_name, lambda listing: listing.dam_rating)
         sire_dog = db.get(Dog, group.sire_dog_id) if group.sire_dog_id else None
         dam_dog = db.get(Dog, group.dam_dog_id) if group.dam_dog_id else None
-        site_photos_by_parent_id = cls._site_photos_of(db, [dog for dog in (sire_dog, dam_dog) if dog is not None])
+        site_photos_by_parent_id = LitterCardFacts.site_photos_of_parents(
+            db, [dog for dog in (sire_dog, dam_dog) if dog is not None]
+        )
         return LitterDetail(
             **card.model_dump(),
             reasons=[LitterReason(text=str(reason["text"]), points=int(reason["points"])) for reason in match.reasons]
@@ -246,8 +316,10 @@ class LitterQueryService:
                 )
                 for entry in group.expected_colors
             ],
+            gold_exclusion_reason=DogColorInference.gold_exclusion_of(group.expected_colors),
             listings=[
                 LitterSourceListing(
+                    id=listing.id,
                     source=listing.source,
                     kind=listing.kind,
                     external_url=listing.breeder_site_page_url or listing.external_url,
@@ -261,7 +333,8 @@ class LitterQueryService:
                         for entry in listing.colors
                     ],
                     photos=listing.photos,
-                    puppy_state=cls._puppy_state(listing),
+                    puppy_state=PuppyAdStateReader.state_of(listing),
+                    confirmed_color=listing.confirmed_color,
                     price_cents=listing.price_cents,
                 )
                 for listing in listings
@@ -491,6 +564,7 @@ class LitterQueryService:
             return None
         follow_up = facts.follow_ups_by_group.get(group.id)
         city = breeder.city if breeder is not None else None
+        photo_url, photo_source = cls._photo_of(group, listings, facts)
         return LitterCard(
             id=group.id,
             name=snapshot.name,
@@ -514,8 +588,8 @@ class LitterQueryService:
             birth_date=group.birth_date,
             expected_birth_date=group.expected_birth_date,
             available_from=group.available_from,
-            photo_url=next((photo for listing in listings for photo in listing.photos), None)
-            or cls._breeding_photo(breeder),
+            photo_url=photo_url,
+            photo_source=photo_source,
             first_seen_at=group.first_seen_at,
             latest_listing_appeared_at=max(listing.first_seen_at for listing in listings),
             last_seen_at=max(listing.last_seen_at for listing in listings),
@@ -529,19 +603,30 @@ class LitterQueryService:
         )
 
     @staticmethod
-    def _breeding_photo(breeder: Breeder | None) -> str | None:
+    def _photo_of(
+        group: LitterGroup, listings: list[Listing], facts: LitterCardFacts
+    ) -> tuple[str | None, LitterPhotoSource | None]:
         """
-        The photo a litter shows while none of its ads has one: the photo of its breeding, from its sites.
+        The photo a litter shows: the first photo of its ads, else its mother, else its father, so that a litter
+        without photo shows a dog of its own, whose coat tells something of the puppies, rather than the cover of
+        its breeding.
 
         Args:
-            breeder: The breeder of the litter, None when unknown.
+            group: The litter.
+            listings: Its listings.
+            facts: The facts loaded for it, with the photos of its parents.
 
         Returns:
-            The photo its sites give (``Breeder.site_photo_url``), else None.
+            The photo and where it comes from, or two None.
         """
-        if breeder is None:
-            return None
-        return breeder.site_photo_url
+        listing_photo = next((photo for listing in listings for photo in listing.photos), None)
+        if listing_photo is not None:
+            return listing_photo, LitterPhotoSource.LISTING
+        for dog_id, source in ((group.dam_dog_id, LitterPhotoSource.DAM), (group.sire_dog_id, LitterPhotoSource.SIRE)):
+            parent_photo = facts.parent_photos_by_dog_id.get(dog_id) if dog_id is not None else None
+            if parent_photo is not None:
+                return parent_photo, source
+        return None, None
 
     @staticmethod
     def _parent(
@@ -603,67 +688,6 @@ class LitterQueryService:
             scc_url=dog.external_url,
             photo_url=site_photos_by_parent_id.get(dog.id),
         )
-
-    @staticmethod
-    def _site_photos_of(db: Session, parents: list[Dog]) -> dict[int, str]:
-        """
-        The first photo the breeders' sites on Chiens de France show of each parent: the dog of the same chip, else
-        of the same full name, since the Centrale Canine knows some dogs by a tattoo and some sites give no chip.
-
-        Args:
-            db: Database session.
-            parents: The parents read at the Centrale Canine.
-
-        Returns:
-            Photo URL by parent dog id, for the parents a site shows with a photo.
-        """
-        if not parents:
-            return {}
-        photos_by_chip: dict[str, str] = {}
-        photos_by_name: dict[str, str] = {}
-        for site_dog in db.query(Dog).filter(Dog.source == ListingSource.CHIENS_DE_FRANCE).order_by(Dog.id):
-            if not site_dog.photos:
-                continue
-            chip = DogChip.key_of(site_dog.identifier)
-            if chip is not None:
-                photos_by_chip.setdefault(chip, site_dog.photos[0])
-            name = DogName.key_of(site_dog.full_name or site_dog.name)
-            if name:
-                photos_by_name.setdefault(name, site_dog.photos[0])
-        photos_by_parent_id: dict[int, str] = {}
-        for parent in parents:
-            chip = DogChip.key_of(parent.identifier)
-            photo = (photos_by_chip.get(chip) if chip is not None else None) or photos_by_name.get(
-                DogName.key_of(parent.full_name or parent.name)
-            )
-            if photo is not None:
-                photos_by_parent_id[parent.id] = photo
-        return photos_by_parent_id
-
-    @staticmethod
-    def _puppy_state(listing: Listing) -> PuppyAdState | None:
-        """
-        Where the puppy of a puppy ad stands, from its status line (« Femelle réservée », « Mâle vendu ») or,
-        failing that, from whether the ad still offers it.
-
-        Args:
-            listing: The listing.
-
-        Returns:
-            The state, None for a litter listing or a puppy ad that tells nothing.
-        """
-        if listing.kind != ListingKind.PUPPY_AD:
-            return None
-        status_text = without_accents(str((listing.raw_json or {}).get("status") or "")).lower()
-        if any(word in status_text for word in SOLD_STATUS_WORDS):
-            return PuppyAdState.SOLD
-        if RESERVED_STATUS_WORD in status_text:
-            return PuppyAdState.RESERVED
-        if listing.puppies_available == 1 or AVAILABLE_STATUS_WORD in status_text:
-            return PuppyAdState.AVAILABLE
-        if listing.puppies_available == 0:
-            return PuppyAdState.RESERVED
-        return None
 
     @staticmethod
     def _photos_added_at(db: Session, listings: list[Listing]) -> datetime | None:

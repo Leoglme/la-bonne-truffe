@@ -1,10 +1,12 @@
 <template>
   <section
     v-if="summary"
-    class="flex items-center gap-4 rounded-card-compact bg-gold-pastel p-4 md:gap-5 md:rounded-[24px] md:px-[22px] md:py-5"
+    class="flex items-center gap-4 rounded-card-compact p-4 md:gap-5 md:rounded-[24px] md:px-[22px] md:py-5"
+    :class="summary.isGoldRuledOut ? 'bg-neutral-pastel' : 'bg-gold-pastel'"
   >
     <span
-      class="flex size-20 shrink-0 flex-col items-center justify-center rounded-full bg-card text-gold-ink md:size-24"
+      class="flex size-20 shrink-0 flex-col items-center justify-center rounded-full bg-card md:size-24"
+      :class="summary.isGoldRuledOut ? 'text-ink-secondary' : 'text-gold-ink'"
     >
       <span class="font-display text-[22px] leading-none font-bold md:text-[26px]">{{ summary.figure }}</span>
       <span class="text-[11px] font-extrabold md:text-xs">{{ summary.figureCaption }}</span>

@@ -72,6 +72,29 @@ export class LitterPresentation {
   }
 
   /**
+   * Whether « Après ton appel » offers to note the colour of a litter.
+   *
+   * @param card - The litter.
+   * @returns True while its colour is not certain, or once confirmed by hand, to change it.
+   */
+  static canConfirmColor(card: LitterCard): boolean {
+    return (
+      card.colors.some((reading: LitterColor): boolean => reading.confidence === 'confirmed') ||
+      !this.hasKnownColors(card.colors)
+    )
+  }
+
+  /**
+   * Whether « Après ton appel » offers to note the sexes of a litter.
+   *
+   * @param card - The litter.
+   * @returns True for a born litter whose sexes are unknown, or confirmed by hand.
+   */
+  static canConfirmSexes(card: LitterCard): boolean {
+    return card.kind !== 'litter_expected' && (!this.hasKnownSexes(card) || card.has_confirmed_sexes)
+  }
+
+  /**
    * Build the label of the colour chip.
    *
    * @param colors - Colours of the litter.
@@ -135,6 +158,61 @@ export class LitterPresentation {
       return null
     }
     return `Née le ${FrenchDate.formatDayAndShortMonth(FrenchDate.parseDay(litter.birth_date))}`
+  }
+
+  /**
+   * Write the title of a row among the litters of a breeder, where its name and its town would repeat on every row.
+   *
+   * @param litter - The litter.
+   * @param now - Current time.
+   * @returns « Née le 2 nov. », « À naître vers le 7 déc. », « Attendue le 5 oct. », with the year when it is not the
+   *   current one, or the name of the litter while its birth is unknown.
+   */
+  static buildBreederRowTitle(litter: LitterCard, now: Date = new Date()): string {
+    if (litter.kind === 'litter_expected') {
+      if (litter.expected_birth_date === null) {
+        return 'À naître'
+      }
+      const expectedDay: string = FrenchDate.formatDayAndShortMonthWithOtherYear(
+        FrenchDate.parseDay(litter.expected_birth_date),
+        now,
+      )
+      return FollowUpPresentation.isBirthOverdue(litter, now)
+        ? `Attendue le ${expectedDay}`
+        : `À naître vers le ${expectedDay}`
+    }
+    if (litter.birth_date === null) {
+      return litter.name
+    }
+    return `Née le ${FrenchDate.formatDayAndShortMonthWithOtherYear(FrenchDate.parseDay(litter.birth_date), now)}`
+  }
+
+  /**
+   * Write what a row among the litters of a breeder says under its birth: the puppies left, and when they leave.
+   *
+   * @param litter - The litter.
+   * @param now - Current time.
+   * @returns « 2 chiots dispo · départ le 28 déc. », « Plus aucun chiot dispo », « Départ vers le 16 oct. »,
+   *   « Naissance pas encore déclarée », or null while nothing is known.
+   */
+  static buildBreederRowSubtitle(litter: LitterCard, now: Date = new Date()): string | null {
+    if (FollowUpPresentation.isBirthOverdue(litter, now)) {
+      return 'Naissance pas encore déclarée'
+    }
+    const puppiesAvailableLabel: string | null = this.buildPuppiesAvailableLabel(litter)
+    if (litter.puppies_available === 0 || litter.available_from === null) {
+      return puppiesAvailableLabel
+    }
+    const departureDay: string = FrenchDate.formatDayAndShortMonthWithOtherYear(
+      FrenchDate.parseDay(litter.available_from),
+      now,
+    )
+    const departurePhrase: string =
+      litter.kind === 'litter_expected' ? `départ vers le ${departureDay}` : `départ le ${departureDay}`
+    if (puppiesAvailableLabel === null) {
+      return departurePhrase.charAt(0).toUpperCase() + departurePhrase.slice(1)
+    }
+    return `${puppiesAvailableLabel} · ${departurePhrase}`
   }
 
   /**

@@ -1,4 +1,4 @@
-import type { LitterDetail } from '~/types/api'
+import type { LitterColor, LitterDetail } from '~/types/api'
 import type { FrenchGender } from '~/types/FrenchText'
 import type { GoldGenotype, GoldGenotypeFacts, GoldPuppyOddsSummary } from '~/types/GoldGenetics'
 import {
@@ -81,19 +81,20 @@ export class GoldGeneticsPresentation {
    * Word the odds of gold puppies of a litter: the figure of its circle and the sentence beside it.
    *
    * @param litter - The litter.
-   * @returns The odds of each puppy, why, and how often one gold at least is born among its puppies; null while
-   *   the genotypes of the parents tell nothing.
+   * @returns The odds of each puppy, why, and how often one gold at least is born among its puppies; « Aucun gold » and
+   *   the reason when the parents rule it out; null while the genotypes of the parents tell nothing.
    */
   static buildPuppyOddsSummary(litter: LitterDetail): GoldPuppyOddsSummary | null {
     const odds: number | null = litter.gold_puppy_odds ?? null
     if (odds === null || odds <= 0) {
-      return null
+      return this.buildRuledOutSummary(litter)
     }
     if (this.isEveryPuppyGold(odds)) {
       return {
         figure: 'Tous',
         figureCaption: 'gold',
         explanation: 'Le père et la mère sont gold : tous les chiots seront gold.',
+        isGoldRuledOut: false,
       }
     }
     const oddsDenominator: number = Math.round(1 / odds)
@@ -106,7 +107,29 @@ export class GoldGeneticsPresentation {
     if (atLeastOneGoldSentence !== null) {
       sentences.push(atLeastOneGoldSentence)
     }
-    return { figure: `1 sur ${oddsDenominator}`, figureCaption: 'par chiot', explanation: sentences.join(' ') }
+    return {
+      figure: `1 sur ${oddsDenominator}`,
+      figureCaption: 'par chiot',
+      explanation: sentences.join(' '),
+      isGoldRuledOut: false,
+    }
+  }
+
+  /**
+   * Word why no puppy of a litter will be gold, when its parents rule the gold out and no source announces it.
+   *
+   * @param litter - The litter.
+   * @returns « Aucun gold » and the reason the parents give, or null when nothing rules the gold out.
+   */
+  private static buildRuledOutSummary(litter: LitterDetail): GoldPuppyOddsSummary | null {
+    const reason: string | null = litter.gold_exclusion_reason ?? null
+    const isGoldAnnounced: boolean = litter.colors.some(
+      (reading: LitterColor): boolean => reading.color === 'gold' && reading.confidence !== 'ambiguous',
+    )
+    if (reason === null || isGoldAnnounced) {
+      return null
+    }
+    return { figure: 'Aucun', figureCaption: 'gold', explanation: reason, isGoldRuledOut: true }
   }
 
   /**

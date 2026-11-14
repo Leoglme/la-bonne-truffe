@@ -62,6 +62,8 @@ MIGRATION_MODULES: list[tuple[str, str]] = [
     ("refresh_expected_colors_of_litters", "migrations.refresh_expected_colors_of_litters"),
     ("reread_dog_colors", "migrations.reread_dog_colors"),
     ("read_breeder_sites_again_silently", "migrations.read_breeder_sites_again_silently"),
+    ("add_listing_confirmed_color", "migrations.add_listing_confirmed_color"),
+    ("rewrite_gold_reasons_of_litters", "migrations.rewrite_gold_reasons_of_litters"),
 ]
 
 _NON_MIGRATION_MODULES: set[str] = {"__init__", "run_migrations"}

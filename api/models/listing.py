@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from core.clock import naive_utc_now
 from core.database import Base
+from enums.coat_color import CoatColor
 from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
 from enums.lof_status import LofStatus
@@ -46,6 +47,8 @@ class Listing(TimestampMixin, Base):
         colors: Canonical colours, each ``{"color": CoatColor, "confidence": ColorConfidence}``.
         color_text: Free colour text as the source writes it.
         price_cents: Price, when published.
+        confirmed_color: Colour of the puppy of a puppy ad, noted by hand from its photo or after a call; the
+            litter is then matched on the noted colours of the puppies still offered.
         department_code: Department code.
         zip_code: Postal code.
         city: Town.
@@ -92,6 +95,7 @@ class Listing(TimestampMixin, Base):
     colors: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list, nullable=False)
     color_text: Mapped[str | None] = mapped_column(String(255))
     price_cents: Mapped[int | None]
+    confirmed_color: Mapped[CoatColor | None] = mapped_column(str_enum_column(CoatColor), nullable=True)
     department_code: Mapped[str | None] = mapped_column(ForeignKey("departments.code"), index=True)
     zip_code: Mapped[str | None] = mapped_column(String(10))
     city: Mapped[str | None] = mapped_column(String(120))

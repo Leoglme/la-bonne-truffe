@@ -6,6 +6,7 @@ import { LitterDetailPresentation } from '../app/utils/litterDetailPresentation'
 const NOW: Date = new Date(2026, 10, 1, 9, 0)
 
 const BIRTH_DECLARATION: LitterSourceListing = {
+  id: 11,
   source: 'centrale_canine',
   kind: 'litter_born',
   external_url: 'https://www.centrale-canine.fr/portee/test',
@@ -23,6 +24,7 @@ const BIRTH_DECLARATION: LitterSourceListing = {
 const LITTER_PAGE_URL: string = 'https://elevage-a.chiens-de-france.com/cocker-spaniel-anglais/chiots-a-vendre/495610'
 
 const MALE_PUPPY_AD: LitterSourceListing = {
+  id: 12,
   source: 'chiens_de_france',
   kind: 'puppy_ad',
   external_url: `${LITTER_PAGE_URL}#:~:text=2199888`,
@@ -39,6 +41,7 @@ const MALE_PUPPY_AD: LitterSourceListing = {
 
 const FEMALE_PUPPY_AD: LitterSourceListing = {
   ...MALE_PUPPY_AD,
+  id: 13,
   external_url: `${LITTER_PAGE_URL}#:~:text=2199889`,
   male_count: 0,
   female_count: 1,
@@ -50,6 +53,7 @@ const FEMALE_PUPPY_AD: LitterSourceListing = {
 
 const SOLD_PUPPY_AD: LitterSourceListing = {
   ...FEMALE_PUPPY_AD,
+  id: 14,
   photos: [],
   puppy_state: 'sold',
   last_seen_at: '2026-10-31T06:40:00',
@@ -200,6 +204,24 @@ describe('LitterDetailPresentation.buildPuppyLines', (): void => {
 
     expect(readColors(1)).toEqual(['gold', 'bleu_rouan'])
     expect(readColors(0.5)).toEqual([null, 'bleu_rouan'])
+  })
+
+  it('tells the colour noted by hand first, then the one the ad gives for sure, and nothing for a bundle', (): void => {
+    const listings: LitterSourceListing[] = [
+      { ...MALE_PUPPY_AD, confirmed_color: 'noir_et_feu' },
+      { ...FEMALE_PUPPY_AD, colors: [{ color: 'gold', confidence: 'ambiguous' }] },
+      SOLD_PUPPY_AD,
+    ]
+
+    expect(
+      LitterDetailPresentation.buildPuppyLines({ ...LITTER, listings }).map(
+        (line: LitterPuppyLine): [number, CoatColor | null] => [line.listingId, line.knownColor],
+      ),
+    ).toEqual([
+      [12, 'noir_et_feu'],
+      [13, null],
+      [14, 'bleu_rouan'],
+    ])
   })
 })
 

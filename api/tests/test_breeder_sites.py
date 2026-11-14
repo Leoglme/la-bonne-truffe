@@ -3,6 +3,7 @@ litters, a link pasted by hand, the dogs both sources know, and the migrations t
 
 from collections.abc import Callable
 from datetime import date, datetime
+from typing import Any
 
 import pytest
 from fastapi import HTTPException
@@ -50,6 +51,7 @@ from services.collectors.raw_dog import RawSiteDirectoryEntry
 from services.dog_ingestion import DogIngestionService
 from services.litter_grouping import litter_grouping_service
 from services.litter_query_service import LitterQueryService
+from services.puppy_ad_state_reader import PuppyAdStateReader
 from services.push_service import PushResult, PushService
 from services.source_run_launcher import source_run_launcher
 from tests.centrale_canine_pages import collector_serving, load_recorded_pages
@@ -490,10 +492,10 @@ def test_the_puppy_of_an_ad_is_told_available_reserved_or_sold() -> None:
         """A puppy ad of a breeder's site with its status line."""
         return Listing(kind=ListingKind.PUPPY_AD, raw_json={"status": status_text}, puppies_available=puppies_available)
 
-    assert LitterQueryService._puppy_state(puppy_ad("Mâle disponible à la vente à 1400 €", 1)) == PuppyAdState.AVAILABLE
-    assert LitterQueryService._puppy_state(puppy_ad("Femelle réservée", 0)) == PuppyAdState.RESERVED
-    assert LitterQueryService._puppy_state(puppy_ad("Mâle vendu", 0)) == PuppyAdState.SOLD
-    assert LitterQueryService._puppy_state(Listing(kind=ListingKind.LITTER_BORN, raw_json={})) is None
+    assert PuppyAdStateReader.state_of(puppy_ad("Mâle disponible à la vente à 1400 €", 1)) == PuppyAdState.AVAILABLE
+    assert PuppyAdStateReader.state_of(puppy_ad("Femelle réservée", 0)) == PuppyAdState.RESERVED
+    assert PuppyAdStateReader.state_of(puppy_ad("Mâle vendu", 0)) == PuppyAdState.SOLD
+    assert PuppyAdStateReader.state_of(Listing(kind=ListingKind.LITTER_BORN, raw_json={})) is None
 
 
 def test_the_dog_migration_reads_the_colours_again_and_plans_the_parents(db: Session, engine: Engine) -> None:
@@ -633,6 +635,57 @@ def test_a_parent_known_by_a_tattoo_takes_the_photo_of_the_site_dog_of_the_same_
     assert detail["sire"]["photo_url"] == site_photo
 
 
+def test_a_litter_without_photo_shows_its_mother_else_its_father_rather_than_the_cover_of_its_breeding(
+    client: TestClient, db: Session, seeded: dict[str, str]
+) -> None:
+    collection_runner.run_centrale_canine(db, collector_serving(load_recorded_pages()))
+    group = db.query(LitterGroup).order_by(LitterGroup.id).first()
+    assert group is not None and group.breeder_id is not None
+    breeder = db.get(Breeder, group.breeder_id)
+    assert breeder is not None
+    breeder.cover_photo_url = f"{SITE_URL}/media_cdf/photos/couverture.jpg"
+    mother_photo = f"{SITE_URL}/media_cdf/photos/chiens/photo-de-test-12.jpg"
+    father_photo = f"{SITE_URL}/media_cdf/photos/chiens/photo-de-test-13.jpg"
+    sire = Dog(
+        source=ListingSource.CENTRALE_CANINE,
+        external_id="7000501",
+        role=DogRole.PARENT,
+        full_name="Père photographié de test",
+        photos=[father_photo],
+    )
+    dam = Dog(
+        source=ListingSource.CENTRALE_CANINE,
+        external_id="7000502",
+        role=DogRole.PARENT,
+        full_name="Mère photographiée de test",
+        identifier="250000000000502",
+    )
+    site_dam = Dog(
+        source=ListingSource.CHIENS_DE_FRANCE,
+        external_id="1999502",
+        role=DogRole.REPRODUCER,
+        identifier="250 000 000 000 502",
+        photos=[mother_photo],
+    )
+    db.add_all([sire, dam, site_dam])
+    db.flush()
+    group.sire_dog_id, group.dam_dog_id = sire.id, dam.id
+    db.commit()
+
+    with_mother = client.get(f"/api/v1/litters/{group.id}", headers=seeded).json()
+    site_dam.photos = []
+    db.commit()
+    with_father = client.get(f"/api/v1/litters/{group.id}", headers=seeded).json()
+    sire.photos = []
+    db.commit()
+    without_parent_photo = client.get(f"/api/v1/litters/{group.id}", headers=seeded).json()
+
+    assert with_mother["photos"] == []
+    assert (with_mother["photo_url"], with_mother["photo_source"]) == (mother_photo, "dam")
+    assert (with_father["photo_url"], with_father["photo_source"]) == (father_photo, "sire")
+    assert (without_parent_photo["photo_url"], without_parent_photo["photo_source"]) == (None, None)
+
+
 def test_the_litter_shows_its_father_with_his_site_photo_and_one_gold_puppy_in_two(
     client: TestClient, db: Session, seeded: dict[str, str]
 ) -> None:
@@ -737,3 +790,49 @@ def test_a_followed_litter_to_come_is_pushed_born_with_the_puppies_its_breeders_
     ]
     assert len(push_titles) == 1
     assert push_titles[0].startswith("Portée née")
+
+
+def test_the_colour_noted_for_a_puppy_shows_on_its_line_and_colours_the_litter(
+    client: TestClient, db: Session, seeded: dict[str, str]
+) -> None:
+    collection_runner.run_centrale_canine(db, collector_serving(load_recorded_pages()))
+    group = db.query(LitterGroup).order_by(LitterGroup.id).first()
+    assert group is not None
+    puppy = Listing(
+        source=ListingSource.CHIENS_DE_FRANCE,
+        external_id="chiot-7000601",
+        breed_id=group.breed_id,
+        kind=ListingKind.PUPPY_AD,
+        litter_group_id=group.id,
+        puppies_available=1,
+    )
+    db.add(puppy)
+    db.commit()
+    declaration = db.query(Listing).filter(Listing.litter_group_id == group.id, Listing.id != puppy.id).first()
+    assert declaration is not None
+    url = f"/api/v1/litters/{group.id}/puppies"
+
+    noted = client.patch(f"{url}/{puppy.id}/color", json={"color": "noir_et_feu"}, headers=seeded).json()
+    not_a_puppy = client.patch(f"{url}/{declaration.id}/color", json={"color": "gold"}, headers=seeded)
+    removed = client.patch(f"{url}/{puppy.id}/color", json={"color": None}, headers=seeded).json()
+
+    def noted_color(detail: dict[str, Any]) -> str | None:
+        """
+        The colour noted for the puppy in a detail of the litter.
+
+        Args:
+            detail: The detail the API returned.
+
+        Returns:
+            The colour, None when none is noted.
+        """
+        noted_colors: list[str | None] = [
+            listing["confirmed_color"] for listing in detail["listings"] if listing["id"] == puppy.id
+        ]
+        return noted_colors[0]
+
+    assert noted_color(noted) == "noir_et_feu"
+    assert noted["colors"] == [{"color": "noir_et_feu", "confidence": "confirmed"}]
+    assert not_a_puppy.status_code == 404
+    assert noted_color(removed) is None
+    assert removed["colors"] != noted["colors"]

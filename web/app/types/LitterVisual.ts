@@ -8,4 +8,5 @@ export type LitterVisualProps = {
   photoPosition: string
   illustrationClass: string
   photoLoading: ImageLoading
+  photoSourceLabelClass: string | null
 }

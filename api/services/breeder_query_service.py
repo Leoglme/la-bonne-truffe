@@ -100,9 +100,10 @@ class BreederFacts:
         return facts
 
     @staticmethod
-    def _litter_order(card: LitterCard) -> tuple[int, int, int]:
+    def _litter_order(card: LitterCard) -> tuple[int, int]:
         """
-        The current litters first, best score first, then the past ones, latest first.
+        The current litters first, then the past ones, each the latest birth first: the rows of a breeder are titled by
+        their birth.
 
         Args:
             card: A litter card.
@@ -111,7 +112,7 @@ class BreederFacts:
             The sort key.
         """
         latest_day = card.birth_date or card.expected_birth_date or date.min
-        return (0 if card.is_active else 1, -(card.score or 0) if card.is_active else 0, -latest_day.toordinal())
+        return (0 if card.is_active else 1, -latest_day.toordinal())
 
 
 class BreederQueryService:

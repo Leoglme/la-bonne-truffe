@@ -26,6 +26,7 @@
           :litter="litter"
           :illustration-size-in-pixels="200"
           illustration-class="mb-6"
+          photo-source-label-class="bottom-11 left-5 px-3 py-1.5 text-[13px] md:bottom-6 md:left-8 md:text-sm"
         />
         <button
           type="button"
@@ -88,7 +89,6 @@
           <LitterKeyFacts :litter="litter" class="shrink-0" />
           <LitterInfoChips :litter="litter" class="shrink-0" />
           <LitterPlaceCard :litter="litter" class="shrink-0" />
-          <LitterCallConfirmation :litter="litter" class="shrink-0" />
           <div v-if="litter.photos.length > 1" class="grid shrink-0 grid-cols-4 gap-2 md:flex md:gap-2.5">
             <button
               v-for="(photo, photoIndex) in galleryPhotos"
@@ -114,6 +114,7 @@
           <LitterReasonsCard :litter="litter" class="shrink-0" />
           <LitterParentsList :litter="litter" class="shrink-0" />
           <LitterGoldOddsCard :litter="litter" class="shrink-0" />
+          <LitterCallConfirmation :litter="litter" class="shrink-0" />
           <LitterBreederCard :litter="litter" class="shrink-0" />
           <LitterListingsList :litter="litter" class="shrink-0" />
         </div>
@@ -193,7 +194,11 @@
           @open="openPhotoViewer"
         />
         <LitterTileFrame v-else :litter="litter" class="h-80 overflow-hidden rounded-card">
-          <LitterVisual :litter="litter" :illustration-size-in-pixels="200" />
+          <LitterVisual
+            :litter="litter"
+            :illustration-size-in-pixels="200"
+            photo-source-label-class="bottom-4 left-4 px-3.5 py-[5px] text-[13px]"
+          />
           <span
             v-if="photoBadge"
             class="absolute top-4 left-4 rounded-full bg-card px-3.5 py-[5px] text-[13px] leading-normal font-extrabold tracking-[0.02em] text-coral-text"
@@ -201,7 +206,6 @@
             {{ photoBadge }}
           </span>
         </LitterTileFrame>
-        <LitterCallConfirmation :litter="litter" is-in-wide-layout />
         <LitterPuppiesList :litter="litter" is-in-wide-layout />
         <LitterReasonsCard :litter="litter" />
         <LitterParentsList :litter="litter" is-in-wide-layout />
@@ -236,6 +240,20 @@
               </UButton>
               <UiPhoneNumberCopy v-if="breederPhoneLabel" :phone-number-label="breederPhoneLabel" />
             </template>
+            <UButton
+              v-if="isCallNoteOffered"
+              color="neutral"
+              variant="outline"
+              size="xl"
+              class="min-h-[52px] w-full justify-center gap-2.5 text-[17px]"
+              aria-haspopup="dialog"
+              @click="isCallNoteDialogOpen = true"
+            >
+              <template #leading>
+                <UIcon name="i-lucide-clipboard-check" class="size-5" />
+              </template>
+              Noter ce que l’éleveur t’a dit
+            </UButton>
           </div>
           <section v-if="hasListingLines" class="flex flex-col gap-2.5">
             <h2 class="m-0 font-display text-xl font-semibold">Vu sur</h2>
@@ -253,6 +271,7 @@
       :start-index="photoViewerStartIndex"
     />
     <LitterShareDialog v-if="litter" v-model:open="isShareDialogOpen" :litter="litter" />
+    <LitterCallNoteDialog v-if="litter" v-model:open="isCallNoteDialogOpen" :litter="litter" />
   </div>
 </template>
 
@@ -289,6 +308,7 @@ const loadError: Ref<string | null> = ref(null)
 const browsableLitterIds: Ref<number[]> = ref([])
 const isPhotoViewerOpen: Ref<boolean> = ref(false)
 const isShareDialogOpen: Ref<boolean> = ref(false)
+const isCallNoteDialogOpen: Ref<boolean> = ref(false)
 const photoViewerStartIndex: Ref<number> = ref(0)
 
 const litterId: ComputedRef<number> = computed((): number => Number(route.params['id']))
@@ -308,6 +328,11 @@ const breederPhoneLabel: ComputedRef<string | null> = computed((): string | null
   const phoneE164: string | null = litter.value?.breeder?.phone_e164 ?? null
   return phoneE164 === null ? null : LitterDetailPresentation.buildBreederPhoneLabel(phoneE164)
 })
+const isCallNoteOffered: ComputedRef<boolean> = computed(
+  (): boolean =>
+    litter.value !== null &&
+    (LitterPresentation.canConfirmColor(litter.value) || LitterPresentation.canConfirmSexes(litter.value)),
+)
 const hasListingLines: ComputedRef<boolean> = computed(
   (): boolean => litter.value !== null && LitterDetailPresentation.buildListingLines(litter.value).length > 0,
 )

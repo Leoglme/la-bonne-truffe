@@ -12,6 +12,7 @@ from enums.follow_up_status import FollowUpStatus
 from enums.genetic_screening import GeneticScreening
 from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
+from enums.litter_photo_source import LitterPhotoSource
 from enums.lof_status import LofStatus
 from enums.match_flag import MatchFlag
 from enums.match_tier import MatchTier
@@ -59,6 +60,10 @@ class LitterCard(BaseModel):
         description="Day the puppies may leave: the day the ads announce, else the birth (or expected birth) + 56 days"
     )
     photo_url: str | None
+    photo_source: LitterPhotoSource | None = Field(
+        default=None,
+        description="Where photo_url comes from: an ad of the litter, else its mother, else its father on a site",
+    )
     first_seen_at: datetime
     latest_listing_appeared_at: datetime = Field(
         description="When its newest listing first showed: the litter itself, or a later ad, such as one of a puppy"
@@ -118,6 +123,7 @@ class LitterBreeder(BaseModel):
 class LitterSourceListing(BaseModel):
     """The litter as one source shows it (« Vu sur »); for a puppy ad, one puppy of the litter."""
 
+    id: int
     source: ListingSource
     kind: ListingKind
     external_url: str | None = Field(
@@ -133,6 +139,9 @@ class LitterSourceListing(BaseModel):
     photos: list[str]
     puppy_state: PuppyAdState | None = Field(default=None, description="Where the puppy of a puppy ad stands")
     price_cents: int | None = None
+    confirmed_color: CoatColor | None = Field(
+        default=None, description="Colour of the puppy of a puppy ad, noted by hand from its photo or after a call"
+    )
 
 
 class FollowUpNoteResponse(BaseModel):
@@ -191,6 +200,9 @@ class LitterDetail(LitterCard):
     expected_colors: list[LitterExpectedColor] = Field(
         default_factory=list, description="The colours the parents imply, and why"
     )
+    gold_exclusion_reason: str | None = Field(
+        default=None, description="Why the parents give no gold puppy, as « Les chances de gold » writes it"
+    )
     photos_added_at: datetime | None = Field(
         default=None, description="Last time new photos reached one of its listings, naive UTC"
     )
@@ -200,6 +212,12 @@ class ColorConfirmation(BaseModel):
     """Colours confirmed by hand after a call; an empty list removes the confirmation."""
 
     colors: list[CoatColor] = Field(..., max_length=4)
+
+
+class PuppyColorConfirmation(BaseModel):
+    """The colour of one puppy, noted by hand; empty to go back to what its ad says."""
+
+    color: CoatColor | None = None
 
 
 class SexConfirmation(BaseModel):

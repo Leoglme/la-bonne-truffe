@@ -29,14 +29,18 @@ export const useLittersStore = defineStore('litters', () => {
 
   let hasRecordedVisit: boolean = false
 
+  const notDismissedCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
+    cards.value.filter((card: LitterCard): boolean => card.follow_up_status !== 'dismissed'),
+  )
+
   const filteredCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] => {
     if (selectedFilterKey.value === 'preferred') {
-      return cards.value.filter((card: LitterCard): boolean => card.tier === 'preferred')
+      return notDismissedCards.value.filter((card: LitterCard): boolean => card.tier === 'preferred')
     }
     if (selectedFilterKey.value === 'expected') {
-      return cards.value.filter((card: LitterCard): boolean => card.kind === 'litter_expected')
+      return notDismissedCards.value.filter((card: LitterCard): boolean => card.kind === 'litter_expected')
     }
-    return cards.value
+    return notDismissedCards.value
   })
 
   const sortedCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
@@ -63,7 +67,7 @@ export const useLittersStore = defineStore('litters', () => {
   )
 
   const preferredCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
-    cards.value.filter((card: LitterCard): boolean => card.tier === 'preferred'),
+    notDismissedCards.value.filter((card: LitterCard): boolean => card.tier === 'preferred'),
   )
 
   const bornLastNightCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
@@ -182,6 +186,24 @@ export const useLittersStore = defineStore('litters', () => {
   }
 
   /**
+   * Note the colour of one puppy, or remove it; the API re-scores the litter on the puppies still offered.
+   *
+   * @param litterId - The litter.
+   * @param listingId - The ad of the puppy.
+   * @param color - Its colour, null to go back to what its ad says.
+   * @returns The updated detail.
+   */
+  async function confirmPuppyColor(
+    litterId: number,
+    listingId: number,
+    color: CoatColor | null,
+  ): Promise<LitterDetail> {
+    const detail: LitterDetail = await LittersService.confirmPuppyColor(litterId, listingId, { color })
+    applyDetail(detail)
+    return detail
+  }
+
+  /**
    * Confirm the males and females heard from the breeder, or go back to the sources with both null; re-scored at once.
    *
    * @param litterId - The litter.
@@ -276,6 +298,7 @@ export const useLittersStore = defineStore('litters', () => {
     select,
     follow,
     confirmColors,
+    confirmPuppyColor,
     confirmSexes,
     applyDetail,
     listBrowsableLitterIds,

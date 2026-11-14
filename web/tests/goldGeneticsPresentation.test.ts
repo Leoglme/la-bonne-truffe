@@ -136,6 +136,7 @@ describe('GoldGeneticsPresentation.buildPuppyOddsSummary', (): void => {
       explanation:
         'Le père ne transmet que le gold et la mère le porte : chaque chiot a une chance sur deux d’être gold. ' +
         'Au moins un gold sur les trois, 7 fois sur 8.',
+      isGoldRuledOut: false,
     })
   })
 
@@ -169,11 +170,13 @@ describe('GoldGeneticsPresentation.buildPuppyOddsSummary', (): void => {
       explanation:
         'Le père et la mère portent le gold sans être gold : chaque chiot a une chance sur quatre d’être gold. ' +
         'Au moins un gold sur les deux, 7 fois sur 16.',
+      isGoldRuledOut: false,
     })
     expect(GoldGeneticsPresentation.buildPuppyOddsSummary({ ...LITTER, gold_puppy_odds: 1 })).toEqual({
       figure: 'Tous',
       figureCaption: 'gold',
       explanation: 'Le père et la mère sont gold : tous les chiots seront gold.',
+      isGoldRuledOut: false,
     })
     expect(
       GoldGeneticsPresentation.buildPuppyOddsSummary({
@@ -185,5 +188,28 @@ describe('GoldGeneticsPresentation.buildPuppyOddsSummary', (): void => {
       })?.explanation,
     ).toBe('Chaque chiot a une chance sur deux d’être gold.')
     expect(GoldGeneticsPresentation.buildPuppyOddsSummary({ ...LITTER, gold_puppy_odds: null })).toBeNull()
+  })
+
+  it('says « Aucun gold » with the reason when the parents rule it out, unless a source announces gold', (): void => {
+    const reason: string = 'La mère, testée E/E, ne transmet pas le gold : aucun chiot ne sera gold.'
+    const ruledOut: LitterDetail = {
+      ...LITTER,
+      gold_puppy_odds: null,
+      gold_exclusion_reason: reason,
+      colors: [{ color: 'noir', confidence: 'ambiguous' }],
+    }
+
+    expect(GoldGeneticsPresentation.buildPuppyOddsSummary(ruledOut)).toEqual({
+      figure: 'Aucun',
+      figureCaption: 'gold',
+      explanation: reason,
+      isGoldRuledOut: true,
+    })
+    expect(
+      GoldGeneticsPresentation.buildPuppyOddsSummary({
+        ...ruledOut,
+        colors: [{ color: 'gold', confidence: 'certain' }],
+      }),
+    ).toBeNull()
   })
 })

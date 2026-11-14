@@ -20,13 +20,28 @@ export const FOLLOW_UP_STATUSES: FollowUpStatus[] = [
   'dismissed',
 ]
 
-/** Sections of the follow-up screen; dismissed litters are not shown. */
+/** Sections of the follow-up screen; dismissed litters come last, greyed, since they left the home list. */
 export const FOLLOW_UP_SECTIONS: FollowUpSection[] = [
-  { title: 'À appeler', statuses: ['new', 'to_contact'], emptyMessage: null },
-  { title: 'En discussion', statuses: ['contacted', 'waiting'], emptyMessage: null },
+  { title: 'À appeler', statuses: ['new', 'to_contact'], emptyMessage: null, caption: null, areCardsDimmed: false },
+  {
+    title: 'En discussion',
+    statuses: ['contacted', 'waiting'],
+    emptyMessage: null,
+    caption: null,
+    areCardsDimmed: false,
+  },
   {
     title: 'Réservé',
     statuses: ['reserved'],
     emptyMessage: 'Rien pour l’instant. Quand tu réserves ton chiot, il arrive ici avec sa date de départ.',
+    caption: null,
+    areCardsDimmed: false,
+  },
+  {
+    title: 'Écartées',
+    statuses: ['dismissed'],
+    emptyMessage: null,
+    caption: 'Plus dans Portées ni sur la carte',
+    areCardsDimmed: true,
   },
 ]

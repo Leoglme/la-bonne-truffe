@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+from enums.coat_color import CoatColor
 from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
 from enums.lof_status import LofStatus
@@ -126,3 +127,22 @@ def test_a_bundle_an_ad_states_wins_over_the_variety_when_the_parents_tell_nothi
     ]
 
     assert colors_of(litter_group([]), listings) == [("gold", "ambiguous"), ("noir_et_feu", "ambiguous")]
+
+
+def test_once_their_colour_is_noted_the_litter_is_matched_on_the_puppies_still_offered() -> None:
+    offered_black_and_tan = puppy_ad([])
+    offered_black_and_tan.puppies_available = 1
+    offered_black_and_tan.confirmed_color = CoatColor.NOIR_ET_FEU
+    reserved_gold = puppy_ad([])
+    reserved_gold.raw_json = {"status": "Mâle réservé"}
+    reserved_gold.puppies_available = 0
+    reserved_gold.confirmed_color = CoatColor.GOLD
+    listings = [litter_declared_under_the_gold_variety(), offered_black_and_tan, reserved_gold]
+
+    assert colors_of(litter_group(ONE_GOLD_PUPPY_IN_TWO), listings) == [("noir_et_feu", "confirmed")]
+    assert colors_of(
+        litter_group(ONE_GOLD_PUPPY_IN_TWO), [litter_declared_under_the_gold_variety(), reserved_gold]
+    ) == [
+        ("gold", "ambiguous"),
+        ("noir_et_feu", "ambiguous"),
+    ]

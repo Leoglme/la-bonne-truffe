@@ -12,4 +12,5 @@ export type GoldPuppyOddsSummary = {
   figure: string
   figureCaption: string
   explanation: string
+  isGoldRuledOut: boolean
 }

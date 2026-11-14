@@ -26,12 +26,18 @@
 
       <template v-else-if="followUpsStore.cards.length > 0">
         <section v-for="section in visibleSections" :key="section.title" class="flex flex-col gap-3">
-          <h2 class="m-0 font-display text-[22px] font-semibold">{{ section.title }}</h2>
+          <div class="flex items-baseline justify-between gap-3">
+            <h2 class="m-0 font-display text-[22px] font-semibold">{{ section.title }}</h2>
+            <span v-if="section.caption" class="text-[13px] font-bold text-ink-label md:text-sm">
+              {{ section.caption }}
+            </span>
+          </div>
           <FollowUpLitterCard
             v-for="followUp in listSectionFollowUps(section)"
             :key="followUp.litter.id"
             :follow-up="followUp"
             :is-note-shown="section.title === 'En discussion'"
+            :class="section.areCardsDimmed ? 'opacity-60' : ''"
           />
           <div
             v-if="listSectionFollowUps(section).length === 0 && section.emptyMessage"
@@ -60,7 +66,9 @@ const followUpsStore: ReturnType<typeof useFollowUpsStore> = useFollowUpsStore()
 
 const todayFollowUp: ComputedRef<FollowUpCard | null> = computed(
   (): FollowUpCard | null =>
-    followUpsStore.cards.find((card: FollowUpCard): boolean => FollowUpPresentation.isDue(card, new Date())) ?? null,
+    followUpsStore.cards.find(
+      (card: FollowUpCard): boolean => card.status !== 'dismissed' && FollowUpPresentation.isDue(card, new Date()),
+    ) ?? null,
 )
 
 const visibleSections: ComputedRef<FollowUpSection[]> = computed((): FollowUpSection[] =>

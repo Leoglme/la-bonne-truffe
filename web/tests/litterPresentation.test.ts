@@ -52,6 +52,44 @@ describe('LitterPresentation.buildBirthFact', (): void => {
   })
 })
 
+describe('a row among the litters of a breeder', (): void => {
+  const NOW: Date = new Date(2026, 10, 14, 10)
+
+  it('is titled by its birth, with the year when it is not the current one', (): void => {
+    expect(LitterPresentation.buildBreederRowTitle(BORN_GOLD_LITTER, NOW)).toBe('Née le 27 oct.')
+    expect(LitterPresentation.buildBreederRowTitle({ ...BORN_GOLD_LITTER, birth_date: '2025-12-05' }, NOW)).toBe(
+      'Née le 5 déc. 2025',
+    )
+    expect(LitterPresentation.buildBreederRowTitle({ ...BORN_GOLD_LITTER, birth_date: null }, NOW)).toBe('De Kerlann')
+  })
+
+  it('titles a litter to come by its expected birth, and says once it is overdue', (): void => {
+    const toCome: LitterCard = {
+      ...BORN_GOLD_LITTER,
+      kind: 'litter_expected',
+      birth_date: null,
+      expected_birth_date: '2026-12-07',
+      available_from: '2027-02-01',
+    }
+    const overdue: LitterCard = { ...toCome, expected_birth_date: '2026-10-05', available_from: '2026-11-30' }
+
+    expect(LitterPresentation.buildBreederRowTitle(toCome, NOW)).toBe('À naître vers le 7 déc.')
+    expect(LitterPresentation.buildBreederRowSubtitle(toCome, NOW)).toBe('Départ vers le 1 févr. 2027')
+    expect(LitterPresentation.buildBreederRowTitle(overdue, NOW)).toBe('Attendue le 5 oct.')
+    expect(LitterPresentation.buildBreederRowSubtitle(overdue, NOW)).toBe('Naissance pas encore déclarée')
+  })
+
+  it('says the puppies left and when they leave', (): void => {
+    expect(LitterPresentation.buildBreederRowSubtitle(BORN_GOLD_LITTER, NOW)).toBe('Départ le 22 déc.')
+    expect(LitterPresentation.buildBreederRowSubtitle({ ...BORN_GOLD_LITTER, puppies_available: 2 }, NOW)).toBe(
+      '2 chiots dispo · départ le 22 déc.',
+    )
+    expect(LitterPresentation.buildBreederRowSubtitle({ ...BORN_GOLD_LITTER, puppies_available: 0 }, NOW)).toBe(
+      'Plus aucun chiot dispo',
+    )
+  })
+})
+
 describe('LitterPresentation price and sighting', (): void => {
   it('writes the price in euros, when a source gives one', (): void => {
     expect(LitterPresentation.buildPriceLabel(BORN_GOLD_LITTER)).toBeNull()

@@ -4,7 +4,12 @@
     class="flex shrink-0 flex-col overflow-hidden rounded-card-compact bg-coral-pastel text-ink no-underline hover:text-ink md:flex-row-reverse md:items-center md:gap-6 md:overflow-visible md:rounded-card md:px-8 md:py-7 lg:hidden"
   >
     <LitterTileFrame :litter="props.litter" class="h-[170px] overflow-hidden md:size-[200px] md:rounded-card">
-      <LitterVisual :litter="props.litter" :illustration-size-in-pixels="132" photo-position="center 35%" />
+      <LitterVisual
+        :litter="props.litter"
+        :illustration-size-in-pixels="132"
+        photo-position="center 35%"
+        photo-source-label-class="bottom-3 left-3 px-3 py-[5px] text-xs"
+      />
       <span
         class="absolute top-3 left-3 rounded-full bg-card px-3 py-[5px] text-xs font-extrabold tracking-[0.02em] text-coral-text md:hidden"
       >

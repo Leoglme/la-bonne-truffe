@@ -2,6 +2,7 @@ import type { ComputedRef, Ref } from 'vue'
 import type { DeviceLocationPermission, DevicePosition } from '~/types/Location'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { DeviceLocationLaunch } from '~/utils/deviceLocationLaunch'
 
 const POSITION_STORAGE_KEY: string = 'lbt-position'
 const PERMISSION_STORAGE_KEY: string = 'lbt-position-permission'
@@ -77,13 +78,35 @@ export const useLocationStore = defineStore('location', () => {
   }
 
   /**
-   * At a launch, ask for the position the first time, and refresh a position older than a few hours.
+   * At a launch, ask for the position the first time, then refresh an old one only while the device allows it.
    */
   async function refreshAtLaunch(): Promise<void> {
-    if (permission.value === 'denied' || !isPositionStale.value) {
-      return
+    const shouldReadPosition: boolean = DeviceLocationLaunch.shouldReadPosition({
+      savedPermission: permission.value,
+      hasSavedPosition: position.value !== null,
+      isPositionStale: isPositionStale.value,
+      devicePermissionState: await readDevicePermissionState(),
+    })
+    if (shouldReadPosition) {
+      await request()
     }
-    await request()
+  }
+
+  /**
+   * Ask the browser whether the device lets the app read its position, without asking the person.
+   *
+   * @returns « granted », « prompt » or « denied », or null when the browser cannot tell.
+   */
+  async function readDevicePermissionState(): Promise<PermissionState | null> {
+    if (!import.meta.client || !('permissions' in navigator)) {
+      return null
+    }
+    try {
+      const status: PermissionStatus = await navigator.permissions.query({ name: 'geolocation' })
+      return status.state
+    } catch {
+      return null
+    }
   }
 
   /**

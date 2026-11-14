@@ -16,6 +16,7 @@ from schemas.litter import (
     LitterCard,
     LitterDetail,
     LitterVisit,
+    PuppyColorConfirmation,
     SexConfirmation,
 )
 from services.auth_service import get_current_user
@@ -109,6 +110,31 @@ async def confirm_litter_colors(
         The updated detail.
     """
     LitterCommandService.confirm_colors(db, litter_id, payload)
+    return LitterQueryService.detail(db, current_user.id, litter_id)
+
+
+@router.patch("/litters/{litter_id}/puppies/{listing_id}/color", response_model=LitterDetail)
+async def confirm_puppy_color(
+    litter_id: int,
+    listing_id: int,
+    payload: PuppyColorConfirmation,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> LitterDetail:
+    """
+    Note the colour of one puppy of a litter, from its photo or after a call.
+
+    Args:
+        litter_id: The litter.
+        listing_id: The ad of the puppy.
+        payload: Its colour, empty to go back to what its ad says.
+        current_user: The authenticated user.
+        db: Database session.
+
+    Returns:
+        The updated detail.
+    """
+    LitterCommandService.confirm_puppy_color(db, litter_id, listing_id, payload)
     return LitterQueryService.detail(db, current_user.id, litter_id)
 
 

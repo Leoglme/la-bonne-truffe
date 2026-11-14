@@ -64,6 +64,18 @@ export class FrenchDate {
   }
 
   /**
+   * Write a day with its month abbreviated, and its year when it is not the current one.
+   *
+   * @param day - The day.
+   * @param now - Current time.
+   * @returns « 22 déc. », or « 22 déc. 2025 » for another year.
+   */
+  static formatDayAndShortMonthWithOtherYear(day: Date, now: Date): string {
+    const dayAndMonth: string = this.formatDayAndShortMonth(day)
+    return day.getFullYear() === now.getFullYear() ? dayAndMonth : `${dayAndMonth} ${day.getFullYear()}`
+  }
+
+  /**
    * Write the day of an API date-time with its month in full.
    *
    * @param isoDateTime - Date-time from the API, such as `2026-10-28T08:00:00`.

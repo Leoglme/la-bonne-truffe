@@ -7,6 +7,7 @@ import type {
   LitterDetail,
   SexConfirmation,
   LitterVisit,
+  PuppyColorConfirmation,
 } from '~/types/api'
 import { ApiClient } from './api'
 
@@ -49,6 +50,22 @@ export class LittersService {
    */
   static async confirmColors(litterId: number, confirmation: ColorConfirmation): Promise<LitterDetail> {
     return ApiClient.patch<LitterDetail>(`/api/v1/litters/${litterId}/colors`, confirmation)
+  }
+
+  /**
+   * Note the colour of one puppy, or remove it with an empty colour.
+   *
+   * @param litterId - The litter.
+   * @param listingId - The ad of the puppy.
+   * @param confirmation - Its colour.
+   * @returns The updated detail.
+   */
+  static async confirmPuppyColor(
+    litterId: number,
+    listingId: number,
+    confirmation: PuppyColorConfirmation,
+  ): Promise<LitterDetail> {
+    return ApiClient.patch<LitterDetail>(`/api/v1/litters/${litterId}/puppies/${listingId}/color`, confirmation)
   }
 
   /**

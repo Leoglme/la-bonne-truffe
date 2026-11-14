@@ -44,11 +44,13 @@ export type LitterListingLine = {
 
 export type LitterPuppyLine = {
   key: string
+  listingId: number
   href: string | null
   label: string
   sex: DogSex
   sexLabel: string | null
   color: CoatColor | null
+  knownColor: CoatColor | null
   stateLabel: string | null
   isAvailable: boolean
   photoUrl: string | null

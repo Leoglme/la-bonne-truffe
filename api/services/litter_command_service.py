@@ -6,10 +6,19 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.clock import naive_utc_now, naive_utc_of
+from enums.coat_color import CoatColor
+from enums.listing_kind import ListingKind
 from models.follow_up import FollowUp, FollowUpNote
+from models.listing import Listing
 from models.litter_group import LitterGroup
 from models.user import User
-from schemas.litter import ColorConfirmation, FollowUpNoteCreate, FollowUpUpdate, SexConfirmation
+from schemas.litter import (
+    ColorConfirmation,
+    FollowUpNoteCreate,
+    FollowUpUpdate,
+    PuppyColorConfirmation,
+    SexConfirmation,
+)
 from services.breeder_command_service import BreederCommandService
 from services.litter_query_service import LitterQueryService
 from services.matching.match_refresh import match_refresh_service
@@ -30,6 +39,31 @@ class LitterCommandService:
         """
         group = LitterQueryService.get_group(db, litter_group_id)
         group.confirmed_colors = [color.value for color in dict.fromkeys(payload.colors)]
+        db.commit()
+        match_refresh_service.refresh(db, naive_utc_now(), should_notify=False)
+
+    @staticmethod
+    def confirm_puppy_color(
+        db: Session, litter_group_id: int, listing_id: int, payload: PuppyColorConfirmation
+    ) -> None:
+        """
+        Store the colour of one puppy, noted from its photo or after a call; the litter is then matched on the
+        noted colours of the puppies still offered. Re-evaluates silently.
+
+        Args:
+            db: Database session.
+            litter_group_id: The litter.
+            listing_id: The ad of the puppy.
+            payload: Its colour, empty to go back to what its ad says.
+
+        Raises:
+            HTTPException: 404 when the ad is not one of the puppies of the litter.
+        """
+        group = LitterQueryService.get_group(db, litter_group_id)
+        listing = db.get(Listing, listing_id)
+        if listing is None or listing.litter_group_id != group.id or listing.kind != ListingKind.PUPPY_AD:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chiot introuvable")
+        listing.confirmed_color = None if payload.color == CoatColor.INCONNUE else payload.color
         db.commit()
         match_refresh_service.refresh(db, naive_utc_now(), should_notify=False)
 
