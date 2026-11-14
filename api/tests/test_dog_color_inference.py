@@ -5,6 +5,7 @@ import pytest
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
 from services.dog_color_inference import DogColorInference, ParentColorFacts
+from services.dog_name import DogName
 
 
 @pytest.mark.parametrize(
@@ -25,6 +26,17 @@ from services.dog_color_inference import DogColorInference, ParentColorFacts
         ("Golden", CoatColor.GOLD),
         ("Noir et feu", CoatColor.NOIR_ET_FEU),
         ("Bleu rouan", CoatColor.BLEU_ROUAN),
+        ("Noi. Pan.Bla.Gri.", CoatColor.BLEU_ROUAN),
+        ("Noi. Pan.Bla.Mou.", CoatColor.PARTICOLORE),
+        ("F.OR", CoatColor.GOLD),
+        ("F. Cl. HD-A", CoatColor.GOLD),
+        ("Noi pan bla", CoatColor.PARTICOLORE),
+        ("Noi.Mar.Fau", CoatColor.NOIR_ET_FEU),
+        ("Bleue", CoatColor.BLEU_ROUAN),
+        ("Noir panaché blanc grisonné", CoatColor.BLEU_ROUAN),
+        ("Noir marqué fauve", CoatColor.NOIR_ET_FEU),
+        ("Choco et feu", CoatColor.MARRON_ET_FEU),
+        ("Noire cravate blanche", CoatColor.NOIR),
         ("", CoatColor.INCONNUE),
         (None, CoatColor.INCONNUE),
         ("Xyz.", CoatColor.INCONNUE),
@@ -42,6 +54,9 @@ def test_a_colour_code_becomes_a_canonical_colour(code: str | None, color: CoatC
         ("Chiots golden et chiots noirs disponibles", (CoatColor.GOLD, CoatColor.NOIR)),
         ("Une portée de bleus rouans et de tricolores", (CoatColor.BLEU_ROUAN, CoatColor.TRICOLORE)),
         ("Chiots chocolat et feu, chiots noire et blanche", (CoatColor.MARRON_ET_FEU, CoatColor.PARTICOLORE)),
+        ("Deux bleus, une bleue rouane et un choco feu", (CoatColor.BLEU_ROUAN, CoatColor.MARRON_ET_FEU)),
+        ("Mâle collier bleu, femelle aux yeux noirs", ()),
+        ("Femelle noire et feu collier rose", (CoatColor.NOIR_ET_FEU,)),
         ("Chiots disponibles à la réservation", ()),
         ("", ()),
     ],
@@ -69,6 +84,9 @@ def test_the_mask_test_counts_as_the_e_locus() -> None:
         ("Fau. Pan.Bla.Rou.", True),
         ("Golden", True),
         ("Orange rouan", True),
+        ("Blanc et orange", True),
+        ("F.OR", True),
+        ("Noir marqué fauve", False),
         ("Noi. Mar.Fau. Pan.Bla.Gri.", False),
         ("Noire et blanche", False),
         (None, False),
@@ -164,3 +182,52 @@ def test_two_parents_with_white_never_announce_a_solid_gold_even_when_both_carry
         (CoatColor.TRICOLORE, ColorConfidence.AMBIGUOUS, None),
     ]
     assert with_a_solid_parent[0].color == CoatColor.GOLD
+
+
+def test_a_parent_tested_e_e_rules_out_the_gold_even_without_a_gold_parent() -> None:
+    expected = DogColorInference.expected_colors(
+        ParentColorFacts(CoatColor.NOIR_ET_FEU, e_locus="E/e"), ParentColorFacts(CoatColor.NOIR, e_locus="E/E")
+    )
+
+    assert [(color.color, color.confidence) for color in expected] == [
+        (CoatColor.NOIR_ET_FEU, ColorConfidence.AMBIGUOUS),
+        (CoatColor.NOIR, ColorConfidence.AMBIGUOUS),
+    ]
+    assert expected[0].reason == "Pas de gold : la mère, testée E/E, ne transmet pas le gold"
+
+
+def test_two_brown_parents_rule_out_the_black_puppies() -> None:
+    brown_and_white = ParentColorFacts(
+        DogColorInference.canonical_color("Mar. Pan.Bla."),
+        has_brown_coat=DogColorInference.has_brown_coat("Mar. Pan.Bla."),
+    )
+    brown_and_tan = ParentColorFacts(CoatColor.MARRON_ET_FEU, has_brown_coat=True)
+    black_and_tan = ParentColorFacts(CoatColor.NOIR_ET_FEU)
+
+    expected = DogColorInference.expected_colors(brown_and_white, brown_and_tan)
+
+    assert [color.color for color in expected] == [CoatColor.PARTICOLORE, CoatColor.MARRON_ET_FEU]
+    assert expected[0].reason == "Pas de noir : les deux parents sont marron, leurs chiots le seront aussi"
+    assert DogColorInference.expected_colors(black_and_tan, brown_and_tan) == ()
+
+
+@pytest.mark.parametrize(
+    ("code", "has_brown_coat"),
+    [
+        ("Mar. Pan.Bla.", True),
+        ("Mar. Mar.Fau.", True),
+        ("Chocolat et feu", True),
+        ("Marron et blanc", True),
+        ("Noi. Mar.Fau.", False),
+        ("F.Or.", False),
+        (None, False),
+    ],
+)
+def test_the_brown_coats_are_told_apart(code: str | None, has_brown_coat: bool) -> None:
+    assert DogColorInference.has_brown_coat(code) is has_brown_coat
+
+
+def test_a_dog_name_is_compared_without_case_accents_punctuation_nor_the_missing_affix() -> None:
+    assert DogName.key_of("Viggo Du Clos De L'Écotay") == DogName.key_of("Viggo du Clos de l'Ecotay")
+    assert DogName.key_of("Valko (Sans Affixe)") == "valko"
+    assert DogName.key_of(None) == ""

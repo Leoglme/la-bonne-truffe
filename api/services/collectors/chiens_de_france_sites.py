@@ -153,9 +153,13 @@ class SiteTarget:
 
 @dataclass(frozen=True)
 class SiteCollectionPlan:
-    """The sites one run reads."""
+    """
+    The sites one run reads. A litter the « Chiots nés chez nous » page lists, born since ``oldest_birth_read``,
+    has its page read too when the site no longer offers it: its puppies tell that none is left.
+    """
 
     sites: tuple[SiteTarget, ...]
+    oldest_birth_read: date | None = None
 
 
 @dataclass(frozen=True)
@@ -266,7 +270,7 @@ class ChiensDeFranceSiteCollector:
         collection = SiteCollection()
         for site in plan.sites:
             try:
-                self._collect_site(site, collection)
+                self._collect_site(site, collection, plan.oldest_birth_read)
             except SourceReadError as error:
                 logger.warning("Sites Chiens de France: site not read %s: %s", site.site_url, error)
                 collection.failed_sites.append(site.site_url)
@@ -298,14 +302,16 @@ class ChiensDeFranceSiteCollector:
             collection.entries.extend(self.parse_directory_page(LexborHTMLParser(html)))
         return collection
 
-    def _collect_site(self, site: SiteTarget, collection: SiteCollection) -> None:
+    def _collect_site(self, site: SiteTarget, collection: SiteCollection, oldest_birth_read: date | None) -> None:
         """
-        Read the pages of one site in the order docs/02 lists them, then each litter for sale and each dog
-        they link. A page the site does not have is skipped; the facts of the site close the reading.
+        Read the pages of one site in the order docs/02 lists them, then each litter for sale, each litter born
+        since ``oldest_birth_read`` the site no longer offers, and each dog they link. A page the site does not have
+        is skipped; the facts of the site close the reading.
 
         Args:
             site: The site to read.
             collection: Filled with what the pages give.
+            oldest_birth_read: Day from which a litter born at the breeding has its page read, None for none.
 
         Raises:
             SourceReadError: When a page cannot be read for another reason than being gone.
@@ -321,12 +327,14 @@ class ChiensDeFranceSiteCollector:
             collection.listings.extend(self.parse_litters_to_come_page(litters_to_come_tree, site))
             social_accounts = self.parse_social_links(litters_to_come_tree)
 
+        litter_ids_for_sale: list[str] = []
         litters_for_sale_tree = self._read_page(f"{breed_url}/{LITTERS_FOR_SALE_PATH}", collection)
         if litters_for_sale_tree is not None:
             social_accounts = social_accounts or self.parse_social_links(litters_for_sale_tree)
             photo_urls.extend(litter_photos_of(litters_for_sale_tree))
             litters_for_sale: list[list[RawListing]] = []
-            for litter_id in self.parse_litters_for_sale_page(litters_for_sale_tree):
+            litter_ids_for_sale = self.parse_litters_for_sale_page(litters_for_sale_tree)
+            for litter_id in litter_ids_for_sale:
                 litter_url = f"{breed_url}/{LITTER_FOR_SALE_PATH}/{litter_id}"
                 litter_tree = self._read_page(litter_url, collection)
                 if litter_tree is None:
@@ -343,6 +351,13 @@ class ChiensDeFranceSiteCollector:
         if litters_born_tree is not None:
             litters_born = tuple(self.parse_litters_born_page(litters_born_tree))
             social_accounts = social_accounts or self.parse_social_links(litters_born_tree)
+            for litter_id in self.recent_litter_ids_no_longer_offered(
+                litters_born, litter_ids_for_sale, oldest_birth_read
+            ):
+                litter_url = f"{breed_url}/{LITTER_FOR_SALE_PATH}/{litter_id}"
+                litter_tree = self._read_page(litter_url, collection)
+                if litter_tree is not None:
+                    collection.listings.extend(self.parse_litter_for_sale_page(litter_tree, site, litter_url))
 
         listed_dogs: dict[str, ListedDog] = {}
         for list_path in DOG_LIST_PATHS:
@@ -571,8 +586,10 @@ class ChiensDeFranceSiteCollector:
             if number_match is None:
                 continue
             puppy_number = number_match.group(1)
+            puppy_name = HtmlAdParser.text_of(box.css_first("div.nom p.gras"))
             status_text = HtmlAdParser.text_of(box.css_first("div.status p"))
             male_count, female_count = cls._sex_counts(status_text)
+            colors_of_the_name = cls._colors_of_puppy_name(puppy_name)
             listings.append(
                 RawListing(
                     source=ListingSource.CHIENS_DE_FRANCE,
@@ -588,6 +605,8 @@ class ChiensDeFranceSiteCollector:
                     male_count=male_count,
                     female_count=female_count,
                     puppies_available=cls._puppies_available(status_text),
+                    colors=colors_of_the_name,
+                    color_text=puppy_name if colors_of_the_name else None,
                     price_cents=HtmlAdParser.price_cents(status_text),
                     sire_name=parents[SIRE_ROLE].name if SIRE_ROLE in parents else None,
                     dam_name=parents[DAM_ROLE].name if DAM_ROLE in parents else None,
@@ -595,7 +614,7 @@ class ChiensDeFranceSiteCollector:
                     breeder=breeder,
                     published_at=published_at,
                     raw_json={
-                        "name": HtmlAdParser.text_of(box.css_first("div.nom p.gras")),
+                        "name": puppy_name,
                         "status": status_text,
                         "facts": facts,
                         "site_url": page_url,
@@ -663,7 +682,8 @@ class ChiensDeFranceSiteCollector:
     def _puppy_ad_told_by_posts(puppy_ad: RawListing, litter_posts: list[SiteNewsPost]) -> RawListing:
         """
         One puppy ad with what the posts about its litter tell: the colours of the last post that names some, one
-        colour being certain and several possible ones; and the photos of the posts when the ad shows none.
+        colour being certain and several possible ones, unless the puppy's own name gives its colour; and the photos
+        of the posts when the ad shows none.
 
         Args:
             puppy_ad: The ad as the page of its litter gives it.
@@ -677,7 +697,7 @@ class ChiensDeFranceSiteCollector:
         posts_naming_a_colour = [
             (news_post, colors) for news_post, colors in zip(litter_posts, colors_of_posts, strict=True) if colors
         ]
-        if posts_naming_a_colour:
+        if posts_naming_a_colour and not told_puppy_ad.colors:
             last_post, colors = posts_naming_a_colour[-1]
             confidence = ColorConfidence.CERTAIN if len(colors) == 1 else ColorConfidence.AMBIGUOUS
             told_puppy_ad = replace(
@@ -691,6 +711,22 @@ class ChiensDeFranceSiteCollector:
         if post_photos and not told_puppy_ad.photos:
             told_puppy_ad = replace(told_puppy_ad, photos=post_photos)
         return told_puppy_ad
+
+    @staticmethod
+    def _colors_of_puppy_name(puppy_name: str) -> tuple[ColorReading, ...]:
+        """
+        The colour a breeder writes in the name of a puppy (« Femelle noire et feu », « CHIOT mâle fauve »), the
+        colour of its collar left out (« mâle collier bleu »).
+
+        Args:
+            puppy_name: The name of the puppy box.
+
+        Returns:
+            One certain colour, several possible ones, or none.
+        """
+        colors = DogColorInference.colors_named_in(puppy_name)
+        confidence = ColorConfidence.CERTAIN if len(colors) == 1 else ColorConfidence.AMBIGUOUS
+        return tuple(ColorReading(color, confidence) for color in colors)
 
     @staticmethod
     def _litter_a_post_speaks_of(litters_for_sale: list[list[RawListing]], published_on: date) -> int | None:
@@ -767,7 +803,8 @@ class ChiensDeFranceSiteCollector:
         """
         litters: list[RawBreederSiteLitter] = []
         for link in tree.css("a.liste-portees[href]"):
-            if LITTER_FOR_SALE_LINK_PATTERN.search((link.attributes.get("href") or "").strip()) is None:
+            litter_link_match = LITTER_FOR_SALE_LINK_PATTERN.search((link.attributes.get("href") or "").strip())
+            if litter_link_match is None:
                 continue
             birth_date = french_date_of(link.attributes.get("title") or "") or french_date_of(
                 HtmlAdParser.text_of(link.css_first("p.port"))
@@ -777,10 +814,41 @@ class ChiensDeFranceSiteCollector:
             parents = cls._listed_parents(link)
             litters.append(
                 RawBreederSiteLitter(
-                    birth_date=birth_date, sire_name=parents.get(SIRE_ROLE), dam_name=parents.get(DAM_ROLE)
+                    birth_date=birth_date,
+                    sire_name=parents.get(SIRE_ROLE),
+                    dam_name=parents.get(DAM_ROLE),
+                    litter_id=litter_link_match.group(1),
                 )
             )
         return litters
+
+    @staticmethod
+    def recent_litter_ids_no_longer_offered(
+        litters_born: Sequence[RawBreederSiteLitter], litter_ids_for_sale: Sequence[str], oldest_birth_read: date | None
+    ) -> list[str]:
+        """
+        The litters born at the breeding since a day that the site no longer offers: once its puppies are all
+        reserved, a breeder often moves a litter from « Chiots disponibles » to « Chiots nés chez nous », where its
+        page still says what became of each puppy, with their photos.
+
+        Args:
+            litters_born: The litters of the « Chiots nés chez nous » page.
+            litter_ids_for_sale: The litters the « Chiots disponibles » page links, read already.
+            oldest_birth_read: Day from which a litter born is read, None for none.
+
+        Returns:
+            Their page numbers, each once, in page order.
+        """
+        if oldest_birth_read is None:
+            return []
+        litter_ids = {
+            litter.litter_id: None
+            for litter in litters_born
+            if litter.litter_id is not None
+            and litter.litter_id not in litter_ids_for_sale
+            and litter.birth_date >= oldest_birth_read
+        }
+        return list(litter_ids)
 
     @staticmethod
     def parse_directory_page(tree: LexborHTMLParser) -> list[RawSiteDirectoryEntry]:
@@ -1078,15 +1146,16 @@ class ChiensDeFranceSiteCollector:
         Whether a puppy is still offered, from its status line.
 
         Args:
-            status_text: « Mâle disponible à la vente à 1400 € », « Femelle réservée », « Mâle vendu ».
+            status_text: « Mâle disponible à la vente à 1400 € », « Femelle réservée », « Mâle vendu », « Femelle
+                resté à l'élevage ».
 
         Returns:
-            1 available, 0 reserved or sold, None when the line says neither.
+            1 available, 0 reserved, sold or kept by the breeder, None when the line says neither.
         """
         lowered = without_accents(status_text).lower()
         if "disponible" in lowered:
             return 1
-        if "reserv" in lowered or "vendu" in lowered:
+        if "reserv" in lowered or "vendu" in lowered or "reste a l'elevage" in lowered:
             return 0
         return None
 

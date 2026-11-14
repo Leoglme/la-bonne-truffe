@@ -106,6 +106,22 @@ def test_an_unknown_coat_or_a_missing_birth_certificate_stays_unknown() -> None:
     assert listing.lof_status == LofStatus.UNKNOWN
 
 
+def test_an_ad_keeps_every_photo_in_its_large_size_and_its_order() -> None:
+    photos = [
+        {"order_column": 2, "large_url": "https://whoof-public.example/ad_photos/833/second-large.jpg"},
+        {"order_column": 1, "large_url": "https://whoof-public.example/ad_photos/833/first-large.jpg"},
+    ]
+    listing = WhoofCollector.listing_of_ad({**ad_of(833), "photos": photos}, 1)
+    without_listed_photos = WhoofCollector.listing_of_ad({**ad_of(833), "photos": []}, 1)
+
+    assert listing is not None and without_listed_photos is not None
+    assert listing.photos == (
+        "https://whoof-public.example/ad_photos/833/first-large.jpg",
+        "https://whoof-public.example/ad_photos/833/second-large.jpg",
+    )
+    assert without_listed_photos.photos == ("https://whoof-public.example/ad_photos/833/photo-de-test.jpg",)
+
+
 def test_another_kind_of_ad_is_left_out() -> None:
     assert WhoofCollector.listing_of_ad({**ad_of(833), "type": "upcoming_litter"}, 1) is None
 

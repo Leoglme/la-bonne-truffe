@@ -566,6 +566,37 @@ def test_the_breeder_migration_marks_the_known_accounts_as_declared_at_the_centr
     assert without_account.social_link_origins == {}
 
 
+def test_a_parent_known_by_a_tattoo_takes_the_photo_of_the_site_dog_of_the_same_name(
+    client: TestClient, db: Session, seeded: dict[str, str]
+) -> None:
+    collection_runner.run_centrale_canine(db, collector_serving(load_recorded_pages()))
+    group = db.query(LitterGroup).order_by(LitterGroup.id).first()
+    assert group is not None
+    site_photo = f"{SITE_URL}/media_cdf/photos/chiens/photo-de-test-10.jpg"
+    tattooed_sire = Dog(
+        source=ListingSource.CENTRALE_CANINE,
+        external_id="7000403",
+        role=DogRole.PARENT,
+        full_name="Père de test du Clos de l'Élevage A",
+        identifier="335BAR",
+    )
+    site_sire = Dog(
+        source=ListingSource.CHIENS_DE_FRANCE,
+        external_id="1999102",
+        role=DogRole.REPRODUCER,
+        full_name="Père De Test Du Clos De L'Elevage A",
+        photos=[site_photo],
+    )
+    db.add_all([tattooed_sire, site_sire])
+    db.flush()
+    group.sire_dog_id = tattooed_sire.id
+    db.commit()
+
+    detail = client.get(f"/api/v1/litters/{group.id}", headers=seeded).json()
+
+    assert detail["sire"]["photo_url"] == site_photo
+
+
 def test_the_litter_shows_its_father_with_his_site_photo_and_one_gold_puppy_in_two(
     client: TestClient, db: Session, seeded: dict[str, str]
 ) -> None:

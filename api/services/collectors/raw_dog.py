@@ -77,11 +77,15 @@ class RawBreederProfile:
 
 @dataclass(frozen=True)
 class RawBreederSiteLitter:
-    """A litter the « Chiots nés chez nous » page of a breeder's site lists: when it was born, and its parents."""
+    """
+    A litter the « Chiots nés chez nous » page of a breeder's site lists: when it was born, its parents, and the
+    number of its page (``/chiots-a-vendre/<id>``).
+    """
 
     birth_date: date
     sire_name: str | None = None
     dam_name: str | None = None
+    litter_id: str | None = None
 
 
 @dataclass(frozen=True)

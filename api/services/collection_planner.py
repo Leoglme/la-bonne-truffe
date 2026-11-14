@@ -34,6 +34,7 @@ from services.collectors.scc_breeders import (
     SccDirectoryBreedTarget,
 )
 from services.collectors.scc_sites import SccSiteCollectionPlan, SccSiteTarget
+from services.listing_ingestion import BORN_LITTER_ACTIVE_DAYS
 
 # A reproducer's page on a breeder's site is read again after this many days.
 SITE_DOG_REFRESH_DAYS = 30
@@ -50,7 +51,8 @@ class CollectionPlanner:
     ) -> SiteCollectionPlan:
         """
         Plan a run of the breeder sites on Chiens de France: every breeder whose site is known, or the ones asked,
-        for every breed of the active profiles that Chiens de France knows.
+        for every breed of the active profiles that Chiens de France knows; the litters born since the app follows a
+        born litter are read even when the site no longer offers them.
 
         Args:
             db: Database session.
@@ -90,7 +92,8 @@ class CollectionPlanner:
                 )
                 for breed in breeds
             )
-        return SiteCollectionPlan(sites=tuple(targets))
+        oldest_birth_read = (now - timedelta(days=BORN_LITTER_ACTIVE_DAYS)).date()
+        return SiteCollectionPlan(sites=tuple(targets), oldest_birth_read=oldest_birth_read)
 
     @staticmethod
     def build_site_directory_plan(db: Session) -> SiteDirectoryPlan:

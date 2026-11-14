@@ -38,7 +38,8 @@ class LitterSnapshotBuilder:
             The snapshot, or None when the group has no listing left.
         """
         listings = db.query(Listing).filter(Listing.litter_group_id == group.id).order_by(Listing.id).all()
-        department_code = cls.department_code_of(listings)
+        breeder = db.get(Breeder, group.breeder_id) if group.breeder_id is not None else None
+        department_code = cls.department_code_of(listings, breeder)
         puppies = (
             db.query(Dog).filter(Dog.litter_group_id == group.id, Dog.role == DogRole.PUPPY).order_by(Dog.id).all()
         )
@@ -46,7 +47,7 @@ class LitterSnapshotBuilder:
             group,
             listings,
             breed=db.get(Breed, group.breed_id),
-            breeder=db.get(Breeder, group.breeder_id) if group.breeder_id is not None else None,
+            breeder=breeder,
             department=db.get(Department, department_code) if department_code is not None else None,
             puppies=puppies,
         )
@@ -79,7 +80,7 @@ class LitterSnapshotBuilder:
         active_listings = cls.active_listings_of(listings)
         if not active_listings:
             return None
-        department_code = cls.department_code_of(listings)
+        department_code = cls.department_code_of(listings, breeder)
         registered_puppies = puppies or []
         male_count, female_count = cls._sex_counts(group, active_listings, registered_puppies)
         known_prices = [listing.price_cents for listing in active_listings if listing.price_cents is not None]
@@ -156,19 +157,22 @@ class LitterSnapshotBuilder:
         return [listing for listing in listings if listing.is_active] or listings
 
     @classmethod
-    def department_code_of(cls, listings: list[Listing]) -> str | None:
+    def department_code_of(cls, listings: list[Listing], breeder: Breeder | None) -> str | None:
         """
-        The department of a litter: the first one its active listings give.
+        The department of a litter: the first one its active listings give, else the one of its breeder, since the
+        pages of a breeder's own site do not say where the breeding is.
 
         Args:
             listings: Every listing of the group.
+            breeder: Breeder of the group, when known.
 
         Returns:
-            The department code, or None while no listing gives one.
+            The department code, or None while neither the listings nor the breeder give one.
         """
-        return next(
+        listed_department_code = next(
             (listing.department_code for listing in cls.active_listings_of(listings) if listing.department_code), None
         )
+        return listed_department_code or (breeder.department_code if breeder is not None else None)
 
     @staticmethod
     def litter_name(breeder: Breeder | None, listings: list[Listing]) -> str:

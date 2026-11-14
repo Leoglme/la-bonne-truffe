@@ -439,8 +439,12 @@ def test_collect_gives_the_facts_of_the_site_with_its_first_litter_photo_as_cove
             registered_on=None,
             facebook_url="https://www.facebook.com/elevage.a.test",
             litters_born=(
-                RawBreederSiteLitter(date(2026, 8, 28), "Père de test 11", "Mère de test 12 Du Clos de l'Élevage A"),
-                RawBreederSiteLitter(date(2026, 7, 19), "Père de test 13", "Chien de test 1 Du Clos de l'Élevage A"),
+                RawBreederSiteLitter(
+                    date(2026, 8, 28), "Père de test 11", "Mère de test 12 Du Clos de l'Élevage A", "495610"
+                ),
+                RawBreederSiteLitter(
+                    date(2026, 7, 19), "Père de test 13", "Chien de test 1 Du Clos de l'Élevage A", "494507"
+                ),
             ),
         )
     ]
@@ -585,9 +589,83 @@ def test_litters_born_page_gives_each_litter_of_the_year_with_its_date_and_paren
     litters = ChiensDeFranceSiteCollector.parse_litters_born_page(parsed("litters_born.html"))
 
     assert litters == [
-        RawBreederSiteLitter(date(2026, 8, 28), "Père de test 11", "Mère de test 12 Du Clos de l'Élevage A"),
-        RawBreederSiteLitter(date(2026, 7, 19), "Père de test 13", "Chien de test 1 Du Clos de l'Élevage A"),
+        RawBreederSiteLitter(date(2026, 8, 28), "Père de test 11", "Mère de test 12 Du Clos de l'Élevage A", "495610"),
+        RawBreederSiteLitter(date(2026, 7, 19), "Père de test 13", "Chien de test 1 Du Clos de l'Élevage A", "494507"),
     ]
+
+
+def test_the_name_of_a_puppy_gives_its_colour_but_not_the_one_of_its_collar() -> None:
+    page = (
+        recorded_page("litter_for_sale_495610.html")
+        .replace("Chiot de test 2", "Femelle noire et feu")
+        .replace("Chiot de test 3", "Mâle collier bleu")
+    )
+    site = site_target(RECORDED_SITE_SLUG)
+
+    puppy_ads = ChiensDeFranceSiteCollector.parse_litter_for_sale_page(LexborHTMLParser(page), site, "page")
+    named_in_colour, named_by_its_collar = puppy_ads[0], puppy_ads[1]
+
+    assert named_in_colour.colors == (ColorReading(CoatColor.NOIR_ET_FEU, ColorConfidence.CERTAIN),)
+    assert named_in_colour.color_text == "Femelle noire et feu"
+    assert (named_by_its_collar.colors, named_by_its_collar.color_text) == ((), None)
+
+
+def test_a_post_does_not_change_the_colour_the_name_of_a_puppy_gives() -> None:
+    puppy_named_in_colour = replace(
+        RECORDED_LITTER[0], colors=(ColorReading(CoatColor.NOIR_ET_FEU, ColorConfidence.CERTAIN),)
+    )
+    post = SiteNewsPost("Chiots golden disponibles", "", date(2026, 9, 1))
+
+    told = ChiensDeFranceSiteCollector.puppy_ads_told_by_news([[puppy_named_in_colour]], [post])
+
+    assert told[0].colors == (ColorReading(CoatColor.NOIR_ET_FEU, ColorConfidence.CERTAIN),)
+
+
+def test_only_the_recent_litters_the_site_no_longer_offers_are_read_again() -> None:
+    litters_born = ChiensDeFranceSiteCollector.parse_litters_born_page(parsed("litters_born.html"))
+
+    recent_ones = ChiensDeFranceSiteCollector.recent_litter_ids_no_longer_offered(
+        litters_born, ["495610"], date(2026, 7, 1)
+    )
+    after_the_window = ChiensDeFranceSiteCollector.recent_litter_ids_no_longer_offered(
+        litters_born, ["495610"], date(2026, 8, 1)
+    )
+    without_a_window = ChiensDeFranceSiteCollector.recent_litter_ids_no_longer_offered(litters_born, [], None)
+
+    assert (recent_ones, after_the_window, without_a_window) == (["494507"], [], [])
+
+
+def test_collect_reads_the_page_of_a_recent_litter_moved_to_the_litters_born() -> None:
+    requests: list[httpx.Request] = []
+    one_litter_for_sale = f'<a href="{SITE_URL}/cocker-spaniel-anglais/chiots-a-vendre/495610">Chiots</a>'
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        """
+        Serve the recorded site, whose « Chiots disponibles » now offers a single litter of the two born.
+
+        Args:
+            request: The collector's request.
+
+        Returns:
+            The page, or a 404.
+        """
+        requests.append(request)
+        if request.url.path == "/cocker-spaniel-anglais/chiots":
+            return httpx.Response(200, text=one_litter_for_sale)
+        file_name = RECORDED_PAGES_BY_PATH.get(request.url.path)
+        return httpx.Response(200, text=recorded_page(file_name)) if file_name else httpx.Response(404)
+
+    collector = ChiensDeFranceSiteCollector(
+        http_client=httpx.Client(transport=httpx.MockTransport(answer)),
+        sleep=lambda _seconds: None,
+        monotonic_clock=lambda: 0.0,
+    )
+
+    collector.collect(SiteCollectionPlan(sites=(RECORDED_SITE,), oldest_birth_read=date(2026, 7, 1)))
+
+    read_paths = [request.url.path for request in requests]
+    assert read_paths.count("/cocker-spaniel-anglais/chiots-a-vendre/494507") == 1
+    assert read_paths.count("/cocker-spaniel-anglais/chiots-a-vendre/495610") == 1
 
 
 def test_regional_list_gives_each_breeder_site_with_its_postal_code() -> None:

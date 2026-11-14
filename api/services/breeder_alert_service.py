@@ -260,7 +260,8 @@ class BreederAlertService:
         follow: BreederFollow, kind: BreederEventKind, snapshot: LitterSnapshot, criteria: ProfileCriteria | None
     ) -> bool:
         """
-        Whether the follow asks for this event, and whether the litter's colours allow it.
+        Whether the follow asks for this event, and whether the litter's colours allow it. New ads and new photos
+        of a litter all reserved or sold, such as one a breeder's site moved to its past litters, are not worth a push.
 
         Args:
             follow: The follow, with its settings.
@@ -278,6 +279,8 @@ class BreederAlertService:
             BreederEventKind.NEW_AD: follow.notify_new_photos,
         }[kind]
         if not is_setting_on:
+            return False
+        if kind in (BreederEventKind.NEW_AD, BreederEventKind.NEW_PHOTOS) and snapshot.puppies_available == 0:
             return False
         if follow.notify_ignored_colors or criteria is None or not snapshot.has_certain_colors:
             return True

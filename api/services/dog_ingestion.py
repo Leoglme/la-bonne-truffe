@@ -13,7 +13,7 @@ from models.litter_group import LitterGroup
 from services.collectors.raw_dog import RawDog
 from services.collectors.scc_dogs import RawLitterDetail
 from services.dog_collection_planner import PUPPIES_RETRY_DAYS
-from services.dog_color_inference import DogColorInference, ParentColorFacts
+from services.dog_color_inference import BROWN_COAT_COLORS, DogColorInference, ParentColorFacts
 
 
 @dataclass
@@ -186,8 +186,8 @@ class DogIngestionService:
     @staticmethod
     def color_facts_of(dog: Dog) -> ParentColorFacts:
         """
-        What a parent's page tells of its colour genes: its colour, its tested E locus, and whether one of its
-        own parents had a coat of the gold family.
+        What a parent's page tells of its colour genes: its colour, its tested E locus, whether one of its own
+        parents had a coat of the gold family, and whether its coat is brown.
 
         Args:
             dog: The parent.
@@ -200,6 +200,9 @@ class DogIngestionService:
             e_locus=dog.e_locus or DogColorInference.e_locus_of(dog.health_codes),
             has_gold_parent=DogColorInference.has_gold_coat(dog.sire_color_code)
             or DogColorInference.has_gold_coat(dog.dam_color_code),
+            has_brown_coat=DogColorInference.has_brown_coat(dog.color_code)
+            if dog.color_code
+            else dog.color in BROWN_COAT_COLORS,
         )
 
 

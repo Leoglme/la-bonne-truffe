@@ -17,6 +17,7 @@ from models.breeder import Breeder
 from models.breeder_follow import BreederFollow, BreederFollowEvent
 from models.listing import Listing
 from models.listing_change import ListingChange
+from models.litter_group import LitterGroup
 from models.notification import Notification
 from models.user import User
 from seeders.run_seeders import SeederRunner
@@ -290,6 +291,29 @@ def test_a_new_ad_for_a_litter_of_a_followed_breeder_is_pushed_with_its_source(
     assert count == 1
     assert ad_push.title == f"Nouvelle annonce · {name_of(breeder)}"
     assert " est en ligne sur Chiens de France : une portée " in ad_push.body
+    assert events(db) == [(BreederEventKind.NEW_AD, True)]
+
+
+def test_a_new_ad_of_a_litter_with_no_puppy_left_is_recorded_without_a_push(
+    client: TestClient, db: Session, headers: dict[str, str], pushed: list[tuple[str, str]]
+) -> None:
+    first_run_without(db)
+    breeder = breeder_of_litter(db, FIRST_BREEDER_OLD_LITTER_ID)
+    follow(client, headers, breeder.id, notify_ignored_colors=True)
+    listing = db.query(Listing).filter(Listing.external_id == FIRST_BREEDER_OLD_LITTER_ID).one()
+    site_ad = a_site_ad_joined(db, listing)
+    litter = db.get(LitterGroup, listing.litter_group_id)
+    assert litter is not None
+    litter.puppies_available = 0
+    db.commit()
+    now = naive_utc_now()
+
+    count = breeder_alert_service.raise_events(
+        db, BreederRunFacts(new_listing_ids=[site_ad.id], run_started_at=now), now, should_notify=True
+    )
+
+    assert count == 0
+    assert db.query(Notification).filter(Notification.kind == NotificationKind.BREEDER_NEW_AD).count() == 0
     assert events(db) == [(BreederEventKind.NEW_AD, True)]
 
 

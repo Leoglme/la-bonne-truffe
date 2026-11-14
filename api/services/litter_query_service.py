@@ -47,6 +47,7 @@ from schemas.notification import NotificationLitter
 from services.collectors.chiens_de_france_sites import breed_page_of
 from services.dog_chip import DogChip
 from services.dog_ingestion import DogIngestionService
+from services.dog_name import DogName
 from services.genetic_screening import GeneticScreeningReader
 from services.matching.snapshot_builder import LitterSnapshotBuilder
 
@@ -108,7 +109,11 @@ class LitterCardFacts:
         department_codes = {
             code
             for code in (
-                LitterSnapshotBuilder.department_code_of(listings) for listings in facts.listings_by_group.values()
+                LitterSnapshotBuilder.department_code_of(
+                    facts.listings_by_group.get(group.id, []),
+                    facts.breeders_by_id.get(group.breeder_id) if group.breeder_id is not None else None,
+                )
+                for group in groups
             )
             if code is not None
         }
@@ -204,7 +209,7 @@ class LitterQueryService:
         dam = cls._parent(listings, lambda listing: listing.dam_name, lambda listing: listing.dam_rating)
         sire_dog = db.get(Dog, group.sire_dog_id) if group.sire_dog_id else None
         dam_dog = db.get(Dog, group.dam_dog_id) if group.dam_dog_id else None
-        site_photos_by_chip = cls._site_photos_by_chip(db, [dog for dog in (sire_dog, dam_dog) if dog is not None])
+        site_photos_by_parent_id = cls._site_photos_of(db, [dog for dog in (sire_dog, dam_dog) if dog is not None])
         return LitterDetail(
             **card.model_dump(),
             reasons=[LitterReason(text=str(reason["text"]), points=int(reason["points"])) for reason in match.reasons]
@@ -213,8 +218,8 @@ class LitterQueryService:
             flags=[MatchFlag(flag) for flag in match.flags] if match is not None else [],
             litter_number=next((listing.litter_number for listing in listings if listing.litter_number), None),
             mating_date=group.mating_date,
-            sire=cls._parent_with_dog(sire, sire_dog, site_photos_by_chip),
-            dam=cls._parent_with_dog(dam, dam_dog, site_photos_by_chip),
+            sire=cls._parent_with_dog(sire, sire_dog, site_photos_by_parent_id),
+            dam=cls._parent_with_dog(dam, dam_dog, site_photos_by_parent_id),
             breeder=cls._breeder(breeder, breed.chiens_de_france_id if breed is not None else None)
             if breeder is not None
             else None,
@@ -473,7 +478,7 @@ class LitterQueryService:
         """
         listings = facts.listings_by_group.get(group.id, [])
         breeder = facts.breeders_by_id.get(group.breeder_id) if group.breeder_id is not None else None
-        department_code = LitterSnapshotBuilder.department_code_of(listings)
+        department_code = LitterSnapshotBuilder.department_code_of(listings, breeder)
         snapshot = LitterSnapshotBuilder.build_from_listings(
             group,
             listings,
@@ -567,16 +572,16 @@ class LitterQueryService:
 
     @staticmethod
     def _parent_with_dog(
-        parent: LitterParent | None, dog: Dog | None, site_photos_by_chip: dict[str, str]
+        parent: LitterParent | None, dog: Dog | None, site_photos_by_parent_id: dict[int, str]
     ) -> LitterParent | None:
         """
         A parent completed with its Centrale Canine page (colour, E locus, health tests, page) and with the first
-        photo its breeder's site shows of the dog of the same chip.
+        photo a breeder's site shows of it.
 
         Args:
             parent: The parent as the listings name it, if any.
             dog: Its dog row, once its page is read.
-            site_photos_by_chip: First photo on a breeder's site, by chip digits.
+            site_photos_by_parent_id: First photo on a breeder's site, by parent dog id.
 
         Returns:
             The parent, from the dog alone when no listing names it.
@@ -587,7 +592,6 @@ class LitterQueryService:
         if not name:
             return parent
         color_facts = DogIngestionService.color_facts_of(dog)
-        chip = DogChip.key_of(dog.identifier)
         return LitterParent(
             name=name,
             rating=parent.rating if parent is not None and parent.rating is not None else dog.rating,
@@ -597,35 +601,44 @@ class LitterQueryService:
             carries_gold_by_parents=color_facts.carries_gold_by_parents,
             health_codes=list(dog.health_codes),
             scc_url=dog.external_url,
-            photo_url=site_photos_by_chip.get(chip) if chip is not None else None,
+            photo_url=site_photos_by_parent_id.get(dog.id),
         )
 
     @staticmethod
-    def _site_photos_by_chip(db: Session, parents: list[Dog]) -> dict[str, str]:
+    def _site_photos_of(db: Session, parents: list[Dog]) -> dict[int, str]:
         """
-        The first photo the breeders' sites on Chiens de France show of each parent, found by its chip.
+        The first photo the breeders' sites on Chiens de France show of each parent: the dog of the same chip, else
+        of the same full name, since the Centrale Canine knows some dogs by a tattoo and some sites give no chip.
 
         Args:
             db: Database session.
             parents: The parents read at the Centrale Canine.
 
         Returns:
-            Photo URL by chip digits, for the parents a site shows with a photo.
+            Photo URL by parent dog id, for the parents a site shows with a photo.
         """
-        chips = {chip for chip in (DogChip.key_of(parent.identifier) for parent in parents) if chip is not None}
-        if not chips:
+        if not parents:
             return {}
         photos_by_chip: dict[str, str] = {}
-        site_dogs = (
-            db.query(Dog)
-            .filter(Dog.source == ListingSource.CHIENS_DE_FRANCE, Dog.identifier.is_not(None))
-            .order_by(Dog.id)
-        )
-        for site_dog in site_dogs:
+        photos_by_name: dict[str, str] = {}
+        for site_dog in db.query(Dog).filter(Dog.source == ListingSource.CHIENS_DE_FRANCE).order_by(Dog.id):
+            if not site_dog.photos:
+                continue
             chip = DogChip.key_of(site_dog.identifier)
-            if chip in chips and site_dog.photos:
+            if chip is not None:
                 photos_by_chip.setdefault(chip, site_dog.photos[0])
-        return photos_by_chip
+            name = DogName.key_of(site_dog.full_name or site_dog.name)
+            if name:
+                photos_by_name.setdefault(name, site_dog.photos[0])
+        photos_by_parent_id: dict[int, str] = {}
+        for parent in parents:
+            chip = DogChip.key_of(parent.identifier)
+            photo = (photos_by_chip.get(chip) if chip is not None else None) or photos_by_name.get(
+                DogName.key_of(parent.full_name or parent.name)
+            )
+            if photo is not None:
+                photos_by_parent_id[parent.id] = photo
+        return photos_by_parent_id
 
     @staticmethod
     def _puppy_state(listing: Listing) -> PuppyAdState | None:
@@ -696,7 +709,7 @@ class LitterQueryService:
             city=breeder.city,
             phone_e164=breeder.phone_e164,
             siren=breeder.siren,
-            website=breed_page_of(breeder.website, site_breed_slug or ""),
+            website=breed_page_of(breeder.website or breeder.chiens_de_france_site_url, site_breed_slug or ""),
             is_selected_breeding=group == SELECTED_BREEDING_GROUP,
             has_affix=(group in GROUPS_WITH_AFFIX) if group is not None else (True if breeder.affix else None),
             is_breed_club_member=breeder.is_breed_club_member is True,

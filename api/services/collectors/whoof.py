@@ -181,7 +181,7 @@ class WhoofCollector:
             sire_rating=cls._rating(father.get("notation")),
             dam_name=BreederContactParser.readable_name(mother.get("name")),
             dam_rating=cls._rating(mother.get("notation")),
-            photos=(ad["main_photo"],) if isinstance(ad.get("main_photo"), str) else (),
+            photos=cls._photos(ad),
             breeder=cls._breeder(breeding, postal_code, town),
             published_at=cls._utc_moment(ad.get("published_at")),
             raw_json={
@@ -192,6 +192,29 @@ class WhoofCollector:
                 "birth_certificate": documents.get("birth_certificate"),
             },
         )
+
+    @staticmethod
+    def _photos(ad: dict[str, Any]) -> tuple[str, ...]:
+        """
+        Every photo of an ad, in the order the breeder gave them, in their large size; the main photo alone when
+        the ad lists none.
+
+        Args:
+            ad: The ad, as the listing JSON gives it.
+
+        Returns:
+            The photo addresses.
+        """
+        listed_photos = [photo for photo in ad.get("photos") or [] if isinstance(photo, dict)]
+        listed_photos.sort(key=lambda photo: photo.get("order_column") or 0)
+        large_photos = tuple(
+            address
+            for address in (photo.get("large_url") or photo.get("url") for photo in listed_photos)
+            if isinstance(address, str) and address
+        )
+        if large_photos:
+            return large_photos
+        return (ad["main_photo"],) if isinstance(ad.get("main_photo"), str) else ()
 
     @staticmethod
     def _breeder(breeding: dict[str, Any], postal_code: str | None, town: str | None) -> RawBreeder | None:

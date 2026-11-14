@@ -1,6 +1,5 @@
 """Reads the breeders for the Éleveurs tab: list, search, detail. Every query is scoped to the user (docs/05)."""
 
-import re
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -42,6 +41,7 @@ from services.collectors.chiens_de_france_sites import LITTERS_BORN_PATH, breed_
 from services.dog_chip import DogChip
 from services.dog_color_inference import DogColorInference
 from services.dog_ingestion import DogIngestionService
+from services.dog_name import DogName
 from services.litter_query_service import LitterCardFacts, LitterQueryService, LitterSort
 
 NAMELESS_BREEDER = "Éleveur sans nom"
@@ -49,7 +49,6 @@ SELECTED_BREEDING_GROUP = 1
 SEARCH_LIMIT = 8
 REPRODUCER_ROLES: tuple[DogRole, ...] = (DogRole.REPRODUCER, DogRole.PARENT)
 SAME_LITTER_DAYS = 3
-DOG_NAME_WORD_PATTERN = re.compile(r"[a-z0-9]+")
 
 
 @dataclass
@@ -626,7 +625,7 @@ class BreederQueryService:
         if not breeder.chiens_de_france_litters:
             return 0
         site_dogs_by_name = {
-            cls._dog_name_key(dog.full_name or dog.name): dog
+            DogName.key_of(dog.full_name or dog.name): dog
             for dog in dogs
             if dog.source == ListingSource.CHIENS_DE_FRANCE
         }
@@ -634,13 +633,13 @@ class BreederQueryService:
         gold_count = 0
         for entry in breeder.chiens_de_france_litters:
             birth_date = date.fromisoformat(entry["birth_date"])
-            dam_key = cls._dog_name_key(entry.get("dam_name"))
+            dam_key = DogName.key_of(entry.get("dam_name"))
             if any(
                 abs((birth_date - known_birth_date).days) <= SAME_LITTER_DAYS and dam_key and dam_key in known_dam_keys
                 for known_birth_date, known_dam_keys in known_litters
             ):
                 continue
-            sire = site_dogs_by_name.get(cls._dog_name_key(entry.get("sire_name")))
+            sire = site_dogs_by_name.get(DogName.key_of(entry.get("sire_name")))
             dam = site_dogs_by_name.get(dam_key)
             if sire is None or dam is None:
                 continue
@@ -670,23 +669,10 @@ class BreederQueryService:
             Listing.litter_group_id.in_([card.id for card in litters]), Listing.dam_name.is_not(None)
         ):
             if group_id is not None:
-                dam_keys_by_group.setdefault(group_id, set()).add(cls._dog_name_key(dam_name))
+                dam_keys_by_group.setdefault(group_id, set()).add(DogName.key_of(dam_name))
         return [
             (card.birth_date, dam_keys_by_group.get(card.id, set())) for card in litters if card.birth_date is not None
         ]
-
-    @staticmethod
-    def _dog_name_key(name: str | None) -> str:
-        """
-        A dog's name as two lists compare it: lower case, without accents nor punctuation.
-
-        Args:
-            name: « Sarah bernhardt Du Moulin des Saules ».
-
-        Returns:
-            « sarah bernhardt du moulin des saules », empty for no name.
-        """
-        return " ".join(DOG_NAME_WORD_PATTERN.findall(without_accents(name or "").lower()))
 
     @staticmethod
     def _site_breed_slug(db: Session) -> str:
