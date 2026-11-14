@@ -111,6 +111,14 @@ def test_the_colour_an_ad_states_wins_over_the_parents_and_the_variety() -> None
     assert colors_of(litter_group(ONE_GOLD_PUPPY_IN_TWO), listings) == [("noir_et_feu", "certain")]
 
 
+def test_a_litter_gone_from_the_centrale_canine_keeps_its_variety_while_its_ads_tell_no_colour() -> None:
+    declared_litter_gone_offline = litter_declared_under_the_gold_variety()
+    declared_litter_gone_offline.is_active = False
+    listings = [declared_litter_gone_offline, puppy_ad([])]
+
+    assert colors_of(litter_group([]), listings) == [("gold", "certain")]
+
+
 def test_a_bundle_an_ad_states_wins_over_the_variety_when_the_parents_tell_nothing() -> None:
     listings = [
         litter_declared_under_the_gold_variety(),

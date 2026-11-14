@@ -305,8 +305,9 @@ class ChiensDeFranceSiteCollector:
     def _collect_site(self, site: SiteTarget, collection: SiteCollection, oldest_birth_read: date | None) -> None:
         """
         Read the pages of one site in the order docs/02 lists them, then each litter for sale, each litter born
-        since ``oldest_birth_read`` the site no longer offers, and each dog they link. A page the site does not have
-        is skipped; the facts of the site close the reading.
+        since ``oldest_birth_read`` the site no longer offers, each dog the lists link, and each parent of these
+        litters the lists leave out (a stud of another breeding, a female the site no longer shows), whose page the
+        site still serves. A page the site does not have is skipped; the facts of the site close the reading.
 
         Args:
             site: The site to read.
@@ -328,6 +329,7 @@ class ChiensDeFranceSiteCollector:
             social_accounts = self.parse_social_links(litters_to_come_tree)
 
         litter_ids_for_sale: list[str] = []
+        litter_parents: dict[str, LinkedParent] = {}
         litters_for_sale_tree = self._read_page(f"{breed_url}/{LITTERS_FOR_SALE_PATH}", collection)
         if litters_for_sale_tree is not None:
             social_accounts = social_accounts or self.parse_social_links(litters_for_sale_tree)
@@ -340,6 +342,7 @@ class ChiensDeFranceSiteCollector:
                 if litter_tree is None:
                     continue
                 litters_for_sale.append(self.parse_litter_for_sale_page(litter_tree, site, litter_url))
+                litter_parents.update(self._linked_parents_by_id(litter_tree))
                 photo_urls.extend(litter_photos_of(litter_tree))
                 if breeding_counts == (None, None):
                     breeding_counts = self.breeding_counts(litter_tree)
@@ -358,6 +361,7 @@ class ChiensDeFranceSiteCollector:
                 litter_tree = self._read_page(litter_url, collection)
                 if litter_tree is not None:
                     collection.listings.extend(self.parse_litter_for_sale_page(litter_tree, site, litter_url))
+                    litter_parents.update(self._linked_parents_by_id(litter_tree))
 
         listed_dogs: dict[str, ListedDog] = {}
         for list_path in DOG_LIST_PATHS:
@@ -369,6 +373,9 @@ class ChiensDeFranceSiteCollector:
                 if known_dog is None or (known_dog.status_text is None and listed_dog.status_text is not None):
                     listed_dogs[listed_dog.external_id] = listed_dog
         photo_urls.extend(listed_dog.photo_url for listed_dog in listed_dogs.values() if listed_dog.photo_url)
+        for parent_id, parent in litter_parents.items():
+            if parent_id not in listed_dogs:
+                listed_dogs[parent_id] = ListedDog(parent_id, f"{breed_url}/chien/{parent_id}", parent.name, None, None)
         for listed_dog in listed_dogs.values():
             if listed_dog.external_id in site.fresh_dog_external_ids:
                 continue
@@ -1034,6 +1041,19 @@ class ChiensDeFranceSiteCollector:
                 parents.setdefault(role, name)
         return parents
 
+    @classmethod
+    def _linked_parents_by_id(cls, tree: LexborHTMLParser) -> dict[str, LinkedParent]:
+        """
+        The parents a litter page links, by the number of their page.
+
+        Args:
+            tree: The parsed litter page.
+
+        Returns:
+            Each parent whose card links a page, by its ``/chien/<id>``.
+        """
+        return {parent.external_id: parent for parent in cls._parents(tree).values() if parent.external_id is not None}
+
     @staticmethod
     def _parents(tree: LexborHTMLParser) -> dict[str, LinkedParent]:
         """
@@ -1146,8 +1166,8 @@ class ChiensDeFranceSiteCollector:
         Whether a puppy is still offered, from its status line.
 
         Args:
-            status_text: « Mâle disponible à la vente à 1400 € », « Femelle réservée », « Mâle vendu », « Femelle
-                resté à l'élevage ».
+            status_text: « Mâle disponible à la vente à 1400 € », « Femelle réservée », « Mâle vendu »,
+                « Femelle resté à l'élevage ».
 
         Returns:
             1 available, 0 reserved, sold or kept by the breeder, None when the line says neither.

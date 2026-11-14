@@ -350,6 +350,42 @@ def test_the_routes_preview_then_add_a_pasted_site_and_read_it_at_once(
     )
 
 
+def test_the_detail_shows_once_a_dog_the_centrale_canine_knows_by_a_tattoo_and_its_site_by_its_name(
+    client: TestClient, db: Session, seeded: dict[str, str]
+) -> None:
+    breeder = ferme_des_tests(db, chiens_de_france_site_url=SITE_URL)
+    site_photo = f"{SITE_URL}/media_cdf/photos/chiens/photo-de-test-11.jpg"
+    db.add_all(
+        [
+            Dog(
+                source=ListingSource.CENTRALE_CANINE,
+                external_id="7000202",
+                role=DogRole.PARENT,
+                breeder_id=breeder.id,
+                full_name="Père tatoué du Clos de Test",
+                identifier="335BAR",
+                color_code="F.Cl.",
+                color=CoatColor.GOLD,
+            ),
+            Dog(
+                source=ListingSource.CHIENS_DE_FRANCE,
+                external_id="1212401",
+                role=DogRole.REPRODUCER,
+                breeder_id=breeder.id,
+                full_name="Père Tatoué Du Clos De Test",
+                photos=[site_photo],
+            ),
+        ]
+    )
+    db.commit()
+
+    detail = client.get(f"{BREEDERS_URL}/{breeder.id}", headers=seeded).json()
+
+    assert [(dog["full_name"], dog["photos"], dog["color"]) for dog in detail["reproducers"]] == [
+        ("Père Tatoué Du Clos De Test", [site_photo], "gold")
+    ]
+
+
 def test_the_detail_shows_a_dog_both_sources_know_once_and_the_gold_litters_only_its_site_lists(
     client: TestClient, db: Session, seeded: dict[str, str]
 ) -> None:

@@ -64,7 +64,9 @@ class LitterSnapshotBuilder:
     ) -> LitterSnapshot | None:
         """
         Merge the listings of a group: a born listing wins over a declaration, LOF over unknown, a
-        confirmed colour over everything, then the registered puppies, then what the parents imply.
+        confirmed colour over everything, then the registered puppies, then what the parents imply. When the
+        listings still online say nothing of the colour, those gone offline still tell it: the Centrale Canine drops
+        a litter from its list long before the breeder's site stops showing its puppies, all reserved.
 
         Args:
             group: The group.
@@ -92,7 +94,8 @@ class LitterSnapshotBuilder:
             kind=cls._merged_kind(active_listings),
             department_code=department_code,
             department_name=department.name if department is not None else None,
-            colors=cls._merged_colors(group, active_listings, registered_puppies),
+            colors=cls._merged_colors(group, active_listings, registered_puppies)
+            or cls._merged_colors(group, listings, registered_puppies),
             lof_status=cls._merged_lof_status(active_listings),
             male_count=male_count,
             female_count=female_count,

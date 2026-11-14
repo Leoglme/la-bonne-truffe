@@ -621,6 +621,42 @@ def test_a_post_does_not_change_the_colour_the_name_of_a_puppy_gives() -> None:
     assert told[0].colors == (ColorReading(CoatColor.NOIR_ET_FEU, ColorConfidence.CERTAIN),)
 
 
+def test_collect_reads_the_page_of_a_parent_of_a_litter_the_site_does_not_list() -> None:
+    requests: list[httpx.Request] = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        """
+        Serve the single litter of ``elevage-e``, which lists no dog, and the page of the father of that litter.
+
+        Args:
+            request: The collector's request.
+
+        Returns:
+            The page, or a 404.
+        """
+        requests.append(request)
+        if request.url.path in ("/cocker-spaniel-anglais/chiots", "/cocker-spaniel-anglais/chiots-a-vendre/493883"):
+            return httpx.Response(200, text=recorded_page("single_litter_for_sale_493883.html"))
+        if request.url.path == "/cocker-spaniel-anglais/chien/1374851":
+            return httpx.Response(200, text=recorded_page("dog_1212400.html"))
+        return httpx.Response(404)
+
+    collector = ChiensDeFranceSiteCollector(
+        http_client=httpx.Client(transport=httpx.MockTransport(answer)),
+        sleep=lambda _seconds: None,
+        monotonic_clock=lambda: 0.0,
+    )
+
+    collection = collector.collect(SiteCollectionPlan(sites=(SINGLE_LITTER_SITE,)))
+
+    read_paths = [request.url.path for request in requests]
+    assert "/cocker-spaniel-anglais/chien/1374851" in read_paths
+    assert "/cocker-spaniel-anglais/chien/1299945" in read_paths
+    assert [(dog.external_id, dog.role, bool(dog.photos)) for dog in collection.dogs] == [
+        ("1374851", DogRole.REPRODUCER, True)
+    ]
+
+
 def test_only_the_recent_litters_the_site_no_longer_offers_are_read_again() -> None:
     litters_born = ChiensDeFranceSiteCollector.parse_litters_born_page(parsed("litters_born.html"))
 

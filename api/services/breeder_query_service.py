@@ -526,6 +526,7 @@ class BreederQueryService:
     def _merged_reproducers(cls, dogs: list[Dog], current_parent_dog_ids: set[int]) -> list[BreederDog]:
         """
         The reproducers of a breeding, a dog the Centrale Canine and the breeder's site both know shown once (same
+        chip, else same full name, since the Centrale Canine knows some dogs by a tattoo and some sites give no
         chip); the parents of the current litters first, then the dogs with a photo.
 
         Args:
@@ -535,10 +536,10 @@ class BreederQueryService:
         Returns:
             One payload per dog.
         """
-        dogs_by_chip: dict[str, list[Dog]] = {}
+        same_dogs_by_key: dict[str, list[Dog]] = {}
         for dog in dogs:
-            dogs_by_chip.setdefault(DogChip.key_of(dog.identifier) or f"dog-{dog.id}", []).append(dog)
-        merged = [cls._merged_dog(same_dogs, current_parent_dog_ids) for same_dogs in dogs_by_chip.values()]
+            same_dogs_by_key.setdefault(cls._same_dog_key(dog), []).append(dog)
+        merged = [cls._merged_dog(same_dogs, current_parent_dog_ids) for same_dogs in same_dogs_by_key.values()]
         return sorted(
             merged,
             key=lambda dog: (
@@ -547,6 +548,23 @@ class BreederQueryService:
                 (dog.full_name or dog.name or "").lower(),
             ),
         )
+
+    @staticmethod
+    def _same_dog_key(dog: Dog) -> str:
+        """
+        What tells one dog of a breeding from another: its chip, else its full name, else its row.
+
+        Args:
+            dog: A parent or a reproducer of the breeding.
+
+        Returns:
+            « chip:250000000000101 », « name:viggo du clos de l ecotay » or « row:12 ».
+        """
+        chip = DogChip.key_of(dog.identifier)
+        if chip is not None:
+            return f"chip:{chip}"
+        name = DogName.key_of(dog.full_name or dog.name)
+        return f"name:{name}" if name else f"row:{dog.id}"
 
     @staticmethod
     def _merged_dog(same_dogs: list[Dog], current_parent_dog_ids: set[int]) -> BreederDog:

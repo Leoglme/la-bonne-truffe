@@ -22,8 +22,7 @@ GOLD_PUPPY_ODDS_OF_GOLD_COUPLE = 1.0
 GOLD_PUPPY_ODDS_WITH_ONE_CARRIER = 0.5
 GOLD_PUPPY_ODDS_OF_TWO_CARRIERS = 0.25
 
-# LOF Select writes the colour in abbreviations (« F.Or. », « Noi. Pan.Bla.Gri. »), which breeders copy with or without
-# their dots (« F.OR », « Noi pan bla »), sometimes followed by the hip score (« F. Cl. HD-A »).
+# LOF Select writes the colour in abbreviations (« F.Or. »), which breeders copy without their dots (« F.OR »).
 COLOR_WORD_PATTERN = re.compile(r"[a-z]+")
 HIP_SCORE_PATTERN = re.compile(r"\bhd-?[a-e]\b")
 GOLD_BASE_WORDS: frozenset[str] = frozenset({"f", "fau", "rou", "gol", "or", "ora", "cit"})
@@ -64,7 +63,6 @@ LOF_SELECT_WORDS: frozenset[str] = (
     | SHADE_WORDS
 )
 
-# A white mark on the chest does not make a solid coat particoloured (« Noire cravate blanche »).
 WHITE_CHEST_MARK_PATTERN = re.compile(r"\b(?:cravate|plastron|tache|liste)s? blanc(?:he)?s?\b")
 
 # The colour words of the sites that write it in full (« Noire et blanche », « Golden », « Noir et feu »).
@@ -107,7 +105,6 @@ SENTENCE_COLOR_PATTERNS: tuple[tuple[re.Pattern[str], CoatColor], ...] = (
     (re.compile(r"\b(?:marrons?|chocolats?)\b"), CoatColor.MARRON),
 )
 SENTENCE_SEPARATOR_PATTERN = re.compile(r"[^a-z0-9]+")
-# The colour of a collar, of the eyes or of the nose is not the one of the coat (« mâle collier bleu »).
 NOT_THE_COAT_PATTERN = re.compile(r"\b(?:colliers?|yeux|truffes?)(?: de couleur| couleur)? [a-z]+")
 
 
