@@ -8,7 +8,14 @@
   >
     <path d="M38 62 C18 70 14 112 30 128 C44 142 58 126 56 100 Z" :fill="palette.ear" />
     <path d="M122 62 C142 70 146 112 130 128 C116 142 102 126 104 100 Z" :fill="palette.ear" />
-    <circle cx="80" cy="78" r="44" :fill="palette.coat" />
+    <circle
+      cx="80"
+      cy="78"
+      r="44"
+      :fill="palette.coat"
+      :stroke="palette.faceOutline ?? undefined"
+      :stroke-width="palette.faceOutline ? 4 : undefined"
+    />
     <path d="M60 42 C68 26 92 26 100 42 L80 52 Z" :fill="palette.ear" />
     <ellipse cx="80" cy="97" rx="25" ry="18" :fill="palette.muzzle" />
     <circle cx="64" cy="74" r="5.5" fill="#2B2420" />

@@ -10,6 +10,7 @@ import { FrenchDate } from '~/utils/frenchDate'
 import { FrenchText } from '~/utils/frenchText'
 
 const MINUTES_PER_HOUR: number = 60
+const MAX_BADGE_COATS: number = 3
 const NON_BREAKING_SPACE: string = '\u00a0'
 const ACCENT_PATTERN: RegExp = /\p{Diacritic}/gu
 const NON_LETTER_OR_DIGIT_PATTERN: RegExp = /[^a-z0-9]+/g
@@ -34,6 +35,44 @@ export class LitterPresentation {
       return 'inconnue'
     }
     return ILLUSTRATED_COATS[firstColor.color]
+  }
+
+  /**
+   * List the heads of a colour badge: the colours of the litter, the possible ones while to confirm, else the « ? ».
+   *
+   * @param colors - Colours of the litter.
+   * @returns Up to three coats, each once.
+   */
+  static listBadgeCoats(colors: LitterColor[]): CockerCoat[] {
+    const coats: CockerCoat[] = [
+      ...new Set(
+        colors
+          .filter((reading: LitterColor): boolean => reading.color !== 'inconnue')
+          .map((reading: LitterColor): CockerCoat => ILLUSTRATED_COATS[reading.color]),
+      ),
+    ]
+    return coats.length > 0 ? coats.slice(0, MAX_BADGE_COATS) : ['inconnue']
+  }
+
+  /**
+   * Pick the tint of a colour badge: the one of its coat when the litter has one known colour, else the neutral chip.
+   *
+   * @param colors - Colours of the litter.
+   * @returns The Tailwind classes of its background and text.
+   */
+  static resolveBadgeClass(colors: LitterColor[]): string {
+    const coat: CockerCoat = this.hasKnownColors(colors) ? this.resolveIllustrationCoat(colors) : 'inconnue'
+    return COCKER_COAT_PALETTES[coat].badgeClass
+  }
+
+  /**
+   * Whether a colour of a litter was confirmed after a call, for the tick of its badge.
+   *
+   * @param colors - Colours of the litter.
+   * @returns True once a colour is confirmed by hand.
+   */
+  static isColorConfirmedByCall(colors: LitterColor[]): boolean {
+    return colors.some((reading: LitterColor): boolean => reading.confidence === 'confirmed')
   }
 
   /**

@@ -201,10 +201,10 @@ describe('LitterPresentation.matchesSearchQuery', (): void => {
 })
 
 describe('LitterPresentation.resolveIllustrationCoat', (): void => {
-  it('draws the coat of a single certain colour, and the « autre » coat when that colour has no drawing', (): void => {
+  it('draws the coat of a single certain colour, each colour with its own head', (): void => {
     expect(LitterPresentation.resolveIllustrationCoat([{ color: 'gold', confidence: 'certain' }])).toBe('gold')
     expect(LitterPresentation.resolveIllustrationCoat([{ color: 'marron_et_feu', confidence: 'certain' }])).toBe(
-      'autre',
+      'marron_et_feu',
     )
   })
 
@@ -218,6 +218,39 @@ describe('LitterPresentation.resolveIllustrationCoat', (): void => {
         { color: 'noir', confidence: 'certain' },
       ]),
     ).toBe('inconnue')
+  })
+})
+
+describe('the colour badge of a litter', (): void => {
+  it('shows the heads of its colours, of the possible ones while to confirm, or the « ? »', (): void => {
+    expect(LitterPresentation.listBadgeCoats([{ color: 'gold', confidence: 'certain' }])).toEqual(['gold'])
+    expect(
+      LitterPresentation.listBadgeCoats([
+        { color: 'gold', confidence: 'ambiguous' },
+        { color: 'noir', confidence: 'ambiguous' },
+        { color: 'bleu_rouan', confidence: 'ambiguous' },
+        { color: 'tricolore', confidence: 'ambiguous' },
+      ]),
+    ).toEqual(['gold', 'noir', 'bleu_rouan'])
+    expect(LitterPresentation.listBadgeCoats([])).toEqual(['inconnue'])
+    expect(LitterPresentation.listBadgeCoats([{ color: 'inconnue', confidence: 'certain' }])).toEqual(['inconnue'])
+  })
+
+  it('takes the tint of a single known colour, the neutral chip otherwise, and a tick once confirmed', (): void => {
+    expect(LitterPresentation.resolveBadgeClass([{ color: 'gold', confidence: 'certain' }])).toBe(
+      'bg-gold-pastel text-gold-ink',
+    )
+    expect(LitterPresentation.resolveBadgeClass([{ color: 'gold', confidence: 'ambiguous' }])).toBe(
+      'bg-chip text-ink-secondary',
+    )
+    expect(
+      LitterPresentation.resolveBadgeClass([
+        { color: 'bleu_rouan', confidence: 'certain' },
+        { color: 'marron_rouan', confidence: 'certain' },
+      ]),
+    ).toBe('bg-chip text-ink-secondary')
+    expect(LitterPresentation.isColorConfirmedByCall([{ color: 'noir_et_feu', confidence: 'confirmed' }])).toBe(true)
+    expect(LitterPresentation.isColorConfirmedByCall([{ color: 'noir_et_feu', confidence: 'certain' }])).toBe(false)
   })
 })
 

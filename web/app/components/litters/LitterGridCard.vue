@@ -31,10 +31,7 @@
     <span
       class="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-1.5 text-[15px] font-bold text-ink-secondary lg:text-sm"
     >
-      <span class="max-w-full rounded-full bg-chip px-2.5 py-1 lg:px-[9px] lg:py-[3px]">
-        <span class="lg:hidden">{{ LitterPresentation.buildColorLabel(props.litter.colors, false) }}</span>
-        <span class="hidden lg:inline">{{ LitterPresentation.buildColorLabel(props.litter.colors, true) }}</span>
-      </span>
+      <LitterColorBadge :colors="props.litter.colors" />
       <LitterSexCounts :litter="props.litter" class="whitespace-nowrap" />
     </span>
   </NuxtLink>

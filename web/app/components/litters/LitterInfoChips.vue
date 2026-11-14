@@ -1,9 +1,6 @@
 <template>
   <div class="flex flex-wrap" :class="props.isInAside ? 'gap-2' : 'gap-2 md:gap-2.5'">
-    <span
-      class="inline-flex items-center rounded-full font-extrabold"
-      :class="[chipSizeClass, coatPalette.tileClass, coatPalette.chipTextClass]"
-    >
+    <span class="inline-flex items-center rounded-full font-extrabold" :class="[chipSizeClass, coatPalette.badgeClass]">
       <span
         class="shrink-0 rounded-full"
         :class="props.isInAside ? 'size-2.5' : 'size-2.5 md:size-3'"
