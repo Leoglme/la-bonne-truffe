@@ -19,6 +19,9 @@
           <h2 class="m-0 font-display text-[22px] font-semibold">{{ sourceCard.status.label }}</h2>
         </span>
         <p class="m-0 text-[15px] text-ink-muted">{{ buildSourceStatusLine(sourceCard.status) }}</p>
+        <p v-if="SOURCE_READING_RHYTHM_NOTES[sourceCard.status.source]" class="m-0 text-sm text-ink-muted">
+          {{ SOURCE_READING_RHYTHM_NOTES[sourceCard.status.source] }}
+        </p>
         <p v-if="sourceCard.status.is_collected_by_desktop_app" class="m-0 text-sm text-ink-muted">
           Relevée par l’app Windows, quand un PC où elle tourne est allumé.
         </p>
@@ -76,7 +79,7 @@ import type {
   SourceRunEndNotice,
 } from '~/types/SourceRun'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { SOURCE_RUN_COUNT_FORMS } from '~/constants/litterLabels'
+import { SOURCE_READING_RHYTHM_NOTES, SOURCE_RUN_COUNT_FORMS } from '~/constants/litterLabels'
 import { SourcesService } from '~/services/sourcesService'
 import { FrenchDate } from '~/utils/frenchDate'
 import { FrenchText } from '~/utils/frenchText'

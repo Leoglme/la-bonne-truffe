@@ -59,8 +59,7 @@ MISSED_RUNS_BEFORE_INACTIVE = 2
 # A born litter older than this is no longer followed.
 BORN_LITTER_ACTIVE_DAYS = 183
 
-# A mating whose litter was due this long ago, with no birth declared since, is no longer a litter to come: born on
-# its due day, the puppies would already be leaving their mother.
+# A litter due this long ago and never declared born is no longer a litter to come.
 UNDECLARED_LITTER_ACTIVE_DAYS = LEGAL_HANDOVER_DAYS
 
 ColumnValue = str | int | float | bool | date | datetime | StrEnum | list[str] | list[dict[str, str]] | None

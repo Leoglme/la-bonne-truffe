@@ -247,11 +247,7 @@ class DogColorInference:
         if sire is None or dam is None:
             return ()
         if sire.color in WHITE_MARKED_COLORS and dam.color in WHITE_MARKED_COLORS:
-            reason = "Pas de gold uni : les deux parents ont du blanc dans leur robe, leurs chiots en auront aussi"
-            return tuple(
-                ExpectedColor(parent_color, ColorConfidence.AMBIGUOUS, reason)
-                for parent_color in dict.fromkeys((sire.color, dam.color))
-            )
+            return cls._colors_of_two_parents_with_white(sire, dam)
         sire_genotype, dam_genotype = sire.genotype, dam.genotype
         if sire_genotype == GOLD_GENOTYPE and dam_genotype == GOLD_GENOTYPE:
             return (
@@ -288,6 +284,24 @@ class DogColorInference:
         if other_parent.color not in (CoatColor.INCONNUE, CoatColor.GOLD):
             expected.append(ExpectedColor(other_parent.color, ColorConfidence.AMBIGUOUS, reason))
         return tuple(expected)
+
+    @staticmethod
+    def _colors_of_two_parents_with_white(sire: ParentColorFacts, dam: ParentColorFacts) -> tuple[ExpectedColor, ...]:
+        """
+        The colours of two parents that both have white in their coat: their puppies have white too.
+
+        Args:
+            sire: The father.
+            dam: The mother.
+
+        Returns:
+            The colours of the parents, each once.
+        """
+        reason = "Pas de gold uni : les deux parents ont du blanc dans leur robe, leurs chiots en auront aussi"
+        return tuple(
+            ExpectedColor(parent_color, ColorConfidence.AMBIGUOUS, reason)
+            for parent_color in dict.fromkeys((sire.color, dam.color))
+        )
 
     @staticmethod
     def _colors_of_two_carriers(sire: ParentColorFacts, dam: ParentColorFacts) -> tuple[ExpectedColor, ...]:

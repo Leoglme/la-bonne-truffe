@@ -712,8 +712,11 @@ export class BreederPresentation {
       if (puppiesAvailable !== null) {
         details.push(puppiesAvailable.toLowerCase())
       }
-    } else if (LitterPresentation.hasKnownSexes(litter)) {
-      details.push(LitterPresentation.listSexCounts(litter).join(' et '))
+    } else {
+      const sexCounts: string[] = LitterPresentation.listSexCounts(litter)
+      if (sexCounts.length > 0) {
+        details.push(sexCounts.join(' et '))
+      }
     }
     if (details.length > 0) {
       parts.push(details.join(', '))

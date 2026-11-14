@@ -296,3 +296,24 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
   - la photo d'une actualité (la portée à quelques jours) devient celle d'une portée dont les annonces n'en ont pas : Les As de Jade montrait un adulte gold de l'élevage au-dessus de quatre chiots noir et feu (`02`).
 - **Vérifié** : chaque correction rejouée sur la copie avec les vrais sites ; tests pytest (toute la suite) et vitest, ruff, mypy, lint et typecheck. Non vérifié en production.
 - **Laissé à décider** : remonter « Les chiots » au-dessus de « Après ton appel » sur la fiche d'une portée ; confirmer une couleur chiot par chiot ; lire la robe sur les photos.
+
+## 14 novembre : le grand tour, suite sur la production
+
+- **Demandé** : continuer le tour complet, cette fois avec le Chrome de Léo relié à la production, puis rendre le compte rendu en PDF.
+- **Constaté en production** (lue le matin par le Chrome de Léo, 22 portées affichées, 403 éleveurs) :
+  - les corrections de la veille sont en place (As de Jade en noir et feu avec la photo de son actualité, Du Marquis aux Cailles sous son vrai élevage, « attendue le … » pour les naissances dépassées) ;
+  - deux portées en double : Les As de Jade (la saillie du site, « attendue le 4 nov. », à côté de la portée née) et De Kerfeuil (les trois chiots de Chiens de France à côté de la portée déclarée). Une annonce n'est regroupée qu'à son arrivée : la correction de la veille sur le nom de la mère ne recollait pas ce qui était déjà séparé ;
+  - l'élevage Ar Ti Marellek sept fois de trop : sept fiches « Elevage Ar Ti Marellek » nées des premiers relevés de Cœur de Cocker. Les annonces ont retrouvé le bon élevage depuis, pas leurs portées ;
+  - de vieilles saillies comptées comme « portée en cours » : celles que les sites d'élevage gardent des années (une de février 2024), et celles de la Centrale Canine restées sans naissance depuis l'été ;
+  - Du Marquis aux Cailles et De Kerfeuil « acceptable, gold possible, un chiot sur quatre » au-dessus de chiots noir et blanc : les deux parents sont particolores, et deux parents qui ont du blanc ne donnent pas de gold uni ;
+  - « Les sites d'élevage de la Centrale Canine : relevé il y a 12 j » n'est pas une panne : chaque site n'est relu qu'une fois par mois, et aucun relevé n'est noté quand il n'y a rien à relire ;
+  - sur une carte d'élevage, « 0 mâle et 1 femelle ».
+- **Fait** :
+  - un passage recolle, avant chaque regroupement, les portées restées en deux groupes, et rend à une portée l'élevage de ses annonces ; l'élevage resté sans rien est supprimé (`03`) ;
+  - une saillie sans naissance déclarée 56 jours après la date attendue n'est plus suivie, jusqu'à ce qu'une naissance soit déclarée (`03`) ;
+  - deux parents avec du blanc n'annoncent plus de gold : leurs robes, « à confirmer », et une migration recalcule les portées déjà lues (`03`, `04`) ;
+  - la page Sources dit le rythme des sources qui ne sont pas lues toutes les heures (`06`) ;
+  - un sexe sans chiot n'est plus écrit : « 1 femelle ».
+- **Vérifié** : sur une copie de la base locale remise dans l'état de la production (la saillie des As de Jade à part, sept éleveurs et sept groupes pour les annonces Ar Ti Marellek), le passage recolle les six groupes et supprime les sept fiches ; sur la base telle que le relevé frais l'a regroupée, il ne touche à rien. Après les nouvelles règles, la liste locale passe de 24 à 20 portées : De Kerfeuil et Du Marquis aux Cailles (ignorées, particolores), Sanquer Helene (attendue le 15 septembre) et une portée de mai devenue trop ancienne. Tests pytest et vitest (toutes les suites), ruff, mypy, lint et typecheck.
+- **Non vérifié** : la production après la mise en ligne. Le Chrome de Léo n'était plus relié l'après-midi ; le déploiement de l'API a réussi, et la réparation s'applique au premier relevé de n'importe quelle source.
+- **Laissé à décider** : une portée « écartée » reste dans la liste Portées (elle ne quitte que l'écran Suivi) ; sur la fiche d'un élevage, les lignes de ses portées répètent son nom et sa ville au lieu de dire la date de naissance ; dire « aucun gold » dans « Les chances de gold » quand les parents l'excluent ; une portée déclarée deux fois par la Centrale Canine pour deux pères (De Kerfeuil, août, numéros `…/A` et `…/B`) reste en deux portées.

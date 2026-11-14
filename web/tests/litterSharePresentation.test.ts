@@ -42,6 +42,12 @@ describe('LitterSharePresentation', (): void => {
     expect(LitterSharePresentation.buildBirthLabel(BORN_GOLD_LITTER)).toBe('NÉE LE 27 OCT.')
   })
 
+  it('leaves out a sex without any puppy', (): void => {
+    const litterOfOneFemale: LitterCard = { ...BORN_GOLD_LITTER, male_count: 0, female_count: 1 }
+
+    expect(LitterSharePresentation.buildSummaryLine(litterOfOneFemale)).toBe('Née le 27 oct. · gold · 1 femelle')
+  })
+
   it('sums up a litter to come without colour nor sexes', (): void => {
     const expectedLitter: LitterCard = {
       ...BORN_GOLD_LITTER,

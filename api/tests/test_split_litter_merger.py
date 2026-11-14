@@ -16,7 +16,7 @@ from models.search_profile import SearchProfile
 from models.user import User
 from services.litter_grouping import litter_grouping_service
 from services.split_litter_merger import split_litter_merger
-from tests.test_litter_grouping import NOW, add_listing, seeded_breeder
+from tests.hand_made_listings import NOW, add_listing, seeded_breeder
 
 BORN_ON = date(2026, 10, 28)
 MATED_ON = date(2026, 8, 26)

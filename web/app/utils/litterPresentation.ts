@@ -102,16 +102,20 @@ export class LitterPresentation {
    * List the puppies of each sex in words, for sentences.
    *
    * @param card - The litter.
-   * @returns « 2 mâles » and « 3 femelles », or nothing while the sexes are unknown.
+   * @returns « 2 mâles » and « 3 femelles », a sex without any puppy left out; nothing while the sexes are unknown.
    */
   static listSexCounts(card: LitterCard): string[] {
     if (card.male_count === null || card.female_count === null) {
       return []
     }
-    return [
-      `${card.male_count} ${FrenchText.pickForm(card.male_count, 'mâle', 'mâles')}`,
-      `${card.female_count} ${FrenchText.pickForm(card.female_count, 'femelle', 'femelles')}`,
-    ]
+    const sexCounts: string[] = []
+    if (card.male_count > 0) {
+      sexCounts.push(`${card.male_count} ${FrenchText.pickForm(card.male_count, 'mâle', 'mâles')}`)
+    }
+    if (card.female_count > 0) {
+      sexCounts.push(`${card.female_count} ${FrenchText.pickForm(card.female_count, 'femelle', 'femelles')}`)
+    }
+    return sexCounts
   }
 
   /**

@@ -42,6 +42,12 @@ export const SOURCE_RUN_COUNT_FORMS: Record<ListingSource, SourceRunCountForms> 
   chiens_de_france_sites: { singularForm: 'annonce ou chien vu', pluralForm: 'annonces et chiens vus' },
 }
 
+export const SOURCE_READING_RHYTHM_NOTES: Partial<Record<ListingSource, string>> = {
+  scc_breeders: 'Relu une fois par jour.',
+  scc_sites: 'Chaque site est relu une fois par mois : rien à relire entre-temps.',
+  chiens_de_france_sites: 'Relus deux fois par jour, et toutes les heures pour les élevages que tu suis.',
+}
+
 export const LISTING_SOURCE_LINK_LABELS: Record<ListingSource, string> = {
   centrale_canine: 'Voir sur la Centrale Canine',
   chiens_de_france: 'Voir sur Chiens de France',
