@@ -1,11 +1,13 @@
 """Stores the listings of a run: insert, update, change history, disappearance."""
 
 import json
+from collections.abc import Set
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from enum import StrEnum
 from urllib.parse import urlparse
 
+from sqlalchemy import ColumnElement, or_
 from sqlalchemy.orm import Session
 
 from enums.listing_source import ListingSource
@@ -90,7 +92,7 @@ class ListingIngestionService:
         db: Session,
         source: ListingSource,
         raw_listings: list[RawListing],
-        collected_department_codes: set[str],
+        collected_department_codes: Set[str | None],
         now: datetime,
         breeder_ids_by_source_id: dict[str, int] | None = None,
     ) -> IngestionSummary:
@@ -103,7 +105,8 @@ class ListingIngestionService:
             db: Database session; committed at the end.
             source: Source of the run.
             raw_listings: Listings read by the collector.
-            collected_department_codes: Departments the run read; only their listings can disappear.
+            collected_department_codes: Departments the run read; only their listings can disappear. None stands for
+                the listings without a department, read when a run reads every page of France.
             now: Run time, naive UTC.
             breeder_ids_by_source_id: Breeders already known for the ``source_id`` the listings name, as when the
                 pages of a breeder's own site are read: no matching rule is needed for them.
@@ -354,7 +357,8 @@ class ListingIngestionService:
         breeder_ids_by_source_id: dict[str, int],
     ) -> int | None:
         """
-        Find the breeder of a listing, or create it, then copy what the source knows about it.
+        Find the breeder of a listing, or create it, then copy what the source knows about it: its department is the
+        one of the listing, else the one of its postal code.
 
         A value the source leaves empty never erases a known one, and a SIREN or a Centrale Canine
         identifier already carried by another breeder is never moved onto this one. A breeder no rule
@@ -375,7 +379,10 @@ class ListingIngestionService:
         raw_breeder = raw_listing.breeder
         if raw_breeder is None:
             return None
-        department_code = raw_listing.department_code if raw_listing.department_code in known_department_codes else None
+        listed_department_code = raw_listing.department_code or BreederContactParser.department_code(
+            raw_breeder.zip_code
+        )
+        department_code = listed_department_code if listed_department_code in known_department_codes else None
         affix_key = BreederContactParser.affix_key(raw_breeder.affix)
         chiens_de_france_site_url = cls._chiens_de_france_site_of(raw_breeder.website)
 
@@ -433,7 +440,7 @@ class ListingIngestionService:
         db: Session,
         source: ListingSource,
         seen_external_ids: set[str],
-        collected_department_codes: set[str],
+        collected_department_codes: Set[str | None],
         now: datetime,
     ) -> list[int]:
         """
@@ -444,21 +451,20 @@ class ListingIngestionService:
             db: Database session.
             source: Source of the run.
             seen_external_ids: Identifiers the run saw.
-            collected_department_codes: Departments the run read.
+            collected_department_codes: Departments the run read, None for the listings without a department.
             now: Run time.
 
         Returns:
             Ids of the listings deactivated by this run.
         """
         deactivated_ids: list[int] = []
+        department_filter: ColumnElement[bool] = Listing.department_code.in_(
+            [code for code in collected_department_codes if code]
+        )
+        if None in collected_department_codes:
+            department_filter = or_(department_filter, Listing.department_code.is_(None))
         active_listings = (
-            db.query(Listing)
-            .filter(
-                Listing.source == source,
-                Listing.is_active.is_(True),
-                Listing.department_code.in_(collected_department_codes),
-            )
-            .all()
+            db.query(Listing).filter(Listing.source == source, Listing.is_active.is_(True), department_filter).all()
         )
         for listing in active_listings:
             if listing.external_id in seen_external_ids:

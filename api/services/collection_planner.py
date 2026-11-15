@@ -5,17 +5,21 @@ from urllib.parse import urlparse
 
 from sqlalchemy.orm import Session
 
+from core.clock import to_french_time
 from enums.coat_color import CoatColor
 from enums.listing_source import ListingSource
 from models.breed import Breed
 from models.breed_variety import BreedVariety
 from models.breeder import Breeder
 from models.breeder_follow import BreederFollow
+from models.breeder_site_directory_entry import BreederSiteDirectoryEntry
 from models.department import Department
 from models.dog import Dog
 from models.search_profile import SearchProfile
+from services.collectors.breeder_contact_parser import BreederContactParser
 from services.collectors.centrale_canine import (
     CentraleCanineCollectionPlan,
+    HiddenAddressBreederPlace,
     SccBreedTarget,
     SccDepartmentTarget,
     SccVarietyTarget,
@@ -40,6 +44,7 @@ from services.listing_ingestion import BORN_LITTER_ACTIVE_DAYS
 SITE_DOG_REFRESH_DAYS = 30
 SCC_SITE_REFRESH_DAYS = 30
 SCC_SITES_PER_RUN = 80
+HIDDEN_ADDRESS_LITTERS_HOURS: frozenset[int] = frozenset({7, 13, 19})
 
 
 class CollectionPlanner:
@@ -218,15 +223,17 @@ class CollectionPlanner:
         return SccSiteCollectionPlan(sites=tuple(target for _priority, target in targets[:SCC_SITES_PER_RUN]))
 
     @staticmethod
-    def build_centrale_canine_plan(db: Session) -> CentraleCanineCollectionPlan:
+    def build_centrale_canine_plan(db: Session, now: datetime | None = None) -> CentraleCanineCollectionPlan:
         """
-        Plan a Centrale Canine run: every breed of the active profiles, in each of their departments.
+        Plan a Centrale Canine run: every breed of the active profiles, in each of their departments, and at the
+        hours of ``HIDDEN_ADDRESS_LITTERS_HOURS`` the places of the breedings that hide their address.
 
         A department whose ``t_ID`` is still unknown cannot be filtered on and is listed apart: the run
         then reads the identifiers the Centrale Canine lists (``CollectionRunner``).
 
         Args:
             db: Database session.
+            now: Current time, naive UTC; None plans no breeding that hides its address.
 
         Returns:
             The plan, empty when no profile is active.
@@ -256,7 +263,35 @@ class CollectionPlanner:
             breeds=tuple(CollectionPlanner._breed_target(db, breed) for breed in breeds),
             departments=tuple(department_targets),
             departments_without_term_id=tuple(departments_without_term_id),
+            hidden_address_breeder_places=CollectionPlanner._hidden_address_breeder_places(db, department_codes, now),
         )
+
+    @staticmethod
+    def _hidden_address_breeder_places(
+        db: Session, department_codes: list[str], now: datetime | None
+    ) -> tuple[HiddenAddressBreederPlace, ...]:
+        """
+        The places the regional lists of Chiens de France give in the profiles' departments, at the hours a run also
+        reads the breedings the Centrale Canine lists without an address.
+
+        Args:
+            db: Database session.
+            department_codes: Departments of the active profiles.
+            now: Current time, naive UTC; None at no hour.
+
+        Returns:
+            One place per breeding of the lists with a postal code in those departments, none outside those hours.
+        """
+        if now is None or to_french_time(now).hour not in HIDDEN_ADDRESS_LITTERS_HOURS:
+            return ()
+        places: list[HiddenAddressBreederPlace] = []
+        for entry in db.query(BreederSiteDirectoryEntry).order_by(BreederSiteDirectoryEntry.id):
+            affix_key = BreederContactParser.affix_key(BreederContactParser.affix_of_breeding_name(entry.name))
+            if affix_key is None or entry.zip_code is None:
+                continue
+            if BreederContactParser.department_code(entry.zip_code) in department_codes:
+                places.append(HiddenAddressBreederPlace(affix_key, entry.zip_code, entry.town))
+        return tuple(places)
 
     @staticmethod
     def build_html_plan(db: Session, source: ListingSource) -> HtmlCollectionPlan:

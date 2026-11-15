@@ -380,3 +380,14 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 - **Fait** : la robe est lue par Qwen 3.8 chez Groq avec la consigne précise (compter les chiens, regarder la truffe et les marques feu), une photo par heure ; Mistral n'est plus appelé, pas même en secours, puisqu'il se trompe une fois sur deux ; la passe s'arrête dès que Groq ne répond plus (quota, clé refusée, panne) ; le secret `GROQ_API_KEY` remplace `MISTRAL_API_KEY`, qui ne sert plus (`04`, `05`, `11`).
 - **Vérifié** : le test ci-dessus ; tests pytest (toute la suite), ruff et mypy.
 - **Non vérifié** : la première lecture en production ; le test a pris une grande part des 200 000 tokens du jour de Groq, qui reviennent au fil des 24 heures.
+
+## 16 novembre : nos portées comparées aux autres sites, les élevages qui cachent leur adresse
+
+- **Demandé** : comparer les dernières portées de la zone avec d'autres sites (« chien.com et/ou chiot.com »), voir s'il manque des données, et brancher une source ou améliorer si possible.
+- **Constaté** (`02`) :
+  - chiot.com n'est qu'un domaine à vendre ; chien.com n'a pas de portée LOF de la zone que l'app ignore ;
+  - sur Leboncoin, 4 des 5 portées LOF en vente dans la zone sont dans l'app, mais seule l'annonce dit les chiots qui restent, leurs couleurs et le prix ; La Colline des Terres Noires y vend une portée que la Centrale Canine n'a jamais déclarée née ;
+  - 12 % des portées de cocker de la Centrale Canine ont un éleveur sans adresse, que le filtre par département ne montre jamais : 3 dans la zone que les listes de Chiens de France placent, et Kersalousse, que seul Leboncoin place.
+- **Fait** : la lecture de la liste de France à 7 h, 13 h et 19 h, qui garde les portées des élevages sans adresse que les listes régionales de Chiens de France placent dans le profil (`02`, `03`, `05`).
+- **Vérifié** : tests pytest (toute la suite), ruff et mypy ; sur la copie, les vraies pages ajoutent les portées de la Promesse d'Or, de la Constellation d'Irka et de Ker Dazont.
+- **Non vérifié** : le relais de l'app Windows avec la liste de France, en production.

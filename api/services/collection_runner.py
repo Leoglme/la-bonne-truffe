@@ -225,6 +225,7 @@ class CollectionRunner:
                 report.linked_breeder_ids = breeder_site_ingestion_service.link_directory_sites(
                     db, report.directory.entries
                 )
+                breeder_site_ingestion_service.keep_directory_entries(db, report.directory.entries, naive_utc_now())
             report.plan = CollectionPlanner.build_breeder_sites_plan(db, naive_utc_now(), breeder_ids)
             report.collection = collector.collect(report.plan)
             return breeder_site_ingestion_service.ingest(db, report.plan, report.collection, naive_utc_now())
@@ -413,10 +414,10 @@ class CollectionRunner:
         Returns:
             The plan.
         """
-        plan = CollectionPlanner.build_centrale_canine_plan(db)
+        plan = CollectionPlanner.build_centrale_canine_plan(db, naive_utc_now())
         if plan.departments_without_term_id:
             self._sync_department_identifiers(db, collector, plan)
-            plan = CollectionPlanner.build_centrale_canine_plan(db)
+            plan = CollectionPlanner.build_centrale_canine_plan(db, naive_utc_now())
         return plan
 
     def run_centrale_canine(self, db: Session, collector: CentraleCanineCollector) -> CentraleCanineRunReport:
@@ -453,11 +454,14 @@ class CollectionRunner:
             if not plan.breeds or not plan.departments:
                 raise CentraleCanineError(NOTHING_TO_COLLECT_MESSAGE)
             report.collection = collector.collect(plan)
+            collected_department_codes: set[str | None] = {department.code for department in plan.departments}
+            if plan.hidden_address_breeder_places:
+                collected_department_codes.add(None)
             return listing_ingestion_service.ingest(
                 db,
                 ListingSource.CENTRALE_CANINE,
                 report.collection.listings,
-                {department.code for department in plan.departments},
+                collected_department_codes,
                 naive_utc_now(),
             )
 

@@ -158,3 +158,11 @@ Le type `breeder_probable_litter`, et `subject_key` (nullable) : ce que l'évén
 
 ### Les couleurs : `suggested`
 Une cinquième confiance, **`suggested`** : la robe lue par l'IA sur la photo d'un chiot. Elle vaut `certain` pour le palier et le score, passe après tout ce que les sources donnent de sûr (`04`), et l'app la dit « suggérée par IA ».
+
+## Le 16/11/2026 : les élevages qui cachent leur adresse
+
+### `breeder_site_directory_entries` (nouvelle)
+Une ligne par site d'élevage qu'une liste régionale de Chiens de France nomme : `site_url` (unique), `name`, `zip_code`, `town` et `seen_at`. Le relevé des sites d'élevage les garde à chaque lecture des listes ; elles placent les élevages que la Centrale Canine publie sans adresse (`02`).
+
+### `listings` : une portée sans département
+La portée d'un élevage qui cache son adresse garde `department_code` vide, comme la Centrale Canine la publie, et prend le département de son éleveur, celui du code postal de sa liste. Seul un relevé qui lit la liste de France la met hors ligne quand elle disparaît.

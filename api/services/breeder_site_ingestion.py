@@ -9,6 +9,7 @@ from core.text import without_accents
 from enums.listing_source import ListingSource
 from enums.social_link_origin import SocialLinkOrigin
 from models.breeder import Breeder
+from models.breeder_site_directory_entry import BreederSiteDirectoryEntry
 from services.breeder_search_text import BreederSearchText
 from services.breeder_social_links import BreederSocialLinks
 from services.collectors.chiens_de_france_sites import SiteCollection, SiteCollectionPlan
@@ -113,6 +114,30 @@ class BreederSiteIngestionService:
         if linked_breeder_ids:
             db.commit()
         return linked_breeder_ids
+
+    @staticmethod
+    def keep_directory_entries(db: Session, entries: list[RawSiteDirectoryEntry], now: datetime) -> None:
+        """
+        Keep the breeder sites the regional lists named, with their postal code and town: they place the breedings
+        the Centrale Canine lists without an address (``CollectionPlanner``).
+
+        Args:
+            db: Database session; committed at the end.
+            entries: The breeder sites the lists gave.
+            now: Run time, naive UTC.
+        """
+        kept_by_site_url = {kept.site_url: kept for kept in db.query(BreederSiteDirectoryEntry)}
+        for entry in entries:
+            kept = kept_by_site_url.get(entry.site_url)
+            if kept is None:
+                kept = BreederSiteDirectoryEntry(site_url=entry.site_url, name=entry.name)
+                db.add(kept)
+                kept_by_site_url[entry.site_url] = kept
+            kept.name = entry.name
+            kept.zip_code = entry.zip_code
+            kept.town = entry.town
+            kept.seen_at = now
+        db.commit()
 
     @staticmethod
     def _apply_reading(breeder: Breeder, facts: RawBreederSiteFacts, now: datetime) -> None:
