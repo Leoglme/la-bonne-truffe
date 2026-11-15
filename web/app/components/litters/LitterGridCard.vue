@@ -32,6 +32,12 @@
       class="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-1.5 text-[15px] font-bold text-ink-secondary lg:text-sm"
     >
       <LitterColorBadge :colors="props.litter.colors" />
+      <span
+        v-if="LitterPresentation.isColorSuggestedByAi(props.litter.colors)"
+        class="text-[13px] font-bold text-ink-label"
+      >
+        suggéré par IA
+      </span>
       <LitterSexCounts :litter="props.litter" class="whitespace-nowrap" />
     </span>
   </NuxtLink>

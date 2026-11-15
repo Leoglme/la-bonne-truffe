@@ -6,9 +6,11 @@ from datetime import date
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from core.clock import french_date_of, naive_utc_now
 from core.text import without_accents
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
+from enums.color_preference_level import ColorPreferenceLevel
 from enums.dog_role import DogRole
 from enums.dog_sex import DogSex
 from enums.listing_source import ListingSource
@@ -33,16 +35,19 @@ from schemas.breeder import (
     BreederSearchResults,
     BreederSiteLitter,
     BreederSort,
+    ProbableLitter,
 )
-from schemas.litter import LitterCard
+from schemas.litter import LitterCard, LitterColor
 from services.breeder_search_text import BreederSearchText
 from services.collection_planner import CollectionPlanner
 from services.collectors.chiens_de_france_sites import LITTERS_BORN_PATH, breed_page_of
+from services.dam_litter_history import DamLitterHistory, DamLitters
 from services.dog_chip import DogChip
 from services.dog_color_inference import DogColorInference
 from services.dog_ingestion import DogIngestionService
 from services.dog_name import DogName
 from services.litter_query_service import LitterCardFacts, LitterQueryService, LitterSort
+from services.matching.criteria import ProfileCriteria
 
 NAMELESS_BREEDER = "Éleveur sans nom"
 SELECTED_BREEDING_GROUP = 1
@@ -53,11 +58,19 @@ SAME_LITTER_DAYS = 3
 
 @dataclass
 class BreederFacts:
-    """What the cards of some breeders are built from, loaded in one query per table."""
+    """
+    What the cards of some breeders are built from, loaded in one query per table: their litters, follows and
+    departments, the litters of each of their mothers, the dogs that may be the father of their next litters, and
+    the criteria that tell which colours are wanted.
+    """
 
     litter_cards_by_breeder: dict[int, list[LitterCard]] = field(default_factory=dict)
     follows_by_breeder: dict[int, BreederFollow] = field(default_factory=dict)
     departments_by_code: dict[str, Department] = field(default_factory=dict)
+    dams_by_breeder: dict[int, list[DamLitters]] = field(default_factory=dict)
+    parents_by_name: dict[str, Dog] = field(default_factory=dict)
+    criteria: ProfileCriteria | None = None
+    today: date = field(default_factory=lambda: french_date_of(naive_utc_now()))
 
     @classmethod
     def load(cls, db: Session, user_id: int, breeders: list[Breeder]) -> "BreederFacts":
@@ -97,6 +110,10 @@ class BreederFacts:
                 department.code: department
                 for department in db.query(Department).filter(Department.code.in_(department_codes))
             }
+        facts.dams_by_breeder = DamLitterHistory.of_breeders(db, breeder_ids)
+        if any(facts.dams_by_breeder.values()):
+            facts.parents_by_name = DamLitterHistory.parents_by_name(db)
+        facts.criteria = ProfileCriteria.of_active_profile(db, user_id)
         return facts
 
     @staticmethod
@@ -244,6 +261,8 @@ class BreederQueryService:
             scc_last_litter_at=breeder.scc_last_litter_at,
             scc_directory_seen_at=breeder.scc_directory_seen_at,
             litters=litters,
+            probable_litters=cls._probable_litters(breeder, facts),
+            dam_litter_gap_months=DamLitterHistory.median_gap_months(facts.dams_by_breeder.get(breeder.id, [])),
             color_shares=cls._color_shares(litters, cls._site_gold_litters_count(db, breeder, litters, reproducers)),
             reproducers=cls._merged_reproducers(reproducers, cls._current_parent_dog_ids(db, breeder.id)),
             photos=list(breeder.scc_site_photos),
@@ -379,9 +398,46 @@ class BreederQueryService:
             litters_last_year_count=breeder.litters_last_year_count,
             breeding_females_count=breeder.breeding_females_count,
             current_litter=current_litter,
+            next_probable_litter=next(iter(cls._probable_litters(breeder, facts)), None),
             is_followed=follow is not None,
             follow_status=follow.status if follow is not None else None,
         )
+
+    @classmethod
+    def _probable_litters(cls, breeder: Breeder, facts: BreederFacts) -> list[ProbableLitter]:
+        """
+        The litters the mothers of a breeding are likely to have soon, a year after their last one, of a colour the
+        profile does not ignore (an unknown colour never filters).
+
+        Args:
+            breeder: The breeder.
+            facts: Its mothers, the dogs that may be the fathers, and the criteria, already loaded.
+
+        Returns:
+            The probable litters, the soonest first.
+        """
+        probable_litters: list[ProbableLitter] = []
+        for estimate in DamLitterHistory.probable_litters(facts.dams_by_breeder.get(breeder.id, []), facts.today):
+            colors = [
+                LitterColor(color=reading.color, confidence=reading.confidence)
+                for reading in DamLitterHistory.likely_colors(estimate, facts.parents_by_name)
+            ]
+            criteria = facts.criteria
+            if (
+                criteria is not None
+                and colors
+                and all(criteria.level_of(reading.color) == ColorPreferenceLevel.IGNORED for reading in colors)
+            ):
+                continue
+            probable_litters.append(
+                ProbableLitter(
+                    dam_name=estimate.dam.name,
+                    last_litter_born_on=estimate.last_litter.born_on,
+                    expected_on=estimate.expected_on,
+                    colors=colors,
+                )
+            )
+        return probable_litters
 
     @staticmethod
     def _sources(breeder: Breeder, litters: list[LitterCard]) -> list[ListingSource]:
@@ -460,6 +516,8 @@ class BreederQueryService:
             return card.is_breed_club_member
         if breeder_filter == BreederFilter.ACTIVE_LITTER:
             return card.current_litter is not None
+        if breeder_filter == BreederFilter.PROBABLE_LITTER:
+            return card.next_probable_litter is not None
         return True
 
     @staticmethod

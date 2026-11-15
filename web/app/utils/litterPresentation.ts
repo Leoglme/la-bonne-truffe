@@ -76,6 +76,16 @@ export class LitterPresentation {
   }
 
   /**
+   * Whether the colours of a litter were read by the AI on the photos of its puppies, for the mark of its badge.
+   *
+   * @param colors - Colours of the litter.
+   * @returns True when a colour comes from the photos.
+   */
+  static isColorSuggestedByAi(colors: LitterColor[]): boolean {
+    return colors.some((reading: LitterColor): boolean => reading.confidence === 'suggested')
+  }
+
+  /**
    * Pick the pastel background of the tile a litter is shown on.
    *
    * @param colors - Colours of the litter.

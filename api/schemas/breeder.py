@@ -12,7 +12,7 @@ from enums.dog_role import DogRole
 from enums.dog_sex import DogSex
 from enums.listing_source import ListingSource
 from enums.social_link_origin import SocialLinkOrigin
-from schemas.litter import LitterCard
+from schemas.litter import LitterCard, LitterColor
 
 
 class BreederFilter(StrEnum):
@@ -23,6 +23,7 @@ class BreederFilter(StrEnum):
     GOLD = "gold"
     CLUB = "club"
     ACTIVE_LITTER = "active_litter"
+    PROBABLE_LITTER = "probable_litter"
 
 
 class BreederSort(StrEnum):
@@ -85,6 +86,18 @@ class BreederColorShare(BaseModel):
     litters_count: int
 
 
+class ProbableLitter(BaseModel):
+    """The next litter a mother of the breeding is likely to have, a year after her last one (an estimate)."""
+
+    dam_name: str = Field(description="The mother, without her affix when a source gives it so")
+    last_litter_born_on: date
+    expected_on: date = Field(description="A year after her last litter")
+    colors: list[LitterColor] = Field(
+        description="What the mother and the father of her last litter would give again, ambiguous with one of "
+        "them unknown, empty with both unknown"
+    )
+
+
 class BreederCard(BaseModel):
     """A breeder as the Éleveurs list shows it."""
 
@@ -112,6 +125,9 @@ class BreederCard(BaseModel):
     litters_last_year_count: int | None = Field(description="As Chiens de France writes it, when it does")
     breeding_females_count: int | None
     current_litter: LitterCard | None = Field(description="The litter to talk about now, when there is one")
+    next_probable_litter: ProbableLitter | None = Field(
+        default=None, description="The soonest probable litter of a colour the profile does not ignore"
+    )
     is_followed: bool
     follow_status: BreederFollowStatus | None
 
@@ -175,6 +191,13 @@ class BreederDetail(BreederCard):
     scc_last_litter_at: datetime | None
     scc_directory_seen_at: datetime | None
     litters: list[LitterCard] = Field(description="Every litter known, the current ones first")
+    probable_litters: list[ProbableLitter] = Field(
+        default_factory=list,
+        description="The litters its mothers are likely to have soon, of a colour the profile does not ignore",
+    )
+    dam_litter_gap_months: int | None = Field(
+        default=None, description="Months a mother of the breeding waits between two litters, the middle value known"
+    )
     color_shares: list[BreederColorShare]
     reproducers: list[BreederDog]
     photos: list[str] = Field(description="Photos of the breeding on its Centrale Canine site")

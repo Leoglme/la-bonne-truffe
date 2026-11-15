@@ -29,7 +29,7 @@ export const LITTER_PHOTO_SOURCE_LABELS: Record<LitterPhotoSource, string | null
 }
 
 export const LISTING_KIND_LABELS: Record<ListingKind, string> = {
-  litter_expected: 'déclaration de saillie',
+  litter_expected: 'portée annoncée',
   litter_born: 'déclaration de naissance',
   puppy_ad: 'annonce',
 }

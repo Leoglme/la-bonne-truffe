@@ -1,5 +1,13 @@
-import type { BreederCard, BreederDetail, BreederDog, BreederLinkPreview, LitterCard } from '../app/types/api'
-import type { BreederChip, BreederLinkRecognition, BreederSeenOnLink, BreederStat } from '../app/types/Breeder'
+import type {
+  BreederCard,
+  BreederDetail,
+  BreederDog,
+  BreederLinkPreview,
+  BreederSiteLitter,
+  LitterCard,
+  ProbableLitter,
+} from '../app/types/api'
+import type { BreederChip, BreederKeyFact, BreederLinkRecognition, BreederSeenOnLink } from '../app/types/Breeder'
 import type { LinkLogo } from '../app/types/UiLinkLogo'
 import { describe, expect, it } from 'vitest'
 import { BreederManualFormPresentation } from '../app/utils/breederManualFormPresentation'
@@ -262,38 +270,156 @@ describe('BreederPresentation.listChips', (): void => {
   })
 })
 
-describe('BreederPresentation.buildStats', (): void => {
-  it('counts the gold litters, dates the last one and gives the rhythm', (): void => {
-    expect(BreederPresentation.buildStats(BREEDER_DETAIL).map((stat: BreederStat): string => stat.value)).toEqual([
-      '7 sur 9',
-      '14 sept.',
-      '4 par an · 6 lices',
+/**
+ * Write the lines of « En bref » as they read.
+ *
+ * @param facts - The lines.
+ * @returns Each line, its bold start then the end of its sentence.
+ */
+function readKeyFacts(facts: BreederKeyFact[]): string[] {
+  return facts.map((fact: BreederKeyFact): string => `${fact.boldStart}${fact.sentenceEnd}`)
+}
+
+describe('BreederPresentation.listKeyFacts', (): void => {
+  it('says the size, the gold, the rhythm and the last litter in words', (): void => {
+    expect(
+      readKeyFacts(BreederPresentation.listKeyFacts({ ...BREEDER_DETAIL, dam_litter_gap_months: 12 }, NOW)),
+    ).toEqual([
+      'Élevage moyen : 6 chiennes, 4 portées par an',
+      'Du gold dans 7 portées sur 9',
+      'Une portée par an pour chaque chienne',
+      'Dernière portée le 14 sept.',
+    ])
+  })
+
+  it('names a large breeding without gold by its main colour, and the rhythm of its mothers', (): void => {
+    expect(
+      readKeyFacts(
+        BreederPresentation.listKeyFacts(
+          {
+            ...BREEDER_DETAIL,
+            breeding_females_count: 18,
+            litters_last_year_count: 13,
+            gold_litters_count: 0,
+            litters_count: 11,
+            color_shares: [{ color: 'bleu_rouan', litters_count: 9 }],
+            dam_litter_gap_months: 7,
+          },
+          NOW,
+        ),
+      ),
+    ).toEqual([
+      'Grand élevage : 18 chiennes, 13 portées par an',
+      'Pas de gold : surtout du bleu rouan',
+      'Une portée tous les 7 mois pour chaque chienne',
+      'Dernière portée le 14 sept.',
+    ])
+  })
+
+  it('counts the litters its site shows over the last twelve months, and leaves out what is unknown', (): void => {
+    expect(
+      readKeyFacts(
+        BreederPresentation.listKeyFacts(
+          {
+            ...BREEDER_DETAIL,
+            breeding_females_count: 4,
+            litters_last_year_count: null,
+            gold_litters_count: 0,
+            litters_count: 0,
+            last_litter_date: null,
+            site_litters: [
+              { birth_date: '2026-08-28', sire_name: 'Père de test 11', dam_name: 'Mère de test 12' },
+              { birth_date: '2026-07-19', sire_name: null, dam_name: null },
+              { birth_date: '2025-05-01', sire_name: null, dam_name: null },
+            ],
+          },
+          NOW,
+        ),
+      ),
+    ).toEqual(['Petit élevage : 4 chiennes, 2 portées par an'])
+  })
+
+  it('gives the rhythm in months when it is far from a year, and leaves it out when the counts say too little', (): void => {
+    expect(
+      readKeyFacts(BreederPresentation.listKeyFacts({ ...BREEDER_DETAIL, dam_litter_gap_months: 16 }, NOW))[2],
+    ).toBe('Une portée tous les 16 mois pour chaque chienne')
+    expect(readKeyFacts(BreederPresentation.listKeyFacts(BREEDER_DETAIL, NOW))).toEqual([
+      'Élevage moyen : 6 chiennes, 4 portées par an',
+      'Du gold dans 7 portées sur 9',
+      'Dernière portée le 14 sept.',
     ])
     expect(
-      BreederPresentation.buildStats({
-        ...BREEDER_DETAIL,
-        gold_litters_count: 0,
-        litters_count: 0,
-        last_litter_date: null,
-        litters_last_year_count: null,
-        breeding_females_count: null,
-      }).map((stat: BreederStat): string => stat.value),
-    ).toEqual(['—', '—', '—'])
+      readKeyFacts(
+        BreederPresentation.listKeyFacts(
+          { ...BREEDER_DETAIL, breeding_females_count: 4, litters_last_year_count: 7 },
+          NOW,
+        ),
+      )[2],
+    ).toBe('Près de deux portées par an pour chaque chienne')
+  })
+
+  it('takes the most of what a breeding declares and of what its site shows', (): void => {
+    const siteLitterDays: string[] = [
+      '2026-10-08',
+      '2026-08-27',
+      '2026-03-31',
+      '2026-03-06',
+      '2025-12-25',
+      '2025-07-10',
+    ]
+
+    expect(
+      readKeyFacts(
+        BreederPresentation.listKeyFacts(
+          {
+            ...BREEDER_DETAIL,
+            breeding_females_count: 3,
+            litters_last_year_count: 1,
+            site_litters: siteLitterDays.map((birthDate: string): BreederSiteLitter => ({
+              birth_date: birthDate,
+              sire_name: null,
+              dam_name: null,
+            })),
+          },
+          NOW,
+        ),
+      )[0],
+    ).toBe('Petit élevage : 3 chiennes, 5 portées par an')
+  })
+
+  it('tells a litter announced for later as the next one', (): void => {
+    expect(
+      readKeyFacts(BreederPresentation.listKeyFacts({ ...BREEDER_DETAIL, last_litter_date: '2026-12-23' }, NOW)).at(-1),
+    ).toBe('Prochaine portée vers le 23 déc.')
   })
 })
 
-describe('BreederPresentation.buildStats with the litters of its site', (): void => {
-  it('gives the rhythm as the litters its site shows for the last year', (): void => {
+describe('BreederPresentation.buildProbableLitterLine', (): void => {
+  it('says when the next litter of a mother is likely, and its colour when the couple tells it', (): void => {
+    const probableLitter: ProbableLitter = {
+      dam_name: 'Selune',
+      last_litter_born_on: '2025-11-19',
+      expected_on: '2026-11-19',
+      colors: [{ color: 'gold', confidence: 'inferred' }],
+    }
+
+    expect(BreederPresentation.buildProbableLitterLine({ ...BREEDER, next_probable_litter: probableLitter }, NOW)).toBe(
+      'Portée gold probable vers novembre',
+    )
     expect(
-      BreederPresentation.buildStats({
-        ...BREEDER_DETAIL,
-        site_litters: [
-          { birth_date: '2026-08-28', sire_name: 'Père de test 11', dam_name: 'Mère de test 12' },
-          { birth_date: '2026-07-19', sire_name: null, dam_name: null },
-          { birth_date: '2025-05-01', sire_name: null, dam_name: null },
-        ],
-      })[2]?.value,
-    ).toBe('2 en 2026 · 6 lices')
+      BreederPresentation.buildProbableLitterLine(
+        { ...BREEDER, next_probable_litter: { ...probableLitter, expected_on: '2027-01-10', colors: [] } },
+        NOW,
+      ),
+    ).toBe('Portée probable vers janvier 2027')
+    expect(BreederPresentation.buildProbableLitterLine({ ...BREEDER, next_probable_litter: null }, NOW)).toBeNull()
+    expect(BreederPresentation.listProbableLitterLines([probableLitter], NOW)).toMatchObject([
+      {
+        title: 'Vers novembre',
+        motherLine: 'Mère : Selune · sa dernière portée est née le 19 nov. 2025',
+        hasKnownColors: true,
+      },
+    ])
   })
 })
 

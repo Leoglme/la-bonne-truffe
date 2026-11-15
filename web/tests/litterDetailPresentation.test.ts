@@ -1,4 +1,4 @@
-import type { CoatColor, LitterDetail, LitterSourceListing } from '../app/types/api'
+import type { CoatColor, LitterDetail, LitterParent, LitterSourceListing } from '../app/types/api'
 import type { LitterPuppyLine } from '../app/types/Litter'
 import { describe, expect, it } from 'vitest'
 import { LitterDetailPresentation } from '../app/utils/litterDetailPresentation'
@@ -182,6 +182,22 @@ describe('LitterDetailPresentation.buildPuppyLines', (): void => {
     ])
   })
 
+  it('shows the colour the AI read on the photo of a puppy whose ad gives none', (): void => {
+    expect(
+      LitterDetailPresentation.buildPuppyLines({
+        ...LITTER,
+        gold_puppy_odds: 0.5,
+        listings: [{ ...MALE_PUPPY_AD, colors: [], confirmed_color: null, suggested_color: 'noir_et_feu' }],
+      })[0],
+    ).toMatchObject({ knownColor: 'noir_et_feu', isColorSuggestedByAi: true })
+    expect(
+      LitterDetailPresentation.buildPuppyLines({
+        ...LITTER,
+        listings: [{ ...MALE_PUPPY_AD, confirmed_color: 'gold', suggested_color: 'noir_et_feu' }],
+      })[0],
+    ).toMatchObject({ knownColor: 'gold', isColorSuggestedByAi: false })
+  })
+
   it('tells a puppy a family is reserving from a reserved one', (): void => {
     expect(
       LitterDetailPresentation.buildPuppyLines({
@@ -231,6 +247,25 @@ describe('LitterDetailPresentation.buildPuppyLines', (): void => {
       [13, null],
       [14, 'bleu_rouan'],
     ])
+  })
+})
+
+describe('LitterDetailPresentation.buildMotherHistoryLine', (): void => {
+  it('says the age of the mother and how long after her previous litter this one came', (): void => {
+    const mother: LitterParent = { name: 'Versace du Clos de Test', rating: 1 }
+
+    expect(
+      LitterDetailPresentation.buildMotherHistoryLine({
+        ...mother,
+        age_years: 2,
+        litter_rank: 2,
+        months_since_previous_litter: 7,
+      }),
+    ).toBe('2 ans · sa 2ᵉ portée connue, 7 mois après la précédente')
+    expect(LitterDetailPresentation.buildMotherHistoryLine({ ...mother, age_years: 1, litter_rank: 1 })).toBe(
+      '1 an · sa première portée connue',
+    )
+    expect(LitterDetailPresentation.buildMotherHistoryLine({ ...mother, litter_rank: 1 })).toBeNull()
   })
 })
 

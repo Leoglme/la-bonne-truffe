@@ -25,6 +25,9 @@
           <span v-if="parent.colorAndGenotypeLine" class="text-[13px] text-ink-muted md:text-[15px]">
             {{ parent.colorAndGenotypeLine }}
           </span>
+          <span v-if="parent.motherHistoryLine" class="text-[13px] text-ink-muted md:text-[15px]">
+            {{ parent.motherHistoryLine }}
+          </span>
           <span v-if="parent.rating !== null" class="mt-1 flex items-center gap-2.5">
             <UiLevelGauge :level="parent.rating" :maximum-level="MAX_PARENT_RATING" />
             <span class="text-[13px] font-extrabold text-ink-secondary md:text-sm">{{ parent.ratingLabel }}</span>
@@ -96,6 +99,7 @@ function buildParentLine(role: LitterParentRole, parent: LitterParent): LitterPa
     name: parent.name,
     color,
     colorAndGenotypeLine: lineParts.length === 0 ? null : lineParts.join(' · '),
+    motherHistoryLine: role === 'dam' ? LitterDetailPresentation.buildMotherHistoryLine(parent) : null,
     photoUrl: parent.photo_url ?? null,
     rating: parent.rating,
     ratingLabel: parent.rating === null ? null : LitterDetailPresentation.buildParentRatingLabel(parent.rating, role),

@@ -28,6 +28,12 @@
       <span v-if="rowSubtitle" class="text-[13px] text-ink-muted">{{ rowSubtitle }}</span>
       <span class="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] font-bold text-ink-secondary">
         <LitterColorBadge :colors="props.litter.colors" is-label-always-short />
+        <span
+          v-if="LitterPresentation.isColorSuggestedByAi(props.litter.colors)"
+          class="text-[13px] font-bold text-ink-label"
+        >
+          suggéré par IA
+        </span>
         <LitterSexCounts :litter="props.litter" class="whitespace-nowrap" />
       </span>
       <span v-if="goldPuppyOddsLine" class="text-[13px] font-bold text-balance text-gold-ink">

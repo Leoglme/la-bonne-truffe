@@ -23,6 +23,7 @@ export const BREEDER_FILTER_OPTIONS: BreederFilterOption[] = [
   { key: 'gold', label: 'Gold' },
   { key: 'club', label: 'Spaniel Club' },
   { key: 'active_litter', label: 'Une portée en cours' },
+  { key: 'probable_litter', label: 'Portée probable bientôt' },
 ]
 
 export const BREEDER_FILTER_KEYS: BreederFilter[] = BREEDER_FILTER_OPTIONS.map(
@@ -60,8 +61,8 @@ export const BREEDER_FOLLOW_STATUS_OPTIONS: BreederFollowStatusOption[] = BREEDE
 export const BREEDER_NOTIFICATION_SETTINGS: BreederNotificationSetting[] = [
   {
     key: 'notify_new_mating',
-    label: 'Nouvelle saillie déclarée',
-    helper: 'Dès qu’elle paraît à la Centrale Canine, environ deux mois avant le départ des chiots',
+    label: 'Nouvelle portée annoncée',
+    helper: 'Dès qu’elle paraît à la Centrale Canine, et un mois avant une portée probable',
   },
   {
     key: 'notify_birth',

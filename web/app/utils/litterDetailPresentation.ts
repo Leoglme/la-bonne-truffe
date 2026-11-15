@@ -6,6 +6,7 @@ import type {
   LitterCard,
   LitterColor,
   LitterDetail,
+  LitterParent,
   LitterSourceListing,
   MatchFlag,
   PuppyAdState,
@@ -176,7 +177,8 @@ export class LitterDetailPresentation {
 
   /**
    * Build the rows of « Les chiots »: one per puppy ad, its photo, its sex, its colour and where it stands. Its colour
-   * is the one noted by hand, else the one its ad gives for sure, else the gold when both parents only give the gold.
+   * is the one noted by hand, else the one its ad gives for sure, else the gold when both parents only give the gold,
+   * else the one the AI read on its photo.
    *
    * @param litter - The litter.
    * @returns « Chiot 1 · mâle · Disponible · 1 400 € »…, in the order of the API.
@@ -194,6 +196,8 @@ export class LitterDetailPresentation {
           ? onlyColor.color
           : null
       const notedColor: CoatColor | null = listing.confirmed_color ?? null
+      const knownColor: CoatColor | null = notedColor ?? statedColor ?? everyPuppyColor
+      const suggestedColor: CoatColor | null = knownColor === null ? (listing.suggested_color ?? null) : null
       return {
         key: `${listing.source}-${puppyIndex}`,
         listingId: listing.id,
@@ -201,14 +205,38 @@ export class LitterDetailPresentation {
         label: this.buildPuppyLabel(puppyIndex, puppyAds.length),
         sex,
         sexLabel: sex === 'unknown' ? null : PUPPY_SEX_LABELS[sex].toLowerCase(),
-        color: notedColor ?? onlyColor?.color ?? everyPuppyColor,
-        knownColor: notedColor ?? statedColor ?? everyPuppyColor,
+        color: notedColor ?? onlyColor?.color ?? everyPuppyColor ?? suggestedColor,
+        knownColor: knownColor ?? suggestedColor,
+        isColorSuggestedByAi: suggestedColor !== null,
         stateLabel: this.buildPuppyStateLabel(listing, sex),
         isAvailable: listing.puppy_state === 'available',
         photoUrl: listing.photos[0] ?? null,
         isGone: !listing.is_active,
       }
     })
+  }
+
+  /**
+   * Build the line under the mother's name: her age at the birth, which of her known litters it is, and the gap.
+   *
+   * @param dam - The mother.
+   * @returns « 2 ans · sa 2ᵉ portée connue, 7 mois après la précédente », null without her age nor an earlier litter.
+   */
+  static buildMotherHistoryLine(dam: LitterParent): string | null {
+    const ageYears: number | null = dam.age_years ?? null
+    const rank: number | null = dam.litter_rank ?? null
+    const parts: string[] = []
+    if (ageYears !== null) {
+      parts.push(`${ageYears} ${FrenchText.pickForm(ageYears, 'an', 'ans')}`)
+    }
+    if (rank !== null && rank > 1) {
+      const monthsSince: number | null = dam.months_since_previous_litter ?? null
+      const after: string = monthsSince === null ? '' : `, ${monthsSince} mois après la précédente`
+      parts.push(`sa ${rank}ᵉ portée connue${after}`)
+    } else if (rank === 1 && ageYears !== null) {
+      parts.push('sa première portée connue')
+    }
+    return parts.length === 0 ? null : parts.join(' · ')
   }
 
   /**

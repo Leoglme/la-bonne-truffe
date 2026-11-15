@@ -64,6 +64,8 @@ MIGRATION_MODULES: list[tuple[str, str]] = [
     ("read_breeder_sites_again_silently", "migrations.read_breeder_sites_again_silently"),
     ("add_listing_confirmed_color", "migrations.add_listing_confirmed_color"),
     ("rewrite_gold_reasons_of_litters", "migrations.rewrite_gold_reasons_of_litters"),
+    ("add_listing_suggested_color", "migrations.add_listing_suggested_color"),
+    ("add_breeder_follow_event_subject_key", "migrations.add_breeder_follow_event_subject_key"),
 ]
 
 _NON_MIGRATION_MODULES: set[str] = {"__init__", "run_migrations"}

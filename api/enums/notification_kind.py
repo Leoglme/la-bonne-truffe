@@ -20,4 +20,5 @@ class NotificationKind(StrEnum):
     BREEDER_BIRTH = "breeder_birth"
     BREEDER_NEW_PHOTOS = "breeder_new_photos"
     BREEDER_NEW_AD = "breeder_new_ad"
+    BREEDER_PROBABLE_LITTER = "breeder_probable_litter"
     BREEDER_FOLLOW_REMINDER = "breeder_follow_reminder"

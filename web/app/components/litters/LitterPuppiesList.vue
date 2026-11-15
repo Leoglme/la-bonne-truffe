@@ -51,6 +51,13 @@
             </button>
             <template v-if="line.stateLabel"> · {{ writeStateAfterColor(line.stateLabel) }}</template>
           </span>
+          <span
+            v-if="line.isColorSuggestedByAi"
+            class="mt-0.5 inline-flex items-center gap-1 text-[13px] font-bold text-ink-label"
+          >
+            <UIcon name="i-lucide-sparkles" class="size-3.5 shrink-0" aria-hidden="true" />
+            Suggéré par l’IA
+          </span>
         </span>
         <UIcon
           v-if="line.href"

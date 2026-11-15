@@ -72,6 +72,8 @@ ZIP_CODE_PATTERN = re.compile(r"\b(\d{5})\b")
 
 LITTER_TO_COME_LINK_PATTERN = re.compile(r"/saillie/(\d+)$")
 LITTER_FOR_SALE_LINK_PATTERN = re.compile(r"/chiots-a-vendre/(\d+)$")
+LITTERS_BORN_YEAR_LINK_PATTERN = re.compile(rf"/{LITTERS_BORN_PATH}/(\d{{4}})/?$")
+SHOWN_YEAR_BUTTON_CLASS = "gras"
 DOG_LINK_PATTERN = re.compile(r"/chien/(\d+)$")
 PUPPY_NUMBER_PATTERN = re.compile(r"n°\s*(\d+)", re.IGNORECASE)
 AVAILABLE_FROM_PATTERN = re.compile(r"partir du\s+(\d{1,2}[./]\d{1,2}[./]\d{4})", re.IGNORECASE)
@@ -354,6 +356,12 @@ class ChiensDeFranceSiteCollector:
         if litters_born_tree is not None:
             litters_born = tuple(self.parse_litters_born_page(litters_born_tree))
             social_accounts = social_accounts or self.parse_social_links(litters_born_tree)
+            previous_year_url = self.previous_year_litters_url(litters_born_tree, litters_born)
+            previous_year_tree = self._read_page(previous_year_url, collection) if previous_year_url else None
+            if previous_year_tree is not None:
+                litters_born = self.with_litters_of_previous_year(
+                    litters_born, self.parse_litters_born_page(previous_year_tree)
+                )
             for litter_id in self.recent_litter_ids_no_longer_offered(
                 litters_born, litter_ids_for_sale, oldest_birth_read
             ):
@@ -828,6 +836,65 @@ class ChiensDeFranceSiteCollector:
                 )
             )
         return litters
+
+    @staticmethod
+    def previous_year_litters_url(tree: LexborHTMLParser, litters_born: Sequence[RawBreederSiteLitter]) -> str | None:
+        """
+        The « Chiots nés chez nous » list of the year before the one the page shows (``/chiots-vendus/2025``): the
+        page only lists the litters of one year, and the litters of the end of the year before are those a mother is
+        likely to follow with a new one now. A page that lists no litter (a year just begun) shows the year of its bold
+        button, else a year that has no button yet, so its year before is the last one linked.
+
+        Args:
+            tree: The parsed list.
+            litters_born: The litters it lists.
+
+        Returns:
+            The address of that list, None when the page links none.
+        """
+        years_by_url: dict[str, int] = {}
+        button_years: list[int] = []
+        for link in tree.css("a[href]"):
+            href = (link.attributes.get("href") or "").strip()
+            year_match = LITTERS_BORN_YEAR_LINK_PATTERN.search(href)
+            if year_match is None:
+                continue
+            years_by_url[href] = int(year_match.group(1))
+            if SHOWN_YEAR_BUTTON_CLASS in (link.attributes.get("class") or "").split():
+                button_years.append(int(year_match.group(1)))
+        if not years_by_url:
+            return None
+        if litters_born:
+            shown_year = max(litter.birth_date.year for litter in litters_born)
+        elif button_years:
+            shown_year = max(button_years)
+        else:
+            shown_year = max(years_by_url.values()) + 1
+        earlier = [(year, href) for href, year in years_by_url.items() if year < shown_year]
+        return max(earlier)[1] if earlier else None
+
+    @staticmethod
+    def with_litters_of_previous_year(
+        litters_born: tuple[RawBreederSiteLitter, ...], previous_year_litters: Sequence[RawBreederSiteLitter]
+    ) -> tuple[RawBreederSiteLitter, ...]:
+        """
+        The litters of the year, then those of the year before that the first list does not hold already.
+
+        Args:
+            litters_born: The litters of the year.
+            previous_year_litters: The litters of the year before.
+
+        Returns:
+            Every litter once.
+        """
+        known = {(litter.litter_id, litter.birth_date) for litter in litters_born}
+        known_ids = {litter.litter_id for litter in litters_born if litter.litter_id is not None}
+        added = tuple(
+            litter
+            for litter in previous_year_litters
+            if (litter.litter_id, litter.birth_date) not in known and litter.litter_id not in known_ids
+        )
+        return litters_born + added
 
     @staticmethod
     def recent_litter_ids_no_longer_offered(

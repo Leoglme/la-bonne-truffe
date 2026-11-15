@@ -353,3 +353,19 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 - **Non vérifié** : la production après la mise en ligne.
 - **Laissé à décider**, sur maquette : les portées probables avant leur déclaration, avec un mot plus simple que « saillie » ; un deuxième cercle de départements en temps de route ; la robe d'un chiot suggérée par une IA gratuite (Mistral, comme DevLeadHunter) ; un avis lisible sur l'élevage ; un lien « Ouvrir chien.com ».
 - **Maquettes** (canevas du 15/11, `06`), faites sur un relevé frais en local : les quatre propositions ci-dessus, à valider par oui ou non. Vu en les préparant : la portée du Clos de l'Ecotay née le 8 octobre (« gold possible, un chiot sur deux ») a ses deux mâles disponibles noir et feu et ses trois chiots gold en cours de réservation ; aucune source ne le dit, seules les photos. La Normandie et le Centre-Val de Loire ajoutent 92 portées déclarées aux 73 des régions du profil, dont 10 classées gold nées depuis moins de deux mois ou à naître.
+
+## 15 novembre (soir) : les portées probables, la robe lue par l'IA, l'élevage en bref
+
+- **Demandé** : réaliser les maquettes validées : la 1 (« je valide les trois écrans »), la 3 (« tu peux implémenter ») et la 4 en liste (« plus lisible » que les cases), avec la ligne de la mère sur la fiche d'une portée ; pas la 2 (« le système de plus loin ne m'intéresse pas »).
+- **Constaté** :
+  - l'écart médian entre deux portées d'une même mère est de 12 mois sur les portées connues : la règle « une portée par an, comptée depuis la dernière » tient (`03`) ;
+  - les sites d'élevage ne montraient que les portées de l'année : les mères de l'automne d'avant manquaient, la page de l'année d'avant est désormais lue (`02`) ;
+  - relu sur la copie du relevé : la Centrale Canine écrit « Violette 1 du Clos de l'Ecotay » quand le site des Rives du Blavet écrit « Violette Du Clos De L'Ecotay » ; l'app en faisait deux mères et annonçait une portée probable en février alors qu'elle a mis bas le 30 octobre (`03`) ;
+  - les chiffres que les élevages déclarent à Chiens de France sont en retard sur leur site : le Clos de l'Ecotay déclare 3 chiennes et 1 portée par an, son site montre 6 chiennes et 6 portées en douze mois ; « En bref » prend le plus grand des deux (`06`).
+- **Fait** :
+  - les portées probables : « Ses prochaines portées » sur la fiche d'un élevage, la ligne et le filtre de la liste, le push « Portée probable » un mois avant pour un élevage suivi (`03`, `04`, `06`) ;
+  - « En bref » à la place des trois cases, et l'âge et le rang de la mère sur la fiche d'une portée (`06`) ;
+  - la robe d'un chiot lue sur sa photo par Mistral, « suggéré par IA » (`04`, `05`) ; elle attend la clé `MISTRAL_API_KEY` (`11`) ;
+  - « portée annoncée » et « chiennes » au lieu de « saillie déclarée » et « lices ».
+- **Vérifié** : tests pytest et vitest (toutes les suites), ruff, mypy, lint et typecheck ; captures sur ordinateur et sur iPhone, sur une copie du relevé du 15/11 relue avec les portées de l'année d'avant (14 élevages ont une portée probable, 8 dans la liste filtrée), la robe des chiots du Clos de l'Ecotay simulée comme l'IA la lirait (80 annonces à lire, six heures au rythme de 15 photos par heure).
+- **Non vérifié** : une vraie lecture par Mistral, qui attend la clé (`11`), et la production après la mise en ligne.

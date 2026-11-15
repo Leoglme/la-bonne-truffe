@@ -34,6 +34,13 @@
       <span class="text-sm md:text-[15px]" :class="BREEDER_LITTER_STATUS_LINE_CLASSES[litterStatusLine.tone]">
         {{ litterStatusLine.text }}
       </span>
+      <span
+        v-if="probableLitterLine"
+        class="inline-flex items-start gap-1.5 text-sm font-extrabold text-coral-text md:text-[15px]"
+      >
+        <UIcon name="i-lucide-calendar" class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+        {{ probableLitterLine }}
+      </span>
       <BreederChips :chips="chips" is-compact class="mt-1" />
     </span>
   </NuxtLink>
@@ -61,6 +68,9 @@ const litterStatusLine: ComputedRef<BreederLitterStatusLine> = computed((): Bree
 )
 const chips: ComputedRef<BreederChip[]> = computed((): BreederChip[] =>
   BreederPresentation.listChips(props.breeder, true),
+)
+const probableLitterLine: ComputedRef<string | null> = computed((): string | null =>
+  BreederPresentation.buildProbableLitterLine(props.breeder, new Date()),
 )
 const sourceLabel: ComputedRef<string | null> = computed((): string | null => {
   if (props.breeder.is_manual) {

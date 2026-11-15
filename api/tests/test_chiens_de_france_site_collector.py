@@ -58,6 +58,7 @@ RECORDED_SITE_PATHS = [
     "/cocker-spaniel-anglais/chiots-a-vendre/494507",
     "/cocker-spaniel-anglais/actualites",
     "/cocker-spaniel-anglais/chiots-vendus",
+    "/cocker-spaniel-anglais/chiots-vendus/2025",
     "/cocker-spaniel-anglais/chiens/femelles",
     "/cocker-spaniel-anglais/chiens/males",
     "/cocker-spaniel-anglais/chiens/etalons",
@@ -726,3 +727,41 @@ def test_collect_directory_reads_each_list_and_skips_a_missing_one() -> None:
     assert [entry.site_url for entry in collection.entries] == [SITE_URL, "https://elevage-d.chiens-de-france.com"]
     assert [page.url for page in collection.raw_pages] == [DIRECTORY_LIST_URL]
     assert collection.failed_urls == []
+
+
+LITTERS_BORN_WITH_YEARS = """
+<html><body>
+<a href="https://elevage-a.chiens-de-france.com/cocker-spaniel-anglais/chiots-vendus/2026" class="bout-annee coul gras">2026</a>
+<a href="https://elevage-a.chiens-de-france.com/cocker-spaniel-anglais/chiots-vendus/2025">2025</a>
+<a href="https://elevage-a.chiens-de-france.com/cocker-spaniel-anglais/chiots-vendus/2024">2024</a>
+</body></html>
+"""
+
+
+def test_the_list_of_the_year_before_is_the_one_before_the_year_shown() -> None:
+    tree = LexborHTMLParser(LITTERS_BORN_WITH_YEARS)
+    litters_of_2026 = (RawBreederSiteLitter(date(2026, 3, 6), litter_id="1"),)
+
+    with_litters = ChiensDeFranceSiteCollector.previous_year_litters_url(tree, litters_of_2026)
+    without_litter = ChiensDeFranceSiteCollector.previous_year_litters_url(tree, ())
+    year_without_button = ChiensDeFranceSiteCollector.previous_year_litters_url(
+        LexborHTMLParser(LITTERS_BORN_WITH_YEARS.replace(' class="bout-annee coul gras"', "")), ()
+    )
+    without_link = ChiensDeFranceSiteCollector.previous_year_litters_url(LexborHTMLParser("<p></p>"), ())
+
+    assert with_litters == "https://elevage-a.chiens-de-france.com/cocker-spaniel-anglais/chiots-vendus/2025"
+    assert without_litter == with_litters
+    assert year_without_button == "https://elevage-a.chiens-de-france.com/cocker-spaniel-anglais/chiots-vendus/2026"
+    assert without_link is None
+
+
+def test_the_litters_of_the_year_before_join_those_of_the_year_once() -> None:
+    this_year = (RawBreederSiteLitter(date(2026, 3, 6), litter_id="1"),)
+    year_before = [
+        RawBreederSiteLitter(date(2026, 3, 6), litter_id="1"),
+        RawBreederSiteLitter(date(2025, 11, 19), litter_id="2"),
+    ]
+
+    litters = ChiensDeFranceSiteCollector.with_litters_of_previous_year(this_year, year_before)
+
+    assert [litter.litter_id for litter in litters] == ["1", "2"]

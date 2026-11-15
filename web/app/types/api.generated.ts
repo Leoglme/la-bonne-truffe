@@ -1415,6 +1415,8 @@ export interface components {
             breeding_females_count: number | null;
             /** @description The litter to talk about now, when there is one */
             current_litter: components["schemas"]["LitterCard"] | null;
+            /** @description The soonest probable litter of a colour the profile does not ignore */
+            next_probable_litter?: components["schemas"]["ProbableLitter"] | null;
             /** Is Followed */
             is_followed: boolean;
             follow_status: components["schemas"]["BreederFollowStatus"] | null;
@@ -1528,6 +1530,8 @@ export interface components {
             breeding_females_count: number | null;
             /** @description The litter to talk about now, when there is one */
             current_litter: components["schemas"]["LitterCard"] | null;
+            /** @description The soonest probable litter of a colour the profile does not ignore */
+            next_probable_litter?: components["schemas"]["ProbableLitter"] | null;
             /** Is Followed */
             is_followed: boolean;
             follow_status: components["schemas"]["BreederFollowStatus"] | null;
@@ -1598,6 +1602,16 @@ export interface components {
              * @description Every litter known, the current ones first
              */
             litters: components["schemas"]["LitterCard"][];
+            /**
+             * Probable Litters
+             * @description The litters its mothers are likely to have soon, of a colour the profile does not ignore
+             */
+            probable_litters?: components["schemas"]["ProbableLitter"][];
+            /**
+             * Dam Litter Gap Months
+             * @description Months a mother of the breeding waits between two litters, the middle value known
+             */
+            dam_litter_gap_months?: number | null;
             /** Color Shares */
             color_shares: components["schemas"]["BreederColorShare"][];
             /** Reproducers */
@@ -1657,7 +1671,7 @@ export interface components {
          * @description Which breeders the list shows.
          * @enum {string}
          */
-        BreederFilter: "all" | "followed" | "gold" | "club" | "active_litter";
+        BreederFilter: "all" | "followed" | "gold" | "club" | "active_litter" | "probable_litter";
         /**
          * BreederFollowNoteCreate
          * @description A note to add to a followed breeder.
@@ -1928,13 +1942,15 @@ export interface components {
         CoatColor: "gold" | "noir" | "noir_et_feu" | "marron" | "marron_et_feu" | "bleu_rouan" | "orange_rouan" | "marron_rouan" | "tricolore" | "particolore" | "zibeline" | "inconnue";
         /**
          * ColorConfidence
-         * @description How sure a colour is: certain, ambiguous source bundle, confirmed by hand, or inferred from the parents.
+         * @description How sure a colour is: certain, ambiguous source bundle, confirmed by hand, inferred from the parents, or
+         *     suggested by the AI from the photo of a puppy.
          *
          *     An inferred colour counts as certain for the tier and the score (docs/04, « Les couleurs données par les
-         *     chiens »): two gold parents only give gold puppies.
+         *     chiens »): two gold parents only give gold puppies. A suggested colour counts as certain too: it is only read
+         *     when no source gives the colour of the puppy, and the app says where it comes from.
          * @enum {string}
          */
-        ColorConfidence: "certain" | "ambiguous" | "confirmed" | "inferred";
+        ColorConfidence: "certain" | "ambiguous" | "confirmed" | "inferred" | "suggested";
         /**
          * ColorConfirmation
          * @description Colours confirmed by hand after a call; an empty list removes the confirmation.
@@ -2421,6 +2437,21 @@ export interface components {
              * @description First photo of the dog on its breeder's site, by chip
              */
             photo_url?: string | null;
+            /**
+             * Age Years
+             * @description For the mother: her age in whole years when the litter was born (or is due)
+             */
+            age_years?: number | null;
+            /**
+             * Litter Rank
+             * @description For the mother: which of her known litters this one is, 1 for the first one known
+             */
+            litter_rank?: number | null;
+            /**
+             * Months Since Previous Litter
+             * @description For the mother: months between her previous known litter and this one
+             */
+            months_since_previous_litter?: number | null;
         };
         /**
          * LitterPhotoSource
@@ -2522,6 +2553,8 @@ export interface components {
             price_cents?: number | null;
             /** @description Colour of the puppy of a puppy ad, noted by hand from its photo or after a call */
             confirmed_color?: components["schemas"]["CoatColor"] | null;
+            /** @description Colour the AI read on the photo of the puppy, when its ad gives none */
+            suggested_color?: components["schemas"]["CoatColor"] | null;
         };
         /**
          * LitterVisit
@@ -2567,7 +2600,7 @@ export interface components {
          * @description Event a sent notification reports (see docs/04-correspondance-et-notifications.md).
          * @enum {string}
          */
-        NotificationKind: "new_preferred" | "born" | "upgraded" | "availability_change" | "available_again" | "evening_digest" | "source_down" | "source_silent" | "signup_request" | "follow_up_reminder" | "breeder_new_mating" | "breeder_birth" | "breeder_new_photos" | "breeder_new_ad" | "breeder_follow_reminder";
+        NotificationKind: "new_preferred" | "born" | "upgraded" | "availability_change" | "available_again" | "evening_digest" | "source_down" | "source_silent" | "signup_request" | "follow_up_reminder" | "breeder_new_mating" | "breeder_birth" | "breeder_new_photos" | "breeder_new_ad" | "breeder_probable_litter" | "breeder_follow_reminder";
         /**
          * NotificationListResponse
          * @description A page of the notification history plus the unread count that lights the bell.
@@ -2766,6 +2799,33 @@ export interface components {
         PasswordResetToken: {
             /** Token */
             token: string;
+        };
+        /**
+         * ProbableLitter
+         * @description The next litter a mother of the breeding is likely to have, a year after her last one (an estimate).
+         */
+        ProbableLitter: {
+            /**
+             * Dam Name
+             * @description The mother, without her affix when a source gives it so
+             */
+            dam_name: string;
+            /**
+             * Last Litter Born On
+             * Format: date
+             */
+            last_litter_born_on: string;
+            /**
+             * Expected On
+             * Format: date
+             * @description A year after her last litter
+             */
+            expected_on: string;
+            /**
+             * Colors
+             * @description What the mother and the father of her last litter would give again, ambiguous with one of them unknown, empty with both unknown
+             */
+            colors: components["schemas"]["LitterColor"][];
         };
         /**
          * PuppyAdState

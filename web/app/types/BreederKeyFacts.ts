@@ -1,6 +1,6 @@
 import type { BreederDetail } from '~/types/api'
 
-export type BreederStatsProps = {
+export type BreederKeyFactsProps = {
   breeder: BreederDetail
   isInAside: boolean
 }

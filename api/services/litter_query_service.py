@@ -44,6 +44,7 @@ from schemas.litter import (
 )
 from schemas.notification import NotificationLitter
 from services.collectors.chiens_de_france_sites import breed_page_of
+from services.dam_litter_history import DAYS_PER_YEAR, SAME_LITTER_DAYS, DamLitterHistory
 from services.dog_chip import DogChip
 from services.dog_color_inference import DogColorInference
 from services.dog_ingestion import DogIngestionService
@@ -289,7 +290,9 @@ class LitterQueryService:
             litter_number=next((listing.litter_number for listing in listings if listing.litter_number), None),
             mating_date=group.mating_date,
             sire=cls._parent_with_dog(sire, sire_dog, site_photos_by_parent_id),
-            dam=cls._parent_with_dog(dam, dam_dog, site_photos_by_parent_id),
+            dam=cls._with_mother_history(
+                db, group, cls._parent_with_dog(dam, dam_dog, site_photos_by_parent_id), dam_dog
+            ),
             breeder=cls._breeder(breeder, breed.chiens_de_france_id if breed is not None else None)
             if breeder is not None
             else None,
@@ -335,6 +338,7 @@ class LitterQueryService:
                     photos=listing.photos,
                     puppy_state=PuppyAdStateReader.state_of(listing),
                     confirmed_color=listing.confirmed_color,
+                    suggested_color=listing.suggested_color,
                     price_cents=listing.price_cents,
                 )
                 for listing in listings
@@ -687,6 +691,41 @@ class LitterQueryService:
             health_codes=list(dog.health_codes),
             scc_url=dog.external_url,
             photo_url=site_photos_by_parent_id.get(dog.id),
+        )
+
+    @staticmethod
+    def _with_mother_history(
+        db: Session, group: LitterGroup, dam: LitterParent | None, dam_dog: Dog | None
+    ) -> LitterParent | None:
+        """
+        The mother completed with her age when the litter was born (or is due), which of her known litters it is,
+        and how long after the one before: her litters are those of her breeding, in the app and on its site.
+
+        Args:
+            db: Database session.
+            group: The litter.
+            dam: The mother, as the listings and her page give her.
+            dam_dog: Her Centrale Canine row, once read.
+
+        Returns:
+            The mother with what her litters tell, unchanged without a breeder or a birth date.
+        """
+        born_on = group.birth_date or group.expected_birth_date
+        if dam is None or group.breeder_id is None or born_on is None:
+            return dam
+        mothers = DamLitterHistory.of_breeders(db, [group.breeder_id]).get(group.breeder_id, [])
+        mother = DamLitterHistory.dam_of(mothers, dam.name, dam_dog)
+        age_years = mother.age_years_on(born_on) if mother is not None else None
+        if age_years is None and dam_dog is not None and dam_dog.birth_date is not None:
+            age_years = int((born_on - dam_dog.birth_date).days // DAYS_PER_YEAR)
+        if mother is None:
+            return dam.model_copy(update={"age_years": age_years})
+        return dam.model_copy(
+            update={
+                "age_years": age_years,
+                "litter_rank": 1 + sum(1 for day in mother.birth_dates if (born_on - day).days > SAME_LITTER_DAYS),
+                "months_since_previous_litter": mother.months_since_litter_before(born_on),
+            }
         )
 
     @staticmethod

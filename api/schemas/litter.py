@@ -101,6 +101,15 @@ class LitterParent(BaseModel):
     health_codes: list[str] = Field(default_factory=list)
     scc_url: str | None = None
     photo_url: str | None = Field(default=None, description="First photo of the dog on its breeder's site, by chip")
+    age_years: int | None = Field(
+        default=None, description="For the mother: her age in whole years when the litter was born (or is due)"
+    )
+    litter_rank: int | None = Field(
+        default=None, description="For the mother: which of her known litters this one is, 1 for the first one known"
+    )
+    months_since_previous_litter: int | None = Field(
+        default=None, description="For the mother: months between her previous known litter and this one"
+    )
 
 
 class LitterBreeder(BaseModel):
@@ -141,6 +150,9 @@ class LitterSourceListing(BaseModel):
     price_cents: int | None = None
     confirmed_color: CoatColor | None = Field(
         default=None, description="Colour of the puppy of a puppy ad, noted by hand from its photo or after a call"
+    )
+    suggested_color: CoatColor | None = Field(
+        default=None, description="Colour the AI read on the photo of the puppy, when its ad gives none"
     )
 
 

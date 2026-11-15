@@ -1,4 +1,4 @@
-import type { BreederFilter, BreederFollowStatus, BreederSort } from '~/types/api'
+import type { BreederFilter, BreederFollowStatus, BreederSort, LitterColor } from '~/types/api'
 import type { LinkLogo } from '~/types/UiLinkLogo'
 
 export type BreederChipTone = 'neutral' | 'gold' | 'coral' | 'green' | 'lilac'
@@ -15,10 +15,19 @@ export type BreederLitterStatusLine = {
   tone: BreederLitterStatusTone
 }
 
-export type BreederStat = {
-  label: string
-  compactLabel: string
-  value: string
+export type BreederKeyFact = {
+  key: string
+  iconName: string
+  boldStart: string
+  sentenceEnd: string
+}
+
+export type ProbableLitterLine = {
+  key: string
+  title: string
+  motherLine: string
+  colors: LitterColor[]
+  hasKnownColors: boolean
 }
 
 export type BreederColorShareSlice = {

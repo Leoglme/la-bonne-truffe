@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from datetime import date
 
+from sqlalchemy.orm import Session
+
 from enums.coat_color import CoatColor
 from enums.color_confidence import ColorConfidence
 from enums.color_preference_level import ColorPreferenceLevel
@@ -52,6 +54,26 @@ class ProfileCriteria:
             price_max_cents=profile.price_max_cents,
             max_puppy_age_days=profile.max_puppy_age_days,
         )
+
+    @classmethod
+    def of_active_profile(cls, db: Session, user_id: int) -> "ProfileCriteria | None":
+        """
+        Read the criteria of the user's first active profile.
+
+        Args:
+            db: Database session.
+            user_id: The user.
+
+        Returns:
+            The typed criteria, or None without an active profile.
+        """
+        profile = (
+            db.query(SearchProfile)
+            .filter(SearchProfile.user_id == user_id, SearchProfile.is_active.is_(True))
+            .order_by(SearchProfile.id)
+            .first()
+        )
+        return cls.from_profile(profile) if profile is not None else None
 
     def level_of(self, color: CoatColor) -> ColorPreferenceLevel:
         """

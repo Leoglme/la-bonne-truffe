@@ -36,6 +36,7 @@ Une pull request ne déploie jamais : elle ne lance que les contrôles. Un servi
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY_B64` | La paire Web Push ; en changer désabonne les appareils |
 | `TAURI_UPDATER_PUBKEY`, `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | La clé de l'updater : clé publique, clé privée et son mot de passe ; la perdre oblige à réinstaller l'app à la main |
 | `RESEND_API_KEY` | Facultatif : la clé Resend qui envoie le lien de « Mot de passe oublié » depuis `EMAIL_FROM` ; sans elle, l'API écrit le lien dans ses logs |
+| `MISTRAL_API_KEY` | Facultatif : la clé Mistral (offre gratuite, la même que pour DevLeadHunter ou une autre) qui lit la robe des chiots sur leurs photos (`04`) ; sans elle, rien n'est lu |
 
 Avec `gh`, depuis la racine du dépôt, dans Git Bash. Les mots de passe sont lus par `read -s` : ils ne s'affichent pas et ne restent pas dans l'historique.
 
@@ -54,6 +55,7 @@ printf '%s' "$tauri_key_password" | gh secret set TAURI_SIGNING_PRIVATE_KEY_PASS
 gh secret set TAURI_SIGNING_PRIVATE_KEY < ~/.tauri/la-bonne-truffe.key
 gh secret set TAURI_UPDATER_PUBKEY < ~/.tauri/la-bonne-truffe.key.pub
 read -rsp "Clé Resend : " resend_api_key; echo; printf '%s' "$resend_api_key" | gh secret set RESEND_API_KEY; unset resend_api_key
+read -rsp "Clé Mistral : " mistral_api_key; echo; printf '%s' "$mistral_api_key" | gh secret set MISTRAL_API_KEY; unset mistral_api_key
 ```
 
 Les adresses (`WEB_BASE_URL`, `CORS_ORIGINS`), `DATABASE_URL`, `COLLECT_SKIPPED_SOURCES` et l'adresse `contact@dibodev.fr` (`ADMIN_EMAIL`, `VAPID_SUBJECT`, User-Agent) ne sont pas secrètes : elles sont écrites dans `deploy-api.yml`. L'inscription est fermée par défaut (`SIGNUP_ENABLED=false`, chaque tentative est gardée dans `signup_requests`) : pour l'ouvrir, ajouter `SIGNUP_ENABLED=true` au `.env` qu'écrit `deploy-api.yml`.

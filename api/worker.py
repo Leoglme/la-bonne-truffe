@@ -10,14 +10,17 @@ import logging
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 from core.clock import naive_utc_now
+from core.config import settings
 from core.database import SessionLocal, engine
 from enums.listing_source import ListingSource
 from migrations.run_migrations import MigrationRunner
+from services.breeder_alert_service import breeder_alert_service
 from services.breeder_website_service import breeder_website_service
 from services.collection_runner import collection_runner
 from services.collectors.chiens_de_france_sites import ChiensDeFranceSiteCollector
 from services.housekeeping_service import housekeeping_service
 from services.notifier import notifier_service
+from services.puppy_photo_color_reader import PuppyPhotoColorReader
 from services.source_status_service import COLLECTED_SOURCES, DESKTOP_RELAYED_SOURCES
 
 logger = logging.getLogger("worker")
@@ -53,6 +56,11 @@ FOLLOWED_BREEDER_SITES_MINUTE = 55
 
 # Minute of every hour at which the websites of the breedings not read yet are read for their photo.
 BREEDER_WEBSITES_MINUTE = 25
+
+PUPPY_PHOTOS_READING_MINUTE = 30
+
+PROBABLE_LITTER_ALERTS_HOUR = 10
+PROBABLE_LITTER_ALERTS_MINUTE = 10
 
 # The relayed sources whose silence is worth an alert: those relayed every hour.
 SILENCE_WATCHED_SOURCES: frozenset[ListingSource] = frozenset({ListingSource.CENTRALE_CANINE})
@@ -120,6 +128,17 @@ class CollectionWorker:
         scheduler.add_job(
             self.read_breeder_websites, "cron", minute=BREEDER_WEBSITES_MINUTE, id="read_breeder_websites"
         )
+        if settings.mistral_api_key:
+            scheduler.add_job(
+                self.read_puppy_photos, "cron", minute=PUPPY_PHOTOS_READING_MINUTE, id="read_puppy_photos"
+            )
+        scheduler.add_job(
+            self.send_probable_litter_alerts,
+            "cron",
+            hour=PROBABLE_LITTER_ALERTS_HOUR,
+            minute=PROBABLE_LITTER_ALERTS_MINUTE,
+            id="send_probable_litter_alerts",
+        )
         scheduler.add_job(self.send_evening_digests, "cron", minute=0, id="send_evening_digests")
         scheduler.add_job(self.send_follow_up_reminders, "cron", minute="*/5", id="send_follow_up_reminders")
         if self.relayed_sources & SILENCE_WATCHED_SOURCES:
@@ -177,6 +196,26 @@ class CollectionWorker:
             breeder_ids = breeder_website_service.read_unread_websites(db, naive_utc_now())
             if breeder_ids:
                 logger.info("Breeder websites read: %d photo(s) found", len(breeder_ids))
+        finally:
+            db.close()
+
+    def read_puppy_photos(self) -> None:
+        """Every hour: read on their photos the coat of a few puppies whose ads give none, then match again."""
+        db = SessionLocal()
+        try:
+            read_count = PuppyPhotoColorReader().read_pending(db, naive_utc_now())
+            if read_count:
+                logger.info("Puppy photos read by the AI: %d", read_count)
+        finally:
+            db.close()
+
+    def send_probable_litter_alerts(self) -> None:
+        """Every morning: tell the followed breeders whose mothers are likely to have a litter within a month."""
+        db = SessionLocal()
+        try:
+            sent_count = breeder_alert_service.send_probable_litter_alerts(db, naive_utc_now())
+            if sent_count:
+                logger.info("%d probable litter alert(s) sent", sent_count)
         finally:
             db.close()
 

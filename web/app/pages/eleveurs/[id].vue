@@ -49,8 +49,9 @@
             </div>
           </div>
           <BreederChips :chips="chips" class="shrink-0" />
-          <BreederStats :breeder="breeder" class="shrink-0" />
+          <BreederKeyFacts :breeder="breeder" class="shrink-0" />
           <BreederPhotoGallery :photos="breeder.photos" class="shrink-0" />
+          <BreederProbableLittersList :probable-litters="breeder.probable_litters ?? []" class="shrink-0" />
           <BreederLittersList :breeder="breeder" class="shrink-0" />
           <BreederColorShares :breeder="breeder" class="shrink-0" />
           <BreederDogsList :breeder="breeder" class="shrink-0" />
@@ -136,6 +137,7 @@
             {{ heroTag }}
           </span>
         </div>
+        <BreederProbableLittersList :probable-litters="breeder.probable_litters ?? []" is-in-wide-layout />
         <BreederLittersList :breeder="breeder" is-in-wide-layout />
         <BreederColorShares :breeder="breeder" />
         <BreederDogsList :breeder="breeder" is-in-wide-layout />
@@ -153,7 +155,7 @@
         <template v-if="breeder">
           <div class="flex flex-col gap-[18px] rounded-card bg-card p-6 shadow-card">
             <BreederChips v-if="chips.length > 0" :chips="chips" />
-            <BreederStats :breeder="breeder" is-in-aside />
+            <BreederKeyFacts :breeder="breeder" is-in-aside />
             <template v-if="primaryAction">
               <div class="h-px bg-line" />
               <UButton

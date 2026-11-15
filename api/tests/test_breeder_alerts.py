@@ -174,7 +174,7 @@ def test_a_mating_at_a_followed_breeder_is_pushed(
     next_run_with_fresh(db, FIRST_BREEDER_EXPECTED_LITTER_ID)
 
     matings = db.query(Notification).filter(Notification.kind == NotificationKind.BREEDER_NEW_MATING).all()
-    assert [mating.title for mating in matings] == [f"Saillie déclarée · {name_of(breeder)}"]
+    assert [mating.title for mating in matings] == [f"Portée annoncée · {name_of(breeder)}"]
     assert events(db) == [(BreederEventKind.NEW_MATING, True)]
 
 

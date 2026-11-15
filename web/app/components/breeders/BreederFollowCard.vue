@@ -40,7 +40,7 @@
     </template>
     <template v-else>
       <p class="m-0 text-sm text-ink-muted md:text-[15px]">
-        Suis cet élevage pour être prévenu de ses saillies et de ses naissances, et noter tes échanges.
+        Suis cet élevage pour être prévenu des portées qu’il annonce et de leurs naissances, et noter tes échanges.
       </p>
       <button
         type="button"

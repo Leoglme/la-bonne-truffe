@@ -8,6 +8,10 @@
         aria-hidden="true"
       />
       {{ LitterPresentation.buildColorLabel(props.litter.colors, true) }}
+      <template v-if="LitterPresentation.isColorSuggestedByAi(props.litter.colors)">
+        <UIcon name="i-lucide-sparkles" class="size-3.5 shrink-0" aria-hidden="true" />
+        <span class="sr-only">, suggérée par l’IA d’après les photos</span>
+      </template>
     </span>
     <span
       class="rounded-full"

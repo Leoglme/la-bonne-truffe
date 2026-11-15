@@ -49,6 +49,10 @@ class Listing(TimestampMixin, Base):
         price_cents: Price, when published.
         confirmed_color: Colour of the puppy of a puppy ad, noted by hand from its photo or after a call; the
             litter is then matched on the noted colours of the puppies still offered.
+        suggested_color: Colour the AI read on the photo of the puppy of a puppy ad when no source gives it, null
+            when it could not tell (several dogs, an adult, a blurred photo).
+        color_suggested_at: When the AI read that photo, null until then.
+        color_suggestion_photo_url: The photo it read: a new photo is read again.
         department_code: Department code.
         zip_code: Postal code.
         city: Town.
@@ -96,6 +100,9 @@ class Listing(TimestampMixin, Base):
     color_text: Mapped[str | None] = mapped_column(String(255))
     price_cents: Mapped[int | None]
     confirmed_color: Mapped[CoatColor | None] = mapped_column(str_enum_column(CoatColor), nullable=True)
+    suggested_color: Mapped[CoatColor | None] = mapped_column(str_enum_column(CoatColor), nullable=True)
+    color_suggested_at: Mapped[datetime | None]
+    color_suggestion_photo_url: Mapped[str | None] = mapped_column(String(500))
     department_code: Mapped[str | None] = mapped_column(ForeignKey("departments.code"), index=True)
     zip_code: Mapped[str | None] = mapped_column(String(10))
     city: Mapped[str | None] = mapped_column(String(120))

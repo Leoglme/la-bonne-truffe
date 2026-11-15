@@ -69,6 +69,17 @@ class Settings(BaseSettings):
         description="Sender of the account emails, on a domain verified in Resend",
     )
 
+    mistral_api_key: str = Field(
+        default="",
+        alias="MISTRAL_API_KEY",
+        description="Mistral key (free plan) that reads the coat of a puppy on its photo; when empty, nothing is read",
+    )
+    mistral_vision_model: str = Field(
+        default="ministral-14b-2512",
+        alias="MISTRAL_VISION_MODEL",
+        description="Mistral model that reads the photos: the only one that answers on the free plan",
+    )
+
     vapid_public_key: str | None = Field(default=None, alias="VAPID_PUBLIC_KEY")
     vapid_private_key_b64: str | None = Field(
         default=None,

@@ -26,6 +26,10 @@
       <UIcon name="i-lucide-check" class="size-3.5 shrink-0" aria-hidden="true" />
       <span class="sr-only">, confirmée après ton appel</span>
     </template>
+    <template v-else-if="isSuggestedByAi">
+      <UIcon name="i-lucide-sparkles" class="size-3.5 shrink-0" aria-hidden="true" />
+      <span class="sr-only">, suggérée par l’IA d’après les photos</span>
+    </template>
   </span>
 </template>
 
@@ -48,5 +52,8 @@ const badgeCoats: ComputedRef<CockerCoat[]> = computed((): CockerCoat[] =>
 const badgeClass: ComputedRef<string> = computed((): string => LitterPresentation.resolveBadgeClass(props.colors))
 const isConfirmedByCall: ComputedRef<boolean> = computed((): boolean =>
   LitterPresentation.isColorConfirmedByCall(props.colors),
+)
+const isSuggestedByAi: ComputedRef<boolean> = computed((): boolean =>
+  LitterPresentation.isColorSuggestedByAi(props.colors),
 )
 </script>

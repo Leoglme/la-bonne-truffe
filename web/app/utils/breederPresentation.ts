@@ -10,11 +10,13 @@ import type {
   BreederSiteLitter,
   BreederSocialAccount,
   LitterCard,
+  ProbableLitter,
   SocialLinkOrigin,
 } from '~/types/api'
 import type {
   BreederChip,
   BreederColorShareSlice,
+  BreederKeyFact,
   BreederLinkRecognition,
   BreederLitterStatusLine,
   BreederSeenOnLink,
@@ -22,7 +24,7 @@ import type {
   BreederSiteLittersYear,
   BreederSocialAccountKind,
   BreederSocialAccountRecognition,
-  BreederStat,
+  ProbableLitterLine,
 } from '~/types/Breeder'
 import type { FrenchGender } from '~/types/FrenchText'
 import type { DevicePosition } from '~/types/Location'
@@ -57,6 +59,15 @@ const WORD_JOINER: string = '\u2060'
 const NO_BREAK_SPACE: string = '\u00a0'
 const MONTH_AND_YEAR_FORMAT: Intl.DateTimeFormat = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
 const MONTH_FORMAT: Intl.DateTimeFormat = new Intl.DateTimeFormat('fr-FR', { month: 'long' })
+const SMALL_BREEDING_MOST_FEMALES: number = 4
+const LARGE_BREEDING_LEAST_FEMALES: number = 10
+const SMALL_BREEDING_MOST_LITTERS: number = 3
+const LARGE_BREEDING_LEAST_LITTERS: number = 9
+const YEARLY_GAP_LEAST_MONTHS: number = 10
+const YEARLY_GAP_MOST_MONTHS: number = 14
+const YEARLY_LITTERS_PER_MOTHER_LEAST: number = 0.8
+const YEARLY_LITTERS_PER_MOTHER_MOST: number = 1.2
+const DAYS_IN_A_YEAR: number = 365
 
 /** How the breeder screens word a breeder: its place, its litters, its chips and its follow. */
 export class BreederPresentation {
@@ -79,6 +90,9 @@ export class BreederPresentation {
     }
     if (filter === 'active_litter') {
       return card.current_litter !== null
+    }
+    if (filter === 'probable_litter') {
+      return (card.next_probable_litter ?? null) !== null
     }
     return true
   }
@@ -255,36 +269,245 @@ export class BreederPresentation {
   }
 
   /**
-   * Build the three figures of the breeder page.
+   * Build the lines of « En bref »: size, gold, rhythm and last litter, each left out when the sources say nothing.
    *
    * @param detail - The breeder.
-   * @returns Gold litters, last litter, rhythm: the litters its site shows for the last year, else its yearly count.
+   * @param now - Current time.
+   * @returns « Grand élevage : 18 chiennes, 13 portées par an », « Du gold dans 3 portées sur 3 »…
    */
-  static buildStats(detail: BreederDetail): BreederStat[] {
-    const lastLitter: string = detail.last_litter_date
-      ? FrenchDate.formatDayAndShortMonth(FrenchDate.parseDay(detail.last_litter_date))
-      : '—'
-    const rhythmParts: string[] = []
-    const siteLittersYear: BreederSiteLittersYear | null = this.countSiteLittersOfLatestYear(detail)
-    if (siteLittersYear !== null) {
-      rhythmParts.push(`${siteLittersYear.littersCount} en ${siteLittersYear.year}`)
-    } else if (detail.litters_last_year_count !== null) {
-      rhythmParts.push(`${detail.litters_last_year_count} par an`)
-    }
-    if (detail.breeding_females_count !== null) {
-      rhythmParts.push(
-        `${detail.breeding_females_count} ${FrenchText.pickForm(detail.breeding_females_count, 'lice', 'lices')}`,
-      )
-    }
+  static listKeyFacts(detail: BreederDetail, now: Date): BreederKeyFact[] {
     return [
-      {
-        label: 'Portées gold',
-        compactLabel: 'Gold',
-        value: detail.litters_count === 0 ? '—' : `${detail.gold_litters_count} sur ${detail.litters_count}`,
-      },
-      { label: 'Dernière portée', compactLabel: 'Dernière', value: lastLitter },
-      { label: 'Rythme', compactLabel: 'Rythme', value: rhythmParts.length === 0 ? '—' : rhythmParts.join(' · ') },
-    ]
+      this.buildSizeFact(detail, now),
+      this.buildGoldFact(detail),
+      this.buildRhythmFact(detail, now),
+      this.buildLastLitterFact(detail, now),
+    ].filter((fact: BreederKeyFact | null): fact is BreederKeyFact => fact !== null)
+  }
+
+  /**
+   * Build the line a card shows for the soonest probable litter of a breeder.
+   *
+   * @param card - The breeder.
+   * @param now - Current time.
+   * @returns « Portée gold probable vers novembre », « Portée probable vers janvier 2027 », or null without one.
+   */
+  static buildProbableLitterLine(card: BreederCard, now: Date): string | null {
+    const litter: ProbableLitter | null = card.next_probable_litter ?? null
+    if (litter === null) {
+      return null
+    }
+    const color: string = LitterPresentation.hasKnownColors(litter.colors)
+      ? ` ${LitterPresentation.buildColorPhrase(litter.colors)}`
+      : ''
+    return `Portée${color} probable vers ${this.buildProbableMonth(litter, now)}`
+  }
+
+  /**
+   * Build the rows of « Ses prochaines portées »: when, which mother, which colours.
+   *
+   * @param probableLitters - The probable litters of a breeder, the soonest first.
+   * @param now - Current time.
+   * @returns « Vers novembre » · « Mère : Selune · sa dernière portée est née le 19 nov. 2025 », in the same order.
+   */
+  static listProbableLitterLines(probableLitters: ProbableLitter[], now: Date): ProbableLitterLine[] {
+    return probableLitters.map((litter: ProbableLitter): ProbableLitterLine => ({
+      key: `${litter.dam_name}-${litter.last_litter_born_on}`,
+      title: `Vers ${this.buildProbableMonth(litter, now)}`,
+      motherLine: `Mère : ${litter.dam_name} · sa dernière portée est née le ${FrenchDate.formatDayAndShortMonthWithOtherYear(
+        FrenchDate.parseDay(litter.last_litter_born_on),
+        now,
+      )}`,
+      colors: litter.colors,
+      hasKnownColors: LitterPresentation.hasKnownColors(litter.colors),
+    }))
+  }
+
+  /**
+   * Write the month a probable litter is expected, with its year when it is not the current one.
+   *
+   * @param litter - The probable litter.
+   * @param now - Current time.
+   * @returns « novembre », « janvier 2027 ».
+   */
+  private static buildProbableMonth(litter: ProbableLitter, now: Date): string {
+    const expectedOn: Date = FrenchDate.parseDay(litter.expected_on)
+    return expectedOn.getFullYear() === now.getFullYear()
+      ? MONTH_FORMAT.format(expectedOn)
+      : MONTH_AND_YEAR_FORMAT.format(expectedOn)
+  }
+
+  /**
+   * Build the size of a breeding: small, medium or large by its mothers, else by its litters of a year.
+   *
+   * @param detail - The breeder.
+   * @param now - Current time.
+   * @returns « Petit élevage : 4 chiennes, 3 portées par an », or null when neither is known.
+   */
+  private static buildSizeFact(detail: BreederDetail, now: Date): BreederKeyFact | null {
+    const mothersCount: number | null = this.countMothers(detail)
+    const littersCount: number | null = this.countLittersOfLastYear(detail, now)
+    if (mothersCount === null && littersCount === null) {
+      return null
+    }
+    const parts: string[] = []
+    if (mothersCount !== null) {
+      parts.push(`${mothersCount} ${FrenchText.pickForm(mothersCount, 'chienne', 'chiennes')}`)
+    }
+    if (littersCount !== null) {
+      parts.push(`${littersCount} ${FrenchText.pickForm(littersCount, 'portée', 'portées')} par an`)
+    }
+    return {
+      key: 'size',
+      iconName: 'i-lucide-house',
+      boldStart: this.resolveSizeLabel(mothersCount, littersCount),
+      sentenceEnd: ` : ${parts.join(', ')}`,
+    }
+  }
+
+  /**
+   * Name the size of a breeding.
+   *
+   * @param mothersCount - Its mothers, null while unknown.
+   * @param littersCount - Its litters of a year, null while unknown.
+   * @returns « Petit élevage », « Élevage moyen » or « Grand élevage ».
+   */
+  private static resolveSizeLabel(mothersCount: number | null, littersCount: number | null): string {
+    if (mothersCount !== null) {
+      if (mothersCount <= SMALL_BREEDING_MOST_FEMALES) {
+        return 'Petit élevage'
+      }
+      return mothersCount >= LARGE_BREEDING_LEAST_FEMALES ? 'Grand élevage' : 'Élevage moyen'
+    }
+    if (littersCount !== null && littersCount <= SMALL_BREEDING_MOST_LITTERS) {
+      return 'Petit élevage'
+    }
+    return littersCount !== null && littersCount >= LARGE_BREEDING_LEAST_LITTERS ? 'Grand élevage' : 'Élevage moyen'
+  }
+
+  /**
+   * Count the mothers of a breeding: the most of those it declares and of those its site shows among its dogs.
+   *
+   * @param detail - The breeder.
+   * @returns Its mothers, null while neither is known.
+   */
+  private static countMothers(detail: BreederDetail): number | null {
+    const shownOnSiteCount: number = detail.reproducers.filter(
+      (dog: BreederDog): boolean => dog.sex === 'female' && dog.role === 'reproducer',
+    ).length
+    const mothersCount: number = Math.max(detail.breeding_females_count ?? 0, shownOnSiteCount)
+    return mothersCount === 0 ? null : mothersCount
+  }
+
+  /**
+   * Count the litters of a breeding over a year: the most of those it declares and of those its site shows.
+   *
+   * @param detail - The breeder.
+   * @param now - Current time.
+   * @returns Its litters born in the last twelve months, null while neither is known.
+   */
+  private static countLittersOfLastYear(detail: BreederDetail, now: Date): number | null {
+    const shownOnSiteCount: number = (detail.site_litters ?? []).filter((litter: BreederSiteLitter): boolean => {
+      const daysAgo: number = FrenchDate.countDaysAgo(FrenchDate.parseDay(litter.birth_date), now)
+      return daysAgo >= 0 && daysAgo < DAYS_IN_A_YEAR
+    }).length
+    const littersCount: number = Math.max(detail.litters_last_year_count ?? 0, shownOnSiteCount)
+    return littersCount === 0 ? null : littersCount
+  }
+
+  /**
+   * Build the gold of a breeding: in how many of its litters, else its main colour.
+   *
+   * @param detail - The breeder.
+   * @returns « Du gold dans 3 portées sur 3 », « Pas de gold : surtout du bleu rouan », or null without a litter.
+   */
+  private static buildGoldFact(detail: BreederDetail): BreederKeyFact | null {
+    if (detail.litters_count === 0) {
+      return null
+    }
+    if (detail.gold_litters_count > 0) {
+      const sentenceEnd: string =
+        detail.litters_count === 1
+          ? ' dans sa seule portée connue'
+          : ` dans ${detail.gold_litters_count} ${FrenchText.pickForm(detail.gold_litters_count, 'portée', 'portées')} sur ${detail.litters_count}`
+      return { key: 'gold', iconName: 'i-lucide-heart', boldStart: 'Du gold', sentenceEnd }
+    }
+    const mainShare: BreederColorShare | undefined = detail.color_shares[0]
+    return {
+      key: 'gold',
+      iconName: 'i-lucide-heart',
+      boldStart: 'Pas de gold',
+      sentenceEnd: mainShare
+        ? ` : surtout du ${COAT_COLOR_LABELS[mainShare.color].toLowerCase()}`
+        : ' dans ses portées connues',
+    }
+  }
+
+  /**
+   * Build how often each mother has a litter, as « En bref » says it.
+   *
+   * @param detail - The breeder.
+   * @param now - Current time.
+   * @returns « Une portée par an pour chaque chienne », « Une portée tous les 7 mois pour chaque chienne », or null.
+   */
+  private static buildRhythmFact(detail: BreederDetail, now: Date): BreederKeyFact | null {
+    const rhythm: string | null = this.resolveRhythm(detail, now)
+    return rhythm === null
+      ? null
+      : { key: 'rhythm', iconName: 'i-lucide-clock', boldStart: rhythm, sentenceEnd: ' pour chaque chienne' }
+  }
+
+  /**
+   * Say how often each mother has a litter: the middle gap between two litters of one, else litters per mother.
+   *
+   * @param detail - The breeder.
+   * @param now - Current time.
+   * @returns « Une portée par an », « Une portée tous les 7 mois », « Près de deux portées par an », or null.
+   */
+  private static resolveRhythm(detail: BreederDetail, now: Date): string | null {
+    const gapMonths: number | null = detail.dam_litter_gap_months ?? null
+    if (gapMonths !== null) {
+      const isGapAboutAYear: boolean = gapMonths >= YEARLY_GAP_LEAST_MONTHS && gapMonths <= YEARLY_GAP_MOST_MONTHS
+      return isGapAboutAYear ? 'Une portée par an' : `Une portée tous les ${gapMonths} mois`
+    }
+    const mothersCount: number | null = this.countMothers(detail)
+    const littersCount: number | null = this.countLittersOfLastYear(detail, now)
+    if (mothersCount === null || littersCount === null) {
+      return null
+    }
+    const littersPerMother: number = littersCount / mothersCount
+    if (littersPerMother > YEARLY_LITTERS_PER_MOTHER_MOST) {
+      return 'Près de deux portées par an'
+    }
+    return littersPerMother < YEARLY_LITTERS_PER_MOTHER_LEAST ? null : 'Une portée par an'
+  }
+
+  /**
+   * Build the last litter of a breeding, or the next one when it is announced.
+   *
+   * @param detail - The breeder.
+   * @param now - Current time.
+   * @returns « Dernière portée le 22 oct. », « Prochaine portée vers le 23 déc. », or null without a litter.
+   */
+  private static buildLastLitterFact(detail: BreederDetail, now: Date): BreederKeyFact | null {
+    if (!detail.last_litter_date) {
+      return null
+    }
+    const day: Date = FrenchDate.parseDay(detail.last_litter_date)
+    const dayLabel: string = FrenchDate.formatDayAndShortMonthWithOtherYear(day, now)
+    if (FrenchDate.countDaysAgo(day, now) < 0) {
+      return {
+        key: 'last-litter',
+        iconName: 'i-lucide-calendar',
+        boldStart: 'Prochaine portée',
+        sentenceEnd: ` vers le ${dayLabel}`,
+      }
+    }
+    return {
+      key: 'last-litter',
+      iconName: 'i-lucide-calendar',
+      boldStart: 'Dernière portée',
+      sentenceEnd: ` le ${dayLabel}`,
+    }
   }
 
   /**
@@ -427,11 +650,11 @@ export class BreederPresentation {
    * Word the role of a dog of the breeding.
    *
    * @param dog - The dog.
-   * @returns « Lice », « Étalon » or « Reproducteur ».
+   * @returns « Chienne », « Étalon » or « Reproducteur ».
    */
   static buildDogRoleLabel(dog: BreederDog): string {
     if (dog.sex === 'female') {
-      return 'Lice'
+      return 'Chienne'
     }
     if (dog.sex === 'male') {
       return 'Étalon'

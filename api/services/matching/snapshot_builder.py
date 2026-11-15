@@ -240,10 +240,11 @@ class LitterSnapshotBuilder:
     ) -> tuple[ColorReading, ...]:
         """
         Confirmed colours win; then the colours noted by hand of the puppies still offered, so that a litter
-        whose gold puppies are reserved is no longer matched as gold; then the colours of the registered puppies; then a colour the parents make
-        certain; then the certain colours an ad states itself; then what the parents make possible; then a bundle
-        an ad states; then the variety of the Centrale Canine, which is the one of the mother whatever the father
-        is: a gold mother and a black and tan father are filed under « rouge et doré ».
+        whose gold puppies are reserved is no longer matched as gold; then the colours of the registered puppies;
+        then a colour the parents make certain; then the certain colours an ad states itself; then the colours the AI
+        read on the photos of the puppies still offered; then what the parents make possible; then a bundle an ad
+        states; then the variety of the Centrale Canine, which is the one of the mother whatever the father is: a
+        gold mother and a black and tan father are filed under « rouge et doré ».
 
         Args:
             group: The group, holding the colours confirmed by hand and those its parents imply.
@@ -276,6 +277,9 @@ class LitterSnapshotBuilder:
         certain_stated_readings = cls._certain_readings(stated_readings)
         if certain_stated_readings:
             return cls._unique_colors(certain_stated_readings)
+        suggested_puppy_readings = cls._colors_of_offered_puppies_read_on_photos(listings)
+        if suggested_puppy_readings:
+            return suggested_puppy_readings
         if expected or stated_readings:
             return cls._unique_colors(expected or stated_readings)
         variety_readings = cls._color_readings(litters_filed_under_a_variety)
@@ -298,6 +302,27 @@ class LitterSnapshotBuilder:
             if listing.confirmed_color is not None and PuppyAdStateReader.state_of(listing) == PuppyAdState.AVAILABLE
         ]
         return tuple(ColorReading(color, ColorConfidence.CONFIRMED) for color in dict.fromkeys(noted_colors))
+
+    @staticmethod
+    def _colors_of_offered_puppies_read_on_photos(listings: list[Listing]) -> tuple[ColorReading, ...]:
+        """
+        The colours the AI read on the photos of the puppies their ads still offer, for the ads that give none.
+
+        Args:
+            listings: Active listings of a group.
+
+        Returns:
+            Each colour once, suggested; empty while no puppy still offered has one.
+        """
+        suggested_colors = [
+            listing.suggested_color
+            for listing in listings
+            if listing.suggested_color is not None
+            and listing.confirmed_color is None
+            and not listing.colors
+            and PuppyAdStateReader.state_of(listing) == PuppyAdState.AVAILABLE
+        ]
+        return tuple(ColorReading(color, ColorConfidence.SUGGESTED) for color in dict.fromkeys(suggested_colors))
 
     @staticmethod
     def _color_readings(listings: list[Listing]) -> list[ColorReading]:

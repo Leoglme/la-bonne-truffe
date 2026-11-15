@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Text, UniqueConstraint
+from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.clock import naive_utc_now
@@ -85,6 +85,8 @@ class BreederFollowEvent(Base):
         follow_id: The follow.
         litter_group_id: The litter the event is about, null for an event without litter.
         kind: ``BreederEventKind`` value.
+        subject_key: What an event without litter is about: for a probable litter, the mother and her last litter
+            (« selune du clos de l ecotay:2025-11-19 »).
         created_at: When the event was raised.
         sent_at: When it was pushed or put in a digest; null while it waits for the evening digest.
     """
@@ -97,6 +99,7 @@ class BreederFollowEvent(Base):
     )
     litter_group_id: Mapped[int | None] = mapped_column(ForeignKey("litter_groups.id", ondelete="SET NULL"))
     kind: Mapped[BreederEventKind] = mapped_column(str_enum_column(BreederEventKind), nullable=False)
+    subject_key: Mapped[str | None] = mapped_column(String(160))
     created_at: Mapped[datetime] = mapped_column(default=naive_utc_now, nullable=False)
     sent_at: Mapped[datetime | None] = mapped_column(index=True)
 

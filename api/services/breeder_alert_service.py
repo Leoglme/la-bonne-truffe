@@ -5,10 +5,11 @@ photos or a new ad on one of their litters, whatever the department and the tier
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
+from core.clock import french_date_of
 from enums.breeder_event_kind import BreederEventKind
 from enums.color_preference_level import ColorPreferenceLevel
 from enums.listing_source import ListingSource
@@ -19,7 +20,8 @@ from models.listing import Listing
 from models.listing_change import ListingChange
 from models.litter_group import LitterGroup
 from models.notification import Notification
-from models.search_profile import SearchProfile
+from services.collectors.raw_listing import ColorReading
+from services.dam_litter_history import DamLitterHistory, ProbableLitterEstimate
 from services.matching.criteria import LitterSnapshot, ProfileCriteria
 from services.matching.snapshot_builder import LitterSnapshotBuilder
 from services.notification_texts import NotificationTexts
@@ -42,6 +44,8 @@ LITTER_PUSH_KINDS: frozenset[NotificationKind] = frozenset(
 )
 PHOTOS_FIELD = "photos"
 NEW_PHOTOS_EVENT_REPEAT_DELAY = timedelta(days=1)
+PROBABLE_LITTER_NOTICE_DAYS = 30
+BREEDER_PAGE_PREFIX = "/eleveurs/"
 
 
 @dataclass
@@ -96,7 +100,7 @@ class BreederAlertService:
             if not groups:
                 continue
             breeder = db.get(Breeder, follow.breeder_id)
-            criteria = self._criteria_of(db, follow.user_id)
+            criteria = ProfileCriteria.of_active_profile(db, follow.user_id)
             is_paused = PuppyArrivalService.is_search_paused(db, follow.user_id)
             is_site_read_for_the_first_time = follow.breeder_id in facts.first_site_read_breeder_ids
             for group in sorted(groups, key=lambda candidate: candidate.id):
@@ -119,6 +123,126 @@ class BreederAlertService:
                     )
         db.commit()
         return sent_count
+
+    def send_probable_litter_alerts(self, db: Session, now: datetime) -> int:
+        """
+        Tell the user of each followed breeder whose mother is likely to have a litter within a month (a year after
+        her last one), once per mother and last litter, when the follow asks for its new litters (« Nouvelle portée
+        annoncée »). A colour the profile ignores stays silent, unless the follow asks for every colour; nothing is
+        sent while the search is paused, but the event is recorded.
+
+        Args:
+            db: Database session; committed at the end.
+            now: Current time, naive UTC.
+
+        Returns:
+            Number of pushes sent.
+        """
+        follows = db.query(BreederFollow).filter(BreederFollow.notify_new_mating.is_(True)).order_by(BreederFollow.id)
+        follows_list = follows.all()
+        if not follows_list:
+            return 0
+        today = french_date_of(now)
+        dams_by_breeder = DamLitterHistory.of_breeders(db, sorted({follow.breeder_id for follow in follows_list}))
+        parents_by_name = DamLitterHistory.parents_by_name(db) if dams_by_breeder else {}
+        sent_count = 0
+        for follow in follows_list:
+            estimates = [
+                estimate
+                for estimate in DamLitterHistory.probable_litters(dams_by_breeder.get(follow.breeder_id, []), today)
+                if estimate.expected_on - timedelta(days=PROBABLE_LITTER_NOTICE_DAYS) <= today
+            ]
+            if not estimates:
+                continue
+            breeder = db.get(Breeder, follow.breeder_id)
+            criteria = ProfileCriteria.of_active_profile(db, follow.user_id)
+            is_paused = PuppyArrivalService.is_search_paused(db, follow.user_id)
+            for estimate in estimates:
+                subject_key = f"{estimate.dam.key}:{estimate.last_litter.born_on.isoformat()}"
+                if self._is_probable_litter_handled(db, follow, subject_key):
+                    continue
+                colors = DamLitterHistory.likely_colors(estimate, parents_by_name)
+                is_ignored = (
+                    not follow.notify_ignored_colors
+                    and criteria is not None
+                    and bool(colors)
+                    and all(criteria.level_of(reading.color) == ColorPreferenceLevel.IGNORED for reading in colors)
+                )
+                if not is_paused and not is_ignored:
+                    self._notify_probable_litter(db, follow, breeder, estimate, colors, today, now)
+                    sent_count += 1
+                db.add(
+                    BreederFollowEvent(
+                        follow_id=follow.id,
+                        litter_group_id=None,
+                        kind=BreederEventKind.PROBABLE_LITTER,
+                        subject_key=subject_key,
+                        created_at=now,
+                        sent_at=now,
+                    )
+                )
+        db.commit()
+        return sent_count
+
+    @staticmethod
+    def _is_probable_litter_handled(db: Session, follow: BreederFollow, subject_key: str) -> bool:
+        """
+        Whether a probable litter of a mother was already told for this follow.
+
+        Args:
+            db: Database session.
+            follow: The follow.
+            subject_key: The mother and her last litter.
+
+        Returns:
+            True once told, or recorded silently.
+        """
+        return (
+            db.query(BreederFollowEvent)
+            .filter(
+                BreederFollowEvent.follow_id == follow.id,
+                BreederFollowEvent.kind == BreederEventKind.PROBABLE_LITTER,
+                BreederFollowEvent.subject_key == subject_key,
+            )
+            .first()
+            is not None
+        )
+
+    @staticmethod
+    def _notify_probable_litter(
+        db: Session,
+        follow: BreederFollow,
+        breeder: Breeder | None,
+        estimate: ProbableLitterEstimate,
+        colors: tuple[ColorReading, ...],
+        today: date,
+        now: datetime,
+    ) -> None:
+        """
+        Push a probable litter; a tap opens the page of the breeder.
+
+        Args:
+            db: Database session.
+            follow: The follow.
+            breeder: The followed breeder.
+            estimate: The probable litter.
+            colors: What the mother and the father of her last litter would give again.
+            today: The day, in French time.
+            now: Current time, naive UTC.
+        """
+        breeder_name = (breeder.card_name if breeder is not None else None) or estimate.dam.name
+        notifier_service.send(
+            db,
+            user_id=follow.user_id,
+            kind=NotificationKind.BREEDER_PROBABLE_LITTER,
+            title=NotificationTexts.breeder_event_title(BreederEventKind.PROBABLE_LITTER, breeder_name),
+            body=NotificationTexts.probable_litter(
+                estimate.dam.name, estimate.last_litter.born_on, estimate.expected_on, colors, today
+            ),
+            litter_group_id=None,
+            now=now,
+            url=f"{BREEDER_PAGE_PREFIX}{follow.breeder_id}",
+        )
 
     @classmethod
     def _groups_with_new_photos(cls, db: Session, facts: BreederRunFacts) -> set[int]:
@@ -353,26 +477,6 @@ class BreederAlertService:
             .first()
             is not None
         )
-
-    @staticmethod
-    def _criteria_of(db: Session, user_id: int) -> ProfileCriteria | None:
-        """
-        The criteria of the user's first active profile.
-
-        Args:
-            db: Database session.
-            user_id: The user.
-
-        Returns:
-            The criteria, or None without an active profile.
-        """
-        profile = (
-            db.query(SearchProfile)
-            .filter(SearchProfile.user_id == user_id, SearchProfile.is_active.is_(True))
-            .order_by(SearchProfile.id)
-            .first()
-        )
-        return ProfileCriteria.from_profile(profile) if profile is not None else None
 
 
 breeder_alert_service = BreederAlertService()

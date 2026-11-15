@@ -16,6 +16,7 @@ export type LitterParentLine = {
   name: string
   color: CoatColor | null
   colorAndGenotypeLine: string | null
+  motherHistoryLine: string | null
   photoUrl: string | null
   rating: number | null
   ratingLabel: string | null

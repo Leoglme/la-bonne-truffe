@@ -16,6 +16,7 @@ MINIMUM_PROXIMITY_POINTS = 2
 GOOD_PARENT_RATING = 4
 SELECTED_BREEDING_GROUP = 1
 GOLD_PUPPY_ODDS_PHRASES: dict[float, str] = {0.5: "un chiot sur deux", 0.25: "un chiot sur quatre"}
+PHOTOS_SUFFIX = " : d’après les photos"
 
 COLOR_LABELS: dict[CoatColor, str] = {
     CoatColor.GOLD: "gold",
@@ -105,13 +106,21 @@ class ScoreCalculator:
         if snapshot.has_certain_colors:
             is_confirmed = any(reading.confidence == ColorConfidence.CONFIRMED for reading in snapshot.colors)
             is_inferred = any(reading.confidence == ColorConfidence.INFERRED for reading in snapshot.colors)
+            is_suggested = any(reading.confidence == ColorConfidence.SUGGESTED for reading in snapshot.colors)
+            seen_on_photos = PHOTOS_SUFFIX if is_suggested else ""
             for color, level in levels.items():
                 if level == ColorPreferenceLevel.PREFERRED:
-                    suffix = ", confirmée" if is_confirmed else (" : les deux parents sont gold" if is_inferred else "")
+                    suffix = (
+                        ", confirmée"
+                        if is_confirmed
+                        else (" : les deux parents sont gold" if is_inferred else seen_on_photos)
+                    )
                     return ScoreReason(f"{cls.color_label(color).capitalize()}, ta couleur préférée{suffix}", 40)
             for color, level in levels.items():
                 if level == ColorPreferenceLevel.ACCEPTABLE:
-                    return ScoreReason(f"{cls.color_label(color).capitalize()}, une couleur acceptable", 20)
+                    return ScoreReason(
+                        f"{cls.color_label(color).capitalize()}, une couleur acceptable{seen_on_photos}", 20
+                    )
             return None
         wanted = [color for color, level in levels.items() if level != ColorPreferenceLevel.IGNORED]
         if not wanted:

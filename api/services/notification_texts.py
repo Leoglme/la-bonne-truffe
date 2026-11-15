@@ -3,8 +3,10 @@
 from datetime import date
 
 from enums.breeder_event_kind import BreederEventKind
+from enums.color_confidence import ColorConfidence
 from enums.listing_source import ListingSource
 from enums.match_event_kind import MatchEventKind
+from services.collectors.raw_listing import ColorReading
 from services.matching.criteria import LitterSnapshot
 from services.matching.scoring import ScoreCalculator
 
@@ -18,10 +20,11 @@ LITTER_EVENT_TITLES: dict[MatchEventKind, str] = {
 }
 
 BREEDER_EVENT_TITLES: dict[BreederEventKind, str] = {
-    BreederEventKind.NEW_MATING: "Saillie déclarée",
+    BreederEventKind.NEW_MATING: "Portée annoncée",
     BreederEventKind.BIRTH: "Portée née",
     BreederEventKind.NEW_PHOTOS: "Nouvelles photos",
     BreederEventKind.NEW_AD: "Nouvelle annonce",
+    BreederEventKind.PROBABLE_LITTER: "Portée probable",
 }
 
 FRENCH_MONTHS: tuple[str, ...] = (
@@ -126,6 +129,38 @@ class NotificationTexts:
             news = f"est en ligne sur {cls._source_in_sentence(new_ad_source)}"
         litter = f"une portée {cls._color_phrase(snapshot)}{cls._sexes_phrase(snapshot)}"
         return f"{cls._breeder_litter_subject(snapshot)} {news} : {litter}."
+
+    @classmethod
+    def probable_litter(
+        cls, dam_name: str, last_litter_born_on: date, expected_on: date, colors: tuple[ColorReading, ...], today: date
+    ) -> str:
+        """
+        Body of the push sent a month before the next litter a mother of a followed breeder is likely to have.
+
+        Args:
+            dam_name: The mother.
+            last_litter_born_on: Birth of her last litter.
+            expected_on: A year after it.
+            colors: What she and the father of her last litter would give again.
+            today: The day, in French time, to leave the year out when it is the current one.
+
+        Returns:
+            « Selune a eu sa dernière portée le 19 novembre 2025. Une nouvelle portée gold est probable vers
+            novembre : appelle pour te placer sur sa liste d’attente. »
+        """
+        last_litter = cls.french_day(last_litter_born_on)
+        if last_litter_born_on.year != today.year:
+            last_litter = f"{last_litter} {last_litter_born_on.year}"
+        month = FRENCH_MONTHS[expected_on.month - 1]
+        if expected_on.year != today.year:
+            month = f"{month} {expected_on.year}"
+        known_colors = [reading for reading in colors if reading.confidence != ColorConfidence.AMBIGUOUS]
+        color = " " + " ou ".join(ScoreCalculator.color_label(reading.color) for reading in known_colors)
+        litter = f"Une nouvelle portée{color if known_colors else ''}"
+        return (
+            f"{dam_name} a eu sa dernière portée le {last_litter}. {litter} est probable vers {month} : appelle pour "
+            "te placer sur sa liste d’attente."
+        )
 
     @staticmethod
     def breeder_follow_reminder_title(breeder_name: str | None) -> str:
@@ -443,12 +478,17 @@ class NotificationTexts:
             snapshot: The litter.
 
         Returns:
-            « gold », « noir ou noir et feu (à confirmer) » or « de couleur à confirmer ».
+            « gold », « gold d’après les photos » when the AI read it on the photos of the puppies, « noir ou noir et
+            feu (à confirmer) » or « de couleur à confirmer ».
         """
         if not snapshot.colors:
             return "de couleur à confirmer"
         labels = " ou ".join(ScoreCalculator.color_label(reading.color) for reading in snapshot.colors)
-        return labels if snapshot.has_certain_colors else f"{labels} (à confirmer)"
+        if not snapshot.has_certain_colors:
+            return f"{labels} (à confirmer)"
+        if any(reading.confidence == ColorConfidence.SUGGESTED for reading in snapshot.colors):
+            return f"{labels} d’après les photos"
+        return labels
 
     @classmethod
     def _breeder_litter_subject(cls, snapshot: LitterSnapshot) -> str:

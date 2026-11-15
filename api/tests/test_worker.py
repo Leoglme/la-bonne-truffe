@@ -22,6 +22,7 @@ def test_every_collected_source_has_its_hourly_job() -> None:
         "read_breeder_websites",
         "send_evening_digests",
         "send_follow_up_reminders",
+        "send_probable_litter_alerts",
         "purge_old_listing_data",
     }
 
@@ -64,6 +65,7 @@ def test_a_skipped_source_has_no_job() -> None:
         "read_breeder_websites",
         "send_evening_digests",
         "send_follow_up_reminders",
+        "send_probable_litter_alerts",
         "purge_old_listing_data",
     }
 
@@ -78,6 +80,7 @@ def test_a_source_relayed_by_the_desktop_app_is_watched_for_silence() -> None:
         "read_breeder_websites",
         "send_evening_digests",
         "send_follow_up_reminders",
+        "send_probable_litter_alerts",
         "alert_silent_sources",
         "purge_old_listing_data",
     }

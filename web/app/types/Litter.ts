@@ -51,6 +51,7 @@ export type LitterPuppyLine = {
   sexLabel: string | null
   color: CoatColor | null
   knownColor: CoatColor | null
+  isColorSuggestedByAi: boolean
   stateLabel: string | null
   isAvailable: boolean
   photoUrl: string | null

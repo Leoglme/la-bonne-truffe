@@ -83,7 +83,7 @@
           <FollowUpNotesSection
             :key="breeder.id"
             :notes="breeder.follow.notes"
-            placeholder="Appel du jour, liste d’attente, lice qui va être saillie…"
+            placeholder="Appel du jour, liste d’attente, prochaine portée…"
             :add-note="addNote"
             :remove-note="removeNote"
             class="border-t border-line pt-5"
