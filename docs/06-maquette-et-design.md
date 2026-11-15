@@ -206,3 +206,13 @@ Dans le code, ce qui diffère des planches :
 ### Portée à naître dont la date est passée (13/11/2026)
 
 Une saillie déclarée dont la naissance attendue (saillie + 63 jours) est passée de plus de trois jours, sans naissance déclarée, ne s'écrit plus « À naître vers le 5 oct. » : la carte dit « attendue le 5 oct. » et « Pas encore déclarée » à la place de « À naître », la ligne d'un élevage « Attendue le 5 oct., naissance pas encore déclarée », et la tuile de la fiche « Attendue le ». La portée quitte toujours l'accueil au-delà de l'âge maximal des critères. Sur la page Sources, chaque relevé compte dans son unité : portées, annonces, éleveurs, sites, fiches de chiens. Une source qui n'est pas lue toutes les heures le dit sous son dernier relevé (14/11/2026) : l'annuaire une fois par jour, les sites d'élevage de Chiens de France deux fois par jour (toutes les heures pour les élevages suivis), ceux de la Centrale Canine une fois par mois chacun, si bien que « Relevé il y a 12 j » n'y est pas un retard.
+
+### Maquettes du 15/11/2026, à valider
+
+Canevas : https://claude.ai/artifact/UMHkahboqEsuSTs6U9k49z. Quatre propositions, chacune avec l'écran du jour et la proposition, en captures de l'app (relevé du 15/11) retouchées :
+
+1. **Les portées probables** : un bloc « Ses prochaines portées » sur la fiche d'un élevage (une chienne a en général une portée par an, comptée depuis sa dernière), un filtre « Portée probable bientôt » et une ligne sur la carte de l'élevage ; et des mots plus simples (« portée annoncée » pour « saillie déclarée », « chiennes » pour « lices »).
+2. **Chercher plus loin** : dans Critères, une deuxième ligne de régions dont seules les portées gold sûres s'affichent, avec l'étiquette « Plus loin » et le temps de route sur leur carte.
+3. **La robe lue sur la photo par une IA** : sous la robe d'un chiot, « Suggéré par l'IA » ; sur la carte d'une portée, une étincelle et « suggéré par IA ».
+4. **L'élevage en bref** : des phrases à la place des trois cases de la fiche d'un élevage, et l'âge de la mère sous son nom sur la fiche d'une portée.
+
