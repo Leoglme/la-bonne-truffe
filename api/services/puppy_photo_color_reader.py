@@ -1,4 +1,4 @@
-"""Reads the coat of a puppy on its photo with a Mistral vision model, when no source gives it (docs/04)."""
+"""Reads the coat of a puppy on its photo with a Groq vision model, when no source gives it (docs/04)."""
 
 import base64
 import json
@@ -27,13 +27,14 @@ from services.matching.match_refresh import match_refresh_service
 
 logger = logging.getLogger(__name__)
 
-MISTRAL_CHAT_URL = "https://api.mistral.ai/v1/chat/completions"
-QUOTA_STATUS_CODE = 429
-# Ten readings a minute at most: the free plan's limit is shared by every app using the same account.
-SECONDS_BETWEEN_READINGS = 6.0
-PHOTOS_PER_RUN = 15
-LARGEST_PHOTO_BYTES = 5_000_000
-ANSWER_TOKENS = 200
+GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions"
+UNAVAILABLE_STATUS_CODES: frozenset[int] = frozenset({401, 403, 429})
+# One photo an hour: Groq's free plan reads about 80 photos a day, two a minute, for every app of the account.
+PHOTOS_PER_RUN = 1
+SECONDS_BETWEEN_READINGS = 60.0
+LARGEST_PHOTO_BYTES = 2_800_000
+ANSWER_TOKENS = 1024
+REASONING_EFFORT = "low"
 ACCEPTED_SUBJECT = "one_puppy"
 ACCEPTED_CONFIDENCES: frozenset[str] = frozenset({"high", "medium"})
 CODE_FENCE = "```"
@@ -50,31 +51,38 @@ SYSTEM_PROMPT = (
     "You answer with one JSON object and nothing else."
 )
 USER_PROMPT = """Look at this photo from an English Cocker Spaniel puppy ad.
-1. "subject": "one_puppy" when it mainly shows one puppy (younger than about four months), "several_dogs" when it shows
-several dogs, "adult_dog" when the dog is an adult, "no_dog" when there is no dog.
-2. "color": the coat of that puppy, one of:
-- "gold": solid red, golden, orange or fawn; a small white mark on the chest is fine
-- "noir": solid black; a small white mark on the chest is fine
-- "noir_et_feu": black with tan points (eyebrows, muzzle, chest, legs)
-- "marron": solid brown, chocolate or liver
-- "marron_et_feu": brown with tan points
-- "bleu_rouan": black and white hairs mixed (blue roan)
-- "orange_rouan": orange and white hairs mixed (orange roan)
-- "marron_rouan": brown and white hairs mixed (liver roan)
+First look, then answer one JSON object with these keys, in this order:
+1. "dogs_seen": how many dogs you see, even partly, even lying under or behind another one.
+2. "subject": "one_puppy" when the photo shows exactly one puppy (younger than about four months) and no other dog;
+"several_dogs" when you see more than one dog, for instance a mother with her litter; "adult_dog" when the only dog is
+an adult; "no_dog" when there is no dog.
+3. "nose": "black", "brown" or "pink".
+4. "tan_marks": where you see tan, copper or orange marks on a black or brown coat (eyebrows, cheeks, muzzle, chest,
+legs), or "none". Look closely: on a young puppy the tan above each eye is often a small spot.
+5. "color": the coat of that one puppy, one of:
+- "gold": solid red, golden, orange or fawn, with a black nose; a small white mark on the chest is fine
+- "noir": solid black with no tan mark anywhere; a small white mark on the chest is fine
+- "noir_et_feu": black with tan marks (eyebrows, cheeks, muzzle, chest or legs), even small ones
+- "marron": solid brown, chocolate or liver, with a brown nose
+- "marron_et_feu": brown with tan marks
+- "bleu_rouan": black and white hairs mixed all over, a grey or blue look
+- "orange_rouan": orange and white hairs mixed all over
+- "marron_rouan": brown and white hairs mixed all over
 - "tricolore": black or brown, white and tan, in patches
-- "particolore": white with clear patches of one colour (black, orange, brown or lemon)
+- "particolore": mostly white with clear patches of one colour (black, orange, brown or lemon)
 - "zibeline": sable
 - "inconnue": you cannot tell
-3. "confidence": "high", "medium" or "low".
-Answer: {"subject": "...", "color": "...", "confidence": "..."}"""
+A red or golden puppy with a black nose is "gold", never "marron".
+6. "confidence": "high" only when the puppy is clearly visible and the colour is certain, else "medium" or "low".
+Answer: {"dogs_seen": 1, "subject": "...", "nose": "...", "tan_marks": "...", "color": "...", "confidence": "..."}"""
 
 
-class MistralQuotaError(RuntimeError):
-    """Mistral refuses for now: the quota of the minute or of the day is spent."""
+class VisionModelUnavailableError(RuntimeError):
+    """The model does not answer for now: quota spent, key refused, service down or out of reach."""
 
 
-class MistralReadError(RuntimeError):
-    """Mistral could not be reached, or answered something that is not a reading."""
+class VisionModelAnswerError(RuntimeError):
+    """The model refused this photo, or answered something that is not a reading."""
 
 
 @dataclass(frozen=True)
@@ -102,15 +110,15 @@ class PhotoColorReading:
         return self.color
 
 
-class MistralVisionClient:
-    """Asks a Mistral vision model what coat the puppy of a photo has."""
+class GroqVisionClient:
+    """Asks a Groq vision model what coat the puppy of a photo has."""
 
     def __init__(self, api_key: str, model: str, http_client: httpx.Client | None = None) -> None:
         """
         Prepare the client.
 
         Args:
-            api_key: Mistral key.
+            api_key: Groq key.
             model: Model that reads the photos.
             http_client: HTTP client, injected by the tests.
         """
@@ -130,8 +138,8 @@ class MistralVisionClient:
             The reading.
 
         Raises:
-            MistralQuotaError: When Mistral refuses for the quota (429).
-            MistralReadError: On a network error, another refusal, or an answer that is not a reading.
+            VisionModelUnavailableError: When Groq does not answer for now: quota, key, outage or network.
+            VisionModelAnswerError: When Groq refuses this photo, or answers something that is not a reading.
         """
         image_url = f"data:{content_type};base64,{base64.b64encode(image).decode('ascii')}"
         payload: dict[str, Any] = {
@@ -149,23 +157,24 @@ class MistralVisionClient:
             "response_format": {"type": "json_object"},
             "temperature": 0.1,
             "max_tokens": ANSWER_TOKENS,
+            "reasoning_effort": REASONING_EFFORT,
         }
         try:
             response = self.http_client.post(
-                MISTRAL_CHAT_URL,
+                GROQ_CHAT_URL,
                 json=payload,
                 headers={"Authorization": f"Bearer {self.api_key}", "Accept": "application/json"},
             )
         except httpx.HTTPError as error:
-            raise MistralReadError(f"Mistral injoignable : {error}") from error
-        if response.status_code == QUOTA_STATUS_CODE:
-            raise MistralQuotaError("Mistral : quota atteint")
-        if response.status_code >= 400:
-            raise MistralReadError(f"Mistral : réponse {response.status_code}")
+            raise VisionModelUnavailableError(f"Groq injoignable : {error}") from error
+        if response.status_code in UNAVAILABLE_STATUS_CODES or response.is_server_error:
+            raise VisionModelUnavailableError(f"Groq : réponse {response.status_code}")
+        if response.is_error:
+            raise VisionModelAnswerError(f"Groq : réponse {response.status_code}")
         try:
             content = str(response.json()["choices"][0]["message"]["content"])
         except (ValueError, KeyError, IndexError, TypeError) as error:
-            raise MistralReadError("Mistral : réponse sans texte") from error
+            raise VisionModelAnswerError("Groq : réponse sans texte") from error
         return self.parse_answer(content)
 
     @staticmethod
@@ -180,15 +189,15 @@ class MistralVisionClient:
             The reading; a colour outside the vocabulary is unknown.
 
         Raises:
-            MistralReadError: When the text is not a JSON object.
+            VisionModelAnswerError: When the text is not a JSON object.
         """
         text = content.strip().removeprefix(CODE_FENCE + "json").removeprefix(CODE_FENCE).removesuffix(CODE_FENCE)
         try:
             answer = json.loads(text)
         except ValueError as error:
-            raise MistralReadError("Mistral : réponse illisible") from error
+            raise VisionModelAnswerError("Groq : réponse illisible") from error
         if not isinstance(answer, dict):
-            raise MistralReadError("Mistral : réponse illisible")
+            raise VisionModelAnswerError("Groq : réponse illisible")
         color_value = str(answer.get("color", "")).strip().lower()
         color = CoatColor(color_value) if color_value in CoatColor._value2member_map_ else CoatColor.INCONNUE
         return PhotoColorReading(
@@ -203,7 +212,7 @@ class PuppyPhotoColorReader:
 
     def __init__(
         self,
-        vision_client: MistralVisionClient | None = None,
+        vision_client: GroqVisionClient | None = None,
         photo_client: PoliteHttpClient | None = None,
         sleep: Callable[[float], None] = time.sleep,
         photos_per_run: int = PHOTOS_PER_RUN,
@@ -212,15 +221,13 @@ class PuppyPhotoColorReader:
         Prepare the reader.
 
         Args:
-            vision_client: The model, injected by the tests; otherwise Mistral with the key of the ``.env``.
+            vision_client: The model, injected by the tests; otherwise Groq with the key of the ``.env``.
             photo_client: Fetches the photos, injected by the tests; otherwise one request a second through ``curl``.
             sleep: Pause between two readings, injected by the tests.
             photos_per_run: Photos read at most by one run; the others wait for the next one.
         """
         self.vision_client = vision_client or (
-            MistralVisionClient(settings.mistral_api_key, settings.mistral_vision_model)
-            if settings.mistral_api_key
-            else None
+            GroqVisionClient(settings.groq_api_key, settings.groq_vision_model) if settings.groq_api_key else None
         )
         self.photo_client = photo_client or PoliteHttpClient("Photos des annonces", settings.honest_user_agent)
         self.sleep = sleep
@@ -229,8 +236,8 @@ class PuppyPhotoColorReader:
     def read_pending(self, db: Session, now: datetime) -> int:
         """
         Read the photos waiting, the newest ads first, and keep what the model saw; when a colour changed, match the
-        litters again (a gold seen on the photos can push a litter to « préférée »). The run stops at the first
-        refusal for the quota and resumes at the next one.
+        litters again (a gold seen on the photos can push a litter to « préférée »). The run stops as soon as the model
+        does not answer (quota, key, outage) and resumes at the next one.
 
         Args:
             db: Database session; committed at the end.
@@ -243,8 +250,8 @@ class PuppyPhotoColorReader:
             return 0
         read_count = 0
         has_color_changed = False
-        for listing, photo_url in self.pending_listings(db)[: self.photos_per_run]:
-            if read_count > 0:
+        for index, (listing, photo_url) in enumerate(self.pending_listings(db)[: self.photos_per_run]):
+            if index > 0:
                 self.sleep(SECONDS_BETWEEN_READINGS)
             try:
                 color = self._read_photo(photo_url)
@@ -253,11 +260,11 @@ class PuppyPhotoColorReader:
             except SourceReadError as error:
                 logger.warning("Puppy photo not read %s: %s", photo_url, error)
                 continue
-            except MistralQuotaError:
-                logger.info("Puppy photos: Mistral quota reached, the next run goes on")
+            except VisionModelUnavailableError as error:
+                logger.info("Puppy photos: %s, the next run goes on", error)
                 break
-            except MistralReadError as error:
-                logger.warning("Puppy photo not read by Mistral %s: %s", photo_url, error)
+            except VisionModelAnswerError as error:
+                logger.warning("Puppy photo not read by the AI %s: %s", photo_url, error)
                 continue
             has_color_changed = has_color_changed or color != listing.suggested_color
             listing.suggested_color = color
@@ -345,8 +352,8 @@ class PuppyPhotoColorReader:
         Raises:
             SourcePageMissingError: When the photo is gone.
             SourceReadError: When the photo cannot be fetched for another reason.
-            MistralQuotaError: When Mistral refuses for the quota.
-            MistralReadError: When Mistral cannot answer.
+            VisionModelUnavailableError: When the model does not answer for now.
+            VisionModelAnswerError: When the model refuses the photo or answers something else.
         """
         response = self.photo_client.get(photo_url, accept="image/*")
         if len(response.content) > LARGEST_PHOTO_BYTES or self.vision_client is None:

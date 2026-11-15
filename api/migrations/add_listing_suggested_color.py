@@ -1,7 +1,7 @@
 """Migration: add ``listings.suggested_color``, the colour the AI reads on the photo of a puppy (docs/03).
 
-Since 15/11/2026 the photo of a puppy whose ad gives no colour is read by an AI (Mistral, free plan), a few each
-hour; the litter is then matched on the colours read of the puppies still offered, shown « suggéré par IA ».
+Since 15/11/2026 the photo of a puppy whose ad gives no colour is read by an AI (Groq, free plan), one each hour;
+the litter is then matched on the colours read of the puppies still offered, shown « suggéré par IA ».
 ``color_suggested_at`` and ``color_suggestion_photo_url`` tell which photo was read and when, so that a photo is read
 once and a new one again.
 

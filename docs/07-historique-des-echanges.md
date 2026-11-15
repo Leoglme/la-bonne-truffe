@@ -369,3 +369,14 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
   - « portée annoncée » et « chiennes » au lieu de « saillie déclarée » et « lices ».
 - **Vérifié** : tests pytest et vitest (toutes les suites), ruff, mypy, lint et typecheck ; captures sur ordinateur et sur iPhone, sur une copie du relevé du 15/11 relue avec les portées de l'année d'avant (14 élevages ont une portée probable, 8 dans la liste filtrée), la robe des chiots du Clos de l'Ecotay simulée comme l'IA la lirait (80 annonces à lire, six heures au rythme de 15 photos par heure).
 - **Non vérifié** : une vraie lecture par Mistral, qui attend la clé (`11`), et la production après la mise en ligne.
+
+## 15 novembre (nuit) : la robe lue par Groq, pas par Mistral
+
+- **Demandé** : une commande simple pour poser la clé Mistral, puis Groq en secours « si Mistral est down » ou si sa limite est atteinte.
+- **Constaté** :
+  - l'offre gratuite de Mistral ne crée plus de clé (« Nouvelle clé » grisé, sur le compte dibodev comme sur un compte neuf) et n'accorde plus que 2 requêtes et 40 000 tokens par minute à tout le compte (30 requêtes en septembre) ; les anciennes clés marchent ;
+  - chez Groq, un seul modèle gratuit lit encore les images, `qwen/qwen3.8-27b` : 8 000 tokens par minute et 200 000 par jour pour tout le compte, DevLeadHunter compris ; une photo en coûte 2 000 à 2 800 ;
+  - test sur 24 annonces d'un seul chiot dont la source donne la couleur (10 gold), avec leurs vraies photos : Ministral 14B (Mistral) garde 15 couleurs dont 7 fausses avec la consigne d'origine, et 12 dont 9 fausses avec une consigne plus précise (une mère noire et sa portée, annoncée gold, lue « un chiot marron, sûr » ; des noir et feu et des bleu rouan lus « noir ») ; Qwen 3.8 (Groq) garde 9 couleurs dont 2 fausses avec la consigne d'origine, et 8 couleurs toutes justes, dont 3 gold, sur 20 photos lues avec la consigne précise ; les autres photos montrent plusieurs chiens et sont écartées à raison.
+- **Fait** : la robe est lue par Qwen 3.8 chez Groq avec la consigne précise (compter les chiens, regarder la truffe et les marques feu), une photo par heure ; Mistral n'est plus appelé, pas même en secours, puisqu'il se trompe une fois sur deux ; la passe s'arrête dès que Groq ne répond plus (quota, clé refusée, panne) ; le secret `GROQ_API_KEY` remplace `MISTRAL_API_KEY`, qui ne sert plus (`04`, `05`, `11`).
+- **Vérifié** : le test ci-dessus ; tests pytest (toute la suite), ruff et mypy.
+- **Non vérifié** : la première lecture en production ; le test a pris une grande part des 200 000 tokens du jour de Groq, qui reviennent au fil des 24 heures.

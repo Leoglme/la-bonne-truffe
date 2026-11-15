@@ -23,10 +23,10 @@ from services.collectors.polite_http_client import PoliteHttpClient
 from services.matching.snapshot_builder import LitterSnapshotBuilder
 from services.notification_texts import NotificationTexts
 from services.puppy_photo_color_reader import (
-    MistralReadError,
-    MistralVisionClient,
+    GroqVisionClient,
     PhotoColorReading,
     PuppyPhotoColorReader,
+    VisionModelAnswerError,
 )
 
 READ_AT = datetime(2026, 11, 15, 9, 30)
@@ -92,12 +92,12 @@ def add_puppy_ad(db: Session, group: LitterGroup, number: int, status: str, phot
     return listing
 
 
-def mistral_answering(colors_by_size: dict[int, str], requests: list[httpx.Request]) -> MistralVisionClient:
+def groq_answering(colors_by_size: dict[int, str], requests: list[httpx.Request]) -> GroqVisionClient:
     """
-    A Mistral client whose model answers, for each photo, the colour its size in bytes stands for.
+    A Groq client whose model answers, for each photo, the colour its size in bytes stands for.
 
     Args:
-        colors_by_size: Colour answered by size of the photo sent, « 429 » for a refusal of the quota.
+        colors_by_size: Colour answered by size of the photo sent, or the status of a refusal (« 429 »).
         requests: Filled with every request sent.
 
     Returns:
@@ -110,12 +110,12 @@ def mistral_answering(colors_by_size: dict[int, str], requests: list[httpx.Reque
         image_url = json.loads(request.content)["messages"][1]["content"][1]["image_url"]["url"]
         size = len(base64.b64decode(image_url.split(",", 1)[1]))
         color = colors_by_size[size]
-        if color == "429":
-            return httpx.Response(429)
+        if color.isdigit():
+            return httpx.Response(int(color))
         content = json.dumps({"subject": "one_puppy", "color": color, "confidence": "high"})
         return httpx.Response(200, json={"choices": [{"message": {"content": content}}]})
 
-    return MistralVisionClient("cle-de-test", "ministral-test", httpx.Client(transport=httpx.MockTransport(answer)))
+    return GroqVisionClient("cle-de-test", "qwen-test", httpx.Client(transport=httpx.MockTransport(answer)))
 
 
 def photos_serving(sizes_by_path: dict[str, int]) -> PoliteHttpClient:
@@ -184,9 +184,10 @@ def test_the_colours_read_make_the_litter_the_colour_of_its_puppies_still_offere
     db.commit()
     requests: list[httpx.Request] = []
     reader = PuppyPhotoColorReader(
-        mistral_answering({11: "noir_et_feu", 22: "noir_et_feu", 33: "gold"}, requests),
+        groq_answering({11: "noir_et_feu", 22: "noir_et_feu", 33: "gold"}, requests),
         photos_serving({"/p1.jpg": 11, "/p2.jpg": 22, "/p3.jpg": 33}),
         sleep=lambda _seconds: None,
+        photos_per_run=3,
     )
 
     read_count = reader.read_pending(db, READ_AT)
@@ -206,26 +207,54 @@ def test_the_colours_read_make_the_litter_the_colour_of_its_puppies_still_offere
     assert NotificationTexts._color_phrase(snapshot) == "noir et feu d’après les photos"
 
 
-def test_a_refusal_for_the_quota_stops_the_run_and_the_next_one_goes_on(db: Session, litter: LitterGroup) -> None:
+@pytest.mark.parametrize("refusal", ["429", "401", "503"])
+def test_a_model_that_does_not_answer_stops_the_run_and_the_next_one_goes_on(
+    db: Session, litter: LitterGroup, refusal: str
+) -> None:
+    add_puppy_ad(db, litter, 1, "Mâle disponible à la vente", [f"{PHOTO_HOST}/p1.jpg"])
+    add_puppy_ad(db, litter, 2, "Mâle disponible à la vente", [f"{PHOTO_HOST}/p2.jpg"])
+    add_puppy_ad(db, litter, 3, "Mâle disponible à la vente", [f"{PHOTO_HOST}/p3.jpg"])
+    db.commit()
+    requests: list[httpx.Request] = []
+    reader = PuppyPhotoColorReader(
+        groq_answering({11: "gold", 22: refusal, 33: "gold"}, requests),
+        photos_serving({"/p1.jpg": 33, "/p2.jpg": 22, "/p3.jpg": 11}),
+        sleep=lambda _seconds: None,
+        photos_per_run=3,
+    )
+
+    read_count = reader.read_pending(db, READ_AT)
+
+    assert (read_count, len(requests)) == (1, 2)
+    assert [listing.external_id for listing, _photo in PuppyPhotoColorReader.pending_listings(db)] == [
+        "chiot-2",
+        "chiot-1",
+    ]
+
+
+def test_a_photo_the_model_refuses_waits_for_the_next_run_and_the_others_are_read(
+    db: Session, litter: LitterGroup
+) -> None:
     add_puppy_ad(db, litter, 1, "Mâle disponible à la vente", [f"{PHOTO_HOST}/p1.jpg"])
     add_puppy_ad(db, litter, 2, "Mâle disponible à la vente", [f"{PHOTO_HOST}/p2.jpg"])
     db.commit()
     reader = PuppyPhotoColorReader(
-        mistral_answering({11: "gold", 22: "429"}, []),
-        photos_serving({"/p1.jpg": 22, "/p2.jpg": 11}),
+        groq_answering({11: "gold", 22: "400"}, []),
+        photos_serving({"/p1.jpg": 11, "/p2.jpg": 22}),
         sleep=lambda _seconds: None,
+        photos_per_run=2,
     )
 
     read_count = reader.read_pending(db, READ_AT)
 
     assert read_count == 1
-    assert [listing.external_id for listing, _photo in PuppyPhotoColorReader.pending_listings(db)] == ["chiot-1"]
+    assert [listing.external_id for listing, _photo in PuppyPhotoColorReader.pending_listings(db)] == ["chiot-2"]
 
 
 def test_a_photo_gone_is_noted_as_read_without_colour(db: Session, litter: LitterGroup) -> None:
     gone = add_puppy_ad(db, litter, 1, "Mâle disponible à la vente", [f"{PHOTO_HOST}/disparue.jpg"])
     db.commit()
-    reader = PuppyPhotoColorReader(mistral_answering({}, []), photos_serving({}), sleep=lambda _seconds: None)
+    reader = PuppyPhotoColorReader(groq_answering({}, []), photos_serving({}), sleep=lambda _seconds: None)
 
     reader.read_pending(db, READ_AT)
 
@@ -233,14 +262,14 @@ def test_a_photo_gone_is_noted_as_read_without_colour(db: Session, litter: Litte
 
 
 def test_a_colour_is_kept_only_for_one_puppy_seen_surely() -> None:
-    one_puppy = MistralVisionClient.parse_answer(
-        '```json\n{"subject": "one_puppy", "color": "gold", "confidence": "high"}\n```'
+    one_puppy = GroqVisionClient.parse_answer(
+        '```json\n{"dogs_seen": 1, "subject": "one_puppy", "nose": "black", "color": "gold", "confidence": "high"}\n```'
     )
     several_dogs = PhotoColorReading("several_dogs", CoatColor.GOLD, "high")
     unsure = PhotoColorReading("one_puppy", CoatColor.GOLD, "low")
-    unknown = MistralVisionClient.parse_answer('{"subject": "one_puppy", "color": "rouge vif", "confidence": "high"}')
+    unknown = GroqVisionClient.parse_answer('{"subject": "one_puppy", "color": "rouge vif", "confidence": "high"}')
 
     assert one_puppy.accepted_color == CoatColor.GOLD
     assert (several_dogs.accepted_color, unsure.accepted_color, unknown.accepted_color) == (None, None, None)
-    with pytest.raises(MistralReadError):
-        MistralVisionClient.parse_answer("Je vois un chiot.")
+    with pytest.raises(VisionModelAnswerError):
+        GroqVisionClient.parse_answer("Je vois un chiot.")

@@ -162,7 +162,7 @@ jobs:
             ADMIN_EMAIL=contact@dibodev.fr
             ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
             RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
-            MISTRAL_API_KEY=${{ secrets.MISTRAL_API_KEY }}
+            GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
             VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
             VAPID_PRIVATE_KEY_B64=${{ secrets.VAPID_PRIVATE_KEY_B64 }}
             VAPID_SUBJECT=mailto:contact@dibodev.fr

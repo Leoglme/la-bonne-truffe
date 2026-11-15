@@ -128,7 +128,7 @@ class CollectionWorker:
         scheduler.add_job(
             self.read_breeder_websites, "cron", minute=BREEDER_WEBSITES_MINUTE, id="read_breeder_websites"
         )
-        if settings.mistral_api_key:
+        if settings.groq_api_key:
             scheduler.add_job(
                 self.read_puppy_photos, "cron", minute=PUPPY_PHOTOS_READING_MINUTE, id="read_puppy_photos"
             )
