@@ -69,13 +69,15 @@ ColumnValue = str | int | float | bool | date | datetime | StrEnum | list[str] |
 class IngestionSummary:
     """
     What a run changed in the database: the listings by id, and a count of the breeders or dogs a run stores
-    instead of listings (the alerts only ever read the listing ids).
+    instead of listings (the alerts only ever read the listing ids). ``offered_again_listing_ids`` are the
+    listings already known that offer a puppy again: a reserved puppy set free, or an ad back online.
     """
 
     seen_count: int = 0
     new_listing_ids: list[int] = field(default_factory=list)
     changed_listing_ids: list[int] = field(default_factory=list)
     deactivated_listing_ids: list[int] = field(default_factory=list)
+    offered_again_listing_ids: list[int] = field(default_factory=list)
     new_breeder_or_dog_count: int = 0
     changed_breeder_or_dog_count: int = 0
 
@@ -147,6 +149,7 @@ class ListingIngestionService:
 
             values_before = self._tracked_values(listing)
             was_active = listing.is_active
+            puppies_offered_before = listing.puppies_available if was_active else 0
             self._apply_content(listing, raw_listing, known_department_codes)
             has_changed = self._record_changes(db, listing.id, values_before, self._tracked_values(listing), now)
             is_active_now = self._is_recent_enough_to_follow(listing.birth_date, listing.mating_date, today)
@@ -155,6 +158,13 @@ class ListingIngestionService:
                 has_changed = True
             if was_active and not is_active_now:
                 summary.deactivated_listing_ids.append(listing.id)
+            if (
+                is_active_now
+                and puppies_offered_before is not None
+                and listing.puppies_available is not None
+                and listing.puppies_available > puppies_offered_before
+            ):
+                summary.offered_again_listing_ids.append(listing.id)
             if breeder_id is not None:
                 if listing.breeder_id is not None and listing.breeder_id != breeder_id:
                     self._leave_former_breeder(db, listing, breeder_id)

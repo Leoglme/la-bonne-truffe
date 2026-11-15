@@ -418,7 +418,8 @@ export class LitterDetailPresentation {
    *
    * @param listing - The puppy ad.
    * @param sex - Its sex, as French agrees with it.
-   * @returns « Disponible · 1 400 € », « Réservée », « Vendu », « Plus en ligne », or null when nothing tells it.
+   * @returns « Disponible · 1 400 € », « En cours de réservation », « Réservée », « Vendu », « Plus en ligne » (an ad
+   *   gone from its source, whatever it said last of a puppy still offered), or null when nothing tells it.
    */
   private static buildPuppyStateLabel(listing: LitterSourceListing, sex: DogSex): string | null {
     const state: PuppyAdState | null = listing.puppy_state ?? null

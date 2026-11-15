@@ -65,8 +65,11 @@ class NotificationTexts:
             snapshot: The litter.
 
         Returns:
-            « Portée née · De Kerlann », or « Plus que 2 chiots · De Kerlann » for a followed litter.
+            « Portée née · De Kerlann », « Plus que 2 chiots · De Kerlann » for a followed litter, or « Un chiot
+            se libère · De Kerlann ».
         """
+        if event == MatchEventKind.AVAILABLE_AGAIN:
+            return f"Un chiot se libère · {snapshot.name}"
         if event == MatchEventKind.AVAILABILITY_CHANGE:
             puppies_left = snapshot.puppies_available
             if puppies_left is None:
@@ -114,7 +117,7 @@ class NotificationTexts:
             return f"{sentence} Appelle vite : les réservations se prennent dans l’ordre des appels."
         if event == BreederEventKind.NEW_MATING:
             sentence = cls.litter_event(MatchEventKind.NEW_PREFERRED, snapshot)
-            return f"{sentence} Quatre mois d’avance pour te placer sur sa liste."
+            return f"{sentence} Appelle avant la naissance pour te placer sur sa liste."
         if event == BreederEventKind.NEW_PHOTOS:
             news = "a de nouvelles photos"
         elif new_ad_source is None:
@@ -236,6 +239,8 @@ class NotificationTexts:
         place = f" ({snapshot.department_name})" if snapshot.department_name else ""
         if event == MatchEventKind.AVAILABILITY_CHANGE:
             return cls._puppies_left_sentence(snapshot, place)
+        if event == MatchEventKind.AVAILABLE_AGAIN:
+            return cls._puppy_offered_again_sentence(snapshot, place)
         color = cls._color_phrase(snapshot)
         if snapshot.is_born:
             opening = {
@@ -389,6 +394,26 @@ class NotificationTexts:
         if puppies_left == 1:
             return f"{litter} n’a plus qu’un chiot disponible : appelle vite pour le réserver."
         return f"{litter} n’a plus que {puppies_left} chiots disponibles : appelle vite pour en réserver un."
+
+    @classmethod
+    def _puppy_offered_again_sentence(cls, snapshot: LitterSnapshot, place: str) -> str:
+        """
+        What a litter offers now that one of its puppies, reserved or gone from its ad, is offered again.
+
+        Args:
+            snapshot: The litter.
+            place: Its department in brackets, or nothing.
+
+        Returns:
+            « Un chiot de la portée née le 29 octobre (Sarthe) est de nouveau disponible : 2 chiots à réserver,
+            appelle vite. »
+        """
+        born_on = f" née le {cls.french_day(snapshot.birth_date)}" if snapshot.birth_date else ""
+        news = f"Un chiot de la portée{born_on}{place} est de nouveau disponible"
+        puppies_offered = snapshot.puppies_available
+        if puppies_offered is None or puppies_offered <= 1:
+            return f"{news} : appelle vite pour le réserver."
+        return f"{news} : {puppies_offered} chiots à réserver, appelle vite."
 
     @staticmethod
     def _puppies_left_phrase(litter_name: str, puppies_left: int) -> str:

@@ -44,7 +44,7 @@ Exemple de la maquette : portée née cette nuit, gold certain (+40), LOF (+20),
 
 ## Les événements qui notifient
 
-Les notifications suivent des **événements**, pas des lignes. Chaque couple (groupe, type d'événement) n'est notifié qu'une fois, grâce à `listing_matches.notified_events`, sauf `availability_change`, qui part à chaque baisse.
+Les notifications suivent des **événements**, pas des lignes. Chaque couple (groupe, type d'événement) n'est notifié qu'une fois, grâce à `listing_matches.notified_events`, sauf `availability_change`, qui part à chaque baisse, et `available_again`, qui part chaque fois qu'un chiot se libère.
 
 | Événement | Quand | Canal |
 |---|---|---|
@@ -53,6 +53,7 @@ Les notifications suivent des **événements**, pas des lignes. Chaque couple (g
 | `new_acceptable` | Un groupe entre au palier `acceptable` | Récap du soir à `digest_hour` |
 | `upgraded` | Un groupe passe de `acceptable` à `preferred` (couleur confirmée, LOF précisé…) | Push immédiat |
 | `availability_change` | `puppies_available` baisse sur une portée suivie | Push immédiat avec le réglage « Portée suivie », sinon récap du soir |
+| `available_again` | Une annonce déjà connue propose de nouveau un chiot (un chiot réservé ou « en cours de réservation » redevenu disponible, une annonce revenue en ligne) sur une portée suivie, quel que soit son palier, ou sur une portée `preferred` | Push immédiat : « Un chiot se libère · De Kerlann », « Un chiot de la portée née le 20 octobre (Ille-et-Vilaine) est de nouveau disponible : 2 chiots à réserver, appelle vite. » ; une portée annoncée « préférée » pour la première fois au même relevé n'envoie que ce push-là |
 | `source_down` | Une source échoue trois relevés de suite | Push, une fois par panne |
 | `signup_request` | Quelqu'un tente de s'inscrire pendant que l'inscription est fermée (`05`) | Push au compte du `.env`, une fois par adresse |
 | `follow_up_reminder` | L'heure du rappel d'une portée suivie est passée (`next_reminder_at`), sauf si elle est écartée ou si la portée a disparu de ses sources (le rappel est alors noté comme passé, sans push) | Push dans les cinq minutes, une fois par rappel ; un rappel déplacé repart : « C'est l'heure d'appeler De Kerlann. » |
@@ -137,7 +138,7 @@ Pour chaque `breeder_follow`, sur les portées de cet éleveur, **quels que soie
 
 | Événement | Quand | Canal | Réglage du suivi |
 |---|---|---|---|
-| `breeder_new_mating` | Une saillie déclarée apparaît chez l'éleveur (portée à naître, Centrale Canine ou futures portées du site) | Push immédiat : « Saillie déclarée · Du Clos de l'Élevage A », puis la portée en une phrase (celle de `new_preferred`) et « Quatre mois d'avance pour te placer sur sa liste. » | `notify_new_mating` |
+| `breeder_new_mating` | Une saillie déclarée apparaît chez l'éleveur (portée à naître, Centrale Canine ou futures portées du site) | Push immédiat : « Saillie déclarée · Du Clos de l'Élevage A », puis la portée en une phrase (celle de `new_preferred`) et « Appelle avant la naissance pour te placer sur sa liste. » (jusqu'au 15/11/2026 : « Quatre mois d'avance », alors que la déclaration paraît en médiane dix jours avant la naissance, `02`) | `notify_new_mating` |
 | `breeder_birth` | Une portée de l'éleveur naît, ou une portée née apparaît | Push immédiat : « Portée née · Du Clos de l'Élevage A », puis la portée en une phrase (celle de `born`) et « Appelle vite : les réservations se prennent dans l'ordre des appels. » | `notify_birth` |
 | `breeder_new_photos` | Une photo que l'annonce n'avait jamais montrée arrive sur une portée de l'éleveur (site Chiens de France, annonce) ; une fois par jour au plus | Push immédiat : « Nouvelles photos · Du Clos de l'Élevage A », « Sa portée née le 29 octobre (Sarthe) a de nouvelles photos : une portée gold, 2 mâles et 3 femelles. » | `notify_new_photos` |
 | `breeder_new_ad` | Une annonce de l'éleveur apparaît sur une autre source (Chiens de France, Chiots de France, Whoof) pour une portée déjà connue | Push immédiat : « Nouvelle annonce · Du Clos de l'Élevage A », « Sa portée née le 29 octobre (Sarthe) est en ligne sur Chiens de France : une portée gold, 1 mâle et 2 femelles. » | `notify_new_photos` |

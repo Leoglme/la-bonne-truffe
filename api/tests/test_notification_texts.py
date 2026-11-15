@@ -72,3 +72,18 @@ def test_only_a_declared_mating_is_told_as_expected() -> None:
     body = NotificationTexts.litter_event(MatchEventKind.NEW_PREFERRED, mating)
 
     assert body == "À naître (Mayenne) : une portée gold déclarée, naissance vers le 20 décembre."
+
+
+def test_a_puppy_offered_again_is_told_with_what_the_litter_offers() -> None:
+    last_puppy = replace(GOLD_PUPPY_ADS_IN_53, puppies_available=1)
+
+    assert NotificationTexts.litter_event_title(MatchEventKind.AVAILABLE_AGAIN, GOLD_PUPPY_ADS_IN_53) == (
+        "Un chiot se libère · De la Vallée de la Mayenne"
+    )
+    assert NotificationTexts.litter_event(MatchEventKind.AVAILABLE_AGAIN, GOLD_PUPPY_ADS_IN_53) == (
+        "Un chiot de la portée née le 14 septembre (Mayenne) est de nouveau disponible : 2 chiots à réserver, "
+        "appelle vite."
+    )
+    assert NotificationTexts.litter_event(MatchEventKind.AVAILABLE_AGAIN, last_puppy) == (
+        "Un chiot de la portée née le 14 septembre (Mayenne) est de nouveau disponible : appelle vite pour le réserver."
+    )

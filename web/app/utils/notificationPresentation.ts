@@ -10,6 +10,7 @@ const LITTER_EVENT_KINDS: NotificationKind[] = [
   'new_preferred',
   'upgraded',
   'availability_change',
+  'available_again',
   'breeder_new_mating',
   'breeder_birth',
   'breeder_new_photos',

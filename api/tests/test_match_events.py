@@ -95,3 +95,45 @@ def test_a_followed_litter_losing_its_last_puppy_is_told_although_excluded() -> 
     )
 
     assert excluded == [MatchEventKind.AVAILABILITY_CHANGE]
+
+
+def test_a_puppy_offered_again_is_told_each_time_on_a_followed_or_a_preferred_litter() -> None:
+    followed = EventService.detect(
+        MatchTier.ACCEPTABLE,
+        MatchTier.ACCEPTABLE,
+        {"new_acceptable": "x", "available_again": "x"},
+        has_just_been_born=False,
+        is_followed=True,
+        has_puppy_offered_again=True,
+    )
+    preferred = EventService.detect(
+        MatchTier.EXCLUDED,
+        MatchTier.PREFERRED,
+        {"new_preferred": "x"},
+        has_just_been_born=False,
+        is_followed=False,
+        has_puppy_offered_again=True,
+    )
+    neither = EventService.detect(
+        MatchTier.ACCEPTABLE,
+        MatchTier.ACCEPTABLE,
+        {"new_acceptable": "x"},
+        has_just_been_born=False,
+        is_followed=False,
+        has_puppy_offered_again=True,
+    )
+
+    assert followed == preferred == [MatchEventKind.AVAILABLE_AGAIN]
+    assert neither == []
+
+
+def test_a_litter_told_as_newly_preferred_is_not_told_twice_for_its_puppy_offered_again() -> None:
+    told_once = EventService.without_news_told_twice([MatchEventKind.NEW_PREFERRED, MatchEventKind.AVAILABLE_AGAIN])
+    told_alone = EventService.without_news_told_twice([MatchEventKind.AVAILABLE_AGAIN])
+    told_with_a_drop = EventService.without_news_told_twice(
+        [MatchEventKind.AVAILABILITY_CHANGE, MatchEventKind.AVAILABLE_AGAIN]
+    )
+
+    assert told_once == [MatchEventKind.NEW_PREFERRED]
+    assert told_alone == [MatchEventKind.AVAILABLE_AGAIN]
+    assert told_with_a_drop == [MatchEventKind.AVAILABILITY_CHANGE, MatchEventKind.AVAILABLE_AGAIN]

@@ -11,6 +11,7 @@ export const NOTIFICATION_CHIPS: Record<NotificationKind, NotificationChip> = {
   new_preferred: { label: 'Préférée', tone: 'gold' },
   upgraded: { label: 'Préférée', tone: 'gold' },
   availability_change: { label: 'Réservé', tone: 'coral' },
+  available_again: { label: 'Se libère', tone: 'gold' },
   follow_up_reminder: { label: 'Rappel', tone: 'dark' },
   evening_digest: { label: 'Récap du soir', tone: 'neutral' },
   source_down: { label: 'Source', tone: 'neutral' },

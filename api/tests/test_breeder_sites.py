@@ -182,6 +182,46 @@ def test_the_hourly_reading_waits_while_the_sites_are_read_and_without_a_followe
     assert (without_followed_site, while_another_reading) == (None, None)
 
 
+def test_the_site_of_a_breeder_is_read_at_once_when_one_of_its_offered_puppies_leaves_the_list(
+    db: Session, seeded: dict[str, str]
+) -> None:
+    breeder = ferme_des_tests(
+        db, chiens_de_france_site_url=SITE_URL, chiens_de_france_site_seen_at=datetime(2026, 11, 14, 5, 40)
+    )
+    other_breeder = Breeder(
+        display_name="Du Clos de Test", chiens_de_france_site_url="https://elevage-b.chiens-de-france.com"
+    )
+    db.add(other_breeder)
+    db.commit()
+    while_no_puppy_left = collection_runner.read_sites_of_puppies_gone_from_the_list(
+        db, chiens_de_france_site_collector_serving()
+    )
+    puppy_gone_from_the_list = Listing(
+        source=ListingSource.CHIENS_DE_FRANCE,
+        external_id="chiot-2199889",
+        breed_id=db.query(Breed).one().id,
+        breeder_id=breeder.id,
+        kind=ListingKind.PUPPY_AD,
+        lof_status=LofStatus.LOF,
+        puppies_available=1,
+        department_code="35",
+        missed_run_count=1,
+        raw_json={"price": "A vendre 1400 €"},
+    )
+    db.add(puppy_gone_from_the_list)
+    db.commit()
+
+    report = collection_runner.read_sites_of_puppies_gone_from_the_list(db, chiens_de_france_site_collector_serving())
+
+    db.expire_all()
+    assert while_no_puppy_left is None
+    assert report is not None
+    assert report.directory.raw_pages == []
+    assert {site.breeder_id for site in report.plan.sites} == {breeder.id}
+    assert (puppy_gone_from_the_list.puppies_available, puppy_gone_from_the_list.missed_run_count) == (0, 0)
+    assert PuppyAdStateReader.state_of(puppy_gone_from_the_list) == PuppyAdState.RESERVED
+
+
 def test_a_name_two_breeders_of_the_postal_code_bear_or_a_known_site_links_nothing(
     db: Session, seeded: dict[str, str]
 ) -> None:
@@ -494,6 +534,10 @@ def test_the_puppy_of_an_ad_is_told_available_reserved_or_sold() -> None:
 
     assert PuppyAdStateReader.state_of(puppy_ad("Mâle disponible à la vente à 1400 €", 1)) == PuppyAdState.AVAILABLE
     assert PuppyAdStateReader.state_of(puppy_ad("Femelle réservée", 0)) == PuppyAdState.RESERVED
+    assert PuppyAdStateReader.state_of(puppy_ad("Mâle en cours de réservation", 0)) == PuppyAdState.BEING_RESERVED
+    gone_ad = Listing(kind=ListingKind.PUPPY_AD, raw_json={"price": "A vendre 1650 €"}, puppies_available=1)
+    gone_ad.is_active = False
+    assert PuppyAdStateReader.state_of(gone_ad) is None
     assert PuppyAdStateReader.state_of(puppy_ad("Mâle vendu", 0)) == PuppyAdState.SOLD
     assert PuppyAdStateReader.state_of(Listing(kind=ListingKind.LITTER_BORN, raw_json={})) is None
 

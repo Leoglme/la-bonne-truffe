@@ -8,7 +8,7 @@ Vérifié le 27/10/2026 : le seul agrégateur avec alerte est chien.com, mono-so
 
 ## La découverte qui change tout
 
-La **Centrale Canine** (Société Centrale Canine, qui tient le LOF) publie un **JSON public** de toutes les portées LOF déclarées par race, avec un filtre « à naître » qui renvoie les **saillies déclarées**. Une saillie déclarée aujourd'hui, c'est une naissance dans deux mois et des chiots cessibles huit semaines plus tard : près de **quatre mois d'avance** sur une annonce Leboncoin. On y trouve le département, la variété de couleur, le nombre de mâles et de femelles à la naissance, les parents avec leurs cotations, l'éleveur avec SIREN et téléphone. Détail dans `02-sources.md`.
+La **Centrale Canine** (Société Centrale Canine, qui tient le LOF) publie un **JSON public** de toutes les portées LOF déclarées par race, avec un filtre « à naître » qui renvoie les **saillies déclarées**. Une saillie déclarée aujourd'hui, c'est une naissance dans deux mois et des chiots cessibles huit semaines plus tard : près de **quatre mois d'avance** sur une annonce Leboncoin en théorie ; mesuré le 15/11/2026, environ **deux mois** en pratique, la Centrale Canine publiant par lots (`02-sources.md`). On y trouve le département, la variété de couleur, le nombre de mâles et de femelles à la naissance, les parents avec leurs cotations, l'éleveur avec SIREN et téléphone. Détail dans `02-sources.md`.
 
 ## Ce que fait l'outil (V1)
 

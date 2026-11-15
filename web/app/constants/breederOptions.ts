@@ -61,7 +61,7 @@ export const BREEDER_NOTIFICATION_SETTINGS: BreederNotificationSetting[] = [
   {
     key: 'notify_new_mating',
     label: 'Nouvelle saillie déclarée',
-    helper: 'Dès qu’elle paraît à la Centrale Canine, quatre mois avant le départ des chiots',
+    helper: 'Dès qu’elle paraît à la Centrale Canine, environ deux mois avant le départ des chiots',
   },
   {
     key: 'notify_birth',

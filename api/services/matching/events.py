@@ -8,14 +8,20 @@ from enums.match_tier import MatchTier
 NEWS_WINDOW_DAYS = 3
 
 ALWAYS_NEWS_EVENTS: frozenset[MatchEventKind] = frozenset(
-    {MatchEventKind.BORN, MatchEventKind.UPGRADED, MatchEventKind.AVAILABILITY_CHANGE}
+    {
+        MatchEventKind.BORN,
+        MatchEventKind.UPGRADED,
+        MatchEventKind.AVAILABILITY_CHANGE,
+        MatchEventKind.AVAILABLE_AGAIN,
+    }
 )
 
 
 class EventService:
     """
     Compares the previous and the new verdict of a group; each (group, event) is raised once, except a drop of
-    the puppies left on a followed litter, raised at every drop whatever the tier of the litter.
+    the puppies left on a followed litter, raised at every drop whatever the tier of the litter, and a puppy
+    offered again on a followed or preferred litter, raised each time one is set free.
     """
 
     @staticmethod
@@ -26,6 +32,7 @@ class EventService:
         has_just_been_born: bool,
         is_followed: bool,
         has_fewer_puppies_available: bool = False,
+        has_puppy_offered_again: bool = False,
     ) -> list[MatchEventKind]:
         """
         Raise the events of a group for one profile.
@@ -40,6 +47,8 @@ class EventService:
             has_just_been_born: Whether the litter went from « à naître » to « née » during this run.
             is_followed: Whether the litter is in the user's follow-ups.
             has_fewer_puppies_available: Whether the litter offers fewer puppies than before this run.
+            has_puppy_offered_again: Whether one of its ads offers a puppy again since this run: a reserved puppy
+                set free, or an ad back online.
 
         Returns:
             The events to notify, possibly none.
@@ -66,7 +75,28 @@ class EventService:
             events.append(MatchEventKind.NEW_ACCEPTABLE)
         if has_fewer_puppies_available and is_followed:
             events.append(MatchEventKind.AVAILABILITY_CHANGE)
+        if has_puppy_offered_again and (is_followed or new_tier == MatchTier.PREFERRED):
+            events.append(MatchEventKind.AVAILABLE_AGAIN)
         return events
+
+    @staticmethod
+    def without_news_told_twice(events_to_send: list[MatchEventKind]) -> list[MatchEventKind]:
+        """
+        Keep one push per litter and run: a litter told as preferred for the first time carries by itself the
+        news of its puppy offered again.
+
+        Args:
+            events_to_send: The events of a litter that are news, in the order they were raised.
+
+        Returns:
+            The same events, without the puppy offered again when the litter is told as newly preferred.
+        """
+        is_told_as_newly_preferred = (
+            MatchEventKind.NEW_PREFERRED in events_to_send or MatchEventKind.UPGRADED in events_to_send
+        )
+        if not is_told_as_newly_preferred:
+            return events_to_send
+        return [event for event in events_to_send if event != MatchEventKind.AVAILABLE_AGAIN]
 
     @staticmethod
     def is_news(event: MatchEventKind, appeared_on: date, today: date) -> bool:

@@ -10,6 +10,7 @@ class NotificationKind(StrEnum):
     BORN = "born"
     UPGRADED = "upgraded"
     AVAILABILITY_CHANGE = "availability_change"
+    AVAILABLE_AGAIN = "available_again"
     EVENING_DIGEST = "evening_digest"
     SOURCE_DOWN = "source_down"
     SOURCE_SILENT = "source_silent"

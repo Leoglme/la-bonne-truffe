@@ -340,3 +340,15 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 - **Vérifié** : sur la copie du relevé du jour, captures de chaque écran sur ordinateur et sur iPhone ; tests pytest et vitest (toutes les suites), ruff, mypy, lint et typecheck.
 - **Non vérifié** : la production après la mise en ligne.
 - **Laissé à décider** : les badges de couleur des cartes avec la petite tête de la robe, une teinte par couleur et les têtes des couleurs possibles sur « À confirmer » (maquette ajoutée au même canevas, à valider) ; la lecture de la robe sur les photos.
+
+## 15 novembre : « en cours de réservation », un chiot qui se libère, l'avance réelle de la Centrale Canine
+
+- **Demandé** : des idées d'amélioration, puis, parmi celles retenues : prévenir quand un chiot réservé redevient disponible, vérifier l'affichage « Disponible » d'un chiot « en cours de réservation » sur le site de son élevage, améliorer ce qui touche la Centrale Canine, et voir si chien.com se lit autrement que par e-mail.
+- **Constaté** :
+  - le site principal de Chiens de France retire un chiot de sa liste dès qu'il passe « en cours de réservation », et l'app gardait « Disponible » jusqu'à la relecture du site de l'élevage, deux fois par jour (`02`) ;
+  - la Centrale Canine publie par lots : la déclaration d'une saillie paraît en médiane dix jours avant la naissance, pas deux mois avant (`02`) ;
+  - chien.com interdit la collecte de ses annonces et son alerte e-mail demande un captcha : pas de relevé, pas d'alerte créée depuis l'app (`02`).
+- **Fait** : l'état « En cours de réservation », distinct de « Réservé » ; « Plus en ligne » au lieu de « Disponible » pour une annonce sortie de sa source ; la lecture immédiate du site de l'élevage quand un chiot proposé quitte la liste ; l'alerte « Un chiot se libère » sur une portée suivie ou préférée (`04`) ; « Appelle avant la naissance » au lieu de « Quatre mois d'avance » dans l'alerte d'une saillie, et « environ deux mois » dans le réglage du suivi d'un élevage.
+- **Vérifié** : tests pytest (toute la suite) et vitest, ruff, mypy, lint et typecheck ; les statuts comparés sur sept sites d'élevage réels.
+- **Non vérifié** : la production après la mise en ligne.
+- **Laissé à décider**, sur maquette : les portées probables avant leur déclaration, avec un mot plus simple que « saillie » ; un deuxième cercle de départements en temps de route ; la robe d'un chiot suggérée par une IA gratuite (Mistral, comme DevLeadHunter) ; un avis lisible sur l'élevage ; un lien « Ouvrir chien.com ».

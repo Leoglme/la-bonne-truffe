@@ -182,6 +182,15 @@ describe('LitterDetailPresentation.buildPuppyLines', (): void => {
     ])
   })
 
+  it('tells a puppy a family is reserving from a reserved one', (): void => {
+    expect(
+      LitterDetailPresentation.buildPuppyLines({
+        ...LITTER,
+        listings: [{ ...FEMALE_PUPPY_AD, puppy_state: 'being_reserved' }],
+      })[0],
+    ).toMatchObject({ stateLabel: 'En cours de réservation', isAvailable: false })
+  })
+
   it('says when an ad that told nothing is gone', (): void => {
     expect(
       LitterDetailPresentation.buildPuppyLines({

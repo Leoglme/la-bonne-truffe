@@ -29,6 +29,7 @@ class MatchRefreshService:
         should_notify: bool = True,
         profile_ids: set[int] | None = None,
         fewer_puppies_group_ids: set[int] | None = None,
+        puppy_offered_again_group_ids: set[int] | None = None,
     ) -> None:
         """
         Evaluate every active group against every active profile.
@@ -44,6 +45,8 @@ class MatchRefreshService:
             should_notify: Whether the raised events are sent.
             profile_ids: Only these profiles (a new account); every active profile when None.
             fewer_puppies_group_ids: Groups that offer fewer puppies since the previous run.
+            puppy_offered_again_group_ids: Groups one of whose ads offers a puppy again: a reserved puppy set
+                free, or an ad back online.
         """
         today = french_date_of(now)
         groups = db.query(LitterGroup).filter(LitterGroup.is_active.is_(True)).order_by(LitterGroup.id).all()
@@ -53,6 +56,7 @@ class MatchRefreshService:
         profiles = profile_query.order_by(SearchProfile.id).all()
         just_born = born_group_ids or set()
         offering_fewer_puppies = fewer_puppies_group_ids or set()
+        offering_a_puppy_again = puppy_offered_again_group_ids or set()
 
         for profile in profiles:
             criteria = ProfileCriteria.from_profile(profile)
@@ -77,10 +81,13 @@ class MatchRefreshService:
                     has_just_been_born=group.id in just_born,
                     is_followed=is_followed,
                     has_fewer_puppies_available=group.id in offering_fewer_puppies,
+                    has_puppy_offered_again=group.id in offering_a_puppy_again,
                 )
                 if not events:
                     continue
-                events_to_send = [event for event in events if EventService.is_news(event, snapshot.appeared_on, today)]
+                events_to_send = EventService.without_news_told_twice(
+                    [event for event in events if EventService.is_news(event, snapshot.appeared_on, today)]
+                )
                 if should_notify and events_to_send:
                     notifier_service.dispatch(db, profile, snapshot, events_to_send, is_followed, now)
                 handled = dict(match.notified_events)

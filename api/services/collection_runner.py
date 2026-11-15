@@ -8,11 +8,14 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 from core.clock import naive_utc_now
+from core.config import settings
+from enums.listing_kind import ListingKind
 from enums.listing_source import ListingSource
 from enums.source_run_status import SourceRunStatus
 from models.breed import Breed
 from models.breeder import Breeder
 from models.breeder_follow import BreederFollow
+from models.listing import Listing
 from models.source_run import SourceRun
 from services.breeder_alert_service import BreederRunFacts, breeder_alert_service
 from services.breeder_directory_ingestion import breeder_directory_ingestion_service
@@ -166,7 +169,10 @@ class CollectionRunner:
         if source == ListingSource.CENTRALE_CANINE:
             return self.run_centrale_canine(db, CentraleCanineCollector())
         if source == ListingSource.CHIENS_DE_FRANCE:
-            return self.run_html_source(db, source, ChiensDeFranceCollector())
+            report = self.run_html_source(db, source, ChiensDeFranceCollector())
+            if ListingSource.CHIENS_DE_FRANCE_SITES not in settings.collect_skipped_sources:
+                self.read_sites_of_puppies_gone_from_the_list(db, ChiensDeFranceSiteCollector())
+            return report
         if source == ListingSource.CHIOTS_DE_FRANCE:
             return self.run_html_source(db, source, ChiotsDeFranceCollector())
         if source == ListingSource.WHOOF:
@@ -252,6 +258,40 @@ class CollectionRunner:
         if not followed_breeder_ids or self._is_running(db, ListingSource.CHIENS_DE_FRANCE_SITES):
             return None
         return self.run_breeder_sites(db, collector, followed_breeder_ids)
+
+    def read_sites_of_puppies_gone_from_the_list(
+        self, db: Session, collector: ChiensDeFranceSiteCollector
+    ) -> BreederSitesRunReport | None:
+        """
+        Read at once the site of every breeder one of whose puppies, offered at the previous reading, has just left
+        the list of Chiens de France. The main site drops a puppy from its list as soon as its breeder marks it
+        « en cours de réservation », while the page of the puppy still says « à vendre »: only the breeder's site
+        tells what became of it, and its next reading may be twelve hours away.
+
+        Args:
+            db: Database session.
+            collector: Collector to read with (a real one, or one on a fake transport in the tests).
+
+        Returns:
+            The run report, or None when no offered puppy left the list, when its breeder has no site, or while
+            another reading of the sites goes on.
+        """
+        breeder_ids = frozenset(
+            breeder_id
+            for (breeder_id,) in db.query(Breeder.id)
+            .join(Listing, Listing.breeder_id == Breeder.id)
+            .filter(
+                Listing.source == ListingSource.CHIENS_DE_FRANCE,
+                Listing.kind == ListingKind.PUPPY_AD,
+                Listing.is_active.is_(True),
+                Listing.puppies_available == 1,
+                Listing.missed_run_count > 0,
+                Breeder.chiens_de_france_site_url.is_not(None),
+            )
+        )
+        if not breeder_ids or self._is_running(db, ListingSource.CHIENS_DE_FRANCE_SITES):
+            return None
+        return self.run_breeder_sites(db, collector, breeder_ids)
 
     def run_scc_breeders(self, db: Session, collector: SccBreederDirectoryCollector) -> SccBreederDirectoryRunReport:
         """
@@ -535,6 +575,7 @@ class CollectionRunner:
                 set(grouping.born_group_ids),
                 should_notify=should_notify,
                 fewer_puppies_group_ids=set(grouping.fewer_puppies_group_ids),
+                puppy_offered_again_group_ids=CollectionRunner._groups_of(db, summary.offered_again_listing_ids),
             )
             breeder_alert_service.raise_events(
                 db,
@@ -570,6 +611,26 @@ class CollectionRunner:
         if source_run.status != SourceRunStatus.OK:
             notifier_service.alert_if_source_down(db, source_run.source, naive_utc_now())
         return summary, grouping
+
+    @staticmethod
+    def _groups_of(db: Session, listing_ids: list[int]) -> set[int]:
+        """
+        The litters some listings belong to, once the run has grouped them.
+
+        Args:
+            db: Database session.
+            listing_ids: The listings.
+
+        Returns:
+            The ids of their litter groups.
+        """
+        if not listing_ids:
+            return set()
+        return {
+            group_id
+            for (group_id,) in db.query(Listing.litter_group_id).filter(Listing.id.in_(listing_ids))
+            if group_id is not None
+        }
 
     @staticmethod
     def _is_running(db: Session, source: ListingSource) -> bool:

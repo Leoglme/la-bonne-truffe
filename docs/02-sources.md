@@ -79,6 +79,8 @@ GET https://www.centrale-canine.fr/api/breed/le-chien-de-race--cocker-spaniel-an
 - `external_id` = `n_id`, et `n_servicing_number` devient `mating_number`, que la déclaration de naissance garde (le numéro de portée `LOF-2026016223-…` le contient). Quand la naissance garde aussi le `n_id` de la saillie, elle apparaît comme un changement de la même annonce (`kind`, `birth_date`, compteurs dans `listing_changes`) ; quand elle arrive sous un nouvel identifiant, le regroupement la rattache à la saillie par le numéro de saillie (`03`). Lequel des deux fait la Centrale Canine n'a pas encore été observé sur un vrai relevé : les deux cas donnent la même portée et le même push « née ».
 - Une annonce absente de deux relevés de suite (dans les départements relevés) passe inactive, de même qu'une portée née depuis plus de six mois, qu'elle soit encore en ligne ou non : le relevé la garde inactive (une annonce adoptée que Cœur de Cocker laisse en ligne ne clignote pas).
 
+**L'avance réelle, mesurée le 15/11/2026** sur les 85 portées du premier relevé (28/10/2026, neuf départements) : `n_created` ne compte que 13 dates en six mois, espacées d'une à sept semaines (8 un lundi ou un mardi) : la Centrale Canine publie **par lots**. Une saillie y paraît en médiane 37 jours après avoir eu lieu pour les portées encore à naître, 50 pour celles déjà nées, soit une dizaine de jours avant la naissance ; 22 des 64 portées nées n'ont paru que le jour de la naissance ou après. L'avance sur le départ des chiots est donc d'environ deux mois, pas quatre : avant la déclaration, seuls le site de l'élevage et un appel renseignent.
+
 **Autres pages SCC utiles plus tard** : `ÉLEVEURS DE LA RACE` (annuaire), LOF Select (base de pedigrees, cotations, généalogie).
 
 **Spaniel Club Français** (vérifié le 29/10/2026) : le club publie sur le site de la SCC ses éleveurs membres (`GET /spaniel-club-francais/api/breeders/0?filter=1728&department=<t_ID>&_format=json`, bloc `breeders.users`) et leurs portées (`/spaniel-club-francais/api/litters/le-chien-de-race--cocker-spaniel-anglais/<page>`), qui sont les fiches du JSON ci-dessus. Rien de plus à relever : le bloc `breeders` des portées porte déjà `is_member`.
@@ -214,7 +216,15 @@ Vérifié le 29/10/2026 :
 
 ## 8. chien.com
 
-Agrégateur avec alerte e-mail par race et pays. Pas prioritaire : ses annonces recoupent celles des autres sources. Peut devenir une quatrième source plus tard si une portée y apparaît avant ailleurs.
+Agrégateur avec alerte e-mail par race et pays. Pas relevé.
+
+Vérifié le 15/11/2026 :
+- **Conditions d'utilisation** (`/cgu.php`) : la collecte ou la reproduction des petites annonces est interdite sans autorisation écrite. Même cas que Leboncoin : pas de relevé automatique.
+- **Accès** : un vrai navigateur reçoit `200` ; `curl` reçoit `403` (Bunny Shield). Le `robots.txt` n'interdit ni `/annonces/` ni `/adresse/`. `sitemap-annonces.xml` liste chaque annonce avec sa date.
+- **Liste d'une race dans un département** : `/annonces/1-0-0-<race>-0-73-73<département sur 3 chiffres>-<titre>-<page>.php` (26 = cocker spaniel anglais, `73035` = Ille-et-Vilaine), avec un bloc « à proximité ». Les identifiants de race sont dans le `<select name="annonce_raceid">` de toute page de liste.
+- **Alerte e-mail** : un formulaire sans compte, mais avec un captcha : elle se crée à la main.
+- **Volume** : 19 annonces de vente de cockers en France sur trente jours, dont 3 dans les départements du profil et 1 seule LOF (Morbihan). Deux élevages « sans site connu » y ont une fiche (De la Ferme Kergaval, Du Fort de Circé).
+- Ce qui reste possible : un lien « Ouvrir chien.com » construit avec la race et le département.
 
 ## Politesse et robustesse
 
@@ -307,3 +317,12 @@ Relevé frais de toutes les sources en local, puis relecture des 25 sites Chiens
 - `www.chiens-de-france.com/chiot/2211562` répond par une redirection (302) vers `/chiots/cocker-spaniel-anglais/france/pays-de-la-loire`. Une saillie que seul le site d'un élevage montre répond 404 sur le site principal (`/saillie/470400`, alors que `delapromessedor.chiens-de-france.com/cocker-spaniel-anglais/saillie/470400` répond). Un chiot que le site principal publie garde sa page (`/chiot/2210630` répond), qui lie ses frères et sœurs et le site de l'élevage, jamais la page de sa portée.
 - Le site principal n'a pas de page de portée (`/portee/<id>` et `/chiots-a-vendre/<id>` renvoient à l'accueil). Le site de l'élevage n'a pas de page par chiot (`/<race>/chiot/<n>` répond 404 ; seul `/<race>/chiot/<n>/contact`, le formulaire, existe), ni d'ancre par chiot sur la page de la portée.
 - **Ce que fait l'app** : `/chiot/<n>` et `/saillie/<id>` restent l'identité de l'annonce, partagée par les deux relevés. Le relevé des sites garde en plus la page de l'annonce sur le site de l'élevage (`listings.breeder_site_page_url`, `03`), que l'app ouvre en priorité : la page de la saillie, ou celle de la portée pointée sur le numéro du chiot par un fragment de texte (`#:~:text=2211562`), qui fait défiler Chrome, Edge, Safari et Firefox jusqu'au numéro et le surligne. La ligne « Vu sur » des annonces de chiots, comme le bouton « Voir sur Chiens de France » d'un élevage sans téléphone, ouvre la page de la portée sans ce fragment, avec tous ses chiots. Un relevé du site principal qui passe ensuite ne l'efface pas.
+
+### Vérifié le 15/11/2026 : « en cours de réservation » et la liste du site principal
+
+Signalé : l'app affichait « Disponible » pour un chiot que le site de son élevage disait « en cours de réservation ».
+
+- **Les statuts d'un chiot sur le site d'un élevage** : « disponible à la vente », « en cours de réservation » (une famille l'a demandé, l'élevage attend son acompte : le chiot peut se libérer), « réservé », « vendu », « resté à l'élevage ».
+- **Le site principal retire un chiot de sa liste dès qu'il n'est plus disponible**, « en cours de réservation » compris : comparé sur 7 élevages et 119 chiots, les 17 chiots listés sont les 17 « disponibles à la vente » des sites, et aucun des 15 « en cours de réservation » n'est listé. Mais la page du chiot (`/chiot/<n>`) répond toujours `200` avec « A vendre 1600 € ».
+- **Le défaut** : la liste est relue chaque heure, les sites d'élevage deux fois par jour. Un chiot sorti de la liste gardait sa dernière lecture, « à vendre », puis passait hors ligne au bout de deux relevés en gardant le libellé « Disponible », jusqu'à la relecture du site : douze heures de retard au pire.
+- **Ce que fait l'app depuis** : dès qu'un chiot proposé quitte la liste, le relevé lit aussitôt le site de son élevage (`CollectionRunner.read_sites_of_puppies_gone_from_the_list`), une seule fois par départ ; une annonce de chiot hors ligne ne dit plus « Disponible » mais « Plus en ligne » ; « En cours de réservation » est un état à part (`PuppyAdState.BEING_RESERVED`), qui ne compte pas dans les chiots disponibles.

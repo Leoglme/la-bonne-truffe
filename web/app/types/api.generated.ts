@@ -2545,10 +2545,11 @@ export interface components {
         LofStatus: "lof" | "non_lof" | "unknown";
         /**
          * MatchEventKind
-         * @description An event of a litter group; each (group, kind) pair is notified once, except a drop of the puppies left.
+         * @description An event of a litter group; each (group, kind) pair is notified once, except a drop of the puppies left and
+         *     a puppy offered again.
          * @enum {string}
          */
-        MatchEventKind: "new_preferred" | "born" | "new_acceptable" | "upgraded" | "availability_change";
+        MatchEventKind: "new_preferred" | "born" | "new_acceptable" | "upgraded" | "availability_change" | "available_again";
         /**
          * MatchFlag
          * @description An unknown fact: it never excludes a litter, it keeps it below « préférée » and is shown to confirm.
@@ -2566,7 +2567,7 @@ export interface components {
          * @description Event a sent notification reports (see docs/04-correspondance-et-notifications.md).
          * @enum {string}
          */
-        NotificationKind: "new_preferred" | "born" | "upgraded" | "availability_change" | "evening_digest" | "source_down" | "source_silent" | "signup_request" | "follow_up_reminder" | "breeder_new_mating" | "breeder_birth" | "breeder_new_photos" | "breeder_new_ad" | "breeder_follow_reminder";
+        NotificationKind: "new_preferred" | "born" | "upgraded" | "availability_change" | "available_again" | "evening_digest" | "source_down" | "source_silent" | "signup_request" | "follow_up_reminder" | "breeder_new_mating" | "breeder_birth" | "breeder_new_photos" | "breeder_new_ad" | "breeder_follow_reminder";
         /**
          * NotificationListResponse
          * @description A page of the notification history plus the unread count that lights the bell.
@@ -2768,10 +2769,11 @@ export interface components {
         };
         /**
          * PuppyAdState
-         * @description Where the puppy of an ad stands: still offered, reserved, or sold.
+         * @description Where the puppy of an ad stands: still offered, being reserved (a family asked for it and the breeder waits
+         *     for its deposit: the puppy may come back), reserved, or sold.
          * @enum {string}
          */
-        PuppyAdState: "available" | "reserved" | "sold";
+        PuppyAdState: "available" | "being_reserved" | "reserved" | "sold";
         /**
          * PuppyArrivalChecklist
          * @description The preparations ticked, by the keys the web app gives them.

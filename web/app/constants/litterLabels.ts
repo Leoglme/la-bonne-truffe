@@ -118,6 +118,7 @@ export const PUPPY_SEX_TEXT_CLASSES: Record<DogSex, string> = {
 
 /** Where the puppy of an ad stands once it is no longer free, agreed with its sex. */
 export const PUPPY_AD_STATE_LABELS: Record<Exclude<PuppyAdState, 'available'>, Record<FrenchGender, string>> = {
+  being_reserved: { masculine: 'En cours de réservation', feminine: 'En cours de réservation' },
   reserved: { masculine: 'Réservé', feminine: 'Réservée' },
   sold: { masculine: 'Vendu', feminine: 'Vendue' },
 }

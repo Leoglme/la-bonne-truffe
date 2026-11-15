@@ -48,10 +48,11 @@ IMMEDIATE_EVENT_KINDS: dict[MatchEventKind, NotificationKind] = {
     MatchEventKind.BORN: NotificationKind.BORN,
     MatchEventKind.UPGRADED: NotificationKind.UPGRADED,
     MatchEventKind.AVAILABILITY_CHANGE: NotificationKind.AVAILABILITY_CHANGE,
+    MatchEventKind.AVAILABLE_AGAIN: NotificationKind.AVAILABLE_AGAIN,
 }
 
 FOLLOWED_LITTER_EVENT_KINDS: frozenset[MatchEventKind] = frozenset(
-    {MatchEventKind.BORN, MatchEventKind.AVAILABILITY_CHANGE}
+    {MatchEventKind.BORN, MatchEventKind.AVAILABILITY_CHANGE, MatchEventKind.AVAILABLE_AGAIN}
 )
 
 
@@ -70,9 +71,9 @@ class NotifierService:
         """
         Send or queue each event, as the profile asks.
 
-        A preferred litter is pushed right away, a birth too, and a followed litter offering fewer puppies; an
-        acceptable litter waits for the evening digest, as does that drop when the pushes of the followed
-        litters are off. An event the profile turned off is still recorded as handled, so turning the setting
+        A preferred litter is pushed right away, a birth too, a followed litter offering fewer puppies, and a
+        followed or preferred litter one of whose puppies is offered again; an acceptable litter waits for the
+        evening digest, as does that drop when the pushes of the followed litters are off. An event the profile turned off is still recorded as handled, so turning the setting
         back on later never floods the phone with old litters.
         Once the user found their puppy, nothing goes out: the events are recorded as handled the same way.
 
