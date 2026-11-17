@@ -508,7 +508,7 @@ export class LitterPresentation {
    * @param text - « Des Vents d’Océan ».
    * @returns « des vents d ocean ».
    */
-  private static foldForSearch(text: string): string {
+  static foldForSearch(text: string): string {
     return text
       .normalize('NFD')
       .replace(ACCENT_PATTERN, '')

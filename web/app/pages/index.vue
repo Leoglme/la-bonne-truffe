@@ -100,6 +100,37 @@
             </template>
           </div>
         </div>
+
+        <section
+          v-if="isPlaceHiddenSectionShown"
+          aria-labelledby="place-hidden-litters-title"
+          class="flex shrink-0 flex-col gap-3.5 md:gap-4"
+        >
+          <div class="flex flex-col gap-1">
+            <h2 id="place-hidden-litters-title" class="m-0 font-display text-xl font-semibold md:text-2xl">
+              Sans lieu publié
+            </h2>
+            <p class="m-0 text-[15px] text-ink-muted md:text-base">
+              L’éleveur cache son adresse : la portée peut être n’importe où en France. Pas de notification pour elles.
+            </p>
+          </div>
+          <div class="flex flex-col gap-3.5 md:hidden">
+            <LitterRowCard
+              v-for="litter in littersStore.notDismissedPlaceHiddenCards"
+              :key="litter.id"
+              :litter="litter"
+              :is-new="false"
+            />
+          </div>
+          <div class="hidden grid-cols-2 gap-5 md:grid xl:grid-cols-3 2xl:grid-cols-4">
+            <LitterGridCard
+              v-for="litter in littersStore.notDismissedPlaceHiddenCards"
+              :key="litter.id"
+              :litter="litter"
+              :is-new="false"
+            />
+          </div>
+        </section>
       </template>
     </div>
     <NuxtLink
@@ -153,6 +184,13 @@ const firstAlreadySeenLitterId: ComputedRef<number | null> = computed((): number
   return firstAlreadySeenLitter?.id ?? null
 })
 const isSearching: ComputedRef<boolean> = computed((): boolean => littersStore.searchQuery.trim() !== '')
+const isPlaceHiddenSectionShown: ComputedRef<boolean> = computed(
+  (): boolean =>
+    littersStore.selectedFilterKey === 'all' &&
+    !isSearching.value &&
+    littersStore.loadError === null &&
+    littersStore.notDismissedPlaceHiddenCards.length > 0,
+)
 const noMatchingLitterLabel: ComputedRef<string> = computed((): string =>
   isSearching.value ? `Aucune portée pour « ${littersStore.searchQuery.trim()} ».` : 'Aucune portée avec ce filtre.',
 )

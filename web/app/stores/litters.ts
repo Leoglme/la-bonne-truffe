@@ -19,6 +19,7 @@ export const useLittersStore = defineStore('litters', () => {
   const locationStore: ReturnType<typeof useLocationStore> = useLocationStore()
 
   const cards: Ref<LitterCard[]> = ref([])
+  const placeHiddenCards: Ref<LitterCard[]> = ref([])
   const selectedFilterKey: Ref<LitterFilterKey> = ref(DEFAULT_LITTER_FILTER_KEY)
   const selectedSortKey: Ref<LitterSortKey> = ref(DEFAULT_LITTER_SORT_KEY)
   const searchQuery: Ref<string> = ref('')
@@ -31,6 +32,10 @@ export const useLittersStore = defineStore('litters', () => {
 
   const notDismissedCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
     cards.value.filter((card: LitterCard): boolean => card.follow_up_status !== 'dismissed'),
+  )
+
+  const notDismissedPlaceHiddenCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] =>
+    placeHiddenCards.value.filter((card: LitterCard): boolean => card.follow_up_status !== 'dismissed'),
   )
 
   const filteredCards: ComputedRef<LitterCard[]> = computed((): LitterCard[] => {
@@ -103,13 +108,18 @@ export const useLittersStore = defineStore('litters', () => {
   }
 
   /**
-   * Load the litters of the home list.
+   * Load the litters of the home list, and apart those whose breeder hides where it is.
    */
   async function load(): Promise<void> {
     isLoading.value = true
     loadError.value = null
     try {
-      cards.value = await LittersService.list()
+      const [homeCards, cardsOfHiddenPlaces]: [LitterCard[], LitterCard[]] = await Promise.all([
+        LittersService.list(),
+        LittersService.listPlaceHidden(),
+      ])
+      cards.value = homeCards
+      placeHiddenCards.value = cardsOfHiddenPlaces
     } catch (error: unknown) {
       loadError.value = error instanceof Error ? error.message : 'Chargement impossible'
     } finally {
@@ -276,6 +286,7 @@ export const useLittersStore = defineStore('litters', () => {
 
   return {
     cards,
+    notDismissedPlaceHiddenCards,
     selectedFilterKey,
     selectedSortKey,
     searchQuery,

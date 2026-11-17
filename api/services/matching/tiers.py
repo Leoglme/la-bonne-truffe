@@ -18,7 +18,8 @@ class TierRules:
     @classmethod
     def tier_of(cls, snapshot: LitterSnapshot, criteria: ProfileCriteria, today: date) -> MatchTier:
         """
-        Apply the hard filters, then pick the tier.
+        Apply the hard filters, then pick the tier. A litter whose breeder hides where it is waits apart, excluded:
+        it may be anywhere in France.
 
         Args:
             snapshot: The litter.
@@ -28,7 +29,7 @@ class TierRules:
         Returns:
             ``excluded``, ``ignored``, ``acceptable`` or ``preferred``.
         """
-        if cls.is_excluded(snapshot, criteria, today):
+        if snapshot.is_place_hidden or cls.is_excluded(snapshot, criteria, today):
             return MatchTier.EXCLUDED
         levels = [criteria.level_of(reading.color) for reading in snapshot.colors]
         if (
@@ -106,14 +107,16 @@ class TierRules:
             return False
         return (today - birth_day).days > criteria.max_puppy_age_days
 
-    @staticmethod
-    def flags_of(snapshot: LitterSnapshot, criteria: ProfileCriteria) -> list[MatchFlag]:
+    @classmethod
+    def flags_of(cls, snapshot: LitterSnapshot, criteria: ProfileCriteria, today: date) -> list[MatchFlag]:
         """
-        The unknown facts worth confirming with the breeder.
+        The unknown facts worth confirming with the breeder. ``place_hidden`` marks a litter whose breeder hides
+        where it is and that the hard filters would keep: it shows in « Sans lieu publié ».
 
         Args:
             snapshot: The litter.
             criteria: The profile.
+            today: Day of the evaluation, in French time.
 
         Returns:
             The flags, in a stable order.
@@ -127,7 +130,10 @@ class TierRules:
             flags.append(MatchFlag.LOF_UNKNOWN)
         if criteria.price_max_cents is not None and snapshot.price_cents is None:
             flags.append(MatchFlag.PRICE_UNKNOWN)
-        if snapshot.department_code is None:
+        if snapshot.is_place_hidden:
+            if not cls.is_excluded(snapshot, criteria, today):
+                flags.append(MatchFlag.PLACE_HIDDEN)
+        elif snapshot.department_code is None:
             flags.append(MatchFlag.DEPARTMENT_UNKNOWN)
         return flags
 

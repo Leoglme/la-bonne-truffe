@@ -33,6 +33,21 @@ import { LitterPresentation } from '~/utils/litterPresentation'
 
 const UNKNOWN_FACT_LABEL: string = 'À confirmer'
 const GONE_LISTING_LABEL: string = 'plus en ligne'
+const LEBONCOIN_SEARCH_URL: string = 'https://www.leboncoin.fr/recherche?category=28'
+const LEBONCOIN_AFFIX_WORDS_LEFT_OUT: Set<string> = new Set([
+  'de',
+  'du',
+  'des',
+  'la',
+  'le',
+  'les',
+  'l',
+  'd',
+  'et',
+  'elevage',
+  'elevages',
+  'chenil',
+])
 const GONE_PUPPY_LABEL: string = 'Plus en ligne'
 const NEW_PHOTOS_BADGE_DAYS: number = 1
 const SIREN_DIGIT_GROUP: RegExp = /(\d{3})(?=\d)/g
@@ -172,7 +187,69 @@ export class LitterDetailPresentation {
         lines.push(this.buildPuppyAdsLine(key, listing.source, sourcePuppyAds))
       }
     })
-    return lines
+    const leboncoinSearchLine: LitterListingLine | null = this.buildLeboncoinSearchLine(litter)
+    return leboncoinSearchLine === null ? lines : [...lines, leboncoinSearchLine]
+  }
+
+  /**
+   * Build the row that searches Leboncoin for a litter only the Centrale Canine shows, by its breeding or department.
+   *
+   * @param litter - The litter.
+   * @returns « Leboncoin · « cocker ferme kergaval » », or null when another source shows it or nothing places it.
+   */
+  private static buildLeboncoinSearchLine(litter: LitterDetail): LitterListingLine | null {
+    const breedShortName: string | null = litter.breed_short_name ?? null
+    const isShownByAnotherSource: boolean = litter.sources.some(
+      (source: ListingSource): boolean => source !== 'centrale_canine',
+    )
+    if (breedShortName === null || !litter.is_active || isShownByAnotherSource) {
+      return null
+    }
+    const affixWords: string[] = this.listAffixWords(litter.breeder?.affix ?? null)
+    if (affixWords.length > 0) {
+      const searchedText: string = [breedShortName, ...affixWords].join(' ')
+      return this.buildLeboncoinLine(`&text=${encodeURIComponent(searchedText)}`, `Leboncoin · « ${searchedText} »`)
+    }
+    if (litter.department_code === null) {
+      return null
+    }
+    return this.buildLeboncoinLine(
+      `&text=${encodeURIComponent(breedShortName)}&locations=d_${litter.department_code}`,
+      `Leboncoin · « ${breedShortName} » · ${litter.department_name ?? litter.department_code}`,
+    )
+  }
+
+  /**
+   * Build a row of « Vu sur » that opens a search on Leboncoin.
+   *
+   * @param searchParameters - The parameters added to the search address, each opened by « & ».
+   * @param description - What the row says of the search.
+   * @returns The row.
+   */
+  private static buildLeboncoinLine(searchParameters: string, description: string): LitterListingLine {
+    return {
+      key: 'leboncoin-search',
+      href: `${LEBONCOIN_SEARCH_URL}${searchParameters}`,
+      label: 'Chercher sur',
+      description,
+      thumbnailUrl: null,
+      isGone: false,
+    }
+  }
+
+  /**
+   * List the words of an affix a search on Leboncoin keeps: without accents, articles nor « élevage ».
+   *
+   * @param affix - « De la Ferme Kergaval », or null when the breeding has none.
+   * @returns « ferme », « kergaval ».
+   */
+  private static listAffixWords(affix: string | null): string[] {
+    if (affix === null) {
+      return []
+    }
+    return LitterPresentation.foldForSearch(affix)
+      .split(' ')
+      .filter((word: string): boolean => word.length > 0 && !LEBONCOIN_AFFIX_WORDS_LEFT_OUT.has(word))
   }
 
   /**

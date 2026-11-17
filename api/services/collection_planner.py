@@ -103,9 +103,9 @@ class CollectionPlanner:
     @staticmethod
     def build_site_directory_plan(db: Session) -> SiteDirectoryPlan:
         """
-        Plan the regional lists of breeders to read on Chiens de France before the sites: the regions of the
-        departments of the active profiles and of the followed breeders, for every breed of the active profiles
-        that Chiens de France knows.
+        Plan the regional lists of breeders to read on Chiens de France before the sites: every region, for every
+        breed of the active profiles that Chiens de France knows. They give their site to the breeders that had none,
+        and they place, near or far, the breedings the Centrale Canine lists without an address.
 
         Args:
             db: Database session.
@@ -114,20 +114,7 @@ class CollectionPlanner:
             The lists, empty when no profile is active.
         """
         breeds = CollectionPlanner._breeder_site_breeds(db)
-        _, department_codes = CollectionPlanner._profile_breeds_and_departments(db)
-        followed_department_codes = {
-            department_code
-            for (department_code,) in db.query(Breeder.department_code)
-            .join(BreederFollow, BreederFollow.breeder_id == Breeder.id)
-            .filter(Breeder.department_code.is_not(None))
-        }
-        region_names = {
-            department.region
-            for department in db.query(Department).filter(
-                Department.code.in_(set(department_codes) | followed_department_codes)
-            )
-        }
-        region_slugs = sorted({REGION_SLUGS[region] for region in region_names if region in REGION_SLUGS})
+        region_slugs = sorted(set(REGION_SLUGS.values()))
         return SiteDirectoryPlan(
             list_urls=tuple(
                 f"{CHIENS_DE_FRANCE_BASE_URL}/eleveurs/{breed.chiens_de_france_id}/france/{region_slug}"
@@ -226,7 +213,8 @@ class CollectionPlanner:
     def build_centrale_canine_plan(db: Session, now: datetime | None = None) -> CentraleCanineCollectionPlan:
         """
         Plan a Centrale Canine run: every breed of the active profiles, in each of their departments, and at the
-        hours of ``HIDDEN_ADDRESS_LITTERS_HOURS`` the places of the breedings that hide their address.
+        hours of ``HIDDEN_ADDRESS_LITTERS_HOURS`` the pages of France, with the places of the breedings that hide their
+        address.
 
         A department whose ``t_ID`` is still unknown cannot be filtered on and is listed apart: the run
         then reads the identifiers the Centrale Canine lists (``CollectionRunner``).
@@ -259,38 +247,39 @@ class CollectionPlanner:
             else:
                 departments_without_term_id.append(code)
 
+        reads_hidden_address_litters = now is not None and to_french_time(now).hour in HIDDEN_ADDRESS_LITTERS_HOURS
         return CentraleCanineCollectionPlan(
             breeds=tuple(CollectionPlanner._breed_target(db, breed) for breed in breeds),
             departments=tuple(department_targets),
             departments_without_term_id=tuple(departments_without_term_id),
-            hidden_address_breeder_places=CollectionPlanner._hidden_address_breeder_places(db, department_codes, now),
+            reads_hidden_address_litters=reads_hidden_address_litters,
+            hidden_address_breeder_places=CollectionPlanner._hidden_address_breeder_places(db)
+            if reads_hidden_address_litters
+            else (),
         )
 
     @staticmethod
-    def _hidden_address_breeder_places(
-        db: Session, department_codes: list[str], now: datetime | None
-    ) -> tuple[HiddenAddressBreederPlace, ...]:
+    def _hidden_address_breeder_places(db: Session) -> tuple[HiddenAddressBreederPlace, ...]:
         """
-        The places the regional lists of Chiens de France give in the profiles' departments, at the hours a run also
-        reads the breedings the Centrale Canine lists without an address.
+        The places the regional lists of Chiens de France give, in every region: near ones keep a litter, far ones
+        leave it out.
 
         Args:
             db: Database session.
-            department_codes: Departments of the active profiles.
-            now: Current time, naive UTC; None at no hour.
 
         Returns:
-            One place per breeding of the lists with a postal code in those departments, none outside those hours.
+            One place per breeding of the lists that gives a postal code.
         """
-        if now is None or to_french_time(now).hour not in HIDDEN_ADDRESS_LITTERS_HOURS:
-            return ()
         places: list[HiddenAddressBreederPlace] = []
         for entry in db.query(BreederSiteDirectoryEntry).order_by(BreederSiteDirectoryEntry.id):
             affix_key = BreederContactParser.affix_key(BreederContactParser.affix_of_breeding_name(entry.name))
             if affix_key is None or entry.zip_code is None:
                 continue
-            if BreederContactParser.department_code(entry.zip_code) in department_codes:
-                places.append(HiddenAddressBreederPlace(affix_key, entry.zip_code, entry.town))
+            places.append(
+                HiddenAddressBreederPlace(
+                    affix_key, entry.zip_code, entry.town, BreederContactParser.department_code(entry.zip_code)
+                )
+            )
         return tuple(places)
 
     @staticmethod

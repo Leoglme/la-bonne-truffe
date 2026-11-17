@@ -1,5 +1,5 @@
 import type { CoatColor, LitterDetail, LitterParent, LitterSourceListing } from '../app/types/api'
-import type { LitterPuppyLine } from '../app/types/Litter'
+import type { LitterListingLine, LitterPuppyLine } from '../app/types/Litter'
 import { describe, expect, it } from 'vitest'
 import { LitterDetailPresentation } from '../app/utils/litterDetailPresentation'
 
@@ -170,6 +170,54 @@ describe('LitterDetailPresentation.buildListingLines', (): void => {
         listings: [{ ...MALE_PUPPY_AD, external_url: puppyPageUrl }],
       }),
     ).toMatchObject([{ href: puppyPageUrl }])
+  })
+
+  it('searches Leboncoin for a litter only the Centrale Canine shows, by the name of its breeding', (): void => {
+    const knownOnlyByTheCentraleCanine: LitterDetail = {
+      ...LITTER,
+      sources: ['centrale_canine'],
+      listings: [BIRTH_DECLARATION],
+      breed_short_name: 'cocker',
+      breeder: {
+        display_name: null,
+        affix: 'De la Ferme Kergaval',
+        city: 'Bédée',
+        phone_e164: null,
+        siren: null,
+        website: null,
+        is_selected_breeding: false,
+        has_affix: true,
+        is_breed_club_member: false,
+      },
+    }
+
+    expect(LitterDetailPresentation.buildListingLines(knownOnlyByTheCentraleCanine)[1]).toEqual({
+      key: 'leboncoin-search',
+      href: 'https://www.leboncoin.fr/recherche?category=28&text=cocker%20ferme%20kergaval',
+      label: 'Chercher sur',
+      description: 'Leboncoin · « cocker ferme kergaval »',
+      thumbnailUrl: null,
+      isGone: false,
+    })
+  })
+
+  it('searches its department when the breeding has no name, and not at all when another source shows it', (): void => {
+    const withoutAffix: LitterDetail = {
+      ...LITTER,
+      sources: ['centrale_canine'],
+      listings: [BIRTH_DECLARATION],
+      breed_short_name: 'cocker',
+    }
+
+    expect(LitterDetailPresentation.buildListingLines(withoutAffix)[1]).toMatchObject({
+      href: 'https://www.leboncoin.fr/recherche?category=28&text=cocker&locations=d_53',
+      description: 'Leboncoin · « cocker » · Mayenne',
+    })
+    expect(
+      LitterDetailPresentation.buildListingLines({ ...LITTER, breed_short_name: 'cocker' }).map(
+        (line: LitterListingLine): string => line.key,
+      ),
+    ).not.toContain('leboncoin-search')
   })
 })
 

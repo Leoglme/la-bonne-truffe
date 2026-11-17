@@ -103,6 +103,8 @@ class LitterSnapshot:
 
     ``gold_puppy_odds`` is the share of gold puppies the genotypes of the parents give, when they tell it.
 
+    ``is_place_hidden`` tells a litter of a breeding that hides its address and that nothing places.
+
     ``price_cents`` is the lowest price of the active listings, the one a price ceiling is compared to;
     ``highest_price_cents`` the highest, the same when every puppy is at one price.
     """
@@ -128,6 +130,7 @@ class LitterSnapshot:
     sire_rating: int | None
     dam_rating: int | None
     gold_puppy_odds: float | None = None
+    is_place_hidden: bool = False
 
     @property
     def has_certain_colors(self) -> bool:

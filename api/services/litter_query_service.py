@@ -217,9 +217,11 @@ class LitterQueryService:
         kind: ListingKind | None,
         is_active: bool,
         sort: LitterSort,
+        is_place_hidden: bool = False,
     ) -> list[LitterCard]:
         """
-        The litters of the home screen; excluded litters never show, ignored ones only on request.
+        The litters of the home screen; excluded litters never show, ignored ones only on request, and the ones whose
+        breeder hides where it is only in « Sans lieu publié ».
 
         Args:
             db: Database session.
@@ -228,13 +230,16 @@ class LitterQueryService:
             kind: Only this kind (``litter_expected`` for « À naître »), when given.
             is_active: Only active litters (True) or only gone ones (False).
             sort: Best score first, or most recently seen first.
+            is_place_hidden: Only the litters whose breeder hides where it is (« Sans lieu publié »).
 
         Returns:
             The cards.
         """
         matches_by_group = cls._matches_by_group(db, user_id)
         groups = db.query(LitterGroup).filter(LitterGroup.is_active.is_(is_active)).all()
-        listed_groups = [group for group in groups if cls._is_listed(matches_by_group.get(group.id), tier)]
+        listed_groups = [
+            group for group in groups if cls._is_listed(matches_by_group.get(group.id), tier, is_place_hidden)
+        ]
         facts = LitterCardFacts.load(db, user_id, listed_groups)
         cards: list[LitterCard] = []
         for group in listed_groups:
@@ -345,6 +350,7 @@ class LitterQueryService:
             ],
             follow_up=cls._follow_up_payload(db, follow_up) if follow_up is not None else None,
             photos_added_at=cls._photos_added_at(db, listings),
+            breed_short_name=breed.short_name if breed is not None else None,
         )
 
     @classmethod
@@ -500,18 +506,22 @@ class LitterQueryService:
         }
 
     @staticmethod
-    def _is_listed(match: ListingMatch | None, tier: MatchTier | None) -> bool:
+    def _is_listed(match: ListingMatch | None, tier: MatchTier | None, is_place_hidden: bool) -> bool:
         """
         Whether a group belongs to the home list: never an excluded one, only the asked tier when there is
-        one, and an ignored one only when asked for.
+        one, and an ignored one only when asked for. « Sans lieu publié » lists only the litters whose breeder hides
+        where it is and that the hard filters would keep.
 
         Args:
             match: The match of the group for the active profile, if evaluated.
             tier: The tier asked for, if any.
+            is_place_hidden: Whether « Sans lieu publié » is asked for.
 
         Returns:
             True when the group is listed.
         """
+        if is_place_hidden:
+            return match is not None and MatchFlag.PLACE_HIDDEN.value in match.flags
         if match is not None and match.tier == MatchTier.EXCLUDED:
             return False
         if tier is not None:

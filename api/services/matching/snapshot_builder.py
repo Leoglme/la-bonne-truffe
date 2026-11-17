@@ -114,6 +114,24 @@ class LitterSnapshotBuilder:
             ),
             dam_rating=cls._first_known([listing.dam_rating for listing in cls.centrale_canine_first(active_listings)]),
             gold_puppy_odds=cls.gold_puppy_odds(group),
+            is_place_hidden=cls.is_place_hidden(active_listings, department_code),
+        )
+
+    @staticmethod
+    def is_place_hidden(active_listings: list[Listing], department_code: str | None) -> bool:
+        """
+        Whether nothing tells where a litter is because its breeder hides its address: only the Centrale Canine shows
+        it, without a department, and no regional list of Chiens de France placed its breeder.
+
+        Args:
+            active_listings: The listings of the group still online.
+            department_code: The department its listings or its breeder give, None when none does.
+
+        Returns:
+            True for such a litter, which waits apart in « Sans lieu publié ».
+        """
+        return department_code is None and all(
+            listing.source == ListingSource.CENTRALE_CANINE for listing in active_listings
         )
 
     @staticmethod

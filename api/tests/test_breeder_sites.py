@@ -34,7 +34,6 @@ from models.department import Department
 from models.dog import Dog
 from models.listing import Listing
 from models.litter_group import LitterGroup
-from models.search_profile import SearchProfile
 from models.source_run import SourceRun
 from models.user import User
 from seeders.run_seeders import SeederRunner
@@ -269,19 +268,16 @@ def test_a_list_naming_a_person_links_the_breeder_of_that_name_in_the_postal_cod
     assert namesake_elsewhere.chiens_de_france_site_url is None
 
 
-def test_the_regional_lists_of_provence_and_la_reunion_are_read_at_the_addresses_of_the_site(
+def test_the_regional_lists_of_every_region_are_read_at_the_addresses_of_the_site(
     db: Session, seeded: dict[str, str]
 ) -> None:
-    profile = db.query(SearchProfile).one()
-    profile.department_codes = ["13", "974"]
-    db.commit()
-
     plan = CollectionPlanner.build_site_directory_plan(db)
 
-    assert plan.list_urls == (
+    assert len(plan.list_urls) == len(set(REGION_SLUGS.values()))
+    assert {
         "https://www.chiens-de-france.com/eleveurs/cocker-spaniel-anglais/france/provence-alpes-cote-dazur",
         "https://www.chiens-de-france.com/eleveurs/cocker-spaniel-anglais/france/reunion",
-    )
+    } <= set(plan.list_urls)
     assert {department.region for department in db.query(Department)} <= set(REGION_SLUGS)
 
 

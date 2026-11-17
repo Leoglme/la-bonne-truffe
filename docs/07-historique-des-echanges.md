@@ -391,3 +391,14 @@ Résumé chronologique des discussions entre Léo et Claude (27 et 28 octobre 20
 - **Fait** : la lecture de la liste de France à 7 h, 13 h et 19 h, qui garde les portées des élevages sans adresse que les listes régionales de Chiens de France placent dans le profil (`02`, `03`, `05`).
 - **Vérifié** : tests pytest (toute la suite), ruff et mypy ; sur la copie, les vraies pages ajoutent les portées de la Promesse d'Or, de la Constellation d'Irka et de Ker Dazont.
 - **Non vérifié** : le relais de l'app Windows avec la liste de France, en production.
+
+## 17 novembre : le lien Leboncoin et les portées sans lieu publié
+
+- **Demandé** : « ajoute-le » (le lien Leboncoin des portées que seule la Centrale Canine connaît), et « si jamais il reste des choses à corriger, fini » pour les élevages qui cachent leur adresse.
+- **Constaté** (`02`) :
+  - une recherche Leboncoin « cocker » suivie de l'affixe tombe sur la seule annonce de l'élevage (Kergaval, Brumes de Brocéliande) ; le nom complet de la race manque des annonces ;
+  - en ne gardant que les listes d'éleveurs des régions du profil, un élevage caché situé loin (Du Royaume des Quatre Pattes, Seine-et-Marne) semblait introuvable : les listes de toutes les régions le situent ;
+  - la portée de Kersalousse n'a que des femelles : le profil, qui cherche un mâle, l'écarte de toute façon.
+- **Fait** : la ligne « Chercher sur Leboncoin » dans « Vu sur » (`06`) ; les listes d'éleveurs de toutes les régions ; les portées d'élevages cachés que rien ne place, gardées sans lieu, exclues de la liste et des notifications, et montrées dans « Sans lieu publié » en bas de l'écran des portées (`02`, `03`, `04`, `05`, `06`).
+- **Vérifié** : tests pytest et vitest (toutes les suites), ruff, mypy, lint et typecheck ; sur la copie, deux lectures de la liste de France : les élevages cachés situés loin sont retirés, 7 portées attendent dans « Sans lieu publié » (dont deux gold à naître), captures sur iPhone et sur ordinateur ; la ligne Leboncoin de Kergaval (« cocker ferme kergaval ») et celle d'une portée sans affixe du Morbihan (`locations=d_56`).
+- **Non vérifié** : la production, dont le premier relevé de la liste de France avec ce code.

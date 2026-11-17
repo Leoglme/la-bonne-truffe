@@ -4,10 +4,14 @@ from enum import StrEnum
 
 
 class MatchFlag(StrEnum):
-    """An unknown fact: it never excludes a litter, it keeps it below « préférée » and is shown to confirm."""
+    """
+    An unknown fact: it never excludes a litter, it keeps it below « préférée » and is shown to confirm. Only
+    ``place_hidden`` sets a litter apart: its breeder hides where it is, and it waits in « Sans lieu publié ».
+    """
 
     COLOR_TO_CONFIRM = "color_to_confirm"
     SEX_UNKNOWN = "sex_unknown"
     LOF_UNKNOWN = "lof_unknown"
     PRICE_UNKNOWN = "price_unknown"
     DEPARTMENT_UNKNOWN = "department_unknown"
+    PLACE_HIDDEN = "place_hidden"

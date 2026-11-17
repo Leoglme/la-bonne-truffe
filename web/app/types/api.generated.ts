@@ -505,6 +505,7 @@ export interface paths {
          *         kind: Only this kind (« À naître »).
          *         active: Active litters, or the ones gone from their sources.
          *         sort: By score or by freshness.
+         *         place_hidden: Only the litters whose breeder hides where it is (« Sans lieu publié »).
          *         current_user: The authenticated user.
          *         db: Database session.
          *
@@ -2375,6 +2376,11 @@ export interface components {
              * @description Last time new photos reached one of its listings, naive UTC
              */
             photos_added_at?: string | null;
+            /**
+             * Breed Short Name
+             * @description The word people search the breed by (« cocker »), for a search on Leboncoin
+             */
+            breed_short_name?: string | null;
         };
         /**
          * LitterExpectedColor
@@ -2585,10 +2591,11 @@ export interface components {
         MatchEventKind: "new_preferred" | "born" | "new_acceptable" | "upgraded" | "availability_change" | "available_again";
         /**
          * MatchFlag
-         * @description An unknown fact: it never excludes a litter, it keeps it below « préférée » and is shown to confirm.
+         * @description An unknown fact: it never excludes a litter, it keeps it below « préférée » and is shown to confirm. Only
+         *     ``place_hidden`` sets a litter apart: its breeder hides where it is, and it waits in « Sans lieu publié ».
          * @enum {string}
          */
-        MatchFlag: "color_to_confirm" | "sex_unknown" | "lof_unknown" | "price_unknown" | "department_unknown";
+        MatchFlag: "color_to_confirm" | "sex_unknown" | "lof_unknown" | "price_unknown" | "department_unknown" | "place_hidden";
         /**
          * MatchTier
          * @description Verdict of a litter group against a search profile; it decides the notification.
@@ -3763,6 +3770,7 @@ export interface operations {
                 kind?: components["schemas"]["ListingKind"] | null;
                 active?: boolean;
                 sort?: components["schemas"]["LitterSort"];
+                place_hidden?: boolean;
             };
             header?: never;
             path?: never;

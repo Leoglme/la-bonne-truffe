@@ -37,5 +37,15 @@ class Breed(TimestampMixin, Base):
     coeur_de_cocker_id: Mapped[str | None] = mapped_column(String(120))
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
 
+    @property
+    def short_name(self) -> str:
+        """
+        The word people search the breed by: the first word of its French name.
+
+        Returns:
+            « cocker » for « Cocker spaniel anglais ».
+        """
+        return self.name_fr.split(maxsplit=1)[0].lower()
+
     def __repr__(self) -> str:
         return f"<Breed id={self.id} slug={self.slug}>"

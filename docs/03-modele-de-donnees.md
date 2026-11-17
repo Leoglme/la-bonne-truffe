@@ -162,7 +162,7 @@ Une cinquième confiance, **`suggested`** : la robe lue par l'IA sur la photo d'
 ## Le 16/11/2026 : les élevages qui cachent leur adresse
 
 ### `breeder_site_directory_entries` (nouvelle)
-Une ligne par site d'élevage qu'une liste régionale de Chiens de France nomme : `site_url` (unique), `name`, `zip_code`, `town` et `seen_at`. Le relevé des sites d'élevage les garde à chaque lecture des listes ; elles placent les élevages que la Centrale Canine publie sans adresse (`02`).
+Une ligne par site d'élevage qu'une liste régionale de Chiens de France nomme : `site_url` (unique), `name`, `zip_code`, `town` et `seen_at`. Le relevé des sites d'élevage les garde à chaque lecture des listes, celles de toutes les régions ; elles placent, près ou loin, les élevages que la Centrale Canine publie sans adresse (`02`).
 
 ### `listings` : une portée sans département
-La portée d'un élevage qui cache son adresse garde `department_code` vide, comme la Centrale Canine la publie, et prend le département de son éleveur, celui du code postal de sa liste. Seul un relevé qui lit la liste de France la met hors ligne quand elle disparaît.
+La portée d'un élevage qui cache son adresse garde `department_code` vide, comme la Centrale Canine la publie, et prend le département de son éleveur, celui du code postal de sa liste. Quand aucune liste ne place l'éleveur, la portée reste sans lieu et attend à part (`is_place_hidden` du résumé de la portée, drapeau `place_hidden`, `04`). Seul un relevé qui lit la liste de France la met hors ligne quand elle disparaît.

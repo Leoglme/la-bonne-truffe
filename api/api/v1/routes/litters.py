@@ -32,6 +32,7 @@ async def list_litters(
     kind: ListingKind | None = None,
     active: bool = True,
     sort: LitterSort = LitterSort.SCORE,
+    place_hidden: bool = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[LitterCard]:
@@ -43,13 +44,14 @@ async def list_litters(
         kind: Only this kind (« À naître »).
         active: Active litters, or the ones gone from their sources.
         sort: By score or by freshness.
+        place_hidden: Only the litters whose breeder hides where it is (« Sans lieu publié »).
         current_user: The authenticated user.
         db: Database session.
 
     Returns:
         The cards.
     """
-    return LitterQueryService.list_cards(db, current_user.id, tier, kind, active, sort)
+    return LitterQueryService.list_cards(db, current_user.id, tier, kind, active, sort, place_hidden)
 
 
 @router.post("/litters/visit", response_model=LitterVisit)

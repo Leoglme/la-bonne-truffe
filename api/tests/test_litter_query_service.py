@@ -89,6 +89,7 @@ def test_the_parents_take_the_rating_of_the_centrale_canine_even_when_another_so
 
     assert detail.sire is not None and (detail.sire.name, detail.sire.rating) == ("Père de test", 4)
     assert detail.dam is not None and (detail.dam.name, detail.dam.rating) == ("Mère de test", 3)
+    assert detail.breed_short_name == "cocker"
 
 
 def test_a_later_puppy_ad_dates_the_newest_listing_of_its_litter(db: Session) -> None:

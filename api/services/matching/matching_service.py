@@ -41,5 +41,5 @@ class MatchingService:
             tier=TierRules.tier_of(snapshot, criteria, today),
             score=ScoreCalculator.score_of(reasons),
             reasons=tuple(reasons),
-            flags=tuple(TierRules.flags_of(snapshot, criteria)),
+            flags=tuple(TierRules.flags_of(snapshot, criteria, today)),
         )

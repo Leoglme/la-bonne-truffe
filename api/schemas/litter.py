@@ -218,6 +218,9 @@ class LitterDetail(LitterCard):
     photos_added_at: datetime | None = Field(
         default=None, description="Last time new photos reached one of its listings, naive UTC"
     )
+    breed_short_name: str | None = Field(
+        default=None, description="The word people search the breed by (« cocker »), for a search on Leboncoin"
+    )
 
 
 class ColorConfirmation(BaseModel):

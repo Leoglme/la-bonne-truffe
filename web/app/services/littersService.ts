@@ -23,6 +23,15 @@ export class LittersService {
   }
 
   /**
+   * Fetch the litters whose breeder hides where it is, shown apart under « Sans lieu publié ».
+   *
+   * @returns The cards.
+   */
+  static async listPlaceHidden(): Promise<LitterCard[]> {
+    return ApiClient.get<LitterCard[]>('/api/v1/litters?place_hidden=true')
+  }
+
+  /**
    * Record that the home list is looked at now, on whatever device.
    *
    * @returns The previous look: the litters first seen after it are the new ones.

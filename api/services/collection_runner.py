@@ -455,7 +455,7 @@ class CollectionRunner:
                 raise CentraleCanineError(NOTHING_TO_COLLECT_MESSAGE)
             report.collection = collector.collect(plan)
             collected_department_codes: set[str | None] = {department.code for department in plan.departments}
-            if plan.hidden_address_breeder_places:
+            if plan.reads_hidden_address_litters:
                 collected_department_codes.add(None)
             return listing_ingestion_service.ingest(
                 db,

@@ -102,6 +102,7 @@ export const MATCH_FLAG_LABELS: Record<MatchFlag, string | null> = {
   lof_unknown: 'le LOF',
   price_unknown: 'le prix',
   department_unknown: 'le département',
+  place_hidden: 'le lieu',
 }
 
 /** The sex of the puppy of an ad, when the ad tells it. */

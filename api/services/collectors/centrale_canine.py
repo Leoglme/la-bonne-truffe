@@ -75,6 +75,7 @@ class HiddenAddressBreederPlace:
     affix_key: str
     zip_code: str
     town: str | None
+    department_code: str | None
 
 
 @dataclass(frozen=True)
@@ -84,6 +85,7 @@ class CentraleCanineCollectionPlan:
     breeds: tuple[SccBreedTarget, ...]
     departments: tuple[SccDepartmentTarget, ...]
     departments_without_term_id: tuple[str, ...] = ()
+    reads_hidden_address_litters: bool = False
     hidden_address_breeder_places: tuple[HiddenAddressBreederPlace, ...] = ()
 
 
@@ -238,8 +240,8 @@ class CentraleCanineCollector:
 
     def collect(self, plan: CentraleCanineCollectionPlan) -> CentraleCanineCollection:
         """
-        Read every page of every breed and department of the plan, then, when the plan places breedings that hide
-        their address, every page of France to keep their litters: no department filter shows them.
+        Read every page of every breed and department of the plan, then, at the hours the plan says, every page of
+        France to keep the litters of the breedings that hide their address: no department filter shows them.
 
         Args:
             plan: Breeds, departments and places to read.
@@ -256,13 +258,18 @@ class CentraleCanineCollector:
                 for raw_page in self._iterate_pages(breed.scc_slug, department):
                     collection.raw_pages.append(raw_page)
                     collection.listings.extend(self.parse_litters_payload(raw_page.payload, breed, department.code))
-        if not plan.hidden_address_breeder_places:
+        if not plan.reads_hidden_address_litters:
             return collection
+        department_codes = frozenset(department.code for department in plan.departments) | frozenset(
+            plan.departments_without_term_id
+        )
         for breed in plan.breeds:
             for raw_page in self._iterate_pages(breed.scc_slug, ALL_DEPARTMENTS_TARGET):
                 collection.raw_pages.append(raw_page)
                 collection.listings.extend(
-                    self.parse_hidden_address_litters(raw_page.payload, breed, plan.hidden_address_breeder_places)
+                    self.parse_hidden_address_litters(
+                        raw_page.payload, breed, plan.hidden_address_breeder_places, department_codes
+                    )
                 )
         return collection
 
@@ -417,20 +424,26 @@ class CentraleCanineCollector:
         return listings
 
     def parse_hidden_address_litters(
-        self, payload: dict[str, Any], breed: SccBreedTarget, places: tuple[HiddenAddressBreederPlace, ...]
+        self,
+        payload: dict[str, Any],
+        breed: SccBreedTarget,
+        places: tuple[HiddenAddressBreederPlace, ...],
+        department_codes: frozenset[str],
     ) -> list[RawListing]:
         """
-        Turn one page of France into the listings of the breedings that hide their address and that a regional list
-        of Chiens de France places: the breeder takes the postal code and town of its place, the listing no
-        department, since the Centrale Canine gives none.
+        Turn one page of France into the listings of the breedings that hide their address: a breeding a regional
+        list of Chiens de France places in a department read takes the postal code and town of its place, one it
+        places elsewhere is left out, and one no list places stays without any. The listing has no department, since
+        the Centrale Canine gives none.
 
         Args:
             payload: Decoded page of every department.
             breed: Breed read, with its varieties.
             places: The places of the breedings, by the key of their affix.
+            department_codes: The departments the run reads.
 
         Returns:
-            The listings of the placed breedings; the other litters of the page are left to the department pages.
+            The listings of the breedings that hide their address and may be in those departments.
         """
         variety_labels = self.page_filters(payload).get("variety", {})
         listings: list[RawListing] = []
@@ -438,13 +451,13 @@ class CentraleCanineCollector:
             if breeder_details is None or not self.hides_address(breeder_details):
                 continue
             place = self.place_of(breeder_details, places)
-            if place is None:
+            if place is not None and place.department_code not in department_codes:
                 continue
             placed_details = {
                 **breeder_details,
                 "u_farming_name": "",
-                "u_breeder_zip_code": place.zip_code,
-                "u_breeder_town": place.town or "",
+                "u_breeder_zip_code": place.zip_code if place is not None else "",
+                "u_breeder_town": (place.town or "") if place is not None else "",
             }
             listing = self.parse_litter(litter, breed, None, placed_details, variety_labels)
             if listing is not None:
